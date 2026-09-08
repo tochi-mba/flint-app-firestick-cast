@@ -131,6 +131,7 @@ class ReceiverServerTest {
                 val input = socket.getInputStream().buffered()
                 val output = socket.getOutputStream().buffered()
                 establish(input, output)
+                awaitConnectedClient(server)
 
                 assertTrue(server.send(PlaybackStateMessage(PlaybackState.PLAYING, detail = "Playing on this TV")))
 
@@ -203,6 +204,20 @@ class ReceiverServerTest {
         write(output, auth)
         val granted = requireNotNull(WireCodec.readFrom(input)).message
         assertIs<HandshakeOutcome.Established>(handshake.onMessage(granted))
+    }
+
+    // The client reaches Established the moment it reads the grant, but the server publishes the
+    // sender it sends through a few instructions later. Waiting on the server's own signal keeps
+    // this test off that window; without it the send races the handshake and intermittently fails.
+    private fun awaitConnectedClient(server: ReceiverServer) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
+        while (System.nanoTime() < deadline) {
+            if (server.state.value is ReceiverState.Connected) {
+                return
+            }
+            Thread.sleep(5)
+        }
+        throw AssertionError("The server never reported a connected client")
     }
 
     private fun profile() = DeviceProfile("Test phone", setOf(CodecId.H264), 1080, 1920, 420)
