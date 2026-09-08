@@ -449,7 +449,13 @@ pub fn is_forbidden_on_ordinary_channel(message: &Message) -> bool {
 /// Returns whether a value is legal at a declared payload version.
 #[must_use]
 pub fn is_allowed_at_version(protocol_version: u16, message: &Message) -> bool {
-    if matches!(message, Message::BrowserWorkspaceResize { .. } | Message::BrowserWorkspaceGeometry { .. }) && protocol_version < 4 { return false; }
+    if matches!(
+        message,
+        Message::BrowserWorkspaceResize { .. } | Message::BrowserWorkspaceGeometry { .. }
+    ) && protocol_version < 4
+    {
+        return false;
+    }
     if is_workspace_message(message) && protocol_version < 3 {
         return false;
     }

@@ -25,12 +25,33 @@ pub(super) fn encode(message: &Message) -> Result<Option<Vec<u8>>, WireError> {
 
     let mut writer = Writer::default();
     match message {
-        Message::BrowserWorkspaceResize { epoch, command_id, expected_revision, column, row, mode } => {
-            writer.i64(*epoch); writer.i64(*command_id); writer.i64(*expected_revision);
-            writer.u16(*column); writer.u16(*row); writer.u8(*mode);
+        Message::BrowserWorkspaceResize {
+            epoch,
+            command_id,
+            expected_revision,
+            column,
+            row,
+            mode,
+        } => {
+            writer.i64(*epoch);
+            writer.i64(*command_id);
+            writer.i64(*expected_revision);
+            writer.u16(*column);
+            writer.u16(*row);
+            writer.u8(*mode);
         }
-        Message::BrowserWorkspaceGeometry { epoch, revision, column, row, mode } => {
-            writer.i64(*epoch); writer.i64(*revision); writer.u16(*column); writer.u16(*row); writer.u8(*mode);
+        Message::BrowserWorkspaceGeometry {
+            epoch,
+            revision,
+            column,
+            row,
+            mode,
+        } => {
+            writer.i64(*epoch);
+            writer.i64(*revision);
+            writer.u16(*column);
+            writer.u16(*row);
+            writer.u8(*mode);
         }
         Message::BrowserWorkspaceCommand {
             epoch,
@@ -114,12 +135,19 @@ pub(super) fn decode(message_type: MessageType, payload: &[u8]) -> Result<Messag
     let mut reader = Reader::new(payload);
     let message = match message_type {
         MessageType::BrowserWorkspaceResize => Message::BrowserWorkspaceResize {
-            epoch: reader.i64("epoch")?, command_id: reader.i64("command ID")?,
-            expected_revision: reader.i64("revision")?, column: reader.u16("column")?, row: reader.u16("row")?, mode: reader.u8("mode")?,
+            epoch: reader.i64("epoch")?,
+            command_id: reader.i64("command ID")?,
+            expected_revision: reader.i64("revision")?,
+            column: reader.u16("column")?,
+            row: reader.u16("row")?,
+            mode: reader.u8("mode")?,
         },
         MessageType::BrowserWorkspaceGeometry => Message::BrowserWorkspaceGeometry {
-            epoch: reader.i64("epoch")?, revision: reader.i64("revision")?,
-            column: reader.u16("column")?, row: reader.u16("row")?, mode: reader.u8("mode")?,
+            epoch: reader.i64("epoch")?,
+            revision: reader.i64("revision")?,
+            column: reader.u16("column")?,
+            row: reader.u16("row")?,
+            mode: reader.u8("mode")?,
         },
         MessageType::BrowserWorkspaceCommand => Message::BrowserWorkspaceCommand {
             epoch: reader.i64("browser workspace command epoch")?,
@@ -294,11 +322,24 @@ fn read_enum<T>(
 
 fn validate(message: &Message) -> Result<(), WireError> {
     match message {
-        Message::BrowserWorkspaceResize { epoch, command_id, expected_revision, column, row, mode } => {
+        Message::BrowserWorkspaceResize {
+            epoch,
+            command_id,
+            expected_revision,
+            column,
+            row,
+            mode,
+        } => {
             positive(*command_id, "command ID")?;
             validate_geometry(*epoch, *expected_revision, *column, *row, *mode)?;
         }
-        Message::BrowserWorkspaceGeometry { epoch, revision, column, row, mode } => {
+        Message::BrowserWorkspaceGeometry {
+            epoch,
+            revision,
+            column,
+            row,
+            mode,
+        } => {
             validate_geometry(*epoch, *revision, *column, *row, *mode)?;
         }
         Message::BrowserWorkspaceCommand {
@@ -586,7 +627,13 @@ fn require(condition: bool, message: &'static str) -> Result<(), WireError> {
     }
 }
 
-fn validate_geometry(epoch: i64, revision: i64, column: u16, row: u16, mode: u8) -> Result<(), WireError> {
+fn validate_geometry(
+    epoch: i64,
+    revision: i64,
+    column: u16,
+    row: u16,
+    mode: u8,
+) -> Result<(), WireError> {
     positive(epoch, "epoch")?;
     positive(revision, "revision")?;
     if mode > 2 || !(1500..=8500).contains(&column) || !(1500..=8500).contains(&row) {

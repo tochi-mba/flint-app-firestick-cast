@@ -102,7 +102,9 @@ fn profile_types_are_additive_v2_tls_browser_messages() {
     assert!(browser::is_browser_type(31));
     assert!(browser::is_browser_type(32));
     assert!(browser::is_browser_type(34));
-    assert!(!browser::is_browser_type(35));
+    assert!(browser::is_browser_type(35));
+    assert!(browser::is_browser_type(36));
+    assert!(!browser::is_browser_type(37));
 }
 
 #[test]

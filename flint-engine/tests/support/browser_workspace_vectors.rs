@@ -9,12 +9,27 @@ use super::Vector;
 
 pub(super) fn vectors() -> Vec<Vector> {
     vec![
-        Vector { name: "browser-workspace-resize", frame: Frame::new(Message::BrowserWorkspaceResize {
-            epoch: 4, command_id: 150, expected_revision: 140, column: 7000, row: 3000, mode: 0,
-        }) },
-        Vector { name: "browser-workspace-geometry", frame: Frame::new(Message::BrowserWorkspaceGeometry {
-            epoch: 4, revision: 141, column: 7000, row: 3000, mode: 0,
-        }) },
+        Vector {
+            name: "browser-workspace-resize",
+            frame: Frame::new(Message::BrowserWorkspaceResize {
+                epoch: 4,
+                command_id: 150,
+                expected_revision: 140,
+                column: 7000,
+                row: 3000,
+                mode: 0,
+            }),
+        },
+        Vector {
+            name: "browser-workspace-geometry",
+            frame: Frame::new(Message::BrowserWorkspaceGeometry {
+                epoch: 4,
+                revision: 141,
+                column: 7000,
+                row: 3000,
+                mode: 0,
+            }),
+        },
         Vector {
             name: "browser-workspace-command-focus",
             frame: Frame::new(Message::BrowserWorkspaceCommand {

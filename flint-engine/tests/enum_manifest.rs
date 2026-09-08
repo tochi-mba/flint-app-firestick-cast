@@ -40,42 +40,140 @@ fn manifest() -> BTreeMap<String, Vec<u8>> {
         }};
     }
 
-    record!(BrowserCapabilityStatus, Available, SecureEndpointUnavailable, WebViewUnavailable,
-        UnsupportedPlatform, DistributionRestricted);
-    record!(BrowserCommandAction, Open, Navigate, Back, Forward, Reload, Stop, Close,
-        SetPreviewEnabled, ClearData);
+    record!(
+        BrowserCapabilityStatus,
+        Available,
+        SecureEndpointUnavailable,
+        WebViewUnavailable,
+        UnsupportedPlatform,
+        DistributionRestricted
+    );
+    record!(
+        BrowserCommandAction,
+        Open,
+        Navigate,
+        Back,
+        Forward,
+        Reload,
+        Stop,
+        Close,
+        SetPreviewEnabled,
+        ClearData
+    );
     record!(BrowserPointerAction, Down, Move, Up, Cancel);
-    record!(BrowserSemanticKey, Select, Up, Down, Left, Right, Back, Tab, ShiftTab, Escape,
-        PageUp, PageDown, Home, End, Refresh);
+    record!(
+        BrowserSemanticKey,
+        Select,
+        Up,
+        Down,
+        Left,
+        Right,
+        Back,
+        Tab,
+        ShiftTab,
+        Escape,
+        PageUp,
+        PageDown,
+        Home,
+        End,
+        Refresh
+    );
     record!(BrowserLoadState, Idle, Loading, Loaded, Failed, Closed);
     record!(BrowserPreviewState, Disabled, Enabled, Unavailable);
     record!(BrowserDialogType, Alert, Confirm, Prompt, BeforeUnload);
     record!(BrowserTabAction, New, Close, Select, Move, Duplicate);
-    record!(BrowserViewAction, SetZoom, SetUa, SetDark, SetInputMode, SetFullscreen,
-        FindStart, FindNext, FindPrev, FindClear, SetSearchEngine);
+    record!(
+        BrowserViewAction,
+        SetZoom,
+        SetUa,
+        SetDark,
+        SetInputMode,
+        SetFullscreen,
+        FindStart,
+        FindNext,
+        FindPrev,
+        FindClear,
+        SetSearchEngine
+    );
     record!(BrowserUserAgentMode, Tv, Desktop, Mobile);
     record!(BrowserDarkMode, FollowSystem, Light, Dark);
     record!(BrowserInteractionMode, Cursor, Focus);
     record!(BrowserSearchEngine, DuckDuckGo, Google, Bing, Custom);
-    record!(BrowserLibraryAction, AddBookmark, RemoveBookmark, ClearHistory, ClearBookmarks,
-        RequestSnapshot);
+    record!(
+        BrowserLibraryAction,
+        AddBookmark,
+        RemoveBookmark,
+        ClearHistory,
+        ClearBookmarks,
+        RequestSnapshot
+    );
     record!(BrowserLibraryEntryKind, Bookmark, History);
 
     record!(BrowserNetworkAction, Set, Clear, RequestSnapshot);
     record!(BrowserVpnProvider, None, WireGuard);
-    record!(BrowserVpnSessionState, Idle, NeedsConsent, Connecting, Connected, Failed, Unavailable);
-    record!(BrowserProfileAction, SelectTvProfile, CreateTvProfile, RenameTvProfile,
-        DeleteTvProfile, SelectDevice, RequestSnapshot);
+    record!(
+        BrowserVpnSessionState,
+        Idle,
+        NeedsConsent,
+        Connecting,
+        Connected,
+        Failed,
+        Unavailable
+    );
+    record!(
+        BrowserProfileAction,
+        SelectTvProfile,
+        CreateTvProfile,
+        RenameTvProfile,
+        DeleteTvProfile,
+        SelectDevice,
+        RequestSnapshot
+    );
     record!(BrowserProfileSource, Tv, Device);
-    record!(BrowserWorkspaceCommandAction, Focus, OpenPane, ClosePane, SetLayout, Navigate, Reload,
-        Back, Forward, SetMute, PlayPause, SetInteraction, EnterTheater, ExitTheater,
-        RequestSnapshot, MovePane);
+    record!(
+        BrowserWorkspaceCommandAction,
+        Focus,
+        OpenPane,
+        ClosePane,
+        SetLayout,
+        Navigate,
+        Reload,
+        Back,
+        Forward,
+        SetMute,
+        PlayPause,
+        SetInteraction,
+        EnterTheater,
+        ExitTheater,
+        RequestSnapshot,
+        MovePane
+    );
     record!(BrowserWorkspaceInputKind, Key, Text);
     record!(BrowserWorkspaceWireInteractionMode, WorkspaceChrome, Page);
-    record!(BrowserWorkspaceWireLayout, Single, TwoColumns, TwoRows, FourGrid);
-    record!(BrowserWorkspaceWireMuteApplication, NotRequested, PendingRenderer, Requested,
-        AppliedToRenderer, Unsupported, Failed);
-    record!(BrowserWorkspaceWireObservedPlayback, Unknown, Playing, Paused, Ended, Unavailable);
+    record!(
+        BrowserWorkspaceWireLayout,
+        Single,
+        TwoColumns,
+        TwoRows,
+        FourGrid
+    );
+    record!(
+        BrowserWorkspaceWireMuteApplication,
+        NotRequested,
+        PendingRenderer,
+        Requested,
+        AppliedToRenderer,
+        Unsupported,
+        Failed
+    );
+    record!(
+        BrowserWorkspaceWireObservedPlayback,
+        Unknown,
+        Playing,
+        Paused,
+        Ended,
+        Unavailable
+    );
     record!(BrowserWorkspaceWirePaneResidency, Live, Suspended, Failed);
 
     all
@@ -131,7 +229,11 @@ fn no_enum_declares_a_duplicate_wire_value() {
     for (name, values) in manifest() {
         let mut seen = values.clone();
         seen.dedup();
-        assert_eq!(seen.len(), values.len(), "{name} declares a duplicate wire value");
+        assert_eq!(
+            seen.len(),
+            values.len(),
+            "{name} declares a duplicate wire value"
+        );
     }
 }
 

@@ -832,7 +832,10 @@ pub fn corpus() -> Vec<Vector> {
                     ..
                 }
         );
-        vector.frame.protocol_version = if matches!(vector.frame.message, Message::BrowserWorkspaceResize { .. } | Message::BrowserWorkspaceGeometry { .. }) {
+        vector.frame.protocol_version = if matches!(
+            vector.frame.message,
+            Message::BrowserWorkspaceResize { .. } | Message::BrowserWorkspaceGeometry { .. }
+        ) {
             4
         } else if requires_v3 {
             3

@@ -522,7 +522,11 @@ fn decode_payload(
                 "browser message types require protocol version 2",
             ));
         }
-        if type_id >= 35 && protocol_version < 4 { return Err(WireError::Invariant("Workspace resizing requires protocol version 4")); }
+        if type_id >= 35 && protocol_version < 4 {
+            return Err(WireError::Invariant(
+                "Workspace resizing requires protocol version 4",
+            ));
+        }
         return if type_id >= MessageType::BrowserWorkspaceCommand as u16 {
             browser_phase3_payload::decode(message_type, payload)
         } else if type_id >= MessageType::BrowserTabCommand as u16 {

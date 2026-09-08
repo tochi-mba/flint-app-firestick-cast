@@ -918,7 +918,15 @@ mod tests {
             MessageType::from_id(34),
             Some(MessageType::BrowserWorkspaceInput)
         );
-        assert!(MessageType::from_id(35).is_none());
+        assert_eq!(
+            MessageType::from_id(35),
+            Some(MessageType::BrowserWorkspaceResize)
+        );
+        assert_eq!(
+            MessageType::from_id(36),
+            Some(MessageType::BrowserWorkspaceGeometry)
+        );
+        assert!(MessageType::from_id(37).is_none());
         assert!(AuthMethod::from_id(0).is_none());
         assert!(TransportAction::from_id(7).is_none());
         assert!(PointerAction::from_id(5).is_none());
