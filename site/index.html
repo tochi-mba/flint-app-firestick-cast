@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flint — REX Technologies</title>
+<meta name="description" content="Flint is a Windows host that casts a PC screen to a Fire TV on the same network. A REX Technologies product.">
+<link rel="icon" href="flint-icon.png" type="image/png">
+<meta property="og:title" content="Flint — REX Technologies">
+<meta property="og:description" content="Cast a Windows PC to a Fire TV. Flint tells you what your hardware can actually do, before you spend time on it.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/*
+  The REX Technologies ink/signal palette, lifted verbatim from FlintColors.axaml so the site and
+  the application are visibly one product. Do not re-pick these values.
+*/
+:root {
+  --ink: #080A09;
+  --panel: #111512;
+  --raised: #181E19;
+  --line: #29302A;
+  --text: #F2F5EE;
+  --muted: #858D83;
+  --signal: #D7FF3F;
+  --live: #FF774D;
+
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 18px;
+  --page: min(1100px, 92vw);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--signal); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* The signature of the system: 9px, bold, heavily tracked, always upper-case. */
+.eyebrow {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+.eyebrow.signal { color: var(--signal); }
+.eyebrow.live { color: var(--live); }
+
+h1, h2, h3 { line-height: 1.15; margin: 0; font-weight: 700; }
+h1 { font-size: clamp(38px, 6vw, 62px); letter-spacing: -0.02em; }
+h2 { font-size: clamp(26px, 3.4vw, 34px); letter-spacing: -0.01em; }
+h3 { font-size: 17px; }
+
+p { margin: 0; }
+.muted { color: var(--muted); }
+
+.wrap { width: var(--page); margin-inline: auto; }
+
+/* ---- Rail ---- */
+header.bar {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(8, 10, 9, 0.88);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.bar-inner { display: flex; align-items: center; gap: 12px; padding: 14px 0; }
+.mark {
+  width: 40px; height: 40px; flex: none;
+  border: 1px solid var(--line); border-radius: var(--radius-s);
+  display: grid; place-items: center;
+  font-size: 10px; font-weight: 900; color: var(--signal);
+}
+.lockup { display: flex; flex-direction: column; gap: 2px; }
+.lockup .name { font-size: 17px; font-weight: 700; }
+.bar nav { margin-left: auto; display: flex; gap: 22px; align-items: center; }
+.bar nav a { color: var(--muted); font-size: 13px; }
+.bar nav a:hover { color: var(--text); text-decoration: none; }
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 48px; padding: 0 22px; border-radius: var(--radius-s);
+  font-size: 9px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
+  border: 1px solid transparent; cursor: pointer; white-space: nowrap;
+}
+.btn.signal { background: var(--signal); color: var(--ink); }
+.btn.signal:hover { opacity: 0.88; text-decoration: none; }
+.btn.outline { border-color: var(--line); color: var(--text); }
+.btn.outline:hover { border-color: var(--muted); text-decoration: none; }
+
+/* ---- Cards ---- */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  padding: 22px;
+}
+.card.signal { border-color: var(--signal); }
+.card.live { border-color: var(--live); }
+
+.pill {
+  display: inline-block;
+  border: 1px solid var(--muted); color: var(--muted);
+  border-radius: 20px; padding: 5px 10px;
+  font-size: 9px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
+}
+.pill.signal { border-color: var(--signal); color: var(--signal); }
+.pill.live { border-color: var(--live); color: var(--live); }
+
+section { padding: 76px 0; border-top: 1px solid var(--line); }
+section:first-of-type { border-top: 0; }
+.head { display: flex; flex-direction: column; gap: 6px; margin-bottom: 26px; }
+
+.grid { display: grid; gap: 14px; }
+@media (min-width: 760px) { .cols-2 { grid-template-columns: 1fr 1fr; } .cols-3 { grid-template-columns: repeat(3, 1fr); } }
+
+/* ---- Hero ---- */
+.hero { padding: 84px 0 76px; }
+.hero .lede { max-width: 660px; margin-top: 20px; font-size: 17px; color: var(--muted); }
+.hero .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; align-items: center; }
+.hero .note { font-size: 12px; color: var(--muted); margin-top: 14px; max-width: 620px; }
+.hero-icon { width: 76px; height: 76px; border-radius: var(--radius-l); display: block; margin-bottom: 26px; }
+
+/* ---- Tables ---- */
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+tbody tr:last-child td { border-bottom: 0; }
+.scroll { overflow-x: auto; }
+
+/* ---- Steps ---- */
+ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
+ol.steps li {
+  counter-increment: step;
+  display: grid; grid-template-columns: 30px 1fr; gap: 14px; align-items: start;
+}
+ol.steps li::before {
+  content: counter(step);
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--line); color: var(--signal);
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 700;
+}
+
+ul.dots { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
+ul.dots li { display: grid; grid-template-columns: 9px 1fr; gap: 11px; align-items: start; }
+ul.dots li::before {
+  content: ""; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--muted); margin-top: 7px;
+}
+ul.dots.signal li::before { background: var(--signal); }
+
+code, pre { font-family: "Cascadia Mono", Consolas, ui-monospace, monospace; }
+code { background: var(--raised); padding: 2px 6px; border-radius: 5px; font-size: 13px; color: var(--text); }
+pre {
+  background: var(--raised); border: 1px solid var(--line); border-radius: var(--radius-s);
+  padding: 16px; overflow-x: auto; font-size: 13px; line-height: 1.65; margin: 0;
+}
+pre code { background: none; padding: 0; }
+
+footer { border-top: 1px solid var(--line); padding: 40px 0 56px; color: var(--muted); font-size: 13px; }
+footer .row { display: flex; flex-wrap: wrap; gap: 10px 26px; align-items: center; }
+footer .row + .row { margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap bar-inner">
+    <div class="mark">REX</div>
+    <div class="lockup">
+      <p class="eyebrow signal">REX Technologies</p>
+      <span class="name">Flint</span>
+    </div>
+    <nav>
+      <a href="#check">Check your TV</a>
+      <a href="#download">Download</a>
+      <a href="#install">Install</a>
+      <a href="#status">Status</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="hero wrap">
+  <img class="hero-icon" src="flint-icon.png" alt="The Flint mark: a struck spark inside a square frame">
+  <p class="eyebrow signal">Windows → Fire TV</p>
+  <h1>Cast your PC to your TV</h1>
+  <p class="lede">
+    Flint finds a Fire TV on your network, works out what your hardware can actually do together,
+    and tells you plainly. No account, no cloud, no analytics — everything stays on your network.
+  </p>
+  <div class="actions">
+    <a class="btn signal" href="#download">Download for Windows</a>
+    <a class="btn outline" href="#check">Will it work for me?</a>
+  </div>
+  <p class="note">
+    Windows 10 or 11, 64-bit. Flint reports what your hardware can actually do, and offers only the
+    modes your particular PC and television can manage together — never a button that does nothing.
+  </p>
+</section>
+
+<section id="check" class="wrap">
+  <div class="head">
+    <p class="eyebrow live">Read this first</p>
+    <h2>Your Fire TV model decides everything</h2>
+  </div>
+
+  <div class="card live">
+    <p>
+      Check the television before you download anything. It takes ten seconds and it decides whether
+      the rest of this page is worth your time.
+    </p>
+    <p style="margin-top:14px">
+      On the TV: <strong>Settings → My Fire TV → About</strong>.
+    </p>
+    <div class="scroll" style="margin-top:18px">
+      <table>
+        <thead>
+          <tr><th>What it says</th><th>What that means</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="pill signal">Fire OS 7 or 8</span></td>
+            <td>Good. Flint can work with this device.</td>
+          </tr>
+          <tr>
+            <td><span class="pill live">Vega OS, or no version</span></td>
+            <td>Stop. Flint cannot work on this device, and no future version will change that.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="margin-top:18px">
+      Vega OS is a Linux system Amazon built in-house. It is not Android, it cannot install apps
+      from outside Amazon's store by any method, and Flint's approach depends on installing a
+      receiver. Devices known to ship with it are the <strong>Fire TV Stick 4K Select</strong>
+      (October 2025) and the <strong>Fire TV Stick HD</strong> (2026).
+    </p>
+  </div>
+</section>
+
+<section id="download" class="wrap">
+  <div class="head">
+    <p class="eyebrow signal">Download</p>
+    <h2>Windows, 64-bit</h2>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card signal">
+      <p class="eyebrow signal">Ready to run</p>
+      <h3 style="margin-top:8px">Flint for Windows</h3>
+      <p class="muted" style="margin-top:10px">
+        A portable folder. Everything it needs is included — there is no .NET runtime to install
+        first, and no installer to run.
+      </p>
+      <p style="margin-top:20px">
+        <a class="btn signal" href="https://github.com/rex-technologies/flint/releases/latest">Get the latest release</a>
+      </p>
+      <p class="muted" style="margin-top:16px; font-size:12px">
+        Releases are published by CI from a tag. If that link shows nothing yet, no release has been
+        tagged — build from source below, which takes about two minutes.
+      </p>
+    </div>
+
+    <div class="card">
+      <p class="eyebrow">Build it yourself</p>
+      <h3 style="margin-top:8px">From source</h3>
+      <p class="muted" style="margin-top:10px">
+        The same program, compiled by you, with no unrecognised-publisher warning.
+      </p>
+      <pre style="margin-top:16px"><code>git clone https://github.com/rex-technologies/flint.git
+cd flint
+./scripts/build.ps1
+./scripts/package.ps1</code></pre>
+      <p class="muted" style="margin-top:14px; font-size:12px">
+        Needs the .NET 10 SDK, Rust with the MSVC toolchain, and Visual Studio Build Tools with the
+        “Desktop development with C++” workload.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="install" class="wrap">
+  <div class="head">
+    <p class="eyebrow signal">Installation</p>
+    <h2>Four steps</h2>
+  </div>
+
+  <div class="card">
+    <ol class="steps">
+      <li>
+        <div>
+          <h3>Extract the zip</h3>
+          <p class="muted">
+            Right-click, <strong>Extract All</strong>, and pick somewhere you can find again.
+            <code>C:\Program Files</code> is neither required nor recommended — Flint does not need it.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Run <code>Flint.App.exe</code></h3>
+          <p class="muted">
+            There is no installer. Flint writes nothing outside its own folder except one marker
+            file under <code>%LOCALAPPDATA%\REX Technologies\Flint</code> recording that you have
+            seen the introduction. To uninstall, delete the folder.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Get past the Windows warning</h3>
+          <p class="muted">
+            Windows will say <em>“Windows protected your PC”</em>. Click <strong>More info</strong>,
+            then <strong>Run anyway</strong>. This happens because the build is not code-signed, and
+            the warning is Windows telling you the truth: it does not recognise this publisher.
+            Building from source avoids it entirely.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Turn on ADB debugging</h3>
+          <p class="muted">
+            On the TV: <strong>Settings → My Fire TV → Developer Options → ADB debugging</strong>.
+            If Developer Options is missing, open <strong>About</strong> and press Select seven
+            times on the device name. Accept the prompt the TV shows — Flint identifies itself as
+            <code>flint-rex-technologies</code>.
+          </p>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="eyebrow">If nothing is found</p>
+    <p class="muted" style="margin-top:10px">
+      Some networks stop devices seeing each other. Guest networks, most corporate networks, and
+      access points with client isolation all block the broadcast Flint listens for.
+    </p>
+    <ul class="dots" style="margin-top:16px">
+      <li>Check that the PC and the TV are on the same Wi-Fi network, and that it is not a guest network.</li>
+      <li>Get the TV's address from <strong>Settings → My Fire TV → About → Network</strong> and type it into the direct address field on the Cast page.</li>
+      <li>Run <code>flint.exe --services</code> from the Flint folder. If it lists nothing at all, the network is the cause rather than the television.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="status" class="wrap">
+  <div class="head">
+    <p class="eyebrow signal">Current status</p>
+    <h2>What works today</h2>
+  </div>
+
+  <p class="muted" style="max-width:680px; margin-bottom:22px">
+    Flint is under construction, and says so. Unfinished modes are labelled in the app rather than
+    offered as controls that do nothing.
+  </p>
+
+  <div class="scroll card">
+    <table>
+      <thead>
+        <tr><th>Capability</th><th>Status</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Capability reporting</td>
+          <td><span class="pill signal">Working</span></td>
+          <td>Finds your TV, identifies its OS, probes host encoders and adapters, measures the path.</td>
+        </tr>
+        <tr>
+          <td>Wire protocol</td>
+          <td><span class="pill signal">Working</span></td>
+          <td>Implemented in Rust and C#, held byte-identical by a committed cross-language vector corpus.</td>
+        </tr>
+        <tr>
+          <td>Screen mirroring</td>
+          <td><span class="pill signal">Working</span></td>
+          <td>Desktop Duplication capture, H.264 encode and transport, proven end to end on a Fire TV Stick.</td>
+        </tr>
+        <tr>
+          <td>Media handoff</td>
+          <td><span class="pill signal">Working</span></td>
+          <td>Original-quality direct play, pushed to the receiver over the control channel.</td>
+        </tr>
+        <tr>
+          <td>Second screen</td>
+          <td><span class="pill">Coming soon</span></td>
+          <td>An extra desktop rather than a copy of this one. Needs a display driver Flint has to ship and sign before it can be installed safely.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="head">
+    <p class="eyebrow signal">How it is built</p>
+    <h2>Two halves, opposite requirements</h2>
+  </div>
+
+  <div class="grid cols-3">
+    <div class="card">
+      <p class="eyebrow signal">Rust</p>
+      <h3 style="margin-top:8px">The frame path</h3>
+      <p class="muted" style="margin-top:10px">
+        Capture, colour convert, encode, packetize, send. A garbage-collector pause landing inside a
+        16.6 ms frame budget is a stutter you can see, and this side has no collector to pause.
+      </p>
+    </div>
+    <div class="card">
+      <p class="eyebrow signal">C# and Avalonia</p>
+      <h3 style="margin-top:8px">The shell</h3>
+      <p class="muted" style="margin-top:10px">
+        Discovery, pairing, installation, diagnostics and the interface. Never in the frame path, so
+        it lives where the tooling and the tests are better.
+      </p>
+    </div>
+    <div class="card">
+      <p class="eyebrow signal">Kotlin</p>
+      <h3 style="margin-top:8px">The receiver</h3>
+      <p class="muted" style="margin-top:10px">
+        Low-latency decode on the television, installed over ADB with the RSA prompt honoured.
+        Not written yet.
+      </p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="eyebrow">The television is usually the bottleneck</p>
+    <p class="muted" style="margin-top:10px">
+      A TV's own picture processing commonly adds more delay than an entire casting pipeline.
+      Turning on Game Mode has a larger effect on what you feel than any host-side tuning. Flint
+      measures glass to glass and will not publish a figure that quietly excludes the panel.
+    </p>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="head">
+    <p class="eyebrow signal">Privacy</p>
+    <h2>Nothing leaves your network</h2>
+  </div>
+
+  <div class="card">
+    <ul class="dots signal">
+      <li>No account, no cloud relay, no analytics, no crash reporting.</li>
+      <li>Network activity is local discovery and local session traffic only.</li>
+      <li>Flint reads from your TV to identify it, and never installs or changes anything without telling you first.</li>
+      <li>
+        Session tokens authorise a receiver; they do not encrypt anything. Nothing here describes
+        local traffic as private or encrypted, because it is not yet.
+      </li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <div class="mark">REX</div>
+      <div class="lockup">
+        <p class="eyebrow signal">REX Technologies</p>
+        <span class="name">Flint</span>
+      </div>
+    </div>
+    <div class="row" style="margin-top:22px">
+      <a href="https://github.com/rex-technologies/flint">Source</a>
+      <a href="https://github.com/rex-technologies/flint/releases/latest">Releases</a>
+      <a href="https://github.com/rex-technologies/flint/blob/main/docs/INSTALL.md">Install guide</a>
+      <a href="https://github.com/rex-technologies/flint/blob/main/docs/LATENCY_BUDGET.md">Latency budget</a>
+      <a href="https://github.com/rex-technologies/flint/blob/main/docs/PROTOCOL.md">Protocol</a>
+    </div>
+    <div class="row" style="margin-top:22px">
+      <span>MIT licensed. Copyright © 2026 REX Technologies.</span>
+    </div>
+    <div class="row">
+      <span>
+        Independent software, not affiliated with Amazon, NVIDIA, Microsoft, or any device
+        manufacturer.
+      </span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

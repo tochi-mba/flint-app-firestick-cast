@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Flint.Core</RootNamespace>
+    <Description>Device model, host capability model, and the mode-availability assessor.</Description>
+  </PropertyGroup>
+
+</Project>

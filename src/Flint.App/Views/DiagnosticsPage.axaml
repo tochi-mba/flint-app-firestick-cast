@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Flint.App.ViewModels"
+             xmlns:controls="using:Flint.App.Controls"
+             x:Class="Flint.App.Views.DiagnosticsPage"
+             x:DataType="vm:CastPageViewModel">
+
+  <ScrollViewer>
+    <StackPanel Margin="{StaticResource PageMargin}" Spacing="12" MaxWidth="820" HorizontalAlignment="Left">
+      <controls:PageHeading Eyebrow="System truth"
+                            Title="Diagnostics"
+                            Trailing="{Binding HeadingStatus}"
+                            TrailingTone="{Binding HeadingTone}" />
+
+      <controls:EmptyState IsVisible="{Binding !HasReport}"
+                           Glyph="D"
+                           Title="Probe before diagnosing"
+                           Body="Diagnostics only shows facts Flint has measured or read from the devices. Run the network probe to populate this page." />
+
+      <Button Theme="{StaticResource SignalButton}"
+              HorizontalAlignment="Left"
+              Command="{Binding ProbeCommand}"
+              IsEnabled="{Binding !IsProbing}"
+              IsVisible="{Binding !HasReport}"
+              Content="RUN CAPABILITY PROBE" />
+
+      <StackPanel IsVisible="{Binding HasReport}" Spacing="12">
+        <controls:SectionLabel Text="This PC" />
+        <controls:InfoCard>
+          <StackPanel>
+            <controls:DiagnosticRow Label="Native encoder probe" Value="{Binding EncoderProbeStatus}" />
+            <controls:DiagnosticRow Label="Windows build" Value="{Binding WindowsBuild}" />
+            <controls:DiagnosticRow Label="Graphics adapters" Value="{Binding GraphicsAdapters}" />
+            <controls:DiagnosticRow Label="Primary display adapter" Value="{Binding PrimaryDisplayAdapter}" />
+            <controls:DiagnosticRow Label="Hardware encoders" Value="{Binding HardwareEncoders}" IsLast="True" />
+          </StackPanel>
+        </controls:InfoCard>
+
+        <controls:SectionLabel Text="Receiver" />
+        <controls:InfoCard>
+          <StackPanel>
+            <controls:DiagnosticRow Label="Name" Value="{Binding DeviceName}" />
+            <controls:DiagnosticRow Label="Model" Value="{Binding DeviceModel}" />
+            <controls:DiagnosticRow Label="Platform" Value="{Binding DevicePlatform}" />
+            <controls:DiagnosticRow Label="Android API" Value="{Binding AndroidApiLevel}" />
+            <controls:DiagnosticRow Label="Android release" Value="{Binding AndroidRelease}" />
+            <controls:DiagnosticRow Label="ADB" Value="{Binding AdbStatus}" />
+            <controls:DiagnosticRow Label="Address" Value="{Binding DeviceAddress}" IsLast="True" />
+          </StackPanel>
+        </controls:InfoCard>
+
+        <controls:SectionLabel Text="Network path" />
+        <controls:InfoCard>
+          <StackPanel>
+            <controls:DiagnosticRow Label="Round trip" Value="{Binding RoundTrip}" />
+            <controls:DiagnosticRow Label="Jitter" Value="{Binding Jitter}" />
+            <controls:DiagnosticRow Label="Throughput" Value="{Binding Throughput}" />
+            <controls:DiagnosticRow Label="Connect-sample loss" Value="{Binding PacketLoss}" IsLast="True" />
+          </StackPanel>
+        </controls:InfoCard>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

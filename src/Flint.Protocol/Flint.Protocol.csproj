@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Flint.Protocol</RootNamespace>
+    <Description>The REX wire protocol: framing, messages, and a strict codec.</Description>
+  </PropertyGroup>
+
+</Project>

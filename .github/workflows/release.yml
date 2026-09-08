@@ -1,0 +1,83 @@
+# Builds the downloadable Windows package and attaches it to a GitHub Release.
+#
+# Triggered by a version tag, so the download on the site is only ever a build that someone
+# deliberately tagged, not whatever happened to be on main.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to stamp into the package
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Install JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android build tools
+        shell: pwsh
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Resolve the version
+        id: version
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $env:GITHUB_REF -replace '^refs/tags/v', ''
+          } else {
+            '${{ github.event.inputs.version }}'
+          }
+          if ([string]::IsNullOrWhiteSpace($version)) { throw 'Could not resolve a version.' }
+          "value=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      # A release must never ship code that does not pass its own gate.
+      - name: Build and test
+        shell: pwsh
+        run: ./scripts/build.ps1
+
+      - name: Package
+        shell: pwsh
+        run: ./scripts/package.ps1 -Version ${{ steps.version.outputs.value }}
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
+          body: |
+            **Windows 10/11, 64-bit.** Download the zip, extract it, and run `Flint.App.exe`.
+
+            The build is not code-signed, so Windows will show an unrecognised-publisher warning:
+            choose **More info**, then **Run anyway**. Building from source avoids it.
+
+            Check your Fire TV first — **Settings → My Fire TV → About**. Fire OS 7 or 8 works;
+            Vega OS cannot, and no future version will change that.
+
+            See the [installation guide](docs/INSTALL.md).

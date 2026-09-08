@@ -1,0 +1,131 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Flint.App.ViewModels"
+             xmlns:controls="using:Flint.App.Controls"
+             x:Class="Flint.App.Views.OnboardingView"
+             x:DataType="vm:OnboardingViewModel">
+
+  <!--
+    A full-bleed ink cover rather than a dialog. The introduction carries the one fact that decides
+    whether Flint can work at all, so it gets the whole window and is not something to click past
+    without noticing.
+  -->
+  <Border Background="{StaticResource InkBrush}">
+    <Grid RowDefinitions="Auto,*,Auto" Margin="48,40">
+
+      <!-- Brand lockup and the skip affordance. -->
+      <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12">
+          <Border Width="40" Height="40"
+                  BorderBrush="{StaticResource LineBrush}"
+                  BorderThickness="1"
+                  CornerRadius="{StaticResource RadiusSmall}">
+            <TextBlock Text="REX"
+                       FontSize="10"
+                       FontWeight="Black"
+                       Foreground="{StaticResource SignalBrush}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+          </Border>
+          <StackPanel VerticalAlignment="Center" Spacing="2">
+            <TextBlock Theme="{StaticResource LabelSmall}"
+                       Foreground="{StaticResource SignalBrush}"
+                       Text="{x:Static vm:MainWindowViewModel.MakerName}" />
+            <TextBlock Theme="{StaticResource TitleLarge}"
+                       Text="{x:Static vm:MainWindowViewModel.ProductName}" />
+          </StackPanel>
+        </StackPanel>
+
+        <Button Grid.Column="2"
+                Theme="{StaticResource OutlineAction}"
+                Command="{Binding SkipCommand}"
+                Content="SKIP"
+                VerticalAlignment="Center" />
+      </Grid>
+
+      <!-- The step. -->
+      <ScrollViewer Grid.Row="1" Margin="0,44,0,0" VerticalAlignment="Center">
+        <StackPanel MaxWidth="720" HorizontalAlignment="Left" VerticalAlignment="Center" Spacing="18">
+          <StackPanel Spacing="6">
+            <TextBlock Theme="{StaticResource LabelSmall}"
+                       Foreground="{Binding Current.Tone, Converter={StaticResource ToneBrush}}"
+                       Text="{Binding Current.Eyebrow, Converter={StaticResource Upper}}" />
+            <TextBlock Theme="{StaticResource HeadlineLarge}" Text="{Binding Current.Title}" />
+          </StackPanel>
+
+          <TextBlock Theme="{StaticResource BodyMedium}"
+                     Foreground="{StaticResource MutedBrush}"
+                     Text="{Binding Current.Body}" />
+
+          <controls:InfoCard BorderTone="{Binding Current.Tone}"
+                             IsVisible="{Binding Current.DisplayPoints.Count}">
+            <ItemsControl ItemsSource="{Binding Current.DisplayPoints}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Spacing="11" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:OnboardingPoint">
+                  <Grid ColumnDefinitions="26,*">
+                    <!--
+                      A numbered marker for a procedure, a dot for a set of facts. Rendering a
+                      strict sequence as bullets invites doing the steps out of order, which is
+                      exactly how the Fire TV developer-options unlock goes wrong.
+                    -->
+                    <Border Grid.Column="0"
+                            Width="24" Height="24"
+                            Margin="0,0,10,0"
+                            VerticalAlignment="Top"
+                            CornerRadius="12"
+                            BorderThickness="1"
+                            BorderBrush="{StaticResource LineBrush}"
+                            IsVisible="{Binding IsNumbered}">
+                      <TextBlock Text="{Binding Marker}"
+                                 FontSize="11"
+                                 FontWeight="Bold"
+                                 Foreground="{StaticResource SignalBrush}"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center" />
+                    </Border>
+                    <controls:StatusDot Grid.Column="0"
+                                        Tone="Neutral"
+                                        Margin="0,6,10,0"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        IsVisible="{Binding !IsNumbered}" />
+                    <TextBlock Grid.Column="1"
+                               Theme="{StaticResource BodyMedium}"
+                               VerticalAlignment="Center"
+                               Text="{Binding Text}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </controls:InfoCard>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- Progress and navigation. -->
+      <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,32,0,0">
+        <TextBlock Grid.Column="0"
+                   Theme="{StaticResource LabelSmall}"
+                   Text="{Binding Progress}"
+                   VerticalAlignment="Center" />
+
+        <Button Grid.Column="2"
+                Theme="{StaticResource OutlineAction}"
+                Command="{Binding GoBackCommand}"
+                IsEnabled="{Binding CanGoBack}"
+                Content="BACK"
+                Margin="0,0,10,0" />
+
+        <Button Grid.Column="3"
+                Theme="{StaticResource SignalButton}"
+                Command="{Binding AdvanceCommand}"
+                Content="{Binding AdvanceLabel}" />
+      </Grid>
+
+    </Grid>
+  </Border>
+</UserControl>

@@ -1,0 +1,756 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Flint.App.ViewModels"
+             xmlns:controls="using:Flint.App.Controls"
+             xmlns:services="using:Flint.App.Services"
+             x:Class="Flint.App.Views.BrowserPage"
+             x:DataType="vm:BrowserPageViewModel">
+  <!--
+    HUD cockpit: TV preview owns the stage and is the interactive surface. Top chrome navigates;
+    a slim D-pad / text strip remains for sofa-parity keys. Mosaic chrome overlays the same preview.
+  -->
+  <UserControl.Styles>
+    <Style Selector="Border.pane-tile">
+      <!-- Keep chrome readable without hiding the mosaic JPEG underneath (both panes). -->
+      <Setter Property="Background" Value="#40101820" />
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+      <Setter Property="Padding" Value="8" />
+      <Setter Property="Margin" Value="3" />
+    </Style>
+    <Style Selector="Border.pane-tile.focused">
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="Background" Value="#281A222C" />
+    </Style>
+    <Style Selector="Border.tab-chip">
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0,0,0,2" />
+      <Setter Property="Padding" Value="0,0,0,1" />
+    </Style>
+    <Style Selector="Border.tab-chip.active">
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
+    <Style Selector="Button.tab-title.active">
+      <Setter Property="Background" Value="{StaticResource SignalWashBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource SignalBrush}" />
+    </Style>
+    <Style Selector="Border.hud-glass">
+      <Setter Property="Background" Value="#CC141820" />
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+      <Setter Property="Padding" Value="10,8" />
+    </Style>
+    <!-- Dense chrome: keep every control, shrink the chrome footprint around the preview. -->
+    <Style Selector="Border.hud-dense">
+      <Setter Property="Padding" Value="6,4" />
+    </Style>
+    <Style Selector="Border.hud-dense Button">
+      <Setter Property="Height" Value="28" />
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="8,0" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="Border.hud-dense TextBox">
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Padding" Value="8,2" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="Border.hud-dense controls|RemoteKeyButton /template/ Button#PART_Button">
+      <Setter Property="MinWidth" Value="32" />
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Width" Value="32" />
+      <Setter Property="Margin" Value="1" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+  </UserControl.Styles>
+
+  <Panel>
+    <Border ZIndex="5" IsVisible="{Binding ShowNavigation}" HorizontalAlignment="Left"
+            VerticalAlignment="Bottom" Margin="20" MaxWidth="460">
+      <StackPanel IsVisible="{Binding !Dialog.IsVisible}" Spacing="8">
+        <Border IsVisible="{Binding Help.IsExpanded}" Background="{StaticResource RaisedBrush}"
+                BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Padding="16" CornerRadius="8">
+          <StackPanel Spacing="10">
+            <TextBlock Text="{Binding Help.Title}" Theme="{StaticResource TitleMedium}" />
+            <TextBlock Text="{Binding Help.Body}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding Help.Progress}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="BACK" Command="{Binding Help.BackCommand}" IsEnabled="{Binding Help.CanGoBack}" />
+              <Button Content="{Binding Help.NextLabel}" Command="{Binding Help.NextCommand}"
+                      Click="OnHelpAdvanceOrDismiss" AutomationProperties.Name="Next Web help topic" />
+              <Button Content="DISMISS" Command="{Binding Help.DismissCommand}" Click="OnHelpAdvanceOrDismiss"
+                      AutomationProperties.Name="Dismiss Web help" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </Border>
+    <!-- ======================== BOOTSTRAP (pre-verify) ======================== -->
+    <ScrollViewer IsVisible="{Binding !ShowNavigation}">
+      <StackPanel Margin="{StaticResource PageMargin}" Spacing="12" MaxWidth="720" HorizontalAlignment="Left">
+        <controls:PageHeading Eyebrow="TV-resident experiment" Title="Web"
+                              Trailing="{Binding StatusLabel}" TrailingTone="{Binding HeadingTone}" />
+
+        <controls:InfoCard BorderTone="{Binding HeadingTone}">
+          <StackPanel Spacing="12">
+            <TextBlock Theme="{StaticResource TitleMedium}" Text="Browse on the TV, when the receiver is ready" />
+            <TextBlock Theme="{StaticResource BodyMedium}" Foreground="{StaticResource MutedBrush}"
+                       TextWrapping="Wrap" Text="{Binding Reason}" />
+            <Border IsVisible="{Binding HasRemedy}" Background="{StaticResource RaisedBrush}"
+                    CornerRadius="{StaticResource RadiusSmall}" Padding="12,10">
+              <StackPanel Spacing="4">
+                <TextBlock Theme="{StaticResource LabelSmall}" Text="NEXT STEP" />
+                <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                           TextWrapping="Wrap" Text="{Binding Remedy}" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </controls:InfoCard>
+
+        <controls:InfoCard IsVisible="{Binding HasError}" BorderTone="Live">
+          <StackPanel Spacing="8">
+            <TextBlock Theme="{StaticResource LabelSmall}" Foreground="{StaticResource LiveBrush}"
+                       Text="{Binding CurrentError.Title}" />
+            <TextBlock Theme="{StaticResource BodyMedium}" TextWrapping="Wrap"
+                       Text="{Binding CurrentError.Message}"
+                       AutomationProperties.LiveSetting="Polite" />
+          </StackPanel>
+        </controls:InfoCard>
+
+        <controls:InfoCard IsVisible="{Binding ShowSecureReceiverCard}">
+          <StackPanel Spacing="10">
+            <TextBlock Theme="{StaticResource LabelSmall}" Text="SECURE RECEIVER" />
+            <TextBlock Theme="{StaticResource BodyMedium}" TextWrapping="Wrap"
+                       Text="{Binding SecureReceiverInstructions}" />
+            <TextBox IsVisible="{Binding ShowBrowserPortEntry}"
+                     Watermark="Browser port from TV" Text="{Binding ManualBrowserPort}"
+                     AutomationProperties.Name="Browser port from TV"
+                     AutomationProperties.HelpText="Dedicated TLS browser listener port shown on the Flint Receiver pairing screen." />
+            <Button Content="{Binding SecureReceiverActionLabel}" Command="{Binding VerifySecureReceiverCommand}"
+                    IsEnabled="{Binding CanVerify}" Theme="{StaticResource SignalButton}"
+                    HorizontalAlignment="Left"
+                    AutomationProperties.Name="Verify or reconnect secure receiver"
+                    AutomationProperties.HelpText="{Binding SecureReceiverInstructions}" />
+            <TextBlock IsVisible="{Binding FingerprintDisplay, Converter={x:Static ObjectConverters.IsNotNull}}"
+                       Theme="{StaticResource TitleMedium}" Text="{Binding FingerprintDisplay}"
+                       AutomationProperties.Name="Browser security code" />
+          </StackPanel>
+        </controls:InfoCard>
+
+        <controls:InfoCard>
+          <StackPanel Spacing="8">
+            <TextBlock Theme="{StaticResource LabelSmall}" Text="TV BROWSER DATA" />
+            <TextBlock Theme="{StaticResource BodyMedium}" Foreground="{StaticResource MutedBrush}"
+                       TextWrapping="Wrap"
+                       Text="The TV connects directly to opened sites. Flint does not relay browser traffic through a cloud service." />
+            <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                       TextWrapping="Wrap"
+                       Text="Address entry stays unavailable until a separate secure receiver session is verified." />
+          </StackPanel>
+        </controls:InfoCard>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- ======================== HUD STAGE (verified) ======================== -->
+    <Grid IsVisible="{Binding ShowNavigation}" RowDefinitions="Auto,*,Auto" Margin="8">
+      <!-- Top HUD: two dense rows — nav/address/actions, then tabs + workspace -->
+      <Border Grid.Row="0" Classes="hud-glass hud-dense" Margin="0,0,0,4" ZIndex="2"
+              AutomationProperties.Name="Browser HUD chrome">
+        <StackPanel Spacing="4">
+          <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="4">
+            <Button Grid.Column="0" Content="←" Theme="{StaticResource OutlineAction}" Command="{Binding GoBackCommand}"
+                    AutomationProperties.Name="Back"
+                    AutomationProperties.HelpText="Move the TV page back one history entry." />
+            <Button Grid.Column="1" Content="→" Theme="{StaticResource OutlineAction}" Command="{Binding GoForwardCommand}"
+                    AutomationProperties.Name="Forward"
+                    AutomationProperties.HelpText="Move the TV page forward one history entry." />
+            <Button Grid.Column="2" Content="↻" Theme="{StaticResource OutlineAction}" Command="{Binding ReloadCommand}"
+                    IsVisible="{Binding !IsLoading}" AutomationProperties.Name="Reload the TV page" />
+            <Button Grid.Column="2" Content="■" Theme="{StaticResource OutlineAction}" Command="{Binding StopLoadingCommand}"
+                    IsVisible="{Binding IsLoading}" AutomationProperties.Name="Stop loading" />
+            <TextBox Grid.Column="3" Watermark="Search or type a site, then Enter"
+                     Text="{Binding Address}" KeyDown="OnAddressKeyDown"
+                     AutomationProperties.Name="TV address"
+                     AutomationProperties.HelpText="Type a search or an https site for the Fire TV WebView. Press Enter to open." />
+            <Button Grid.Column="4" Content="GO" Command="{Binding NavigateCommand}"
+                    Theme="{StaticResource SignalButton}" AutomationProperties.Name="Open address on TV" />
+            <controls:Pill Grid.Column="5" VerticalAlignment="Center"
+                           Text="{Binding StatusLabel}" Tone="{Binding HeadingTone}" />
+            <Button Grid.Column="6" Content="{Binding Preview.ToggleLabel}" Theme="{StaticResource OutlineAction}"
+                    Command="{Binding TogglePreviewCommand}"
+                    AutomationProperties.Name="Turn the TV preview on or off" />
+            <Button Grid.Column="7" Content="MORE" Theme="{StaticResource OutlineAction}"
+                    Command="{Binding ToggleMorePanelCommand}"
+                    AutomationProperties.Name="{Binding MorePanelToggleLabel}" />
+            <Button Grid.Column="8" x:Name="HelpButton" Content="HELP" Theme="{StaticResource OutlineAction}"
+                    Command="{Binding Help.ToggleCommand}"
+                    AutomationProperties.Name="Web help" AutomationProperties.HelpText="{Binding Help.Label}" />
+            <Button Grid.Column="9" Content="CLOSE" Theme="{StaticResource OutlineAction}"
+                    Command="{Binding CloseBrowserCommand}"
+                    AutomationProperties.Name="Close browser on TV" />
+          </Grid>
+
+          <ProgressBar IsVisible="{Binding IsLoading}" Minimum="0" Maximum="100"
+                       Value="{Binding PageProgress}" Height="2" Margin="0,0,0,2"
+                       Foreground="{StaticResource SignalBrush}" Background="{StaticResource LineBrush}"
+                       AutomationProperties.Name="Page load progress" />
+          <TextBlock IsVisible="{Binding IsLoading}" Theme="{StaticResource LabelSmall}"
+                     Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis"
+                     Text="{Binding PageStatusLabel}"
+                     AutomationProperties.Name="Page status"
+                     AutomationProperties.LiveSetting="Polite" />
+
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+            <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled">
+              <StackPanel Orientation="Horizontal" Spacing="4" DataContext="{Binding Tabs}">
+                <TextBlock Theme="{StaticResource LabelSmall}" VerticalAlignment="Center"
+                           Foreground="{StaticResource MutedBrush}" Text="TABS"
+                           ToolTip.Tip="One-at-a-time page switcher — not the mosaic." />
+                <ItemsControl ItemsSource="{Binding Items}" IsVisible="{Binding IsAvailable}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="4" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:BrowserTabItemViewModel">
+                      <Border Classes="tab-chip" Classes.active="{Binding IsActive}"
+                              AutomationProperties.Name="{Binding StateLabel}">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                          <Button Content="{Binding Title}" Theme="{StaticResource OutlineAction}"
+                                  Classes="tab-title" Classes.active="{Binding IsActive}"
+                                  MaxWidth="160"
+                                  Command="{Binding $parent[ItemsControl].((vm:BrowserTabsViewModel)DataContext).SelectTabCommand}"
+                                  CommandParameter="{Binding Id}"
+                                  AutomationProperties.Name="{Binding Title}"
+                                  AutomationProperties.HelpText="{Binding StateLabel}" />
+                          <Button Content="×" Theme="{StaticResource OutlineAction}" Padding="4,0"
+                                  Command="{Binding $parent[ItemsControl].((vm:BrowserTabsViewModel)DataContext).CloseTabCommand}"
+                                  CommandParameter="{Binding Id}"
+                                  AutomationProperties.Name="Close tab" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button Content="+" Theme="{StaticResource OutlineAction}"
+                        IsVisible="{Binding IsAvailable}"
+                        Command="{Binding NewTabCommand}"
+                        AutomationProperties.Name="Open a new tab on the TV" />
+                <TextBlock IsVisible="{Binding !IsAvailable}" Theme="{StaticResource LabelSmall}"
+                           Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"
+                           Text="Single-page receiver" />
+              </StackPanel>
+            </ScrollViewer>
+
+            <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled"
+                          DataContext="{Binding Workspace}" IsVisible="{Binding IsAvailable}">
+              <StackPanel Orientation="Horizontal" Spacing="3">
+                <TextBlock Theme="{StaticResource LabelSmall}" VerticalAlignment="Center"
+                           Foreground="{StaticResource MutedBrush}" Text="MOSAIC"
+                           ToolTip.Tip="{Binding WorkspaceCoachHint}" />
+                <TextBlock Theme="{StaticResource LabelSmall}" VerticalAlignment="Center"
+                           Text="{Binding StatusLabel}" MaxWidth="220" TextTrimming="CharacterEllipsis"
+                           ToolTip.Tip="{Binding WorkspaceCoachHint}"
+                           AutomationProperties.LiveSetting="Polite"
+                           AutomationProperties.Name="Workspace status" />
+                <TextBlock Theme="{StaticResource LabelSmall}" VerticalAlignment="Center"
+                           Foreground="{StaticResource LiveBrush}"
+                           Text="{Binding CommandError}"
+                           IsVisible="{Binding CommandError, Converter={x:Static ObjectConverters.IsNotNull}}"
+                           AutomationProperties.LiveSetting="Assertive" />
+                <Button Content="SPLIT VIEW" Theme="{StaticResource SignalButton}"
+                        Command="{Binding SplitBesideCommand}"
+                        ToolTip.Tip="Opens a second page beside this one (mosaic). Tabs stay a one-at-a-time strip."
+                        AutomationProperties.Name="Split view — open a second page beside this one" />
+                <Button Content="STACK" Theme="{StaticResource OutlineAction}"
+                        Command="{Binding StackBelowCommand}"
+                        ToolTip.Tip="Opens a second page stacked above/below this one."
+                        AutomationProperties.Name="Stack view — open a second page above or below" />
+                <Button Content="ADD PAGE" Theme="{StaticResource OutlineAction}"
+                        Command="{Binding AddPaneCommand}"
+                        ToolTip.Tip="Open another independent page without changing the layout yet."
+                        AutomationProperties.Name="Open another independently browsing pane on the TV" />
+                <ItemsControl ItemsSource="{Binding LayoutOptions}"
+                              ToolTip.Tip="Advanced layouts — only enabled when the open page count fits.">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="2" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:BrowserWorkspaceLayoutOptionViewModel">
+                      <Button Content="{Binding Label}" Theme="{StaticResource OutlineAction}"
+                              Command="{Binding SelectCommand}"
+                              ToolTip.Tip="{Binding DisplayName}"
+                              AutomationProperties.Name="{Binding DisplayName}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button Content="TABS" Theme="{StaticResource OutlineAction}" Command="{Binding ShowTabsCommand}"
+                        IsEnabled="{Binding CanSwitchMode}"
+                        ToolTip.Tip="Show the tab strip. The mosaic stays saved on this profile." />
+                <Button Content="WORKSPACE" Theme="{StaticResource OutlineAction}" Command="{Binding ShowWorkspaceCommand}"
+                        IsEnabled="{Binding CanSwitchMode}"
+                        ToolTip.Tip="Show the mosaic. Tabs stay saved on this profile." />
+                <Button Content="EQUAL SIZE" Theme="{StaticResource OutlineAction}" Command="{Binding EqualizePanesCommand}"
+                        IsEnabled="{Binding CanResize}" ToolTip.Tip="Center both dividers" />
+                <Button Content="PAGE" Theme="{StaticResource OutlineAction}"
+                        Command="{Binding EnterPageCommand}"
+                        ToolTip.Tip="Send keyboard input to the focused TV page"
+                        AutomationProperties.Name="Enter page input mode" />
+                <Button Content="MOSAIC" Theme="{StaticResource OutlineAction}"
+                        Command="{Binding WorkspaceControlsCommand}"
+                        ToolTip.Tip="Move focus between mosaic panes with the remote"
+                        AutomationProperties.Name="Enter mosaic chrome mode" />
+              </StackPanel>
+            </ScrollViewer>
+          </Grid>
+          <Expander Header="Profiles on this Windows device" DataContext="{Binding Library}">
+            <StackPanel Spacing="6">
+              <WrapPanel>
+                <ComboBox ItemsSource="{Binding DeviceProfiles}" SelectedItem="{Binding SelectedDeviceProfile}"
+                          MinWidth="180" AutomationProperties.Name="Windows browser profile">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="services:BrowserDeviceProfile"><TextBlock Text="{Binding Name}" /></DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button Content="USE PROFILE" Theme="{StaticResource OutlineAction}" Command="{Binding UseDeviceProfileCommand}" />
+                <TextBox Text="{Binding NewDeviceProfileName}" Watermark="New profile name" MaxLength="32" MinWidth="180" />
+                <Button Content="CREATE PROFILE" Theme="{StaticResource OutlineAction}" Command="{Binding CreateDeviceProfileCommand}" />
+              </WrapPanel>
+              <TextBlock Text="Each profile keeps its own tabs, workspace, bookmarks and history on this Windows device."
+                         TextWrapping="Wrap" Theme="{StaticResource BodySmall}" />
+              <TextBlock Text="{Binding SyncError}" TextWrapping="Wrap" Theme="{StaticResource BodySmall}" />
+              <Button Content="RETRY RESTORE" Theme="{StaticResource OutlineAction}"
+                      Command="{Binding RetryRestoreCommand}"
+                      IsVisible="{Binding CanRetryRestore}"
+                      AutomationProperties.Name="Retry restoring this profile's saved pages" />
+            </StackPanel>
+          </Expander>
+          <WrapPanel IsVisible="{Binding Workspace.SupportsCustomization}">
+            <Button Content="ADD SELECTED TAB TO WORKSPACE" Theme="{StaticResource OutlineAction}"
+                    Command="{Binding AddSelectedTabToWorkspaceCommand}" IsEnabled="{Binding Workspace.CanAddPane}"
+                    ToolTip.Tip="Keep this tab and open its address in another pane" />
+            <Button Content="REPLACE SELECTED PANE WITH TAB" Theme="{StaticResource OutlineAction}"
+                    Command="{Binding ReplaceSelectedPaneFromTabCommand}" IsEnabled="{Binding Workspace.HasOpenPanes}"
+                    ToolTip.Tip="Replace the workspace's selected pane with the selected tab's address" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- Dominant interactive preview stage -->
+      <Border x:Name="PreviewSurface" Grid.Row="1" ZIndex="0" MinHeight="520"
+              Background="{StaticResource InkBrush}"
+              BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+              CornerRadius="{StaticResource RadiusSmall}" ClipToBounds="True"
+              Focusable="True"
+              PointerEntered="OnPreviewPointerEntered" PointerExited="OnPreviewPointerExited"
+              PointerPressed="OnPreviewPointerPressed" PointerMoved="OnPreviewPointerMoved"
+              PointerReleased="OnPreviewPointerReleased" PointerCaptureLost="OnPreviewPointerCaptureLost"
+              KeyDown="OnRemoteKeyDown" TextInput="OnRemoteTextInput"
+              AutomationProperties.Name="Browser stage"
+              AutomationProperties.HelpText="Click, drag, and scroll on the TV preview. Keys typed here go to the page on the Fire TV.">
+        <Panel>
+          <!-- Single-page / mosaic share one interactive preview layer -->
+          <Image Source="{Binding Preview.Frame}" Stretch="Uniform"
+                 IsVisible="{Binding Preview.HasFrame}"
+                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                 IsHitTestVisible="False"
+                 AutomationProperties.Name="Latest TV preview frame" />
+          <!--
+            The empty stage does the introducing. It is the largest thing on the page and used to
+            be a bare "waiting" line — shown even when preview was off or the receiver could not
+            capture, so it waited for something that was never coming. It now names the real state
+            and says how to drive the television regardless.
+          -->
+          <StackPanel IsVisible="{Binding Preview.ShowStageHints}"
+                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                      MaxWidth="460" Spacing="10" IsHitTestVisible="False">
+            <TextBlock Theme="{StaticResource TitleMedium}" HorizontalAlignment="Center"
+                       TextAlignment="Center" TextWrapping="Wrap"
+                       Text="{Binding Preview.StageHeadline}"
+                       AutomationProperties.LiveSetting="Polite" />
+            <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                       HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                       Text="{Binding Preview.StageDetail}" />
+            <Border Background="{StaticResource RaisedBrush}" BorderBrush="{StaticResource LineBrush}"
+                    BorderThickness="1" CornerRadius="{StaticResource RadiusSmall}"
+                    Padding="16,12" Margin="0,6,0,0">
+              <StackPanel Spacing="8">
+                <TextBlock Theme="{StaticResource LabelSmall}" Foreground="{StaticResource MutedBrush}"
+                           Text="THREE WAYS TO DRIVE THE TV" />
+                <TextBlock Theme="{StaticResource BodySmall}" TextWrapping="Wrap"
+                           Text="Type a site or a search in the bar above, then press Enter." />
+                <TextBlock Theme="{StaticResource BodySmall}" TextWrapping="Wrap"
+                           Text="Use the D-pad and OK below, exactly as the TV remote does." />
+                <TextBlock Theme="{StaticResource BodySmall}" TextWrapping="Wrap"
+                           Text="Turn PREVIEW ON to mirror the page here and click it with a mouse." />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          <!-- Hidden while the stage hints are up: the headline there already says this, larger. -->
+          <TextBlock HorizontalAlignment="Right" VerticalAlignment="Top" Margin="10"
+                     IsVisible="{Binding !Preview.ShowStageHints}"
+                     Theme="{StaticResource LabelSmall}" Foreground="{StaticResource MutedBrush}"
+                     IsHitTestVisible="False"
+                     Text="{Binding Preview.StatusLabel}" />
+
+          <Canvas IsHitTestVisible="False">
+            <Canvas x:Name="PreviewCursor" Width="36" Height="36" IsVisible="False">
+              <Ellipse Width="36" Height="36" Stroke="#FFFFFFFF" StrokeThickness="2" Opacity="0.85" />
+              <Ellipse Width="28" Height="28" Canvas.Left="4" Canvas.Top="4"
+                       Stroke="{StaticResource SignalBrush}" StrokeThickness="2"
+                       Fill="{StaticResource SignalWashBrush}" />
+              <Ellipse Width="8" Height="8" Canvas.Left="14" Canvas.Top="14"
+                       Fill="{StaticResource SignalBrush}" />
+              <Line StartPoint="18,4" EndPoint="18,32" Stroke="#FFFFFFFF" StrokeThickness="1.5" Opacity="0.7" />
+              <Line StartPoint="4,18" EndPoint="32,18" Stroke="#FFFFFFFF" StrokeThickness="1.5" Opacity="0.7" />
+            </Canvas>
+          </Canvas>
+
+          <!-- Workspace mosaic chrome over the live preview -->
+          <Panel IsVisible="{Binding ShowWorkspaceMosaic}"
+                 AutomationProperties.Name="TV workspace mosaic">
+            <ItemsControl x:Name="WorkspacePaneGrid"
+                          DataContext="{Binding Workspace}"
+                          ItemsSource="{Binding Panes}"
+                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <controls:WorkspaceMosaicPanel />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:BrowserWorkspacePaneViewModel">
+                  <Border Classes="pane-tile" Classes.focused="{Binding IsFocused}"
+                          AutomationProperties.Name="{Binding AccessibleName}">
+                    <Grid RowDefinitions="*,Auto">
+                      <Button Grid.Row="0" Theme="{StaticResource OutlineAction}"
+                              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                              HorizontalContentAlignment="Left" VerticalContentAlignment="Top"
+                              Background="Transparent" BorderThickness="0"
+                              Command="{Binding RequestFocusCommand}"
+                              AutomationProperties.Name="Focus this TV workspace pane">
+                        <StackPanel Spacing="4">
+                          <TextBlock Theme="{StaticResource TitleMedium}" TextTrimming="CharacterEllipsis"
+                                     Text="{Binding DisplayTitle}" Opacity="0.95" />
+                          <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                                     TextTrimming="CharacterEllipsis" Text="{Binding HostOrUrl}" Opacity="0.9" />
+                          <TextBlock Theme="{StaticResource LabelSmall}" Foreground="{StaticResource MutedBrush}"
+                                     Text="{Binding StateLabel}" />
+                          <TextBlock Theme="{StaticResource LabelSmall}" Foreground="{StaticResource SignalBrush}"
+                                     Text="{Binding FocusLabel}" />
+                          <TextBlock Theme="{StaticResource LabelSmall}" Foreground="{StaticResource MutedBrush}"
+                                     Text="{Binding MediaRequestStatusLabel}"
+                                     AutomationProperties.LiveSetting="Polite" />
+                        </StackPanel>
+                      </Button>
+                      <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+                        <Button Content="{Binding PlaybackRequestLabel}" Theme="{StaticResource OutlineAction}"
+                                Command="{Binding RequestPlaybackCommand}"
+                                AutomationProperties.Name="{Binding PlaybackRequestLabel}" />
+                        <Button Content="{Binding MuteRequestLabel}" Theme="{StaticResource OutlineAction}"
+                                Command="{Binding RequestMuteCommand}"
+                                AutomationProperties.Name="{Binding MuteRequestLabel}" />
+                        <Button Content="← MOVE" Theme="{StaticResource OutlineAction}"
+                                Command="{Binding MoveLeftCommand}"
+                                AutomationProperties.Name="Move this pane left" />
+                        <Button Content="MOVE →" Theme="{StaticResource OutlineAction}"
+                                Command="{Binding MoveRightCommand}"
+                                AutomationProperties.Name="Move this pane right" />
+                        <Button Content="CLOSE" Theme="{StaticResource OutlineAction}"
+                                Command="{Binding CloseCommand}"
+                                AutomationProperties.Name="Close this TV workspace pane" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <controls:WorkspaceResizeOverlay DataContext="{Binding Workspace}" />
+          </Panel>
+
+          <!-- Focused-pane omnibar when mosaic is up -->
+          <Border VerticalAlignment="Bottom" Margin="8" IsVisible="{Binding ShowWorkspaceMosaic}"
+                  IsHitTestVisible="True">
+            <Border Classes="hud-glass" DataContext="{Binding Workspace}">
+              <StackPanel Spacing="8" IsVisible="{Binding FocusedPane, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <TextBlock Theme="{StaticResource LabelSmall}" Text="{Binding InputStatusLabel}"
+                           AutomationProperties.LiveSetting="Polite" />
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8"
+                      DataContext="{Binding FocusedPane}">
+                  <TextBox Grid.Column="0" Text="{Binding DraftAddress}"
+                           Watermark="Search or type a site for this pane"
+                           AutomationProperties.Name="Focused workspace pane address" />
+                  <Button Grid.Column="1" Content="GO" Theme="{StaticResource SignalButton}"
+                          Command="{Binding NavigateCommand}"
+                          AutomationProperties.Name="Open address in the focused TV pane" />
+                  <Button Grid.Column="2" Content="←" Theme="{StaticResource OutlineAction}" Command="{Binding BackCommand}"
+                          AutomationProperties.Name="Back in focused pane" />
+                  <Button Grid.Column="3" Content="→" Theme="{StaticResource OutlineAction}" Command="{Binding ForwardCommand}"
+                          AutomationProperties.Name="Forward in focused pane" />
+                  <Button Grid.Column="4" Content="↻" Theme="{StaticResource OutlineAction}" Command="{Binding ReloadCommand}"
+                          AutomationProperties.Name="Reload focused pane" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBox Grid.Column="0" Text="{Binding DraftInputText}"
+                           Watermark="Text for the TV-confirmed focused pane…"
+                           AutomationProperties.Name="Workspace pane input" />
+                  <Button Grid.Column="1" Content="SEND" Theme="{StaticResource SignalButton}"
+                          Command="{Binding SendTextCommand}"
+                          AutomationProperties.Name="Send text to the confirmed TV workspace pane" />
+                </Grid>
+              </StackPanel>
+            </Border>
+          </Border>
+
+          <!-- Error toast on stage -->
+          <Border Classes="hud-glass" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,12,0,0"
+                  IsVisible="{Binding HasError}" BorderBrush="{StaticResource LiveBrush}"
+                  IsHitTestVisible="False">
+            <StackPanel Spacing="4">
+              <TextBlock Theme="{StaticResource LabelSmall}" Foreground="{StaticResource LiveBrush}"
+                         Text="{Binding CurrentError.Title}" />
+              <TextBlock Theme="{StaticResource BodySmall}" TextWrapping="Wrap" MaxWidth="480"
+                         Text="{Binding CurrentError.Message}"
+                         AutomationProperties.LiveSetting="Polite" />
+            </StackPanel>
+          </Border>
+        </Panel>
+      </Border>
+
+      <!-- Compact remote strip: one row — D-pad, keys, text, capture -->
+      <Border Grid.Row="2" Margin="0,4,0,0" ZIndex="2" Classes="hud-glass hud-dense"
+              AutomationProperties.Name="Browser remote HUD">
+        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="6">
+          <Border Grid.Column="0" Focusable="True" Background="Transparent"
+                  KeyDown="OnRemoteKeyDown" TextInput="OnRemoteTextInput"
+                  AutomationProperties.Name="Remote control surface"
+                  AutomationProperties.HelpText="Keyboard input here is sent to the browser on the TV.">
+            <Grid ColumnDefinitions="Auto,Auto,Auto" RowDefinitions="Auto,Auto,Auto">
+              <controls:RemoteKeyButton Grid.Row="0" Grid.Column="1" Key="Up" Glyph="▲" Pressed="OnRemoteKeyPressed" AutomationProperties.Name="Up" />
+              <controls:RemoteKeyButton Grid.Row="1" Grid.Column="0" Key="Left" Glyph="◀" Pressed="OnRemoteKeyPressed" AutomationProperties.Name="Left" />
+              <controls:RemoteKeyButton Grid.Row="1" Grid.Column="1" Key="Select" Glyph="OK" Emphasis="True" Pressed="OnRemoteKeyPressed" AutomationProperties.Name="Select" />
+              <controls:RemoteKeyButton Grid.Row="1" Grid.Column="2" Key="Right" Glyph="▶" Pressed="OnRemoteKeyPressed" AutomationProperties.Name="Right" />
+              <controls:RemoteKeyButton Grid.Row="2" Grid.Column="1" Key="Down" Glyph="▼" Pressed="OnRemoteKeyPressed" AutomationProperties.Name="Down" />
+            </Grid>
+          </Border>
+
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+            <controls:RemoteKeyButton Key="PageUp" Glyph="Pg↑" Pressed="OnRemoteKeyPressed" AutomationProperties.Name="Page up" />
+            <controls:RemoteKeyButton Key="PageDown" Glyph="Pg↓" Pressed="OnRemoteKeyPressed" AutomationProperties.Name="Page down" />
+            <controls:RemoteKeyButton Key="Tab" Glyph="Tab" Pressed="OnRemoteKeyPressed" AutomationProperties.Name="Move focus forward on the page" />
+            <controls:RemoteKeyButton Key="Back" Glyph="Bk" Pressed="OnRemoteKeyPressed" AutomationProperties.Name="Page back" />
+            <controls:RemoteKeyButton Key="Escape" Glyph="Esc" Pressed="OnRemoteKeyPressed" AutomationProperties.Name="Escape" />
+          </StackPanel>
+
+          <TextBox Grid.Column="2" Text="{Binding ComposedText}" VerticalAlignment="Center"
+                   Watermark="Type into the focused field on the TV…"
+                   AutomationProperties.Name="Text to send to the TV"
+                   AutomationProperties.HelpText="Sent to whatever the page on the TV has focused." />
+          <Button Grid.Column="3" Content="SEND" Theme="{StaticResource OutlineAction}" VerticalAlignment="Center"
+                  Command="{Binding SendComposedTextCommand}" AutomationProperties.Name="Send text to TV" />
+          <Button Grid.Column="4" Theme="{StaticResource OutlineAction}" VerticalAlignment="Center"
+                  Content="{Binding KeyboardCaptureLabel}" Command="{Binding ToggleKeyboardCaptureCommand}"
+                  AutomationProperties.Name="Keyboard forwarding"
+                  AutomationProperties.HelpText="While on, keys pressed on the preview or remote strip are sent to the TV. Flint never installs a system-wide keyboard hook." />
+        </Grid>
+      </Border>
+
+      <!-- MORE drawer overlay -->
+      <Border Grid.RowSpan="3" IsVisible="{Binding IsMorePanelOpen}"
+              Background="#99000000" ZIndex="10"
+              PointerPressed="OnMoreScrimPressed"
+              AutomationProperties.Name="Extra controls scrim">
+        <Border Classes="hud-glass" Width="420" HorizontalAlignment="Right" Margin="0,0,0,0"
+                VerticalAlignment="Stretch" Padding="16"
+                PointerPressed="OnMoreDrawerPressed">
+          <ScrollViewer>
+            <StackPanel Spacing="16">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Theme="{StaticResource TitleMedium}" Text="Extra controls" />
+                <Button Grid.Column="1" Content="CLOSE" Theme="{StaticResource OutlineAction}"
+                        Command="{Binding ToggleMorePanelCommand}"
+                        AutomationProperties.Name="Close extra controls" />
+              </Grid>
+
+              <!-- Find -->
+              <StackPanel Spacing="8">
+                <TextBlock Theme="{StaticResource LabelSmall}" Text="FIND ON PAGE" />
+                <TextBlock IsVisible="{Binding !ViewControls.IsAvailable}" Theme="{StaticResource BodySmall}"
+                           Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                           Text="Find, zoom and display controls need a newer receiver build." />
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" IsVisible="{Binding ViewControls.IsAvailable}" ColumnSpacing="6">
+                  <TextBox Grid.Column="0" Text="{Binding FindText}" Watermark="Find…"
+                           AutomationProperties.Name="Find text" />
+                  <Button Grid.Column="1" Content="FIND" Theme="{StaticResource SignalButton}"
+                          Command="{Binding ViewControls.StartFindCommand}" CommandParameter="{Binding FindText}"
+                          AutomationProperties.Name="Find on page" />
+                  <Button Grid.Column="2" Content="↑" Theme="{StaticResource OutlineAction}"
+                          Command="{Binding ViewControls.FindPreviousCommand}"
+                          AutomationProperties.Name="Previous match" />
+                  <Button Grid.Column="3" Content="↓" Theme="{StaticResource OutlineAction}"
+                          Command="{Binding ViewControls.FindNextCommand}"
+                          AutomationProperties.Name="Next match" />
+                  <Button Grid.Column="4" Content="×" Theme="{StaticResource OutlineAction}"
+                          Command="{Binding ViewControls.ClearFindCommand}"
+                          AutomationProperties.Name="Clear find" />
+                </Grid>
+                <TextBlock IsVisible="{Binding ViewControls.IsFindActive}" Theme="{StaticResource LabelSmall}"
+                           Foreground="{StaticResource MutedBrush}" Text="{Binding ViewControls.FindStatus}"
+                           AutomationProperties.LiveSetting="Polite" />
+              </StackPanel>
+
+              <!-- View -->
+              <StackPanel Spacing="8" IsVisible="{Binding ViewControls.IsAvailable}">
+                <TextBlock Theme="{StaticResource LabelSmall}" Text="TV DISPLAY" />
+                <WrapPanel>
+                  <Button Content="ZOOM −" Theme="{StaticResource OutlineAction}" Margin="0,0,6,6"
+                          Command="{Binding ViewControls.ZoomOutCommand}" AutomationProperties.Name="Zoom out" />
+                  <Button Content="RESET" Theme="{StaticResource OutlineAction}" Margin="0,0,6,6"
+                          Command="{Binding ViewControls.ResetZoomCommand}" AutomationProperties.Name="Reset zoom" />
+                  <Button Content="ZOOM +" Theme="{StaticResource OutlineAction}" Margin="0,0,6,6"
+                          Command="{Binding ViewControls.ZoomInCommand}" AutomationProperties.Name="Zoom in" />
+                  <Button Content="DARK PAGE" Theme="{StaticResource OutlineAction}" Margin="0,0,6,6"
+                          Command="{Binding ViewControls.ToggleDarkModeCommand}"
+                          AutomationProperties.Name="Toggle dark page rendering" />
+                  <Button Content="POINTER / LINKS" Theme="{StaticResource OutlineAction}" Margin="0,0,6,6"
+                          Command="{Binding ViewControls.ToggleInputModeCommand}"
+                          AutomationProperties.Name="Switch the TV between pointer and link mode" />
+                  <Button Content="FULLSCREEN" Theme="{StaticResource OutlineAction}" Margin="0,0,6,6"
+                          Command="{Binding ViewControls.ToggleFullscreenCommand}"
+                          AutomationProperties.Name="Toggle fullscreen on the TV" />
+                </WrapPanel>
+                <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}">
+                  <TextBlock.Text>
+                    <MultiBinding StringFormat="Zoom {0}% · {1} · {2}">
+                      <Binding Path="ViewControls.ZoomPercent" />
+                      <Binding Path="ViewControls.UserAgent" />
+                      <Binding Path="ViewControls.InputMode" />
+                    </MultiBinding>
+                  </TextBlock.Text>
+                </TextBlock>
+              </StackPanel>
+
+              <!-- Compact profile / library -->
+              <StackPanel Spacing="8" DataContext="{Binding Library}">
+                <TextBlock Theme="{StaticResource LabelSmall}" Text="BROWSER PROFILE" />
+                <TextBlock Theme="{StaticResource LabelSmall}" Foreground="{StaticResource MutedBrush}"
+                           Text="{Binding ProfileStatusLabel}" AutomationProperties.LiveSetting="Polite" />
+                <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                           TextWrapping="Wrap" Text="{Binding StorageDetail}" />
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsAvailable}">
+                  <Button Content="REFRESH" Theme="{StaticResource OutlineAction}"
+                          Command="{Binding RefreshCommand}" AutomationProperties.Name="Refresh the active browser profile" />
+                  <Button Content="CLEAR HISTORY" Theme="{StaticResource OutlineAction}"
+                          Command="{Binding ClearHistoryCommand}"
+                          AutomationProperties.Name="Clear history in the active browser profile" />
+                </StackPanel>
+              </StackPanel>
+
+              <!-- VPN compact -->
+              <StackPanel Spacing="8" DataContext="{Binding Network}">
+                <TextBlock Theme="{StaticResource LabelSmall}" Text="TV NETWORK / VPN" />
+                <TextBlock Theme="{StaticResource LabelSmall}" Foreground="{StaticResource MutedBrush}"
+                           Text="{Binding StatusLabel}" AutomationProperties.LiveSetting="Polite" />
+                <TextBlock IsVisible="{Binding !IsAvailable}" Theme="{StaticResource BodySmall}"
+                           Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                           Text="Paste a WireGuard config once the television reports network support. The tunnel runs on the TV after system consent — never on this PC." />
+                <StackPanel IsVisible="{Binding IsAvailable}" Spacing="8">
+                  <CheckBox Content="Enable VPN for this TV profile"
+                            IsChecked="{Binding VpnEnabled}" IsEnabled="{Binding CanEdit}"
+                            AutomationProperties.Name="Enable VPN for this TV profile" />
+                  <CheckBox Content="Auto-connect when browser or mosaic opens"
+                            IsChecked="{Binding AutoConnectOnBrowserStart}" IsEnabled="{Binding CanEdit}"
+                            AutomationProperties.Name="Auto-connect VPN when browser opens" />
+                  <CheckBox Content="Require VPN before pages load"
+                            IsChecked="{Binding RequireVpnBeforeBrowse}" IsEnabled="{Binding CanEdit}"
+                            AutomationProperties.Name="Require VPN before browsing" />
+                  <TextBox AcceptsReturn="True" TextWrapping="Wrap" MinHeight="100"
+                           Text="{Binding ConfigText}"
+                           Watermark="Paste WireGuard config"
+                           IsEnabled="{Binding CanEdit}"
+                           AutomationProperties.Name="WireGuard configuration" />
+                  <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                             TextWrapping="Wrap" Text="{Binding ConfigHint}" />
+                  <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                             TextWrapping="Wrap"
+                             Text="Full-tunnel AllowedIPs (0.0.0.0/0) is fine — Flint keeps the TV↔PC LAN outside the tunnel. Approve the Android VPN prompt on the Stick when asked." />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="SAVE TO TV" Theme="{StaticResource SignalButton}"
+                            Command="{Binding SaveCommand}"
+                            AutomationProperties.Name="Save VPN settings to the television" />
+                    <Button Content="REMOVE" Theme="{StaticResource OutlineAction}"
+                            Command="{Binding ClearCommand}"
+                            AutomationProperties.Name="Remove VPN settings from this TV profile" />
+                  </StackPanel>
+                </StackPanel>
+              </StackPanel>
+
+              <!-- Clear data -->
+              <StackPanel Spacing="8">
+                <TextBlock Theme="{StaticResource LabelSmall}" Text="TV BROWSER DATA" />
+                <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                           TextWrapping="Wrap"
+                           Text="The TV connects directly to opened sites. Flint does not relay browser traffic through a cloud service." />
+                <Button Content="CLEAR TV BROWSER DATA" Theme="{StaticResource OutlineAction}"
+                        HorizontalAlignment="Left"
+                        Command="{Binding ShowClearDataConfirmationCommand}"
+                        AutomationProperties.Name="Clear the TV's browsing data" />
+                <StackPanel IsVisible="{Binding ClearDataConfirmationVisible}" Spacing="8">
+                  <TextBlock Theme="{StaticResource BodyMedium}" TextWrapping="Wrap"
+                             Foreground="{StaticResource LiveBrush}"
+                             Text="This erases the television's cookies, site storage, cache, history and bookmarks. It cannot be undone." />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="ERASE EVERYTHING" Theme="{StaticResource SignalButton}"
+                            Command="{Binding ConfirmClearDataCommand}"
+                            AutomationProperties.Name="Erase the TV's browsing data now" />
+                    <Button Content="KEEP IT" Theme="{StaticResource OutlineAction}"
+                            Command="{Binding CancelClearDataCommand}"
+                            AutomationProperties.Name="Keep the TV's browsing data" />
+                  </StackPanel>
+                </StackPanel>
+              </StackPanel>
+            </StackPanel>
+          </ScrollViewer>
+        </Border>
+      </Border>
+    </Grid>
+
+    <!-- Native dialog overlays everything -->
+    <Border IsVisible="{Binding Dialog.IsVisible}" Background="#CC000000" ZIndex="20"
+            HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+      <controls:InfoCard BorderTone="Signal" MaxWidth="480" HorizontalAlignment="Center" VerticalAlignment="Center"
+                         Margin="24">
+        <StackPanel Spacing="10">
+          <TextBlock Theme="{StaticResource LabelSmall}" Text="THE PAGE IS ASKING" />
+          <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                     Text="{Binding Dialog.Active.Origin}" TextTrimming="CharacterEllipsis" />
+          <TextBlock Theme="{StaticResource BodyMedium}" TextWrapping="Wrap"
+                     Text="{Binding Dialog.Active.Message}"
+                     AutomationProperties.LiveSetting="Assertive" />
+          <TextBox IsVisible="{Binding Dialog.IsPrompt}" Text="{Binding Dialog.PromptText}"
+                   AutomationProperties.Name="Answer for the page" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="{Binding Dialog.ConfirmLabel}" Theme="{StaticResource SignalButton}"
+                    Command="{Binding ConfirmDialogCommand}"
+                    AutomationProperties.Name="Answer the page dialog" />
+            <Button Content="CANCEL" Theme="{StaticResource OutlineAction}"
+                    IsVisible="{Binding Dialog.CanCancel}" Command="{Binding CancelDialogCommand}"
+                    AutomationProperties.Name="Dismiss the page dialog" />
+          </StackPanel>
+        </StackPanel>
+      </controls:InfoCard>
+    </Border>
+  </Panel>
+</UserControl>

@@ -1,0 +1,223 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Flint.App.ViewModels"
+             xmlns:controls="using:Flint.App.Controls"
+             x:Class="Flint.App.Views.CastPage"
+             x:DataType="vm:CastPageViewModel">
+
+  <ScrollViewer>
+    <StackPanel Margin="{StaticResource PageMargin}" Spacing="12" MaxWidth="820" HorizontalAlignment="Left">
+
+      <controls:PageHeading Eyebrow="Local link"
+                            Title="Cast"
+                            Trailing="{Binding HeadingStatus}"
+                            TrailingTone="{Binding HeadingTone}" />
+
+      <!-- What Flint found, and the one action on this page. -->
+      <controls:InfoCard BorderTone="{Binding HeadingTone}">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <controls:StatusDot Grid.Column="0"
+                                Tone="{Binding HeadingTone}"
+                                Margin="0,0,9,0"
+                                VerticalAlignment="Top" />
+            <StackPanel Grid.Column="1" Spacing="6">
+              <TextBlock Theme="{StaticResource LabelSmall}" Text="RECEIVER" />
+              <TextBlock Theme="{StaticResource TitleMedium}" Text="{Binding DeviceName}" />
+              <TextBlock Theme="{StaticResource BodySmall}" Text="{Binding DeviceAddress}" />
+            </StackPanel>
+            <controls:Pill Grid.Column="2"
+                           Text="{Binding DevicePlatform}"
+                           Tone="Neutral"
+                           VerticalAlignment="Top" />
+          </Grid>
+
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Theme="{StaticResource SignalButton}"
+                    Command="{Binding ProbeCommand}"
+                    IsEnabled="{Binding !IsProbing}"
+                    Content="PROBE THIS NETWORK"
+                    AutomationProperties.Name="Probe this network" />
+            <TextBlock Theme="{StaticResource BodySmall}"
+                       VerticalAlignment="Center"
+                       IsVisible="{Binding IsProbing}"
+                       Text="Listening for receivers…" />
+          </StackPanel>
+
+          <Border Height="1" Background="{StaticResource LineBrush}" />
+
+          <StackPanel Spacing="8">
+            <TextBlock Theme="{StaticResource LabelSmall}" Text="DIRECT ADDRESS" />
+            <TextBlock Theme="{StaticResource BodySmall}"
+                       Foreground="{StaticResource MutedBrush}"
+                       Text="Use the address shown under Settings → My Fire TV → About → Network when multicast is blocked." />
+            <Grid ColumnDefinitions="*,110,Auto" ColumnSpacing="10" RowDefinitions="Auto,Auto"
+                  RowSpacing="4">
+              <!--
+                Labels above the fields, not only inside them. A watermark disappears the moment a
+                value exists, so a pre-filled or typed-in port becomes a bare number with nothing
+                saying what it is.
+              -->
+              <TextBlock Grid.Row="0" Grid.Column="0" Theme="{StaticResource LabelSmall}"
+                         Foreground="{StaticResource MutedBrush}" Text="TV IP ADDRESS" />
+              <TextBlock Grid.Row="0" Grid.Column="1" Theme="{StaticResource LabelSmall}"
+                         Foreground="{StaticResource MutedBrush}" Text="ADB PORT" />
+              <TextBox Grid.Row="1" Grid.Column="0"
+                       Height="48"
+                       Padding="12,0"
+                       Background="{StaticResource RaisedBrush}"
+                       Foreground="{StaticResource TextBrush}"
+                       BorderBrush="{StaticResource LineBrush}"
+                       BorderThickness="1"
+                       CornerRadius="{StaticResource RadiusSmall}"
+                       Watermark="Fire TV IP address"
+                       AutomationProperties.Name="TV IP address"
+                       Text="{Binding ManualAddress}" />
+              <TextBox Grid.Row="1" Grid.Column="1"
+                       Height="48"
+                       Padding="12,0"
+                       Background="{StaticResource RaisedBrush}"
+                       Foreground="{StaticResource TextBrush}"
+                       BorderBrush="{StaticResource LineBrush}"
+                       BorderThickness="1"
+                       CornerRadius="{StaticResource RadiusSmall}"
+                       Watermark="Port"
+                       AutomationProperties.Name="ADB port"
+                       Text="{Binding ManualPort}" />
+              <Button Grid.Row="1" Grid.Column="2"
+                      Theme="{StaticResource OutlineAction}"
+                      Command="{Binding ProbeAddressCommand}"
+                      IsEnabled="{Binding !IsBusy}"
+                      Content="CONNECT TO TV"
+                      AutomationProperties.Name="Connect to TV" />
+            </Grid>
+                  <Button Theme="{StaticResource OutlineAction}"
+                    HorizontalAlignment="Left"
+                    Command="{Binding OpenReceiverCommand}"
+                    IsEnabled="{Binding CanOpenReceiver}"
+                    Content="OPEN RECEIVER ON TV"
+                    AutomationProperties.Name="Open receiver on TV" />
+            <Grid ColumnDefinitions="*,110,Auto" ColumnSpacing="10" RowDefinitions="Auto,Auto"
+                  RowSpacing="4">
+              <TextBlock Grid.Row="0" Grid.Column="0" Theme="{StaticResource LabelSmall}"
+                         Foreground="{StaticResource MutedBrush}" Text="PAIRING CODE FROM TV" />
+              <TextBlock Grid.Row="0" Grid.Column="1" Theme="{StaticResource LabelSmall}"
+                         Foreground="{StaticResource MutedBrush}" Text="RECEIVER PORT" />
+              <TextBox Grid.Row="1" Grid.Column="0"
+                       Height="48"
+                       Padding="12,0"
+                       Background="{StaticResource RaisedBrush}"
+                       Foreground="{StaticResource TextBrush}"
+                       BorderBrush="{StaticResource LineBrush}"
+                       BorderThickness="1"
+                       CornerRadius="{StaticResource RadiusSmall}"
+                       Watermark="Pairing code"
+                       Text="{Binding PairingCode}"
+                       AutomationProperties.Name="Pairing code" />
+              <TextBox Grid.Row="1" Grid.Column="1"
+                       Height="48"
+                       Padding="12,0"
+                       Background="{StaticResource RaisedBrush}"
+                       Foreground="{StaticResource TextBrush}"
+                       BorderBrush="{StaticResource LineBrush}"
+                       BorderThickness="1"
+                       CornerRadius="{StaticResource RadiusSmall}"
+                       Watermark="Receiver port"
+                       Text="{Binding ReceiverPort}"
+                       AutomationProperties.Name="Receiver port" />
+              <Button Grid.Row="1" Grid.Column="2"
+                      Theme="{StaticResource SignalButton}"
+                      Command="{Binding ConnectCommand}"
+                      IsEnabled="{Binding CanPairWithCode}"
+                      Content="PAIR WITH TV"
+                      AutomationProperties.Name="Pair with TV" />
+            </Grid>
+            <TextBlock Theme="{StaticResource BodySmall}"
+                       Foreground="{StaticResource MutedBrush}"
+                       Text="{Binding PairingStatus}"
+                       AutomationProperties.Name="Pairing status"
+                       AutomationProperties.HelpText="{Binding PairingStatus}" />
+          </StackPanel>
+        </StackPanel>
+      </controls:InfoCard>
+
+      <!-- A probe that threw is reported, not swallowed. -->
+      <controls:InfoCard BorderTone="Live" IsVisible="{Binding Failure, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <StackPanel Spacing="8">
+          <TextBlock Theme="{StaticResource LabelSmall}"
+                     Foreground="{StaticResource LiveBrush}"
+                     Text="PROBE FAILED" />
+          <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding Failure}" />
+        </StackPanel>
+      </controls:InfoCard>
+
+      <controls:EmptyState IsVisible="{Binding ShowEmptyState}"
+                           Glyph="TV"
+                           Title="Nothing probed yet"
+                           Body="Flint has not looked at your network. It will find receivers that advertise themselves, identify what each one runs, and then say plainly which modes your hardware can actually do." />
+
+      <controls:SectionLabel Text="What this pair can do" IsVisible="{Binding HasReport}" />
+
+      <ItemsControl ItemsSource="{Binding Modes}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Spacing="12" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:ModeVerdictViewModel">
+            <controls:InfoCard BorderTone="{Binding Tone}">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Grid.Column="0"
+                             Theme="{StaticResource TitleMedium}"
+                             Text="{Binding Title}"
+                             VerticalAlignment="Center" />
+                  <controls:Pill Grid.Column="1"
+                                 Text="{Binding StatusLabel}"
+                                 Tone="{Binding Tone}" />
+                </Grid>
+                <TextBlock Theme="{StaticResource BodyMedium}"
+                           Foreground="{StaticResource MutedBrush}"
+                           Text="{Binding Reason}" />
+                <!--
+                  A mode that has not shipped gets a plan rather than a remedy. The "what to do"
+                  block below is deliberately not reused for it: every instruction it could offer
+                  would send someone looking for a setting that does not exist.
+                -->
+                <Border IsVisible="{Binding IsComingSoon}"
+                        Background="{StaticResource RaisedBrush}"
+                        CornerRadius="{StaticResource RadiusSmall}"
+                        Padding="12,10">
+                  <StackPanel Spacing="5">
+                    <!--
+                      Not "COMING SOON" again: the pill above already says that, and the panel's
+                      job is to answer the question the pill provokes — whether the reader is
+                      supposed to go and do something about it.
+                    -->
+                    <TextBlock Theme="{StaticResource LabelSmall}" Text="NO ACTION NEEDED" />
+                    <TextBlock Theme="{StaticResource BodySmall}"
+                               Foreground="{StaticResource TextBrush}"
+                               Text="Nothing to change on your PC or your TV — this arrives in a Flint update." />
+                  </StackPanel>
+                </Border>
+                <Border IsVisible="{Binding HasRemedy}"
+                        Background="{StaticResource RaisedBrush}"
+                        CornerRadius="{StaticResource RadiusSmall}"
+                        Padding="12,10">
+                  <StackPanel Spacing="5">
+                    <TextBlock Theme="{StaticResource LabelSmall}" Text="WHAT TO DO" />
+                    <TextBlock Theme="{StaticResource BodySmall}"
+                               Foreground="{StaticResource TextBrush}"
+                               Text="{Binding Remedy}" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </controls:InfoCard>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

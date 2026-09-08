@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Flint.App.Tests</RootNamespace>
+    <IsTestProject>true</IsTestProject>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      This project stays on xunit v2 because Avalonia.Headless.XUnit is built against it. The other
+      test projects use xunit v3; they are separate assemblies with separate runners, so the split
+      costs nothing at the command line.
+    -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageReference Include="Avalonia.Headless.XUnit" Version="11.3.0" />
+    <PackageReference Include="Shouldly" Version="4.3.0" />
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Flint.App/Flint.App.csproj" />
+  </ItemGroup>
+
+</Project>

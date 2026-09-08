@@ -1,0 +1,276 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="using:Flint.App.Controls"
+                    xmlns:conv="using:Flint.App.Converters">
+
+  <!--
+    Templates for the REX component set, ported from the composables in RexCastApp.kt.
+    Every colour here comes from a token or a Tone; no literal colours below this line.
+  -->
+
+  <conv:UpperCaseConverter x:Key="Upper" />
+  <conv:ToneToBrushConverter x:Key="ToneBrush" />
+
+  <ControlTheme x:Key="{x:Type controls:InfoCard}" TargetType="controls:InfoCard">
+    <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}" />
+    <Setter Property="Padding" Value="{StaticResource CardPadding}" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="BorderBrush"
+            Value="{Binding BorderTone, RelativeSource={RelativeSource Self}, Converter={StaticResource ToneBrush}}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalAlignment="Stretch" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type controls:Pill}" TargetType="controls:Pill">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border BorderThickness="1"
+                CornerRadius="{StaticResource RadiusPill}"
+                Padding="9,6"
+                VerticalAlignment="Center"
+                BorderBrush="{Binding Tone, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ToneBrush}}">
+          <TextBlock Theme="{StaticResource LabelSmall}"
+                     Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource Upper}}"
+                     Foreground="{Binding Tone, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ToneBrush}}"
+                     MaxLines="1" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <!--
+    One key of the on-screen remote.
+
+    Sized generously and identically: these are pressed in sequence while the user is looking at the
+    television rather than at this window, so every key has to be the same target and none of them
+    can be a small one.
+  -->
+  <ControlTheme x:Key="{x:Type controls:RemoteKeyButton}" TargetType="controls:RemoteKeyButton">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Button x:Name="PART_Button"
+                MinWidth="60"
+                MinHeight="48"
+                Margin="4"
+                HorizontalContentAlignment="Center"
+                VerticalContentAlignment="Center"
+                Theme="{StaticResource OutlineAction}"
+                AutomationProperties.Name="{Binding $parent[controls:RemoteKeyButton].(AutomationProperties.Name)}"
+                Content="{Binding Glyph, RelativeSource={RelativeSource TemplatedParent}}" />
+      </ControlTemplate>
+    </Setter>
+
+    <!--
+      The primary key of a cluster carries the Signal accent, the rest are outlines. Expressed as a
+      selector rather than a converter: there is no logic here, only two static themes, and a
+      converter would be a class whose whole job is to choose between two resources.
+    -->
+    <Style Selector="^[Emphasis=True] /template/ Button#PART_Button">
+      <Setter Property="Theme" Value="{StaticResource SignalButton}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type controls:StatusDot}" TargetType="controls:StatusDot">
+    <Setter Property="Width" Value="9" />
+    <Setter Property="Height" Value="9" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Ellipse Width="9" Height="9"
+                 Fill="{Binding Tone, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ToneBrush}}" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type controls:SectionLabel}" TargetType="controls:SectionLabel">
+    <Setter Property="Margin" Value="0,8,0,2" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <TextBlock Theme="{StaticResource LabelSmall}"
+                   Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource Upper}}" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type controls:PageHeading}" TargetType="controls:PageHeading">
+    <Setter Property="Margin" Value="0,0,0,8" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Bottom">
+          <StackPanel Grid.Column="0" Spacing="4">
+            <TextBlock Theme="{StaticResource LabelSmall}"
+                       Foreground="{StaticResource SignalBrush}"
+                       Text="{Binding Eyebrow, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource Upper}}" />
+            <TextBlock Theme="{StaticResource HeadlineLarge}"
+                       Text="{Binding Title, RelativeSource={RelativeSource TemplatedParent}}" />
+          </StackPanel>
+          <controls:Pill Grid.Column="1"
+                         VerticalAlignment="Bottom"
+                         Margin="12,0,0,4"
+                         Text="{Binding Trailing, RelativeSource={RelativeSource TemplatedParent}}"
+                         Tone="{Binding TrailingTone, RelativeSource={RelativeSource TemplatedParent}}" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type controls:DiagnosticRow}" TargetType="controls:DiagnosticRow">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel>
+          <Grid ColumnDefinitions="42*,58*" Margin="0,8">
+            <TextBlock Grid.Column="0"
+                       Theme="{StaticResource BodySmall}"
+                       Text="{Binding Label, RelativeSource={RelativeSource TemplatedParent}}"
+                       VerticalAlignment="Top" />
+            <TextBlock Grid.Column="1"
+                       Theme="{StaticResource BodySmall}"
+                       Text="{Binding Value, RelativeSource={RelativeSource TemplatedParent}}"
+                       Foreground="{StaticResource TextBrush}"
+                       TextAlignment="Right"
+                       TextWrapping="Wrap" />
+          </Grid>
+          <Border Height="1"
+                  Background="{StaticResource LineBrush}"
+                  IsVisible="{Binding !IsLast, RelativeSource={RelativeSource TemplatedParent}}" />
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type controls:EmptyState}" TargetType="controls:EmptyState">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource LineBrush}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource RadiusMedium}"
+                Padding="28,34">
+          <StackPanel HorizontalAlignment="Center" Spacing="0">
+            <TextBlock Text="{Binding Glyph, RelativeSource={RelativeSource TemplatedParent}}"
+                       FontFamily="{StaticResource FlintFont}"
+                       FontSize="24"
+                       FontWeight="Black"
+                       Foreground="{StaticResource MutedBrush}"
+                       HorizontalAlignment="Center" />
+            <TextBlock Theme="{StaticResource TitleLarge}"
+                       Text="{Binding Title, RelativeSource={RelativeSource TemplatedParent}}"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       MaxWidth="420"
+                       Margin="0,14,0,0" />
+            <TextBlock Theme="{StaticResource BodySmall}"
+                       Text="{Binding Body, RelativeSource={RelativeSource TemplatedParent}}"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       MaxWidth="420"
+                       Margin="0,8,0,0" />
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <!--
+    Buttons. SignalButton is the single primary action on a page; OutlineAction is everything else.
+    Both are 48 tall and carry the tracked label style, matching REX Cast.
+  -->
+  <ControlTheme x:Key="SignalButton" TargetType="Button">
+    <Setter Property="Height" Value="48" />
+    <Setter Property="Padding" Value="20,0" />
+    <Setter Property="Background" Value="{StaticResource SignalBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <TextBlock Theme="{StaticResource LabelSmall}"
+                     Text="{TemplateBinding Content, Converter={StaticResource Upper}}"
+                     Foreground="{TemplateBinding Foreground}"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="Opacity" Value="0.88" />
+    </Style>
+    <Style Selector="^:pressed">
+      <Setter Property="Opacity" Value="0.72" />
+    </Style>
+    <!--
+      A disabled primary loses its fill rather than fading it. Dimming a bright accent to 35% on a
+      near-black ground leaves an olive shape that still reads as coloured and actionable, and it
+      multiplies the dark label into the background — the control looks pressable and cannot be
+      read. Flat surface plus muted text is unambiguous and keeps its contrast.
+    -->
+    <Style Selector="^:disabled">
+      <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="OutlineAction" TargetType="Button">
+    <Setter Property="Height" Value="48" />
+    <Setter Property="Padding" Value="20,0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <TextBlock Theme="{StaticResource LabelSmall}"
+                     Text="{TemplateBinding Content, Converter={StaticResource Upper}}"
+                     Foreground="{TemplateBinding Foreground}"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="BorderBrush" Value="{StaticResource MutedBrush}" />
+    </Style>
+    <Style Selector="^:pressed">
+      <Setter Property="Opacity" Value="0.72" />
+    </Style>
+    <!--
+      Outline actions are already low emphasis, so 35% opacity took them close to invisible against
+      the page. Muting the text and softening the border says "unavailable" while leaving the label
+      readable — a control nobody can read is not a control anyone can rule out.
+    -->
+    <Style Selector="^:disabled">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+      <Setter Property="Opacity" Value="0.6" />
+      <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

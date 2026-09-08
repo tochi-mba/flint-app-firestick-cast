@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- Windows-only: the host probe reads the driver registry and the engine is Win32. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Flint.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets/flint.ico</ApplicationIcon>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <Description>Flint desktop shell. REX Technologies ink/signal visual system.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.0" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.0" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.0" Condition="'$(Configuration)' == 'Debug'" />
+
+    <!--
+      Avalonia.Desktop pulls in a Tmds.DBus.Protocol with a published advisory
+      (GHSA-xrw6-gwf8-vvr9). The D-Bus path is Linux-only and never executes on a Windows host, but
+      a known-vulnerable package does not belong in the graph, so the transitive version is lifted.
+    -->
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.95.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Flint.Core/Flint.Core.csproj" />
+    <ProjectReference Include="../Flint.Discovery/Flint.Discovery.csproj" />
+    <ProjectReference Include="../Flint.Engine.Interop/Flint.Engine.Interop.csproj" />
+    <ProjectReference Include="../Flint.Session/Flint.Session.csproj" />
+  </ItemGroup>
+
+</Project>

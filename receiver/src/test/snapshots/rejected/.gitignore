@@ -1,0 +1,3 @@
+# Images from failed snapshot runs. Never committed: a rejected image is evidence of a failure, and
+# a repository that carries them makes it possible to approve one by accident.
+*.png

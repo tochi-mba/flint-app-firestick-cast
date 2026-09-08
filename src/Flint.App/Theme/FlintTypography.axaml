@@ -1,0 +1,92 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!--
+    The REX type scale, ported from RexTypography in RexTheme.kt.
+
+    Android sp values become device-independent pixels one-for-one; both systems are density
+    independent, so the visual result matches. The signature of the system is LabelSmall: 9px, bold,
+    heavily tracked, always upper-cased at the call site. It is what makes a REX screen read as an
+    instrument rather than a web page, and it is used for every eyebrow, pill and status word.
+  -->
+
+  <FontFamily x:Key="FlintFont">avares://Avalonia.Fonts.Inter/Assets#Inter</FontFamily>
+
+  <x:Double x:Key="HeadlineLargeSize">28</x:Double>
+  <x:Double x:Key="TitleLargeSize">18</x:Double>
+  <x:Double x:Key="TitleMediumSize">15</x:Double>
+  <x:Double x:Key="BodyMediumSize">13</x:Double>
+  <x:Double x:Key="BodySmallSize">12</x:Double>
+  <x:Double x:Key="LabelSmallSize">9</x:Double>
+
+  <x:Double x:Key="HeadlineLargeLineHeight">32</x:Double>
+  <x:Double x:Key="TitleLargeLineHeight">22</x:Double>
+  <x:Double x:Key="TitleMediumLineHeight">19</x:Double>
+  <x:Double x:Key="BodyMediumLineHeight">19</x:Double>
+  <x:Double x:Key="BodySmallLineHeight">17</x:Double>
+
+  <!-- 1.4sp of tracking on a 9sp label, carried across verbatim. -->
+  <x:Double x:Key="LabelSmallTracking">1.4</x:Double>
+
+  <ControlTheme x:Key="HeadlineLarge" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FlintFont}" />
+    <Setter Property="FontSize" Value="{StaticResource HeadlineLargeSize}" />
+    <Setter Property="LineHeight" Value="{StaticResource HeadlineLargeLineHeight}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="TitleLarge" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FlintFont}" />
+    <Setter Property="FontSize" Value="{StaticResource TitleLargeSize}" />
+    <Setter Property="LineHeight" Value="{StaticResource TitleLargeLineHeight}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="TitleMedium" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FlintFont}" />
+    <Setter Property="FontSize" Value="{StaticResource TitleMediumSize}" />
+    <Setter Property="LineHeight" Value="{StaticResource TitleMediumLineHeight}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="BodyMedium" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FlintFont}" />
+    <Setter Property="FontSize" Value="{StaticResource BodyMediumSize}" />
+    <Setter Property="LineHeight" Value="{StaticResource BodyMediumLineHeight}" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="BodySmall" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FlintFont}" />
+    <Setter Property="FontSize" Value="{StaticResource BodySmallSize}" />
+    <Setter Property="LineHeight" Value="{StaticResource BodySmallLineHeight}" />
+    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </ControlTheme>
+
+  <!-- The eyebrow. Callers pass text already upper-cased; the tracking does the rest. -->
+  <ControlTheme x:Key="LabelSmall" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FlintFont}" />
+    <Setter Property="FontSize" Value="{StaticResource LabelSmallSize}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="LetterSpacing" Value="{StaticResource LabelSmallTracking}" />
+    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+  </ControlTheme>
+
+  <!--
+    Numerals in the telemetry strip. Tabular figures stop the readout jittering as digits change,
+    which matters when a value updates sixty times a second.
+  -->
+  <ControlTheme x:Key="Readout" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FlintFont}" />
+    <Setter Property="FontSize" Value="{StaticResource TitleMediumSize}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="FontFeatures" Value="tnum=1" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+  </ControlTheme>
+
+</ResourceDictionary>

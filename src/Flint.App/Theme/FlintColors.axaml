@@ -1,0 +1,57 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!--
+    The REX Technologies ink/signal palette.
+
+    These values are lifted verbatim from RexTheme.kt in REX Cast so the phone app, the Fire TV
+    receiver and this desktop shell are visibly one product. Do not re-pick them, and do not add a
+    light variant: REX is a dark system by design, and a washed-out light mode would break the
+    instrument character the palette exists to create.
+  -->
+
+  <!-- Page ground. Near-black with a green cast, never pure #000. -->
+  <Color x:Key="InkColor">#080A09</Color>
+  <!-- Card surface, one step off the ground. -->
+  <Color x:Key="PanelColor">#111512</Color>
+  <!-- Nested surface, for a panel inside a panel. -->
+  <Color x:Key="RaisedColor">#181E19</Color>
+  <!-- Hairline borders and dividers. Always 1px, never heavier. -->
+  <Color x:Key="LineColor">#29302A</Color>
+  <!-- Primary text. Warm off-white, never pure #FFF. -->
+  <Color x:Key="TextColor">#F2F5EE</Color>
+  <!-- Secondary text, labels, and anything inactive. -->
+  <Color x:Key="MutedColor">#858D83</Color>
+  <!-- The accent. Ready states, primary actions, live values. Used sparingly; it earns attention. -->
+  <Color x:Key="SignalColor">#D7FF3F</Color>
+  <!-- Errors, blocked states, recording. The only warm colour in the system. -->
+  <Color x:Key="LiveColor">#FF774D</Color>
+
+  <SolidColorBrush x:Key="InkBrush" Color="{StaticResource InkColor}" />
+  <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource PanelColor}" />
+  <SolidColorBrush x:Key="RaisedBrush" Color="{StaticResource RaisedColor}" />
+  <SolidColorBrush x:Key="LineBrush" Color="{StaticResource LineColor}" />
+  <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}" />
+  <SolidColorBrush x:Key="MutedBrush" Color="{StaticResource MutedColor}" />
+  <SolidColorBrush x:Key="SignalBrush" Color="{StaticResource SignalColor}" />
+  <SolidColorBrush x:Key="LiveBrush" Color="{StaticResource LiveColor}" />
+
+  <!-- Signal at low opacity, for the fill under a sparkline or behind a selected rail item. -->
+  <SolidColorBrush x:Key="SignalWashBrush" Color="{StaticResource SignalColor}" Opacity="0.10" />
+  <SolidColorBrush x:Key="LiveWashBrush" Color="{StaticResource LiveColor}" Opacity="0.10" />
+
+  <!-- Corner radii, matching RexTheme's shapes.small / medium / large. -->
+  <CornerRadius x:Key="RadiusSmall">8</CornerRadius>
+  <CornerRadius x:Key="RadiusMedium">12</CornerRadius>
+  <CornerRadius x:Key="RadiusLarge">18</CornerRadius>
+  <CornerRadius x:Key="RadiusPill">20</CornerRadius>
+
+  <!--
+    Spacing rhythm, taken from the REX Cast layout constants: 20 page margin, 12 between cards,
+    16 inside a card. Everything else is a multiple or a deliberate optical adjustment.
+  -->
+  <Thickness x:Key="PageMargin">28</Thickness>
+  <Thickness x:Key="CardPadding">16</Thickness>
+  <x:Double x:Key="CardSpacing">12</x:Double>
+
+</ResourceDictionary>

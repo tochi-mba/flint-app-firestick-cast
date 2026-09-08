@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 16:9 Leanback banner: the geometric R mark nods to the REX-shaped source artwork. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path android:fillColor="#080A09" android:pathData="M0,0h320v180h-320z" />
+    <path android:fillColor="#111512" android:pathData="M16,16h288v148h-288z" />
+    <path android:fillColor="#29302A" android:pathData="M16,16h288v2h-288zM16,162h288v2h-288zM16,18h2v144h-2zM302,18h2v144h-2z" />
+    <path
+        android:fillColor="#D7FF3F"
+        android:pathData="M34,51h33c15,0 25,9 25,22c0,10 -6,18 -16,21l19,25h-20l-17,-22h-8v22h-16zM50,65v18h15c7,0 10,-3 10,-9c0,-6 -3,-9 -10,-9z" />
+    <path android:fillColor="#D7FF3F" android:pathData="M91,49h7v7h-7zM99,57h5v5h-5z" />
+    <!-- FLINT, drawn as a compact geometric wordmark so legacy Fire TV launchers render it. -->
+    <path
+        android:fillColor="#F2F5EE"
+        android:pathData="M115,62h31v11h-18v14h16v11h-16v27h-13zM152,62h13v51h22v12h-35zM194,62h13v63h-13zM214,62h13l21,38v-38h12v63h-13l-21,-38v38h-12zM266,62h42v12h-14v51h-14v-51h-14z" />
+    <path android:fillColor="#D7FF3F" android:pathData="M115,139h193v3h-193z" />
+</vector>

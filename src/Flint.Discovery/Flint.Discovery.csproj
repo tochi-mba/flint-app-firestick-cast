@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Flint.Discovery</RootNamespace>
+    <Description>Fire TV discovery over mDNS and a bounded ADB port scan.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Flint.Core/Flint.Core.csproj" />
+  </ItemGroup>
+
+</Project>

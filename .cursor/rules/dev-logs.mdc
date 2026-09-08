@@ -1,0 +1,19 @@
+---
+description: Pull and read Fire TV + Windows Flint logs when diagnosing device issues
+alwaysApply: true
+---
+
+# Dev logs
+
+When the user reports a cast, browser, pairing, VPN, or workspace problem on Fire TV or Windows:
+
+1. Run `.\scripts\pull-dev-logs.ps1` (optional `-Serial host:5555`, `-ClearLogcat` after they reproduce).
+2. Read `artifacts/logs/session-meta.txt`, then `firetv-latest.log`, then `windows-latest.log`.
+3. Do not invent device behaviour that contradicts those logs.
+
+Windows app writes continuously to `%LOCALAPPDATA%\Flint\logs\windows-latest.log` via `DevFileLog`
+(`FlintDiag` breadcrumbs: cast/trust/browser/workspace/VPN/session/UI). The file is size-capped
+(trim oldest → keep newest). Avalonia binding TRACE is filtered. Fire TV uses `Log.*` tags
+(`FlintReceiver`, `FlintBrowser`, `FlintWorkspace`, `FlintVpn*`, `BrowserTlsServer`); pull filters
+those. Never log or paste secrets (VPN config, keys, cookies, passwords, PEMs, preview pixels,
+page text).

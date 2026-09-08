@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Flint.App.ViewModels"
+             xmlns:controls="using:Flint.App.Controls"
+             x:Class="Flint.App.Views.MediaPage"
+             x:DataType="vm:CastPageViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="{StaticResource PageMargin}" Spacing="12" MaxWidth="820" HorizontalAlignment="Left">
+      <controls:PageHeading Eyebrow="Local playback" Title="Media" Trailing="{Binding SessionStatus}" TrailingTone="{Binding HeadingTone}" />
+      <controls:InfoCard BorderTone="{Binding HeadingTone}">
+        <StackPanel Spacing="12">
+          <TextBlock Theme="{StaticResource TitleMedium}" Text="Play media on the connected TV" />
+          <TextBlock Theme="{StaticResource BodyMedium}" Foreground="{StaticResource MutedBrush}"
+                     Text="Choose a file to send to the receiver. Starting media stops mirror or browser on the TV first." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Theme="{StaticResource SignalButton}" Content="CHOOSE MEDIA FILE"
+                    Command="{Binding ChooseMediaFileCommand}"
+                    IsEnabled="{Binding IsSessionConnected}"
+                    HorizontalAlignment="Left"
+                    AutomationProperties.Name="Choose media file" />
+            <Button Theme="{StaticResource OutlineAction}" Content="STOP"
+                    Command="{Binding StopMediaCommand}"
+                    IsVisible="{Binding IsMediaPlaying}"
+                    HorizontalAlignment="Left"
+                    AutomationProperties.Name="Stop media playback" />
+          </StackPanel>
+          <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}" Text="{Binding MediaStatus}" />
+          <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                     IsVisible="{Binding !IsSessionConnected}"
+                     Text="Connect the receiver on Cast first." />
+        </StackPanel>
+      </controls:InfoCard>
+      <controls:InfoCard>
+        <StackPanel Spacing="8">
+          <TextBlock Theme="{StaticResource LabelSmall}" Text="SUPPORTED PLAYBACK" />
+          <TextBlock Theme="{StaticResource BodyMedium}" Text="Local video, audio, images, subtitles, and direct network streams" />
+        </StackPanel>
+      </controls:InfoCard>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
