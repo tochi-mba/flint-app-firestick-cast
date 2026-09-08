@@ -1,4 +1,4 @@
-using Flint.Core;
+﻿using Flint.Core;
 
 namespace Flint.Cli;
 
@@ -6,6 +6,8 @@ namespace Flint.Cli;
 internal sealed record CliOptions(
     bool ScanServices,
     bool ShowHelp,
+    bool ShowVersion,
+    bool Json,
     ManualProbeEndpoint? Endpoint,
     string? PairingCode,
     string? MediaPath,
@@ -26,6 +28,8 @@ internal sealed record CliOptions(
 
         var scanServices = false;
         var showHelp = false;
+        var showVersion = false;
+        var json = false;
         string? address = null;
         string? port = null;
         string? pairingCode = null;
@@ -48,6 +52,16 @@ internal sealed record CliOptions(
                 || argument.Equals("-h", StringComparison.OrdinalIgnoreCase))
             {
                 showHelp = true;
+            }
+            else if (argument.Equals("--version", StringComparison.OrdinalIgnoreCase))
+            {
+                showVersion = true;
+            }
+            else if (argument.Equals("--json", StringComparison.OrdinalIgnoreCase))
+            {
+                // Machine-readable probe output. The human banner still goes to stderr so a
+                // caller can redirect stdout straight into a parser without stripping it.
+                json = true;
             }
             else if (argument.Equals("--address", StringComparison.OrdinalIgnoreCase))
             {
@@ -135,9 +149,12 @@ internal sealed record CliOptions(
             }
         }
 
-        if (showHelp)
+        // Help and version answer immediately and ignore everything else on the line: someone
+        // asking what this is should not first have to make the rest of their arguments valid.
+        if (showHelp || showVersion)
         {
-            options = new CliOptions(false, true, null, null, null, receiverPort);
+            options = new CliOptions(
+                false, showHelp, showVersion, json, null, null, null, receiverPort);
             return true;
         }
 
@@ -238,6 +255,8 @@ internal sealed record CliOptions(
         options = new CliOptions(
             scanServices,
             false,
+            false,
+            json,
             endpoint,
             pairingCode,
             mediaPath,

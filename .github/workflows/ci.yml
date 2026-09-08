@@ -3,17 +3,26 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# A second push supersedes the first. Three toolchains on a Windows runner is a slow job, and
+# queueing runs for commits nobody is waiting on wastes the minutes that matter.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     # Windows only: the host probe reads the driver registry and the engine links against Win32.
     runs-on: windows-latest
+    # Well past a cold run with empty caches; short enough that a hung gradle daemon or a
+    # credential prompt fails visibly instead of burning an hour.
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
@@ -53,9 +62,28 @@ jobs:
         shell: pwsh
         run: ./scripts/build.ps1
 
+      # The same gate as the local one. Protocol tests and lint were missing, so a wire
+      # change that broke Kotlin, or a lint regression, could pass CI and fail on a television.
       - name: Test Fire TV receiver
         shell: pwsh
-        run: ./gradlew.bat --no-daemon :receiver:testDebugUnitTest --console plain
+        run: >
+          ./gradlew.bat --no-daemon
+          :protocol:test :receiver:testDebugUnitTest :receiver:lintDebug
+          --console plain
+
+      # Reports are the only way to see which case failed once the runner is gone.
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            receiver/build/reports/**
+            receiver/build/test-results/**
+            protocol/build/reports/**
+            **/TestResults/**
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Check the site
         shell: pwsh

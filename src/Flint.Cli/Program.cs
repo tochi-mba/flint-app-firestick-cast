@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Flint.App.Services;
 using Flint.Core;
 using Flint.Discovery;
@@ -34,21 +34,31 @@ internal static class Program
         {
         }
 
-        Console.WriteLine();
-        Console.WriteLine("  REX TECHNOLOGIES · FLINT");
+        // Parsed before anything is printed, because --json decides which stream the banner goes
+        // to. A caller piping stdout into a parser should not have to strip decoration first.
+        var wantsJson = args.Any(argument => argument.Equals("--json", StringComparison.OrdinalIgnoreCase));
+        var banner = wantsJson ? Console.Error : Console.Out;
+        banner.WriteLine();
+        banner.WriteLine("  REX TECHNOLOGIES · FLINT");
 
         if (!CliOptions.TryParse(args, out var options, out var argumentError))
         {
             Console.WriteLine($"  {argumentError}");
             Console.WriteLine();
             PrintUsage();
-            return 64;
+            return FlintExitCode.UsageError;
         }
 
-        if (options!.ShowHelp)
+        if (options!.ShowVersion)
+        {
+            Console.WriteLine(FlintVersion.Describe());
+            return FlintExitCode.Success;
+        }
+
+        if (options.ShowHelp)
         {
             PrintUsage();
-            return 0;
+            return FlintExitCode.Success;
         }
 
         // A probe has a deadline; a live session does not — it runs until Ctrl+C.
@@ -60,7 +70,7 @@ internal static class Program
             Console.WriteLine("  Multicast service scan");
             Console.WriteLine();
             await ScanServicesAsync(cts.Token).ConfigureAwait(false);
-            return 0;
+            return FlintExitCode.Success;
         }
 
         // A browse run that was given both an address and a browser port needs nothing the probe
@@ -81,8 +91,10 @@ internal static class Program
                 .ConfigureAwait(false);
         }
 
-        Console.WriteLine("  Capability probe");
-        Console.WriteLine();
+        // Progress goes wherever the banner went. With --json, stdout must carry the object and
+        // nothing else — a heading above it makes the whole stream unparseable.
+        banner.WriteLine("  Capability probe");
+        banner.WriteLine();
 
         var deviceProbe = new FireTvDeviceProbe();
         var prober = new CapabilityProber(
@@ -103,8 +115,16 @@ internal static class Program
         }
         catch (OperationCanceledException)
         {
-            Console.WriteLine($"  The probe did not finish within {timeout.TotalSeconds:F0} seconds.");
-            return 2;
+            banner.WriteLine($"  The probe did not finish within {timeout.TotalSeconds:F0} seconds.");
+            return FlintExitCode.ProbeTimedOut;
+        }
+
+        if (options.Json)
+        {
+            // The whole verdict as one object. Everything a script would otherwise have to scrape
+            // back out of the prose above.
+            Console.WriteLine(CapabilityReportJson.Render(report, stopwatch.Elapsed));
+            return FlintExitCode.Success;
         }
 
         PrintHost(report.Host);
@@ -127,7 +147,7 @@ internal static class Program
                 Console.WriteLine();
                 Console.WriteLine("  This receiver is not advertising a browser endpoint.");
                 Console.WriteLine("  Open the Flint receiver on the TV and make sure it reports a browser port.");
-                return 69;
+                return FlintExitCode.ReceiverUnavailable;
             }
 
             // Its own session, deliberately. The browser channel is separately authenticated and
@@ -159,7 +179,7 @@ internal static class Program
             if (options.MediaPath is { } mediaPath)
             {
                 await PlayMediaAsync(session, mediaPath, cts.Token).ConfigureAwait(false);
-                return 0;
+                return FlintExitCode.Success;
             }
 
             if (options.Mirror)
@@ -172,7 +192,7 @@ internal static class Program
         Console.WriteLine();
 
         // A report always succeeds. "Nothing found" is an answer, not a failure.
-        return 0;
+        return FlintExitCode.Success;
     }
 
     private static void PrintUsage()
@@ -195,6 +215,20 @@ internal static class Program
         Console.WriteLine("                                  Open a page in the TV's own browser until Ctrl+C");
         Console.WriteLine("    flint ... --browse <https url> --browser-port <port>");
         Console.WriteLine("                                  Use an explicit browser port instead of the advertised one");
+        Console.WriteLine();
+        Console.WriteLine("  Output:");
+        Console.WriteLine("    --json                        Print the probe verdict as JSON on stdout");
+        Console.WriteLine("                                  (the banner moves to stderr, so stdout pipes cleanly)");
+        Console.WriteLine("    --version                     Print the version and exit");
+        Console.WriteLine("    --help, -h                    Print this and exit");
+        Console.WriteLine();
+        Console.WriteLine("  Exit codes:");
+        Console.WriteLine($"    {FlintExitCode.Success,-3} success");
+        Console.WriteLine($"    {FlintExitCode.ProbeTimedOut,-3} the probe did not finish in time");
+        Console.WriteLine($"    {FlintExitCode.MirrorProducedNoFrames,-3} the mirror encoded no frames");
+        Console.WriteLine($"    {FlintExitCode.MirrorUnsupported,-3} this PC cannot mirror");
+        Console.WriteLine($"    {FlintExitCode.UsageError,-3} bad command line");
+        Console.WriteLine($"    {FlintExitCode.ReceiverUnavailable,-3} the receiver is not offering that service");
         Console.WriteLine();
     }
 
@@ -255,17 +289,17 @@ internal static class Program
             if (stats.FramesEncoded == 0)
             {
                 Console.WriteLine("  No frames were encoded, so the television never showed anything.");
-                return 3;
+                return FlintExitCode.MirrorProducedNoFrames;
             }
 
-            return 0;
+            return FlintExitCode.Success;
         }
         catch (MirrorEngineException exception)
         {
             Console.WriteLine();
             Console.WriteLine($"  This PC cannot mirror: {exception.Message}");
             Console.WriteLine();
-            return 4;
+            return FlintExitCode.MirrorUnsupported;
         }
         finally
         {

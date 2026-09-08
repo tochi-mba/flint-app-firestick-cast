@@ -92,6 +92,35 @@ machine at all. If it lists nothing, the problem is client isolation, a firewall
 guest network — not Fire TV. Networks that suppress multicast can still use the direct-address
 field in the Cast page or `--address`; leaving `--port` out checks only the bounded 5555–5585 range.
 
+### Scripting it
+
+`--json` prints the whole verdict as one object on stdout and moves the banner and progress lines
+to stderr, so the stream pipes straight into a parser without being cleaned up first:
+
+```powershell
+dotnet run --project src/Flint.Cli -- --json --address 192.168.1.42 | ConvertFrom-Json
+```
+
+The object carries a `schema` number, and enums are written as names rather than ordinals so a
+value inserted into an enum does not silently change what a script reads. Two fields exist to
+separate absence from failure, and are worth branching on: `host.encodersProbed` distinguishes "no
+encoder" from "never looked", and `path.throughputMeasured` distinguishes a slow network from one
+that was not measured.
+
+Exit codes are a contract — `scripts/*.ps1` and CI branch on them:
+
+| Code | Meaning |
+|---:|---|
+| 0 | Success |
+| 2 | The probe did not finish in time |
+| 3 | The mirror ran but encoded no frames |
+| 4 | This PC cannot mirror |
+| 64 | Bad command line (`sysexits.h` EX_USAGE) |
+| 69 | The receiver is not offering that service (`sysexits.h` EX_UNAVAILABLE) |
+
+`--version` prints the build, including the source revision when one was stamped, which is what a
+bug report should quote. `--help` prints the full option list and this table.
+
 ## The mark
 
 Flint's icon is a struck spark on the REX ink ground, inside the same off-white square frame REX
