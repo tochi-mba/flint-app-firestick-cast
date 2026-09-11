@@ -119,7 +119,7 @@ class CastService : Service() {
          * running also throws — so a second screen declared as a projection would fail at start, and a
          * mirror declared as anything else would fail at consent.
          */
-            internal fun foregroundTypeFor(mode: OutputMode): Int = when (mode) {
+        internal fun foregroundTypeFor(mode: OutputMode): Int = when (mode) {
             OutputMode.MIRROR -> ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
             OutputMode.SECOND_SCREEN, OutputMode.NONE ->
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE

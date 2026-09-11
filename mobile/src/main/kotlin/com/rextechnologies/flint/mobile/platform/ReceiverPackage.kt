@@ -35,8 +35,12 @@ object ReceiverPackage {
     suspend fun bundled(context: Context): BundledReceiver? = withContext(Dispatchers.IO) {
         val staged = stage(context) ?: return@withContext null
         val info = archiveInfo(context, staged) ?: return@withContext null
-        val packageName = info.packageName ?: return@withContext null
-        val versionName = info.versionName ?: return@withContext null
+        // Typed as nullable on purpose. The SDK stubs declare both fields non-null and the compiler
+        // believes them; a real package manager on a real phone hands back null for either, and a
+        // field read carries no runtime check that would say so.
+        val packageName: String? = info.packageName
+        val versionName: String? = info.versionName
+        if (packageName == null || versionName == null) return@withContext null
         runCatching {
             BundledReceiver(
                 packageName = packageName,

@@ -78,7 +78,7 @@ class MobileController(
      * is what this used to do, left the controller permanently dead — every later launch was a
      * no-op, and nothing said so.
      */
-    private val work = SupervisorJob(scope.coroutineContext[Job])
+    private val work = CoroutineScope(scope.coroutineContext + SupervisorJob(scope.coroutineContext[Job]))
 
     val state: StateFlow<MobileUiState> = combine(
         navigation.state,
@@ -130,7 +130,7 @@ class MobileController(
         watcher.stop()
         scope.launch { output.stop() }
         session.close()
-        work.cancelChildren()
+        work.coroutineContext.cancelChildren()
     }
 
     /** Releases everything for good, when the activity is finishing rather than pausing. */
@@ -281,7 +281,7 @@ class MobileController(
     }
 
     private fun launchWork(block: suspend CoroutineScope.() -> Unit) {
-        scope.launch(work, block = block)
+        work.launch(block = block)
     }
 
     private fun codecName(value: Int): String = when (value) {
