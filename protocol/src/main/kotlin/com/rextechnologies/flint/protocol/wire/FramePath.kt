@@ -19,6 +19,14 @@ import java.nio.ByteBuffer
  * The bytes produced are identical to the ones [WireCodec] produces for the same message, which is
  * asserted rather than assumed — this is a second way of writing the same format, not a second
  * format, and the golden corpus stays the authority on what that format is.
+ *
+ * **One writer at a time.** Every method here reuses one header array and writes it to the stream in
+ * two calls, so two threads sharing a writer would interleave one frame's header with another's
+ * payload and desynchronise the receiver for the rest of the session. Two threads sharing a *socket*
+ * would do the same even with a writer each. The caller owns that exclusion — in this codebase the
+ * session holds a single write lock across both calls and the encoder is the only producer — and
+ * nothing in this class attempts to provide it, because a lock on the frame path is a lock taken
+ * sixty times a second for a contention that a correct caller never has.
  */
 class FrameWriter {
     /**
@@ -82,9 +90,14 @@ class FrameWriter {
     /**
      * The same for a direct buffer, which is what `MediaCodec` hands back.
      *
-     * `ByteBuffer.get(ByteArray)` into a scratch array would reintroduce the copy this class exists
-     * to remove, so the buffer is drained a chunk at a time through one reusable scratch block. That
-     * block is allocated once per writer, not once per frame.
+     * `ByteBuffer.get(ByteArray)` into one array the size of the frame would reintroduce the copy
+     * this class exists to remove, so the buffer is drained a chunk at a time through one reusable
+     * scratch block. That block is allocated once per writer, not once per frame.
+     *
+     * Unlike the array overload this **consumes** [data]: it writes everything from the buffer's
+     * current position to its limit and leaves the position at the limit, which is what a caller
+     * about to hand the same buffer back to `MediaCodec.releaseOutputBuffer` wants. Duplicate the
+     * buffer first if the bytes are needed again.
      */
     fun writeVideoPacket(
         output: OutputStream,

@@ -55,8 +55,14 @@ object ThermalPolicy {
         require(sessionMaximumBitrate > 0)
         require(sessionMaximumFrameRate in 1..120)
 
-        fun ceiling(fraction: Double): Int =
-            maxOf(MINIMUM_BITRATE, (sessionMaximumBitrate * fraction).toInt())
+        // Clamped at both ends, and the upper clamp is the one that matters: without it a session
+        // that started at 500 kbit/s is handed a 1 Mbit/s "ceiling" the moment the phone gets warm,
+        // which is the opposite of what a ceiling is for and contradicts the invariant above. Where
+        // the two clamps disagree -- a session maximum already below MINIMUM_BITRATE -- the upper
+        // one wins, because heat is never a reason to send more than the session agreed to.
+        fun ceiling(fraction: Double): Int = (sessionMaximumBitrate * fraction).toInt()
+            .coerceAtLeast(MINIMUM_BITRATE)
+            .coerceAtMost(sessionMaximumBitrate)
 
         return when (level) {
             ThermalLevel.NONE, ThermalLevel.LIGHT -> ThermalDecision(
@@ -94,7 +100,7 @@ object ThermalPolicy {
             // competing with the platform for a device that has decided the answer, and the session
             // would stop anyway — just without having said why.
             ThermalLevel.EMERGENCY, ThermalLevel.SHUTDOWN -> ThermalDecision(
-                bitrateCeiling = MINIMUM_BITRATE,
+                bitrateCeiling = minOf(sessionMaximumBitrate, MINIMUM_BITRATE),
                 frameRateCeiling = 1,
                 shouldStop = true,
                 sentence = "This phone is too hot to keep casting, so Flint has stopped. Let it cool " +
@@ -103,6 +109,12 @@ object ThermalPolicy {
         }
     }
 
-    /** The floor the ceilings never go below, matching the bitrate controller's own minimum. */
+    /**
+     * The floor the ceilings go down to, matching the bitrate controller's own minimum.
+     *
+     * Not an absolute floor: a session whose own maximum is already below this never has it raised
+     * to meet it, because the session maximum is a promise about the link and heat is not a reason
+     * to break it.
+     */
     const val MINIMUM_BITRATE: Int = 1_000_000
 }

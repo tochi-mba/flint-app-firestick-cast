@@ -2,6 +2,7 @@ package com.rextechnologies.flint.castcore.setup
 
 import com.rextechnologies.flint.castcore.capability.ReceiverPlatform
 import com.rextechnologies.flint.castcore.capability.canInstallReceiver
+import com.rextechnologies.flint.protocol.text.Decimal
 
 /** Where receiver setup has got to on one television. */
 enum class ReceiverInstallStage {
@@ -54,12 +55,17 @@ data class BundledReceiver(
     val isDebugPackage: Boolean
         get() = packageName.endsWith(".debug")
 
+    /** The size a person sees above "this is what will be installed", in megabytes. */
     val sizeLabel: String
-        get() {
-            val megabytes = sizeBytes.toDouble() / (1024 * 1024)
-            val scaled = kotlin.math.round(megabytes * 10).toLong()
-            return "${scaled / 10}.${scaled % 10} MB"
-        }
+        get() = "${Decimal.oneDecimal(sizeBytes.toDouble() / BYTES_PER_MEGABYTE)} MB"
+
+    private companion object {
+        /**
+         * Binary megabytes, because that is what the phone's own package manager reports and a
+         * person comparing the two numbers should see them agree.
+         */
+        const val BYTES_PER_MEGABYTE = 1024.0 * 1024.0
+    }
 }
 
 /**

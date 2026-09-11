@@ -122,17 +122,36 @@ class KeyFrameGovernor(
 ) {
     init {
         require(framesBeforeFallback in 1..600)
+        // Checked here rather than left to BoundedInterval's own require, which would not run until
+        // the moment the fallback engages -- mid-cast, on the codec callback thread, from a
+        // constructor argument that was already wrong when the session started.
+        require(fallbackSeconds in 1..10) { "A fallback interval outside a few seconds is not a fallback" }
     }
 
-    var strategy: KeyFrameStrategy = KeyFrameStrategy.OnDemand
-        private set
+    /**
+     * The lock.
+     *
+     * The two entry points run on different threads and always have: a sync-frame request arrives on
+     * the control-socket reader, and every emitted frame arrives on the codec's callback thread.
+     * Both read and write the same two fields, and `strategy` is additionally read by whoever is
+     * configuring the encoder. Neither field is a safe unsynchronised `var`.
+     */
+    private val lock = Any()
 
-    private var framesSinceRequest: Int = -1
+    var strategy: KeyFrameStrategy = KeyFrameStrategy.OnDemand
+        get() = synchronized(lock) { field }
+        private set(value) = synchronized(lock) { field = value }
+
+    private var framesSinceRequest: Int = NO_REQUEST_OUTSTANDING
 
     /** Call when a sync frame has been asked for, whether by the receiver or after a reconfigure. */
-    fun onSyncFrameRequested() {
-        if (strategy is KeyFrameStrategy.BoundedInterval) return
-        framesSinceRequest = 0
+    fun onSyncFrameRequested() = synchronized(lock) {
+        if (strategy is KeyFrameStrategy.BoundedInterval) return@synchronized
+        // Only the first request of a run starts the count. Restarting it on every request is what
+        // the whole class exists to catch: an encoder that ignores the parameter, paired with a
+        // receiver that re-asks every second, would reset the counter before it ever reached the
+        // threshold -- so the watchdog would never fire on exactly the device it was written for.
+        if (framesSinceRequest == NO_REQUEST_OUTSTANDING) framesSinceRequest = 0
     }
 
     /**
@@ -140,24 +159,27 @@ class KeyFrameGovernor(
      *
      * @return the strategy now in force, so the caller can reconfigure on the frame it changes.
      */
-    fun onFrameEmitted(keyFrame: Boolean): KeyFrameStrategy {
-        if (strategy is KeyFrameStrategy.BoundedInterval) return strategy
-        if (framesSinceRequest < 0) return strategy
+    fun onFrameEmitted(keyFrame: Boolean): KeyFrameStrategy = synchronized(lock) {
+        if (strategy is KeyFrameStrategy.BoundedInterval) return@synchronized strategy
+        if (framesSinceRequest == NO_REQUEST_OUTSTANDING) return@synchronized strategy
 
         if (keyFrame) {
-            framesSinceRequest = -1
-            return strategy
+            framesSinceRequest = NO_REQUEST_OUTSTANDING
+            return@synchronized strategy
         }
 
         framesSinceRequest++
         if (framesSinceRequest >= framesBeforeFallback) {
             strategy = KeyFrameStrategy.BoundedInterval(fallbackSeconds)
-            framesSinceRequest = -1
+            framesSinceRequest = NO_REQUEST_OUTSTANDING
         }
-        return strategy
+        return@synchronized strategy
     }
 
     private companion object {
+        /** No request is being waited on, so an emitted frame proves nothing either way. */
+        const val NO_REQUEST_OUTSTANDING = -1
+
         /** Roughly a second and a half at sixty frames a second: long enough not to be a hiccup. */
         const val FRAMES_BEFORE_FALLBACK = 90
         const val FALLBACK_INTERVAL_SECONDS = 2

@@ -1,5 +1,6 @@
 package com.rextechnologies.flint.protocol.discovery
 
+import com.rextechnologies.flint.protocol.text.SafeText
 import java.nio.charset.StandardCharsets
 
 /**
@@ -53,6 +54,14 @@ object ReceiverProbe {
     /** What the receiver calls itself when the platform gives no model name at all. */
     const val FALLBACK_MODEL_NAME: String = "Fire TV"
 
+    /**
+     * The longest model name that still leaves room for the rest of the response.
+     *
+     * [RESPONSE_PREFIX] is 18 bytes, the two tabs are 2, the longest port is 5 and the line feed is
+     * 1 -- so 26 bytes are spoken for before the name gets any.
+     */
+    const val MAX_MODEL_NAME_BYTES: Int = MAX_RESPONSE_BYTES - 26
+
     /** The request bytes, ready to write to a socket. ASCII, because the line is pure ASCII. */
     fun requestBytes(): ByteArray = "$REQUEST_LINE\n".toByteArray(StandardCharsets.US_ASCII)
 
@@ -70,15 +79,18 @@ object ReceiverProbe {
         return "$RESPONSE_PREFIX\t${sanitizeModelName(modelName)}\t$port\n".toByteArray(StandardCharsets.UTF_8)
     }
 
-    /** Replaces every character that would split the record, and falls back to a usable name. */
-    fun sanitizeModelName(modelName: String): String {
-        val flattened = modelName
-            .replace('\t', ' ')
-            .replace('\r', ' ')
-            .replace('\n', ' ')
-            .trim()
-        return flattened.ifBlank { FALLBACK_MODEL_NAME }
-    }
+    /**
+     * Replaces every character that would split the record, and falls back to a usable name.
+     *
+     * The budget is what is left of a response once the prefix, the two tabs, the largest port and
+     * the line feed have taken their share, so a sanitised name is always a name that fits.
+     */
+    fun sanitizeModelName(modelName: String): String = SafeText.forDisplay(
+        raw = modelName,
+        maximumBytes = MAX_MODEL_NAME_BYTES,
+        fallback = FALLBACK_MODEL_NAME,
+        replacement = ' ',
+    )
 
     /**
      * Reads one response line, or `null` when it is not a receiver announcement.
@@ -89,7 +101,9 @@ object ReceiverProbe {
      */
     fun parseResponse(line: String): ReceiverAnnouncement? {
         val trimmed = line.trimEnd('\r', '\n')
-        if (trimmed.length > MAX_RESPONSE_BYTES) return null
+        // Bytes, not characters. A model name is explicitly allowed to be non-ASCII, so 512 CJK
+        // characters is 1,536 bytes -- which the char-length comparison this replaced let through.
+        if (SafeText.byteLength(trimmed) > MAX_RESPONSE_BYTES) return null
         val fields = trimmed.split('\t')
         if (fields.size != 3) return null
         if (fields[0] != RESPONSE_PREFIX) return null

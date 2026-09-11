@@ -29,9 +29,39 @@ class SweepBudgetTest {
 
     @Test
     fun `a point to point link is still worth one probe`() {
+        // A /30 is four addresses: network, two hosts, broadcast. One of the two hosts is this
+        // phone, so one remains.
         val budget = SweepBudget.forSubnet(Ipv4Subnet(address("10.0.0.1"), 30))
         assertNotNull(budget)
         assertEquals(1, budget.hostCount)
+    }
+
+    @Test
+    fun `an RFC 3021 point to point link has both ends usable`() {
+        // A /31 has no network or broadcast address, so both of its two addresses are hosts and the
+        // one that is not this phone is the peer.
+        val budget = SweepBudget.forSubnet(Ipv4Subnet(address("10.0.0.1"), 31))
+        assertNotNull(budget)
+        assertEquals(1, budget.hostCount)
+    }
+
+    @Test
+    fun `the budget is exactly what the sweep will visit, at every prefix`() {
+        // These were two implementations of one rule and they disagreed. Comparing the budget with
+        // the sequence it sizes is the only assertion that can catch them drifting apart again.
+        for (prefix in 23..32) {
+            val subnet = Ipv4Subnet(address("10.0.0.1"), prefix)
+            val budget = SweepBudget.forSubnet(subnet)
+            val actual = subnet.hosts().count()
+            if (budget == null) {
+                assertTrue(
+                    actual < 1 || actual > SweepBudget.MAXIMUM_SWEEP_HOSTS,
+                    "/$prefix has $actual hosts and should have had a budget",
+                )
+            } else {
+                assertEquals(actual, budget.hostCount, "/$prefix")
+            }
+        }
     }
 
     @Test

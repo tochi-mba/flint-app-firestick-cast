@@ -61,9 +61,67 @@ class ThermalPolicyTest {
 
     @Test
     fun `no ceiling ever falls below the controller's own floor`() {
-        ThermalLevel.entries.forEach { level ->
-            val decision = ThermalPolicy.decide(level, ThermalPolicy.MINIMUM_BITRATE)
-            assertTrue(decision.bitrateCeiling >= ThermalPolicy.MINIMUM_BITRATE, "$level")
+        // Exercised well above the floor, so that a level failing to reach it is a real failure
+        // rather than one hidden by a session maximum that is already the floor.
+        listOf(ThermalPolicy.MINIMUM_BITRATE, 4_000_000, 20_000_000).forEach { sessionMaximum ->
+            ThermalLevel.entries.forEach { level ->
+                val decision = ThermalPolicy.decide(level, sessionMaximum)
+                assertTrue(
+                    decision.bitrateCeiling >= ThermalPolicy.MINIMUM_BITRATE,
+                    "$level at $sessionMaximum",
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `no ceiling ever rises above this session's maximum`() {
+        // A ceiling is a cap, so heat may only ever lower it. Before this was clamped, a 500 kbit/s
+        // session was handed a 1 Mbit/s "ceiling" at MODERATE -- twice what it agreed to send,
+        // arrived at by getting warm.
+        listOf(200_000, 500_000, 999_999, ThermalPolicy.MINIMUM_BITRATE, 4_000_000, 20_000_000)
+            .forEach { sessionMaximum ->
+                ThermalLevel.entries.forEach { level ->
+                    val decision = ThermalPolicy.decide(level, sessionMaximum)
+                    assertTrue(
+                        decision.bitrateCeiling <= sessionMaximum,
+                        "$level raised a $sessionMaximum session to ${decision.bitrateCeiling}",
+                    )
+                    assertTrue(
+                        decision.frameRateCeiling <= 60,
+                        "$level raised the frame rate to ${decision.frameRateCeiling}",
+                    )
+                }
+            }
+    }
+
+    @Test
+    fun `a session already below the floor is capped at its own maximum, not raised to the floor`() {
+        val sessionMaximum = 500_000
+        assertEquals(
+            sessionMaximum,
+            ThermalPolicy.decide(ThermalLevel.MODERATE, sessionMaximum).bitrateCeiling,
+        )
+        assertEquals(
+            sessionMaximum,
+            ThermalPolicy.decide(ThermalLevel.EMERGENCY, sessionMaximum).bitrateCeiling,
+        )
+    }
+
+    @Test
+    fun `the ceilings fall as the phone heats up, at every session size`() {
+        listOf(2_000_000, 8_000_000, 20_000_000).forEach { sessionMaximum ->
+            val ladder = listOf(
+                ThermalLevel.NONE,
+                ThermalLevel.MODERATE,
+                ThermalLevel.SEVERE,
+                ThermalLevel.CRITICAL,
+            ).map { ThermalPolicy.decide(it, sessionMaximum).bitrateCeiling }
+            assertEquals(
+                ladder.sortedDescending(),
+                ladder,
+                "at $sessionMaximum the ceilings did not fall monotonically: $ladder",
+            )
         }
     }
 

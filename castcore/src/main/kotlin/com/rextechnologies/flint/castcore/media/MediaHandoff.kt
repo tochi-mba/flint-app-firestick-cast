@@ -1,8 +1,8 @@
 package com.rextechnologies.flint.castcore.media
 
+import com.rextechnologies.flint.protocol.text.SafeText
 import com.rextechnologies.flint.protocol.wire.MediaAction
 import com.rextechnologies.flint.protocol.wire.MediaCommandMessage
-import java.nio.charset.StandardCharsets
 
 /**
  * How a file gets from the phone to the television.
@@ -54,7 +54,7 @@ object MediaHandoff {
     fun mimeTypeOrNull(candidate: String): String? {
         val trimmed = candidate.trim()
         if (trimmed.isEmpty()) return null
-        if (trimmed.toByteArray(StandardCharsets.UTF_8).size > MAXIMUM_MIME_BYTES) return null
+        if (SafeText.byteLength(trimmed) > MAXIMUM_MIME_BYTES) return null
         if (trimmed.any { it.isISOControl() }) return null
         return trimmed
     }
@@ -69,9 +69,11 @@ object MediaHandoff {
     fun titleFor(displayName: String): String {
         val lastSeparator = displayName.indexOfLast { it == '/' || it == '\\' }
         val leaf = if (lastSeparator >= 0) displayName.substring(lastSeparator + 1) else displayName
-        val cleaned = leaf.filterNot { it.isISOControl() }.trim()
-        if (cleaned.isEmpty()) return FALLBACK_TITLE
-        return cleaned.truncateToBytes(MAXIMUM_TITLE_BYTES)
+        return SafeText.forDisplay(
+            raw = leaf,
+            maximumBytes = MAXIMUM_TITLE_BYTES,
+            fallback = FALLBACK_TITLE,
+        )
     }
 
     /**
@@ -101,12 +103,4 @@ object MediaHandoff {
 
     /** Returns the television to its idle screen and releases its decoder. */
     fun clear(): MediaCommandMessage = MediaCommandMessage(action = MediaAction.CLEAR)
-
-    private fun String.truncateToBytes(maximumBytes: Int): String {
-        var result = this
-        while (result.toByteArray(StandardCharsets.UTF_8).size > maximumBytes) {
-            result = result.substring(0, result.length - 1)
-        }
-        return result
-    }
 }

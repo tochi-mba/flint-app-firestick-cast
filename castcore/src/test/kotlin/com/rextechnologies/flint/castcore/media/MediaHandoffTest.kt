@@ -79,6 +79,36 @@ class MediaHandoffTest {
     }
 
     @Test
+    fun `a title that fills the budget with emoji is cut on a code point, not a surrogate`() {
+        // The case "é" cannot test: it is one UTF-16 unit, so removing a unit at a time happens to
+        // land on a boundary every time. An emoji is a surrogate pair, and cutting one in half
+        // leaves a high surrogate that UTF-8 cannot encode -- so the title that goes on the wire is
+        // a question mark where the picture was, and no longer the string that was measured.
+        val trimmed = MediaHandoff.titleFor(GRINNING.repeat(200))
+        val encoded = trimmed.toByteArray(Charsets.UTF_8)
+        assertTrue(encoded.size <= MediaHandoff.MAXIMUM_TITLE_BYTES)
+        // The round trip is the assertion that catches an orphan: an unpaired surrogate encodes to
+        // a question mark and so cannot come back as what went in.
+        assertEquals(trimmed, String(encoded, Charsets.UTF_8))
+        assertEquals(MediaHandoff.MAXIMUM_TITLE_BYTES / 4, trimmed.codePointCount(0, trimmed.length))
+    }
+
+    @Test
+    fun `a title ending in one emoji keeps it whole or drops it whole`() {
+        // 509 ASCII characters plus one emoji is 513 bytes against a 512-byte budget, so the emoji
+        // is the part that has to go -- all of it, not the half that fits.
+        val title = "n".repeat(MediaHandoff.MAXIMUM_TITLE_BYTES - 3) + GRINNING
+        val trimmed = MediaHandoff.titleFor(title)
+        assertEquals("n".repeat(MediaHandoff.MAXIMUM_TITLE_BYTES - 3), trimmed)
+    }
+
+    @Test
+    fun `a title never carries a character that would split a record`() {
+        assertEquals("holidaymp4", MediaHandoff.titleFor("holiday\tmp4"))
+        assertEquals("holidaymp4", MediaHandoff.titleFor("holiday\nmp4"))
+    }
+
+    @Test
     fun `a blank url is how the television is told to play what was just sent`() {
         val command = MediaHandoff.playPushedFile("holiday.mp4", "video/mp4", durationMs = 90_000)
         assertEquals(MediaAction.LOAD, command.action)
@@ -100,5 +130,10 @@ class MediaHandoffTest {
         val command = MediaHandoff.clear()
         assertEquals(MediaAction.CLEAR, command.action)
         assertEquals("", command.url)
+    }
+
+    private companion object {
+        /** U+1F600: one code point, two UTF-16 units, four UTF-8 bytes. */
+        const val GRINNING = "\uD83D\uDE00"
     }
 }

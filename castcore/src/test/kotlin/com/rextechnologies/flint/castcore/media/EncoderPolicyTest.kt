@@ -173,9 +173,67 @@ class KeyFrameGovernorTest {
     }
 
     @Test
+    fun `a receiver that keeps asking does not keep the watchdog from firing`() {
+        // The case the class exists for, and the one it used to miss: an encoder that ignores the
+        // request, and a receiver that re-asks just before the threshold. Restarting the count on
+        // every request meant the fallback never engaged on exactly that device.
+        val governor = KeyFrameGovernor(framesBeforeFallback = 10)
+        repeat(9) {
+            governor.onSyncFrameRequested()
+            governor.onFrameEmitted(keyFrame = false)
+        }
+        governor.onSyncFrameRequested()
+        assertIs<KeyFrameStrategy.BoundedInterval>(governor.onFrameEmitted(keyFrame = false))
+    }
+
+    @Test
+    fun `a request after an honoured one starts a fresh count`() {
+        val governor = KeyFrameGovernor(framesBeforeFallback = 3)
+        governor.onSyncFrameRequested()
+        governor.onFrameEmitted(keyFrame = false)
+        governor.onFrameEmitted(keyFrame = true)
+
+        governor.onSyncFrameRequested()
+        governor.onFrameEmitted(keyFrame = false)
+        governor.onFrameEmitted(keyFrame = false)
+        assertIs<KeyFrameStrategy.OnDemand>(governor.strategy)
+        assertIs<KeyFrameStrategy.BoundedInterval>(governor.onFrameEmitted(keyFrame = false))
+    }
+
+    @Test
     fun `a governor with an absurd threshold is refused`() {
         assertFailsWith<IllegalArgumentException> { KeyFrameGovernor(framesBeforeFallback = 0) }
         assertFailsWith<IllegalArgumentException> { KeyFrameGovernor(framesBeforeFallback = 601) }
+    }
+
+    @Test
+    fun `a fallback interval that is not a fallback is refused at construction`() {
+        // Not at the moment it engages, which would be mid-cast on the codec callback thread.
+        assertFailsWith<IllegalArgumentException> { KeyFrameGovernor(fallbackSeconds = 0) }
+        assertFailsWith<IllegalArgumentException> { KeyFrameGovernor(fallbackSeconds = 11) }
+    }
+
+    @Test
+    fun `the two entry points can be called from different threads`() {
+        // Both are, and always were: a request arrives on the control-socket reader and a frame on
+        // the codec callback. Without the lock this races on two plain vars; with it the outcome is
+        // the same one a single thread would reach.
+        repeat(20) {
+            val governor = KeyFrameGovernor(framesBeforeFallback = 4)
+            val requester = Thread {
+                repeat(500) { governor.onSyncFrameRequested() }
+            }
+            val emitter = Thread {
+                repeat(500) { governor.onFrameEmitted(keyFrame = false) }
+            }
+            requester.start()
+            emitter.start()
+            requester.join()
+            emitter.join()
+            // 500 unhonoured frames against a threshold of four: whatever the interleaving, the
+            // watchdog has had every chance to fire and the strategy is stable afterwards.
+            assertIs<KeyFrameStrategy.BoundedInterval>(governor.strategy)
+        }
     }
 }
 

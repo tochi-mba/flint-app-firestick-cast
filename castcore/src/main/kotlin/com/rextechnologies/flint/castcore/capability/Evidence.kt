@@ -1,5 +1,6 @@
 package com.rextechnologies.flint.castcore.capability
 
+import com.rextechnologies.flint.protocol.text.Decimal
 import com.rextechnologies.flint.protocol.wire.CodecId
 
 /**
@@ -254,19 +255,11 @@ data class NetworkPath(
         /** Below this even direct play stutters, because nothing is being re-encoded to fit. */
         const val MINIMUM_MEDIA_HANDOFF_MBPS: Double = 8.0
 
-        /**
-         * One decimal place, without a locale.
-         *
-         * `String.format` would put a comma in for half the world and then the number would not
-         * match the one in the same sentence a line above it.
-         */
-        internal fun formatMbps(value: Double): String = "${oneDecimal(value)} Mbit/s"
+        /** Throughput with its unit, formatted the same way everywhere the number appears. */
+        internal fun formatMbps(value: Double): String = "${Decimal.oneDecimal(value)} Mbit/s"
 
-        internal fun oneDecimal(value: Double): String {
-            val scaled = kotlin.math.round(value * 10.0).toLong()
-            return "${scaled / 10}.${scaled % 10}"
-        }
+        internal fun oneDecimal(value: Double): String = Decimal.oneDecimal(value)
 
-        internal fun wholeNumber(value: Double): String = kotlin.math.round(value).toLong().toString()
+        internal fun wholeNumber(value: Double): String = Decimal.whole(value)
     }
 }

@@ -65,10 +65,14 @@ data class SweepBudget(
 
         const val CONCURRENCY: Int = 16
 
-        /** `null` when the derived subnet is too large to sweep responsibly. */
+        /**
+         * `null` when the derived subnet is too large to sweep responsibly.
+         *
+         * The count comes from the subnet rather than being worked out again here. Working it out
+         * again is what produced a budget for one more host than the sweep would ever visit.
+         */
         fun forSubnet(subnet: Ipv4Subnet): SweepBudget? {
-            val hosts = subnet.addressCount - if (subnet.prefixLength <= 30) 2 else 0
-            val sweepable = hosts - 1 // the phone's own address is never probed
+            val sweepable = subnet.usableHostCount()
             if (sweepable < 1 || sweepable > MAXIMUM_SWEEP_HOSTS) return null
             return SweepBudget(
                 hostCount = sweepable.toInt(),
