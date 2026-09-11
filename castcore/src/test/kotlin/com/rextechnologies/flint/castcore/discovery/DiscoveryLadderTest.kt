@@ -9,6 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -157,14 +158,44 @@ class DiscoveryLadderTest {
     @Test
     fun `the broadcast rung carries the address derived from the subnet`() {
         val plan = DiscoveryLadder.plan(host).associateBy { it.rung }
-        assertEquals(address("192.168.43.255"), plan.getValue(DiscoveryRung.UDP_BROADCAST).broadcastAddress)
-        assertNull(plan.getValue(DiscoveryRung.LINE_PROBE).broadcastAddress)
+        val broadcast = assertIs<DiscoveryStep.UdpBroadcast>(plan.getValue(DiscoveryRung.UDP_BROADCAST))
+        assertEquals(address("192.168.43.255"), broadcast.broadcastAddress)
+    }
+
+    @Test
+    fun `a subnet with no broadcast address has no broadcast rung`() {
+        // A /31 has two addresses and both are hosts; a /32 has one. Neither has anything to
+        // broadcast to, and a rung planned for one would be a rung that could only ever fail.
+        listOf(31, 32).forEach { prefix ->
+            val plan = DiscoveryLadder.plan(LocalNetwork.PhoneIsClient("wlan0", 3, address("10.0.0.1"), prefix))
+            assertFalse(
+                plan.any { it.rung == DiscoveryRung.UDP_BROADCAST },
+                "/$prefix planned a broadcast with nowhere to send it",
+            )
+        }
     }
 
     @Test
     fun `only the sweep rung carries a budget`() {
         val plan = DiscoveryLadder.plan(host).associateBy { it.rung }
-        assertNotNull(plan.getValue(DiscoveryRung.LINE_PROBE).sweep)
-        assertNull(plan.getValue(DiscoveryRung.MULTICAST_DNS).sweep)
+        val sweep = assertIs<DiscoveryStep.LineProbe>(plan.getValue(DiscoveryRung.LINE_PROBE))
+        assertEquals(253, sweep.sweep.hostCount)
+        assertIs<DiscoveryStep.MulticastDns>(plan.getValue(DiscoveryRung.MULTICAST_DNS))
+    }
+
+    @Test
+    fun `every rung's own shape matches the rung it says it is`() {
+        // The sealed hierarchy is only worth having if the rung name and the shape cannot disagree.
+        DiscoveryLadder.plan(host).forEach { step ->
+            val expected = when (step) {
+                is DiscoveryStep.LineProbe -> DiscoveryRung.LINE_PROBE
+                is DiscoveryStep.MulticastDns -> DiscoveryRung.MULTICAST_DNS
+                is DiscoveryStep.UdpBroadcast -> DiscoveryRung.UDP_BROADCAST
+                is DiscoveryStep.Ssdp -> DiscoveryRung.SSDP
+                is DiscoveryStep.Manual -> DiscoveryRung.MANUAL
+            }
+            assertEquals(expected, step.rung)
+            assertEquals(host.subnet, step.subnet)
+        }
     }
 }

@@ -86,27 +86,75 @@ data class SweepBudget(
 /**
  * One rung, ready to run.
  *
+ * Sealed, with one shape per rung, because the rungs do not need the same things: a sweep needs a
+ * budget and nothing else does, a broadcast needs a broadcast address and nothing else does, and two
+ * of the five need a multicast lock held for their duration. As one data class with five nullable
+ * fields, which combinations were valid lived in the heads of whoever wrote the runner -- so the
+ * sweep read `step.sweep ?: return "too large to sweep"`, a sentence that is only true for one of
+ * the five rungs, and the broadcast read `step.broadcastAddress ?: return notAttempted`, which could
+ * silently skip the rung on a subnet that does have one.
+ *
  * @property boundAddress the address every socket this rung opens must be bound to. There is no case
  *   where this is absent and the rung still runs, which is the point of carrying it here rather than
  *   letting each rung go and look for itself.
+ * @property subnet the subnet the address sits in, carried rather than re-derived. A rung that had
+ *   to work the prefix out for itself would have to guess at it, and a guessed prefix is a hardcoded
+ *   subnet wearing arithmetic as a disguise. It is derived once, from the interface, and handed down.
  * @property requiresMulticastLock whether Android will drop the rung's packets without a
  *   `WifiManager.MulticastLock` held for its duration.
  */
-data class DiscoveryStep(
-    val rung: DiscoveryRung,
-    val boundAddress: Inet4Address,
-    /**
-     * The subnet the address sits in, carried rather than re-derived.
-     *
-     * A rung that had to work the prefix out for itself would have to guess at it, and a guessed
-     * prefix is a hardcoded subnet wearing arithmetic as a disguise. It is derived once, from the
-     * interface, and handed down.
-     */
-    val subnet: Ipv4Subnet,
-    val sweep: SweepBudget? = null,
-    val broadcastAddress: Inet4Address? = null,
-    val requiresMulticastLock: Boolean = false,
-)
+sealed interface DiscoveryStep {
+    val rung: DiscoveryRung
+    val boundAddress: Inet4Address
+    val subnet: Ipv4Subnet
+
+    val requiresMulticastLock: Boolean
+        get() = false
+
+    /** The plaintext sweep, with the bounds the subnet earned. */
+    data class LineProbe(
+        override val boundAddress: Inet4Address,
+        override val subnet: Ipv4Subnet,
+        val sweep: SweepBudget,
+    ) : DiscoveryStep {
+        override val rung: DiscoveryRung get() = DiscoveryRung.LINE_PROBE
+    }
+
+    /** Multicast DNS on `_rexcast._tcp.local`. */
+    data class MulticastDns(
+        override val boundAddress: Inet4Address,
+        override val subnet: Ipv4Subnet,
+    ) : DiscoveryStep {
+        override val rung: DiscoveryRung get() = DiscoveryRung.MULTICAST_DNS
+        override val requiresMulticastLock: Boolean get() = true
+    }
+
+    /** One datagram to the subnet's broadcast address, which only exists for some prefixes. */
+    data class UdpBroadcast(
+        override val boundAddress: Inet4Address,
+        override val subnet: Ipv4Subnet,
+        val broadcastAddress: Inet4Address,
+    ) : DiscoveryStep {
+        override val rung: DiscoveryRung get() = DiscoveryRung.UDP_BROADCAST
+    }
+
+    /** SSDP `M-SEARCH`, which finds DLNA renderers rather than Flint receivers. */
+    data class Ssdp(
+        override val boundAddress: Inet4Address,
+        override val subnet: Ipv4Subnet,
+    ) : DiscoveryStep {
+        override val rung: DiscoveryRung get() = DiscoveryRung.SSDP
+        override val requiresMulticastLock: Boolean get() = true
+    }
+
+    /** Typed in by hand, so it is always in the plan and never runs as part of a sweep. */
+    data class Manual(
+        override val boundAddress: Inet4Address,
+        override val subnet: Ipv4Subnet,
+    ) : DiscoveryStep {
+        override val rung: DiscoveryRung get() = DiscoveryRung.MANUAL
+    }
+}
 
 /**
  * Decides which rungs to run, in which order, with what bounds.
@@ -123,27 +171,19 @@ object DiscoveryLadder {
         }
 
         return buildList {
+            // A rung that cannot run is left out of the plan rather than added and skipped. A plan
+            // that lists a rung is a plan to attempt it, which is what lets the diagnostics say what
+            // was tried without the runner also having to decide.
             SweepBudget.forSubnet(subnet)?.let { budget ->
-                add(DiscoveryStep(DiscoveryRung.LINE_PROBE, address, subnet, sweep = budget))
+                add(DiscoveryStep.LineProbe(address, subnet, budget))
             }
-            add(
-                DiscoveryStep(
-                    DiscoveryRung.MULTICAST_DNS,
-                    address,
-                    subnet,
-                    requiresMulticastLock = true,
-                ),
-            )
-            add(
-                DiscoveryStep(
-                    DiscoveryRung.UDP_BROADCAST,
-                    address,
-                    subnet,
-                    broadcastAddress = subnet.broadcastAddress,
-                ),
-            )
-            add(DiscoveryStep(DiscoveryRung.SSDP, address, subnet, requiresMulticastLock = true))
-            add(DiscoveryStep(DiscoveryRung.MANUAL, address, subnet))
+            add(DiscoveryStep.MulticastDns(address, subnet))
+            // A /31 and a /32 have no broadcast address at all, so there is nothing to broadcast to.
+            if (subnet.prefixLength <= 30) {
+                add(DiscoveryStep.UdpBroadcast(address, subnet, subnet.broadcastAddress))
+            }
+            add(DiscoveryStep.Ssdp(address, subnet))
+            add(DiscoveryStep.Manual(address, subnet))
         }
     }
 }

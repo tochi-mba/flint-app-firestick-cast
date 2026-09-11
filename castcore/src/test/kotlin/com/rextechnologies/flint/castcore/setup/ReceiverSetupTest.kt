@@ -43,7 +43,7 @@ class ReceiverSetupPlanTest {
     fun `nothing is offered for installation without saying what it is`() {
         assertFailsWith<IllegalArgumentException> {
             ReceiverSetupPlan(
-                stage = ReceiverInstallStage.NOT_INSTALLED,
+                stage = ReceiverInstallStage.NotInstalled,
                 headline = "Install",
                 body = "Body.",
                 installAction = "Install",
@@ -55,7 +55,7 @@ class ReceiverSetupPlanTest {
     fun `an impossibility cannot carry a remedy`() {
         assertFailsWith<IllegalArgumentException> {
             ReceiverSetupPlan(
-                stage = ReceiverInstallStage.IMPOSSIBLE,
+                stage = ReceiverInstallStage.Impossible,
                 headline = "No",
                 body = "Body.",
                 remedy = "Try something.",
@@ -66,10 +66,10 @@ class ReceiverSetupPlanTest {
     @Test
     fun `a plan without words is refused`() {
         assertFailsWith<IllegalArgumentException> {
-            ReceiverSetupPlan(ReceiverInstallStage.UNKNOWN, " ", "Body.")
+            ReceiverSetupPlan(ReceiverInstallStage.Unknown, " ", "Body.")
         }
         assertFailsWith<IllegalArgumentException> {
-            ReceiverSetupPlan(ReceiverInstallStage.UNKNOWN, "Headline", " ")
+            ReceiverSetupPlan(ReceiverInstallStage.Unknown, "Headline", " ")
         }
     }
 }
@@ -77,9 +77,9 @@ class ReceiverSetupPlanTest {
 class ReceiverSetupTest {
     @Test
     fun `vega is refused plainly, whatever stage anything thinks it is at`() {
-        ReceiverInstallStage.entries.forEach { stage ->
+        everyStage().forEach { stage ->
             val plan = ReceiverSetup.plan(ReceiverPlatform.VEGA, stage, bundle(), "Fire TV")
-            assertEquals(ReceiverInstallStage.IMPOSSIBLE, plan.stage)
+            assertEquals(ReceiverInstallStage.Impossible, plan.stage)
             assertNull(plan.remedy)
             assertNull(plan.installAction)
             assertNull(plan.removeAction)
@@ -91,11 +91,11 @@ class ReceiverSetupTest {
     fun `nothing is offered for a television that has not been identified`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.UNKNOWN,
-            ReceiverInstallStage.NOT_INSTALLED,
+            ReceiverInstallStage.NotInstalled,
             bundle(),
             "Fire TV",
         )
-        assertEquals(ReceiverInstallStage.UNKNOWN, plan.stage)
+        assertEquals(ReceiverInstallStage.Unknown, plan.stage)
         assertNull(plan.installAction)
         assertNotNull(plan.remedy)
         assertTrue(plan.body.contains("read-only"), plan.body)
@@ -105,7 +105,7 @@ class ReceiverSetupTest {
     fun `removal is offered wherever installation is, on the same screen`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_8,
-            ReceiverInstallStage.NOT_INSTALLED,
+            ReceiverInstallStage.NotInstalled,
             bundle(),
             "Fire TV Stick",
         )
@@ -118,7 +118,7 @@ class ReceiverSetupTest {
     fun `what will be installed is named before anything is installed`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_8,
-            ReceiverInstallStage.NOT_INSTALLED,
+            ReceiverInstallStage.NotInstalled,
             bundle(),
             "Fire TV Stick",
         )
@@ -133,7 +133,7 @@ class ReceiverSetupTest {
         val debug = bundle(packageName = "com.rextechnologies.flint.receiver.debug")
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_8,
-            ReceiverInstallStage.NOT_INSTALLED,
+            ReceiverInstallStage.NotInstalled,
             debug,
             "Fire TV Stick",
         )
@@ -144,7 +144,7 @@ class ReceiverSetupTest {
     fun `a build with no bundled receiver explains itself rather than offering nothing silently`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_8,
-            ReceiverInstallStage.NOT_INSTALLED,
+            ReceiverInstallStage.NotInstalled,
             bundled = null,
             deviceName = "Fire TV Stick",
         )
@@ -158,7 +158,7 @@ class ReceiverSetupTest {
     fun `the television's own prompt is waited for rather than worked around`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_7,
-            ReceiverInstallStage.AWAITING_AUTHORISATION,
+            ReceiverInstallStage.AwaitingAuthorisation,
             bundle(),
             "Fire TV Stick",
         )
@@ -172,11 +172,11 @@ class ReceiverSetupTest {
     fun `installing says what is happening to the television while it happens`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_7,
-            ReceiverInstallStage.INSTALLING,
+            ReceiverInstallStage.Installing,
             bundle(),
             "Fire TV Stick",
         )
-        assertEquals(ReceiverInstallStage.INSTALLING, plan.stage)
+        assertEquals(ReceiverInstallStage.Installing, plan.stage)
         assertTrue(plan.headline.contains("Fire TV Stick"))
         assertNull(plan.installAction)
     }
@@ -185,7 +185,7 @@ class ReceiverSetupTest {
     fun `an installed receiver names its version and still offers removal`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_8,
-            ReceiverInstallStage.INSTALLED,
+            ReceiverInstallStage.Installed,
             bundle(versionName = "0.2.1"),
             "Fire TV Stick",
         )
@@ -198,7 +198,7 @@ class ReceiverSetupTest {
     fun `an installed debug receiver explains the suffix rather than leaving it a mystery`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_8,
-            ReceiverInstallStage.INSTALLED,
+            ReceiverInstallStage.Installed,
             bundle(packageName = "com.rextechnologies.flint.receiver.debug"),
             "Fire TV Stick",
         )
@@ -209,11 +209,11 @@ class ReceiverSetupTest {
     fun `an installed receiver with nothing bundled still reports itself installed`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_8,
-            ReceiverInstallStage.INSTALLED,
+            ReceiverInstallStage.Installed,
             bundled = null,
             deviceName = "Fire TV Stick",
         )
-        assertEquals(ReceiverInstallStage.INSTALLED, plan.stage)
+        assertEquals(ReceiverInstallStage.Installed, plan.stage)
         assertEquals(ReceiverSetup.REMOVE_ACTION, plan.removeAction)
         assertTrue(plan.disclosure.isEmpty())
     }
@@ -222,10 +222,9 @@ class ReceiverSetupTest {
     fun `a failure carries the television's own account of it, and offers a retry`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_8,
-            ReceiverInstallStage.FAILED,
+            ReceiverInstallStage.Failed("There is not enough space on the device."),
             bundle(),
             "Fire TV Stick",
-            failureDetail = "There is not enough space on the device.",
         )
         assertEquals("There is not enough space on the device.", plan.body)
         assertEquals(ReceiverSetup.RETRY_ACTION, plan.installAction)
@@ -237,7 +236,7 @@ class ReceiverSetupTest {
     fun `a failure with nothing to say says that rather than inventing a cause`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_8,
-            ReceiverInstallStage.FAILED,
+            ReceiverInstallStage.Failed(),
             bundle(),
             "Fire TV Stick",
         )
@@ -248,7 +247,7 @@ class ReceiverSetupTest {
     fun `a failure with nothing bundled cannot offer a retry it could not honour`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_8,
-            ReceiverInstallStage.FAILED,
+            ReceiverInstallStage.Failed("The TV ran out of space."),
             bundled = null,
             deviceName = "Fire TV Stick",
         )
@@ -259,11 +258,11 @@ class ReceiverSetupTest {
     fun `a device that is provably not android has nothing to install`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_8,
-            ReceiverInstallStage.IMPOSSIBLE,
+            ReceiverInstallStage.Impossible,
             bundle(),
             "Something",
         )
-        assertEquals(ReceiverInstallStage.IMPOSSIBLE, plan.stage)
+        assertEquals(ReceiverInstallStage.Impossible, plan.stage)
         assertNull(plan.remedy)
     }
 
@@ -271,11 +270,29 @@ class ReceiverSetupTest {
     fun `an authorised but not yet installed television is offered the install`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.FIRE_OS_16,
-            ReceiverInstallStage.AUTHORISED,
+            ReceiverInstallStage.Authorised,
             bundle(),
             "Fire TV",
         )
-        assertEquals(ReceiverInstallStage.NOT_INSTALLED, plan.stage)
+        assertEquals(ReceiverInstallStage.NotInstalled, plan.stage)
         assertEquals(ReceiverSetup.INSTALL_ACTION, plan.installAction)
     }
 }
+
+/**
+ * Every stage, listed once.
+ *
+ * A sealed hierarchy has no `entries`, and a `when` somewhere else would only prove that this list
+ * and that `when` agree. Listing them here keeps the exhaustiveness in one place, and the compiler
+ * still catches a new stage at every `when` over [ReceiverInstallStage] in the production code.
+ */
+private fun everyStage(): List<ReceiverInstallStage> = listOf(
+    ReceiverInstallStage.Unknown,
+    ReceiverInstallStage.NotInstalled,
+    ReceiverInstallStage.AwaitingAuthorisation,
+    ReceiverInstallStage.Authorised,
+    ReceiverInstallStage.Installing,
+    ReceiverInstallStage.Installed,
+    ReceiverInstallStage.Failed("The TV refused the package."),
+    ReceiverInstallStage.Impossible,
+)

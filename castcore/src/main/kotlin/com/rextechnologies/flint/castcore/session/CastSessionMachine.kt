@@ -12,7 +12,6 @@ import com.rextechnologies.flint.protocol.wire.ByeMessage
 import com.rextechnologies.flint.protocol.wire.ByeReason
 import com.rextechnologies.flint.protocol.wire.HelloMessage
 import com.rextechnologies.flint.protocol.wire.ProtocolVersion
-import com.rextechnologies.flint.protocol.wire.VersionNegotiator
 import com.rextechnologies.flint.protocol.wire.WireFrame
 import com.rextechnologies.flint.protocol.wire.WireMessage
 
@@ -32,6 +31,62 @@ enum class CastSessionPhase {
 
     /** Over, for whatever reason. A machine never leaves this state. */
     ENDED,
+}
+
+/**
+ * A session's state, with everything that state actually knows attached to it.
+ *
+ * The four facts a ready session carries -- the negotiated parameters, the granted token, the
+ * receiver's browser port and the envelope version -- used to be four independent `var`s beside a
+ * phase enum, so "READY but parameters == null" was a value the type allowed and only convention
+ * ruled out. Here it is not a value at all.
+ */
+sealed interface CastSessionState {
+    /** The envelope version frames ride on right now. Before negotiation, the oldest supported. */
+    val envelopeVersion: Int
+        get() = ProtocolVersion.MIN_SUPPORTED
+
+    val phase: CastSessionPhase
+
+    data object Idle : CastSessionState {
+        override val phase: CastSessionPhase get() = CastSessionPhase.IDLE
+    }
+
+    data object AwaitingHello : CastSessionState {
+        override val phase: CastSessionPhase get() = CastSessionPhase.AWAITING_HELLO
+    }
+
+    /**
+     * HELLO has been answered, so a version is agreed even though nothing is established yet.
+     *
+     * This is the state the version matters in earliest: the AUTH reply that leaves here must
+     * already be framed at the negotiated version, not at the oldest supported one.
+     */
+    data class AwaitingAuth(override val envelopeVersion: Int) : CastSessionState {
+        override val phase: CastSessionPhase get() = CastSessionPhase.AWAITING_AUTH
+    }
+
+    data class Ready(
+        val parameters: CastSessionParameters,
+        val grantedToken: SessionToken?,
+        /**
+         * The receiver's browser TLS port, when it advertised one.
+         *
+         * It arrives in the AUTH ack's `publicKeyFingerprint` field as a decimal string, which is an
+         * overload rather than a fingerprint. The phone app opens no browser session; this is
+         * carried for diagnostics so the field is not silently discarded.
+         */
+        val browserTlsPort: Int?,
+    ) : CastSessionState {
+        override val phase: CastSessionPhase get() = CastSessionPhase.READY
+        override val envelopeVersion: Int get() = parameters.protocolVersion
+    }
+
+    /** Over. A machine never leaves this state. */
+    data class Ended(val lastEnvelopeVersion: Int) : CastSessionState {
+        override val phase: CastSessionPhase get() = CastSessionPhase.ENDED
+        override val envelopeVersion: Int get() = lastEnvelopeVersion
+    }
 }
 
 /** Something the caller must do. The machine performs no I/O of its own. */
@@ -73,78 +128,75 @@ class CastSessionMachine(
 ) {
     private val handshake = SenderHandshake(profile, authMethod, credential)
 
-    var phase: CastSessionPhase = CastSessionPhase.IDLE
+    var state: CastSessionState = CastSessionState.Idle
         private set
+
+    val phase: CastSessionPhase
+        get() = state.phase
 
     /** The version every frame after the handshake rides on. */
-    var negotiatedVersion: Int = ProtocolVersion.MIN_SUPPORTED
-        private set
+    val negotiatedVersion: Int
+        get() = state.envelopeVersion
 
-    var parameters: CastSessionParameters? = null
-        private set
+    val parameters: CastSessionParameters?
+        get() = (state as? CastSessionState.Ready)?.parameters
 
-    var grantedToken: SessionToken? = null
-        private set
+    val grantedToken: SessionToken?
+        get() = (state as? CastSessionState.Ready)?.grantedToken
 
-    /**
-     * The receiver's browser TLS port, when it advertised one.
-     *
-     * It arrives in the AUTH ack's `publicKeyFingerprint` field as a decimal string, which is an
-     * overload rather than a fingerprint. The phone app opens no browser session; this is carried for
-     * diagnostics so the field is not silently discarded.
-     */
-    var browserTlsPort: Int? = null
-        private set
+    val browserTlsPort: Int?
+        get() = (state as? CastSessionState.Ready)?.browserTlsPort
 
     fun start(): List<SessionEffect> {
-        check(phase == CastSessionPhase.IDLE) { "This session has already been started" }
-        phase = CastSessionPhase.AWAITING_HELLO
+        check(state is CastSessionState.Idle) { "This session has already been started" }
+        state = CastSessionState.AwaitingHello
         return listOf(
             SessionEffect.SendFrame(WireFrame(ProtocolVersion.MIN_SUPPORTED, handshake.start())),
         )
     }
 
     fun onMessage(message: WireMessage): List<SessionEffect> {
-        if (phase == CastSessionPhase.ENDED) return emptyList()
+        if (state is CastSessionState.Ended) return emptyList()
 
         if (message is ByeMessage) {
-            phase = CastSessionPhase.ENDED
+            end()
             return listOf(SessionEffect.Close(ByeCopy.of(message)))
         }
 
-        return when (phase) {
-            CastSessionPhase.IDLE -> fail(
+        return when (state) {
+            is CastSessionState.Idle -> fail(
                 SessionFailure(
                     SessionFailureKind.PROTOCOL,
                     "The television spoke before this phone had said anything.",
                 ),
             )
 
-            CastSessionPhase.AWAITING_HELLO -> onHello(message)
-            CastSessionPhase.AWAITING_AUTH -> onAuth(message)
+            is CastSessionState.AwaitingHello -> onHello(message)
+            is CastSessionState.AwaitingAuth -> onAuth(message)
 
             // Everything past the handshake belongs to the caller: stats, playback state, and any
             // message a future receiver sends that this build does not model. Swallowing them here
             // would put the routing table in two places.
-            CastSessionPhase.READY -> emptyList()
-            CastSessionPhase.ENDED -> emptyList()
+            is CastSessionState.Ready -> emptyList()
+            is CastSessionState.Ended -> emptyList()
         }
     }
 
     /** The socket died without either end saying anything. */
     fun onTransportFailure(detail: String): List<SessionEffect> {
-        if (phase == CastSessionPhase.ENDED) return emptyList()
-        phase = CastSessionPhase.ENDED
+        if (state is CastSessionState.Ended) return emptyList()
+        end()
         return listOf(SessionEffect.Close(ByeCopy.transportFailure(detail)))
     }
 
     /** This phone is stopping. A deliberate stop is not a failure and carries no sentence. */
     fun stop(): List<SessionEffect> {
-        if (phase == CastSessionPhase.ENDED) return emptyList()
-        val sendBye = phase == CastSessionPhase.READY
-        phase = CastSessionPhase.ENDED
+        if (state is CastSessionState.Ended) return emptyList()
+        val sendBye = state is CastSessionState.Ready
+        val goodbye = frame(ByeMessage(ByeReason.NORMAL))
+        end()
         return buildList {
-            if (sendBye) add(SessionEffect.SendFrame(frame(ByeMessage(ByeReason.NORMAL))))
+            if (sendBye) add(SessionEffect.SendFrame(goodbye))
             add(SessionEffect.Close(null))
         }
     }
@@ -168,14 +220,21 @@ class CastSessionMachine(
             )
         }
 
-        // SenderHandshake keeps the negotiated version to itself until the session is established, so
-        // it is computed here too rather than guessed at. The two must agree; the alternative is
-        // sending AUTH on an envelope the receiver did not agree to.
-        val version = VersionNegotiator.negotiate(remote = message)
         return when (val outcome = handshake.onMessage(message)) {
             is HandshakeOutcome.Continue -> {
-                negotiatedVersion = version ?: ProtocolVersion.MIN_SUPPORTED
-                phase = CastSessionPhase.AWAITING_AUTH
+                // Taken from the handshake rather than negotiated a second time here. Running the
+                // same negotiation twice on the same HELLO meant carrying a fallback for a failure
+                // that cannot reach this branch -- Continue is only returned once a version has been
+                // agreed -- and a fallback that cannot run is a fallback nobody can check.
+                val version = handshake.negotiatedVersion
+                    ?: return fail(
+                        SessionFailure(
+                            SessionFailureKind.PROTOCOL,
+                            "The television's greeting was accepted without agreeing a protocol " +
+                                "version, which this phone has no way to continue from.",
+                        ),
+                    )
+                state = CastSessionState.AwaitingAuth(version)
                 listOf(SessionEffect.SendFrame(frame(outcome.reply)))
             }
 
@@ -206,12 +265,16 @@ class CastSessionMachine(
 
         return when (val outcome = handshake.onMessage(message)) {
             is HandshakeOutcome.Established -> {
-                phase = CastSessionPhase.READY
-                parameters = outcome.parameters
-                grantedToken = handshake.grantedToken
-                browserTlsPort = message.publicKeyFingerprint?.toIntOrNull()?.takeIf { it in 1..65_535 }
+                val ready = CastSessionState.Ready(
+                    parameters = outcome.parameters,
+                    grantedToken = handshake.grantedToken,
+                    browserTlsPort = message.publicKeyFingerprint
+                        ?.toIntOrNull()
+                        ?.takeIf { it in 1..65_535 },
+                )
+                state = ready
                 listOf(
-                    SessionEffect.Established(outcome.parameters, grantedToken, browserTlsPort),
+                    SessionEffect.Established(ready.parameters, ready.grantedToken, ready.browserTlsPort),
                 )
             }
 
@@ -227,8 +290,18 @@ class CastSessionMachine(
     }
 
     private fun fail(failure: SessionFailure): List<SessionEffect> {
-        phase = CastSessionPhase.ENDED
+        end()
         return listOf(SessionEffect.Close(failure))
+    }
+
+    /**
+     * Ends the session, keeping the envelope version it was using.
+     *
+     * Kept rather than reset so that a diagnostic read after the fact says what the session actually
+     * spoke, instead of the oldest version anything supports.
+     */
+    private fun end() {
+        state = CastSessionState.Ended(state.envelopeVersion)
     }
 
     /** The screen dimensions this phone advertised, which the receiver sizes its surface from. */

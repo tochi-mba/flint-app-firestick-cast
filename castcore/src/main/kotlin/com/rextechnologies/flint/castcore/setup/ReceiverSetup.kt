@@ -4,31 +4,44 @@ import com.rextechnologies.flint.castcore.capability.ReceiverPlatform
 import com.rextechnologies.flint.castcore.capability.canInstallReceiver
 import com.rextechnologies.flint.protocol.text.Decimal
 
-/** Where receiver setup has got to on one television. */
-enum class ReceiverInstallStage {
+/**
+ * Where receiver setup has got to on one television.
+ *
+ * Sealed rather than an enum because one of the stages carries something: a failure that cannot say
+ * what went wrong is not much of a failure report. That detail used to travel beside the stage as a
+ * fifth parameter of [ReceiverSetup.plan], which every caller had to remember to pass and which was
+ * meaningless for the other seven stages.
+ */
+sealed interface ReceiverInstallStage {
     /** Nothing has been attempted, or the television has not been identified. */
-    UNKNOWN,
+    data object Unknown : ReceiverInstallStage
 
     /** Android is there and Flint is not. */
-    NOT_INSTALLED,
+    data object NotInstalled : ReceiverInstallStage
 
     /** The television is showing its own authorisation prompt and is waiting for somebody to accept it. */
-    AWAITING_AUTHORISATION,
+    data object AwaitingAuthorisation : ReceiverInstallStage
 
     /** The television has accepted this phone's key. Nothing has been installed yet. */
-    AUTHORISED,
+    data object Authorised : ReceiverInstallStage
 
     /** The package is being pushed and installed. */
-    INSTALLING,
+    data object Installing : ReceiverInstallStage
 
     /** Flint is installed and this phone put it there. */
-    INSTALLED,
+    data object Installed : ReceiverInstallStage
 
-    /** The attempt failed and the reason is worth showing. */
-    FAILED,
+    /**
+     * The attempt failed.
+     *
+     * @property detail what the television said, verbatim where it said anything. Blank is allowed
+     *   and is itself a fact -- a package manager that refuses without a reason is a thing that
+     *   happens, and the copy has a sentence for it.
+     */
+    data class Failed(val detail: String = "") : ReceiverInstallStage
 
     /** This device can never run a receiver. */
-    IMPOSSIBLE,
+    data object Impossible : ReceiverInstallStage
 }
 
 /**
@@ -95,7 +108,7 @@ data class ReceiverSetupPlan(
         require(installAction == null || disclosure.isNotEmpty()) {
             "Nothing is offered for installation without saying what it is"
         }
-        require(stage != ReceiverInstallStage.IMPOSSIBLE || remedy == null) {
+        require(stage != ReceiverInstallStage.Impossible || remedy == null) {
             "An impossibility cannot carry a remedy"
         }
     }
@@ -112,20 +125,19 @@ object ReceiverSetup {
         stage: ReceiverInstallStage,
         bundled: BundledReceiver?,
         deviceName: String,
-        failureDetail: String = "",
     ): ReceiverSetupPlan {
         if (platform == ReceiverPlatform.VEGA) {
             return ReceiverSetupPlan(
-                stage = ReceiverInstallStage.IMPOSSIBLE,
+                stage = ReceiverInstallStage.Impossible,
                 headline = "This TV cannot run Flint",
                 body = "It runs Vega OS, which is not Android. An APK cannot be installed on it by " +
                     "any method, and no future version of Flint will change that.",
             )
         }
 
-        if (!platform.canInstallReceiver() && stage != ReceiverInstallStage.INSTALLED) {
+        if (!platform.canInstallReceiver() && stage != ReceiverInstallStage.Installed) {
             return ReceiverSetupPlan(
-                stage = ReceiverInstallStage.UNKNOWN,
+                stage = ReceiverInstallStage.Unknown,
                 headline = "Flint has not identified this TV yet",
                 body = "It will not offer to install anything on a device it cannot name. Identifying " +
                     "it is read-only: Flint asks the TV what it is and changes nothing.",
@@ -134,7 +146,7 @@ object ReceiverSetup {
         }
 
         return when (stage) {
-            ReceiverInstallStage.AWAITING_AUTHORISATION -> ReceiverSetupPlan(
+            ReceiverInstallStage.AwaitingAuthorisation -> ReceiverSetupPlan(
                 stage = stage,
                 headline = "Waiting for the TV",
                 body = "$deviceName is showing a prompt asking whether to allow this phone to connect. " +
@@ -144,14 +156,14 @@ object ReceiverSetup {
                     "and connect again to make it show.",
             )
 
-            ReceiverInstallStage.INSTALLING -> ReceiverSetupPlan(
+            ReceiverInstallStage.Installing -> ReceiverSetupPlan(
                 stage = stage,
                 headline = "Installing on $deviceName",
                 body = "The package is being copied to the TV and installed. This takes a few moments " +
                     "and the TV may go dark while it happens.",
             )
 
-            ReceiverInstallStage.INSTALLED -> ReceiverSetupPlan(
+            ReceiverInstallStage.Installed -> ReceiverSetupPlan(
                 stage = stage,
                 headline = "Flint is installed on $deviceName",
                 body = bundled?.let { installedBody(it) }
@@ -160,10 +172,10 @@ object ReceiverSetup {
                 removeAction = REMOVE_ACTION,
             )
 
-            ReceiverInstallStage.FAILED -> ReceiverSetupPlan(
+            is ReceiverInstallStage.Failed -> ReceiverSetupPlan(
                 stage = stage,
                 headline = "The install did not finish",
-                body = failureDetail.ifBlank {
+                body = stage.detail.ifBlank {
                     "The TV refused the package and did not say why."
                 },
                 disclosure = bundled?.let { disclosureFor(it) }.orEmpty(),
@@ -172,12 +184,12 @@ object ReceiverSetup {
                 remedy = "Check that the TV is still awake and on this phone's hotspot, then try again.",
             )
 
-            ReceiverInstallStage.UNKNOWN,
-            ReceiverInstallStage.NOT_INSTALLED,
-            ReceiverInstallStage.AUTHORISED,
+            ReceiverInstallStage.Unknown,
+            ReceiverInstallStage.NotInstalled,
+            ReceiverInstallStage.Authorised,
             -> notInstalled(bundled, deviceName)
 
-            ReceiverInstallStage.IMPOSSIBLE -> ReceiverSetupPlan(
+            ReceiverInstallStage.Impossible -> ReceiverSetupPlan(
                 stage = stage,
                 headline = "This TV cannot run Flint",
                 body = "It is not an Android device, so there is nothing to install.",
@@ -188,7 +200,7 @@ object ReceiverSetup {
     private fun notInstalled(bundled: BundledReceiver?, deviceName: String): ReceiverSetupPlan {
         if (bundled == null) {
             return ReceiverSetupPlan(
-                stage = ReceiverInstallStage.NOT_INSTALLED,
+                stage = ReceiverInstallStage.NotInstalled,
                 headline = "No receiver is bundled with this build",
                 body = "This copy of Flint was built without a Fire TV package inside it, so it has " +
                     "nothing to offer $deviceName. Pairing with a receiver that is already installed " +
@@ -199,7 +211,7 @@ object ReceiverSetup {
         }
 
         return ReceiverSetupPlan(
-            stage = ReceiverInstallStage.NOT_INSTALLED,
+            stage = ReceiverInstallStage.NotInstalled,
             headline = "Install Flint on $deviceName",
             body = "Flint is not on this TV yet. This phone can install it over ADB — nothing is " +
                 "downloaded, because the package is already inside this app and was built from the " +

@@ -4,7 +4,10 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import android.os.Build
 import com.rextechnologies.flint.castcore.setup.BundledReceiver
+import com.rextechnologies.flint.mobile.BuildConfig
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * The Fire TV package this build carries, if it carries one.
@@ -22,15 +25,19 @@ import java.io.File
 object ReceiverPackage {
     const val ASSET_NAME: String = "flint-receiver.apk"
 
-    private const val CACHED_NAME = "flint-receiver.apk"
-
-    /** Reads the bundled package, or `null` when this build has none. */
-    fun bundled(context: Context): BundledReceiver? {
-        val staged = stage(context) ?: return null
-        val info = archiveInfo(context, staged) ?: return null
-        val packageName = info.packageName ?: return null
-        val versionName = info.versionName ?: return null
-        return runCatching {
+    /**
+     * Reads the bundled package, or `null` when this build has none.
+     *
+     * Suspending, and on [Dispatchers.IO], because the first call copies several megabytes out of
+     * the assets. It used to be called from `onCreate` on the main thread, which is a visible pause
+     * on the app's very first frame and a strict-mode violation on every phone that has it on.
+     */
+    suspend fun bundled(context: Context): BundledReceiver? = withContext(Dispatchers.IO) {
+        val staged = stage(context) ?: return@withContext null
+        val info = archiveInfo(context, staged) ?: return@withContext null
+        val packageName = info.packageName ?: return@withContext null
+        val versionName = info.versionName ?: return@withContext null
+        runCatching {
             BundledReceiver(
                 packageName = packageName,
                 versionName = versionName,
@@ -40,16 +47,39 @@ object ReceiverPackage {
         }.getOrNull()
     }
 
-    /** The file to hand to the installer, copied out of the assets on first use. */
+    /**
+     * The file to hand to the installer, copied out of the assets on first use.
+     *
+     * Blocking, and deliberately not hidden behind a suspend wrapper: the callers that hand this to
+     * a package installer are already on a background dispatcher, and one that is not should find
+     * that out from a lint warning rather than from a dropped frame.
+     *
+     * The cache file's name carries this build's version code. Without it an update ships a new
+     * receiver and the phone goes on offering the one it staged before the update, for the life of
+     * the installation -- a stale APK is served forever, and it looks exactly like the bundled
+     * receiver never changing. Files from earlier versions are removed as they are noticed rather
+     * than accumulating.
+     */
     fun stage(context: Context): File? {
-        val target = File(context.cacheDir, CACHED_NAME)
+        val target = File(context.cacheDir, cachedName())
         if (target.isFile && target.length() > 0) return target
+        removeStaleStagedCopies(context, keep = target.name)
         return runCatching {
             context.assets.open(ASSET_NAME).use { input ->
                 target.outputStream().use { output -> input.copyTo(output) }
             }
             target.takeIf { it.length() > 0 }
         }.getOrNull()
+    }
+
+    private fun cachedName(): String = "flint-receiver-${BuildConfig.VERSION_CODE}.apk"
+
+    private fun removeStaleStagedCopies(context: Context, keep: String) {
+        runCatching {
+            context.cacheDir.listFiles()
+                ?.filter { it.isFile && it.name.startsWith(STAGED_PREFIX) && it.name != keep }
+                ?.forEach { it.delete() }
+        }
     }
 
     private fun archiveInfo(context: Context, file: File): PackageInfo? = runCatching {
@@ -67,4 +97,6 @@ object ReceiverPackage {
     /** Whether the receiver package this build carries is already on the television. */
     fun isInstalledOn(installedPackages: Collection<String>, bundled: BundledReceiver?): Boolean =
         bundled != null && bundled.packageName in installedPackages
+
+    private const val STAGED_PREFIX = "flint-receiver-"
 }

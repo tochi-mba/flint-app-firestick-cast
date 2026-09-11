@@ -220,6 +220,10 @@ class KeyFrameGovernorTest {
         // the same one a single thread would reach.
         repeat(20) {
             val governor = KeyFrameGovernor(framesBeforeFallback = 4)
+            // Seeded before either thread starts, so the outcome does not depend on which of them
+            // wins the first turn: from here the count only ever rises, because no frame in this
+            // test is a key frame and a further request while one is outstanding is a no-op.
+            governor.onSyncFrameRequested()
             val requester = Thread {
                 repeat(500) { governor.onSyncFrameRequested() }
             }
@@ -230,8 +234,8 @@ class KeyFrameGovernorTest {
             emitter.start()
             requester.join()
             emitter.join()
-            // 500 unhonoured frames against a threshold of four: whatever the interleaving, the
-            // watchdog has had every chance to fire and the strategy is stable afterwards.
+            // 500 unhonoured frames against a threshold of four: the watchdog has fired, whatever
+            // order the two threads ran in.
             assertIs<KeyFrameStrategy.BoundedInterval>(governor.strategy)
         }
     }

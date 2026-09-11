@@ -6,6 +6,8 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.Inet4Address
 import java.net.InetSocketAddress
+import java.net.NetworkInterface
+import java.net.SocketTimeoutException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +32,20 @@ import kotlinx.coroutines.launch
  *
  * Like the TCP probe, answering one produces no state change and no listener callback. A phone
  * looking for a television must not be able to make that television flicker between screens.
+ *
+ * ## What it binds, and why it is not the address every other listener here binds
+ *
+ * Every other socket in this application binds the television's own address. This one binds the
+ * interface's **broadcast** address, because that is the address the datagram is sent to, and a
+ * socket bound to a unicast address never sees it: the kernel matches the destination address of an
+ * arriving datagram against the socket's bound address, and 192.0.2.255 is not 192.0.2.2. Bound to
+ * the unicast address this class received every unicast datagram anybody sent it and not one of the
+ * broadcasts it exists to answer -- and the loopback interface, which its tests used, has no
+ * broadcast address at all, so nothing noticed.
+ *
+ * This is not the wildcard the project's rule forbids. The address is derived from the same
+ * interface the rest of the receiver is bound to, it is one address rather than all of them, and an
+ * interface with no broadcast address of its own gets no responder rather than a wildcard one.
  */
 class ReceiverBroadcastResponder(
     private val address: Inet4Address,
@@ -47,22 +63,28 @@ class ReceiverBroadcastResponder(
     var boundPort: Int = 0
         private set
 
+    /** The address actually bound, for the log line that says where answers will come from. */
+    var boundAddress: Inet4Address? = null
+        private set
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val closed = AtomicBoolean()
     private var socket: DatagramSocket? = null
 
     fun start(): Result<Unit> = runCatching {
         check(socket == null) { "Broadcast responder is already running" }
-        // Bound to the receiver's own site-local address rather than the wildcard, matching every
-        // other listener in this app. A broadcast datagram is delivered to a socket bound to the
-        // interface that received it.
+        val listenAddress = requireNotNull(broadcastAddressFor(address)) {
+            "The interface holding ${address.hostAddress} has no broadcast address, so nothing can " +
+                "be broadcast to it"
+        }
         val active = DatagramSocket(null).apply {
             reuseAddress = true
-            bind(InetSocketAddress(address, listenPort))
+            bind(InetSocketAddress(listenAddress, listenPort))
             soTimeout = RECEIVE_TIMEOUT_MILLIS
         }
         socket = active
         boundPort = active.localPort
+        boundAddress = listenAddress
 
         scope.launch {
             val buffer = ByteArray(MAX_REQUEST_BYTES)
@@ -70,10 +92,15 @@ class ReceiverBroadcastResponder(
                 val packet = DatagramPacket(buffer, buffer.size)
                 try {
                     active.receive(packet)
-                } catch (_: Throwable) {
-                    // A receive timeout is the ordinary case: it is how the loop checks whether it
-                    // has been asked to stop. Anything else is a socket that is going away anyway.
+                } catch (_: SocketTimeoutException) {
+                    // The ordinary case, and the only one worth continuing on: it is how the loop
+                    // checks whether it has been asked to stop.
                     continue
+                } catch (_: Throwable) {
+                    // Anything else is the socket going away, and a loop that continued past it
+                    // would spin a television's CPU for as long as the receiver is running --
+                    // silently, because there is nobody to tell.
+                    break
                 }
                 answerIfProbe(active, packet)
             }
@@ -98,14 +125,28 @@ class ReceiverBroadcastResponder(
         socket = null
     }
 
-    private companion object {
+    companion object {
+        /**
+         * The broadcast address of whichever interface holds [address], or `null`.
+         *
+         * Asked of the interface rather than worked out from a prefix length, so a point-to-point
+         * link -- which has no broadcast address at all -- answers `null` instead of being handed
+         * something that looks like one.
+         */
+        fun broadcastAddressFor(address: Inet4Address): Inet4Address? = runCatching {
+            NetworkInterface.getByInetAddress(address)
+                ?.interfaceAddresses
+                ?.firstOrNull { it.address == address }
+                ?.broadcast as? Inet4Address
+        }.getOrNull()
+
         /**
          * Short enough that stopping the receiver does not wait on it, long enough that the loop is
          * not spinning through a wakeup every few milliseconds for the hours nobody is casting.
          */
-        const val RECEIVE_TIMEOUT_MILLIS = 500
+        private const val RECEIVE_TIMEOUT_MILLIS = 500
 
         /** A probe is nineteen bytes. Anything appreciably larger is not one. */
-        const val MAX_REQUEST_BYTES = 256
+        private const val MAX_REQUEST_BYTES = 256
     }
 }

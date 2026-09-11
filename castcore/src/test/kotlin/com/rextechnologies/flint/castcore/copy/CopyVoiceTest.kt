@@ -1,5 +1,6 @@
 package com.rextechnologies.flint.castcore.copy
 
+import com.rextechnologies.flint.castcore.capability.AssessmentInput
 import com.rextechnologies.flint.castcore.capability.CastMode
 import com.rextechnologies.flint.castcore.capability.LocalNetwork
 import com.rextechnologies.flint.castcore.capability.MobileCapabilityAssessor
@@ -129,7 +130,7 @@ class CopyVoiceTest {
         }
 
         devices.forEach { device ->
-            MobileCapabilityAssessor.assess(host, phone, device).verdicts.forEach { verdict ->
+            MobileCapabilityAssessor.assess(AssessmentInput(host, phone, device)).verdicts.forEach { verdict ->
                 assertTrue(HonestyRules.isCompleteSentence(verdict.reason), verdict.reason)
                 assertFalse(HonestyRules.raisesItsVoice(verdict.reason), verdict.reason)
                 assertTrue(HonestyRules.confidentialityClaims(verdict.reason).isEmpty(), verdict.reason)

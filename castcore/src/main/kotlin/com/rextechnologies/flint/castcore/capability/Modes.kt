@@ -69,6 +69,25 @@ data class ModeVerdict(
 }
 
 /**
+ * A verdict that has not been attached to a mode yet.
+ *
+ * Several of the gates below -- the network, the television, the encoder -- are the same answer for
+ * every mode that shares them, and so are decided once. They used to be returned as a [ModeVerdict]
+ * carrying a placeholder [CastMode.MIRROR] that each caller had to remember to overwrite with
+ * `.copy(mode = …)`. Forgetting once produced a report with two verdicts for the same mode and none
+ * for another, which `CapabilityReport`'s own `init` then threw about -- at runtime, in front of the
+ * person, some way from the line that caused it. A template has no mode to get wrong.
+ */
+data class VerdictTemplate(
+    val status: ModeStatus,
+    val reason: String,
+    val remedy: String? = null,
+) {
+    /** The same answer, now about a particular mode. */
+    fun about(mode: CastMode): ModeVerdict = ModeVerdict(mode, status, reason, remedy)
+}
+
+/**
  * The single word the UI puts in a mode's pill.
  *
  * Four distinct words for four distinct outcomes. "Blocked" and "Not possible" have to stay

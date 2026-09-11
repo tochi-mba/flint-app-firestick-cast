@@ -75,7 +75,16 @@ class CastConnection(
      */
     private val frameWriter = FrameWriter()
 
+    /**
+     * Written by the connect coroutine and read by whichever thread is sending.
+     *
+     * The encoder thread sends video, the control path sends everything else, and the connect
+     * coroutine is what publishes both of these -- so neither is a safe plain `var`.
+     */
+    @Volatile
     private var socket: Socket? = null
+
+    @Volatile
     private var output: OutputStream? = null
 
     /**
@@ -202,10 +211,21 @@ class CastConnection(
     /** Bytes written but not yet acknowledged by the socket, for the bitrate controller. */
     fun pendingSendBytes(): Long = pendingSendBytes.get()
 
+    /**
+     * Ends the session, politely if the socket still allows it.
+     *
+     * The work happens on this connection's own dispatcher rather than on the caller's thread,
+     * because the caller is the UI: somebody pressing Stop. `machine.stop()` produces a BYE, and a
+     * BYE is a socket write, which on the main thread is a `NetworkOnMainThreadException` rather
+     * than a goodbye. Tearing down first and writing afterwards would be worse still -- the message
+     * would simply never leave, and the television would sit waiting for a peer that had gone.
+     */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        perform(machine.stop())
-        teardown()
+        scope.launch {
+            perform(machine.stop())
+            teardown()
+        }
     }
 
     private fun perform(effects: List<SessionEffect>) {
@@ -233,6 +253,14 @@ class CastConnection(
         }
     }
 
+    /**
+     * Releases the socket, and then this connection's dispatcher.
+     *
+     * The order matters: cancelling the scope first would leave whatever is still being written
+     * half-sent, and a cancelled scope cannot be used to finish the job. A `CastConnection` is
+     * single-use by construction -- [connect] refuses a second call -- so cancelling for good here
+     * costs nothing that could be wanted later.
+     */
     private fun teardown() {
         runCatching { output?.flush() }
         runCatching { socket?.close() }

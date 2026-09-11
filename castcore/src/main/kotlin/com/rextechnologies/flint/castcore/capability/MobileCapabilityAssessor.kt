@@ -23,6 +23,23 @@ data class CapabilityReport(
 }
 
 /**
+ * Everything one assessment is made from.
+ *
+ * Five arguments travelled together through every function here and through the phone's own
+ * controller, and each hop repeated the same five names. Grouping them means a new piece of evidence
+ * is added in one place rather than in nine signatures, and it means no call site can pass the
+ * network where the path belongs.
+ */
+data class AssessmentInput(
+    val network: LocalNetwork,
+    val phone: PhoneCapabilities,
+    val device: ReceiverDevice?,
+    val path: NetworkPath? = null,
+    /** Whether a session is open right now, which is the strongest possible proof of reachability. */
+    val pairedSessionActive: Boolean = false,
+)
+
+/**
  * Decides which [CastMode]s this phone, this network and this television support.
  *
  * Pure: same inputs, same verdicts, no I/O, no clock, no ambient state. Every sentence it returns is
@@ -41,34 +58,24 @@ data class CapabilityReport(
  * has to be able to say so.
  */
 object MobileCapabilityAssessor {
-    fun assess(
-        network: LocalNetwork,
-        phone: PhoneCapabilities,
-        device: ReceiverDevice?,
-        path: NetworkPath? = null,
-        pairedSessionActive: Boolean = false,
-    ): CapabilityReport = CapabilityReport(
-        network = network,
-        phone = phone,
-        device = device,
-        path = path,
+    fun assess(input: AssessmentInput): CapabilityReport = CapabilityReport(
+        network = input.network,
+        phone = input.phone,
+        device = input.device,
+        path = input.path,
         verdicts = listOf(
-            assessMirror(network, phone, device, path, pairedSessionActive),
-            assessSecondScreen(network, phone, device, path, pairedSessionActive),
-            assessMediaHandoff(network, device, path, pairedSessionActive),
+            assessMirror(input),
+            assessSecondScreen(input),
+            assessMediaHandoff(input),
         ),
     )
 
-    private fun assessMirror(
-        network: LocalNetwork,
-        phone: PhoneCapabilities,
-        device: ReceiverDevice?,
-        path: NetworkPath?,
-        pairedSessionActive: Boolean,
-    ): ModeVerdict {
+    private fun assessMirror(input: AssessmentInput): ModeVerdict {
         val mode = CastMode.MIRROR
-        reachability(network, device, pairedSessionActive)?.let { return it.copy(mode = mode) }
-        encoder(phone)?.let { return it.copy(mode = mode) }
+        val phone = input.phone
+        val path = input.path
+        reachability(input)?.let { return it.about(mode) }
+        encoder(phone)?.let { return it.about(mode) }
 
         if (!phone.screenCaptureConsentAvailable) {
             return ModeVerdict(
@@ -86,22 +93,18 @@ object MobileCapabilityAssessor {
             mode,
             ModeStatus.AVAILABLE,
             "This phone can encode its own screen and the television can decode it." +
-                capacityCaveat(path) + isolationCaveat(network) +
+                capacityCaveat(path) + isolationCaveat(input.network) +
                 " Android asks for capture permission every time a mirror starts, and will not " +
                 "remember the answer.",
         )
     }
 
-    private fun assessSecondScreen(
-        network: LocalNetwork,
-        phone: PhoneCapabilities,
-        device: ReceiverDevice?,
-        path: NetworkPath?,
-        pairedSessionActive: Boolean,
-    ): ModeVerdict {
+    private fun assessSecondScreen(input: AssessmentInput): ModeVerdict {
         val mode = CastMode.SECOND_SCREEN
-        reachability(network, device, pairedSessionActive)?.let { return it.copy(mode = mode) }
-        encoder(phone)?.let { return it.copy(mode = mode) }
+        val phone = input.phone
+        val path = input.path
+        reachability(input)?.let { return it.about(mode) }
+        encoder(phone)?.let { return it.about(mode) }
 
         when (phone.virtualDisplayProbe) {
             ProbeOutcome.NOT_PROBED -> return ModeVerdict(
@@ -132,18 +135,14 @@ object MobileCapabilityAssessor {
             mode,
             ModeStatus.AVAILABLE,
             "The television becomes a screen Flint draws on while the phone stays the controller." +
-                capacityCaveat(path) + isolationCaveat(network) + " " + SECOND_SCREEN_BOUNDARY,
+                capacityCaveat(path) + isolationCaveat(input.network) + " " + SECOND_SCREEN_BOUNDARY,
         )
     }
 
-    private fun assessMediaHandoff(
-        network: LocalNetwork,
-        device: ReceiverDevice?,
-        path: NetworkPath?,
-        pairedSessionActive: Boolean,
-    ): ModeVerdict {
+    private fun assessMediaHandoff(input: AssessmentInput): ModeVerdict {
         val mode = CastMode.MEDIA_HANDOFF
-        reachability(network, device, pairedSessionActive)?.let { return it.copy(mode = mode) }
+        val path = input.path
+        reachability(input)?.let { return it.about(mode) }
 
         if (path != null && path.throughputMeasured &&
             path.throughputMbps < NetworkPath.MINIMUM_MEDIA_HANDOFF_MBPS
@@ -164,24 +163,21 @@ object MobileCapabilityAssessor {
             mode,
             ModeStatus.AVAILABLE,
             "The television is reachable and the path is sufficient to play a file at its original " +
-                "quality." + capacityCaveat(path) + isolationCaveat(network),
+                "quality." + capacityCaveat(path) + isolationCaveat(input.network),
         )
     }
 
     /**
      * Whether anything about the network or the television stops Flint before the phone matters.
      *
-     * Returns a verdict carrying a placeholder mode for the caller to overwrite, or `null` when
-     * nothing here blocks.
+     * The same answer for every mode that shares it, so it is decided once and asked about a mode by
+     * whoever needed it. `null` when nothing here blocks.
      */
-    private fun reachability(
-        network: LocalNetwork,
-        device: ReceiverDevice?,
-        pairedSessionActive: Boolean,
-    ): ModeVerdict? {
+    private fun reachability(input: AssessmentInput): VerdictTemplate? {
+        val network = input.network
+        val device = input.device
         if (network is LocalNetwork.NoLocalNetwork) {
-            return ModeVerdict(
-                CastMode.MIRROR,
+            return VerdictTemplate(
                 ModeStatus.BLOCKED,
                 "This phone is not on a local network, so there is nothing for it to find. Mobile " +
                     "data cannot carry a cast: the television has to be on the same link as the phone.",
@@ -191,8 +187,7 @@ object MobileCapabilityAssessor {
         }
 
         if (device == null) {
-            return ModeVerdict(
-                CastMode.MIRROR,
+            return VerdictTemplate(
                 ModeStatus.BLOCKED,
                 "No television has answered on this network yet.",
                 when (network) {
@@ -209,8 +204,7 @@ object MobileCapabilityAssessor {
         }
 
         if (device.platform == ReceiverPlatform.VEGA) {
-            return ModeVerdict(
-                CastMode.MIRROR,
+            return VerdictTemplate(
                 ModeStatus.IMPOSSIBLE,
                 "This device runs Vega OS, which is not Android and cannot install a receiver by any " +
                     "method. Flint cannot run on it, and no future version will change that.",
@@ -220,22 +214,20 @@ object MobileCapabilityAssessor {
         // A Flint receiver answering its own port is stronger evidence than anything ADB can report:
         // it proves the receiver is installed, running and willing to talk. Keep blocking only while
         // that has not been shown.
-        if (pairedSessionActive || device.receiverAnswered) return null
+        if (input.pairedSessionActive || device.receiverAnswered) return null
 
         if (device.platform.canInstallReceiver()) {
             return when (device.adbState) {
                 AdbConnectionState.CONNECTED -> null
 
-                AdbConnectionState.UNAUTHORIZED -> ModeVerdict(
-                    CastMode.MIRROR,
+                AdbConnectionState.UNAUTHORIZED -> VerdictTemplate(
                     ModeStatus.BLOCKED,
                     "The television is reachable but has not authorised this phone.",
                     "Accept the authorisation prompt on the television. If none appeared, disconnect " +
                         "and connect again to make it show.",
                 )
 
-                else -> ModeVerdict(
-                    CastMode.MIRROR,
+                else -> VerdictTemplate(
                     ModeStatus.BLOCKED,
                     "The television was identified but is not answering over ADB right now.",
                     "Check that it is awake and still on this network, then probe again.",
@@ -249,8 +241,7 @@ object MobileCapabilityAssessor {
         // is overwhelmingly a wrong address — and sending someone into Developer Options on a
         // television that was never the problem wastes their time on the easiest failure to fix.
         return if (device.adbState == AdbConnectionState.REFUSED) {
-            ModeVerdict(
-                CastMode.MIRROR,
+            VerdictTemplate(
                 ModeStatus.BLOCKED,
                 "Something answered at ${device.address} but refused the ADB port. Either it is not " +
                     "an Android device, or ADB debugging is switched off. Flint cannot identify Fire " +
@@ -260,8 +251,7 @@ object MobileCapabilityAssessor {
                     "authorisation prompt, then connect again.",
             )
         } else {
-            ModeVerdict(
-                CastMode.MIRROR,
+            VerdictTemplate(
                 ModeStatus.BLOCKED,
                 "Nothing answered at ${device.address}. The address may be wrong or stale, or the " +
                     "television may be asleep or on a different network.",
@@ -272,9 +262,8 @@ object MobileCapabilityAssessor {
     }
 
     /** The encoder gates both streaming modes share. */
-    private fun encoder(phone: PhoneCapabilities): ModeVerdict? = when {
-        phone.encoderProbe == ProbeOutcome.NOT_PROBED -> ModeVerdict(
-            CastMode.MIRROR,
+    private fun encoder(phone: PhoneCapabilities): VerdictTemplate? = when {
+        phone.encoderProbe == ProbeOutcome.NOT_PROBED -> VerdictTemplate(
             ModeStatus.BLOCKED,
             "Flint has not asked this phone what video it can encode in hardware yet, so it cannot " +
                 "say whether a stream is possible. It will not guess from the model name.",
@@ -282,8 +271,7 @@ object MobileCapabilityAssessor {
         )
 
         phone.encoderProbe == ProbeOutcome.UNSUPPORTED || phone.hardwareVideoEncoders.isEmpty() ->
-            ModeVerdict(
-                CastMode.MIRROR,
+            VerdictTemplate(
                 ModeStatus.IMPOSSIBLE,
                 "This phone reports no hardware video encoder. Encoding in software cannot meet the " +
                     "latency these modes exist to deliver, so Flint will not offer them.",

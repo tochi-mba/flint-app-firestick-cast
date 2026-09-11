@@ -6,6 +6,7 @@ import android.content.Context
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.os.Bundle
+import android.os.Looper
 import android.view.Surface
 import android.view.View
 import androidx.compose.runtime.Composable
@@ -51,6 +52,13 @@ class SecondScreenHost(
      * through application memory at any point.
      */
     fun start(surface: Surface, content: @Composable () -> Unit): Result<Unit> = runCatching {
+        // A Presentation is a Dialog, and show() on any thread but the main one throws from deep
+        // inside the window manager with a message about a Looper rather than about a dialog. This
+        // is reached from the media path, where the surrounding code is on a background dispatcher,
+        // so the mistake is an easy one and the diagnosis is not.
+        check(Looper.myLooper() == Looper.getMainLooper()) {
+            "The second screen must be started on the main thread; a Presentation is a Dialog"
+        }
         check(display == null) { "The second screen is already running" }
         val manager = activity.getSystemService(DisplayManager::class.java)
             ?: error("This phone has no display manager")
@@ -71,7 +79,10 @@ class SecondScreenHost(
     }
 
     override fun close() {
+        // Dismissed first, so the presentation's own onStop runs while it is still alive, and only
+        // then destroyed. A Presentation that had already been destroyed could not be shown again.
         runCatching { presentation?.dismiss() }
+        runCatching { presentation?.destroy() }
         runCatching { display?.release() }
         presentation = null
         display = null
@@ -127,8 +138,17 @@ private class ComposePresentation(
     }
 
     override fun onStop() {
+        // ON_STOP, not ON_DESTROY. DESTROYED is terminal in a LifecycleRegistry: once dispatched,
+        // the next ON_CREATE throws, so a presentation that was hidden and shown again -- which is
+        // what a second screen does every time the television's input changes and comes back --
+        // crashed as its content attached.
+        registry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+        super.onStop()
+    }
+
+    /** The end of this presentation's life, dispatched by its owner rather than by being hidden. */
+    fun destroy() {
         registry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         store.clear()
-        super.onStop()
     }
 }
