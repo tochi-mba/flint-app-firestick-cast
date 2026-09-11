@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The cast socket, the discovery sweep and the ADB channel. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Re-sampling the interface list when the hotspot comes up or goes away. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- Android drops multicast packets to a sleeping Wi-Fi chip unless a lock is held for them. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <!-- A cast that stops because the screen turned off is not a cast. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!--
+      Two service types, because the two modes genuinely need different things. A mirror captures the
+      screen and must run under mediaProjection; a second screen captures nothing at all -- it draws
+      into a display this app owns -- and declaring it as a projection would be a claim about what
+      the app is doing that is not true.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <!-- Runtime from API 33. The ongoing notification is the only Stop control a locked phone has. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+      No ACCESS_FINE_LOCATION and no ACCESS_COARSE_LOCATION. Flint never scans for Wi-Fi networks: it
+      reads its own interface list, which needs no permission, and sweeps a subnet it derived from
+      that. The absence is worth stating out loud, because every other casting app on a phone asks
+      for location and people have learned to assume it is unavoidable.
+    -->
+
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="false" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.FlintMobile">
+        <!--
+          allowBackup is false because a session token is stored on this device. The token is
+          authorisation, not encryption: it proves which phone is talking, and a copy of it in a
+          device-transfer stream is a copy of that proof.
+
+          There is deliberately no android:usesCleartextTraffic here, unlike the receiver. That flag
+          governs the platform HTTP stack -- URLConnection, WebView, OkHttp -- and every socket this
+          app opens is a raw one: the cast protocol, the ADB channel and the hand-rolled HTTP in
+          :protocol are all unaffected by it. Leaving it off costs nothing and keeps a true statement
+          true.
+        -->
+
+        <activity
+            android:name=".MobileActivity"
+            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <!--
+              The activity handles its own configuration changes rather than being recreated. Rotating
+              the phone during a cast has to re-send VIDEO_CONFIG and request a key frame; it must not
+              tear down the session and the encoder underneath it, which is what a recreation would do.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".service.CastService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection|connectedDevice"
+            android:stopWithTask="false" />
+    </application>
+
+</manifest>

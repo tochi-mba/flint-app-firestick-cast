@@ -1,0 +1,119 @@
+# The phone app's pull-request gate.
+#
+# Separate from ci.yml on purpose. That job runs .NET, Rust, a JDK and the Android SDK on a Windows
+# runner because the host probe reads the driver registry and the engine links against Win32 — none
+# of which a phone-app change can affect. Left alone, every :mobile pull request would have paid
+# forty-five Windows minutes to prove something about a desktop it did not touch.
+name: Mobile CI
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'mobile/**'
+      - 'design/**'
+      - 'castcore/**'
+      - 'protocol/**'
+      - 'testdata/golden/**'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+      - '.editorconfig'
+      - '.github/workflows/mobile.yml'
+  pull_request:
+    # GitHub Actions does not resolve YAML anchors, so this list is duplicated rather than shared.
+    paths:
+      - 'mobile/**'
+      - 'design/**'
+      - 'castcore/**'
+      - 'protocol/**'
+      - 'testdata/golden/**'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+      - '.editorconfig'
+      - '.github/workflows/mobile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # A cold run with empty caches sits well inside this. Long enough not to flap, short enough that
+    # a hung Gradle daemon fails visibly rather than burning an hour.
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # ci.yml has no Gradle caching at all, so every Fire TV check there re-downloads the world.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install the Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      # The wire is shared with the Fire TV receiver, the Windows host and the Rust engine. A phone
+      # change that breaks a golden vector has to fail here rather than on a television.
+      - name: Check the shared protocol
+        run: ./gradlew :protocol:test --console plain
+
+      # :castcore is Android-free on purpose, which is what lets it carry the same 95% line / 85%
+      # branch gate as :protocol without Robolectric anywhere near it. `check` is tests, the coverage
+      # verification and ktlint.
+      - name: Check the phone's pure logic
+        run: ./gradlew :castcore:check --console plain
+
+      - name: Check the design system
+        run: ./gradlew :design:ktlintCheck :design:testDebugUnitTest :design:lintDebug --console plain
+
+      - name: Check the phone app
+        run: ./gradlew :mobile:ktlintCheck :mobile:testDebugUnitTest :mobile:lintDebug --console plain
+
+      - name: Build the debug APK
+        run: ./gradlew :mobile:assembleDebug --console plain
+
+      # So a reviewer can install the branch on a real phone instead of taking the diff's word for it.
+      - name: Upload the debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: flint-mobile-debug-apk
+          path: mobile/build/outputs/apk/debug/*.apk
+          retention-days: 7
+          if-no-files-found: error
+
+      # Reports are the only way to see which case failed once the runner is gone.
+      - name: Upload test and lint reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-test-reports
+          path: |
+            castcore/build/reports/**
+            castcore/build/test-results/**
+            design/build/reports/**
+            design/build/test-results/**
+            mobile/build/reports/**
+            mobile/build/test-results/**
+            protocol/build/reports/**
+          retention-days: 7
+          if-no-files-found: ignore

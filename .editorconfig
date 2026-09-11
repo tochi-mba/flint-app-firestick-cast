@@ -18,6 +18,19 @@ indent_size = 4
 
 [*.{kt,kts}]
 indent_size = 4
+max_line_length = 120
+
+# ktlint settings. Nothing else reads these, and ktlint only runs on :castcore, :design and
+# :mobile today, but the file is the tool's own configuration mechanism so it belongs here.
+#
+# intellij_idea rather than ktlint_official: the official style rewrites signatures and expression
+# bodies to its own taste, which would put a formatter's opinion in the diff of every change to
+# code that already reads consistently. The rules that matter -- imports, indentation, spacing,
+# no wildcard imports -- are in both.
+ktlint_code_style = intellij_idea
+# Composable functions are PascalCase by the framework's own convention, which the function-naming
+# rule reads as a violation on every component in :design.
+ktlint_function_naming_ignore_when_annotated_with = Composable
 
 [*.{md,yml,yaml,json}]
 indent_size = 2

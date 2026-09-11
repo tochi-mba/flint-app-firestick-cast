@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Deliberately empty. :design contributes no components, no permissions and no resources that need
+  declaring; it is a Compose library and nothing else. The file exists because a library module reads
+  better with an explicit, obviously-empty manifest than with none at all.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />

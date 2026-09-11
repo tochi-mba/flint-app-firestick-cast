@@ -15,6 +15,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "FlintReceiver"
-include(":receiver", ":protocol")
+include(":receiver", ":protocol", ":castcore", ":design", ":mobile")
 
 

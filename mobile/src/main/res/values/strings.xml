@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Only the strings Android itself needs. Every piece of product copy lives in :castcore as a Kotlin
+  constant instead, so it can be asserted by a unit test without a renderer, which is how the
+  honesty rules are enforced rather than reviewed.
+-->
+<resources>
+    <string name="app_name">Flint</string>
+    <string name="creator_name">REX Technologies</string>
+    <string name="app_description">Flint by REX Technologies. Cast from your phone to a Fire TV.</string>
+</resources>
