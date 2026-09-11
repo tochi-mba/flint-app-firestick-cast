@@ -30,6 +30,21 @@ class HonestyRulesTest {
     }
 
     @Test
+    fun `a hyphen ends a word, so a compound built on a claim is still a claim`() {
+        assertContains(HonestyRules.confidentialityClaims("A privacy-preserving link."), "privacy")
+        assertContains(HonestyRules.confidentialityClaims("Kept secure-by-design."), "secure")
+    }
+
+    @Test
+    fun `claims come back in the order they appear, not the order they are listed`() {
+        // "secure" is declared after "private" in the list; in this sentence it comes first.
+        assertEquals(
+            listOf("secure", "private", "encrypted"),
+            HonestyRules.confidentialityClaims("Secure, then private, then encrypted."),
+        )
+    }
+
+    @Test
     fun `clean copy claims nothing`() {
         assertTrue(
             HonestyRules

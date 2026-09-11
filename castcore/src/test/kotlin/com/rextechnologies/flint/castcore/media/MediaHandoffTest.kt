@@ -132,6 +132,28 @@ class MediaHandoffTest {
         assertEquals("", command.url)
     }
 
+    @Test
+    fun `for any input the title fits the wire and survives a strict encode, and never names a path`() {
+        val alphabet = listOf("a", "é", "東", GRINNING, "/", "\\", "\u0000", " ", ".", "")
+        var seed = 3L
+        fun next(): Long {
+            seed = seed * 6_364_136_223_846_793_005L + 1_442_695_040_888_963_407L
+            return seed ushr 33
+        }
+        repeat(500) {
+            val length = (next() % 600).toInt()
+            val input = buildString {
+                repeat(length) { append(alphabet[(next() % alphabet.size).toInt()]) }
+            }
+            val title = MediaHandoff.titleFor(input)
+            assertTrue(title.isNotBlank(), "blank title for \"$input\"")
+            assertTrue(title.toByteArray(Charsets.UTF_8).size <= MediaHandoff.MAXIMUM_TITLE_BYTES)
+            assertEquals(title, String(title.toByteArray(Charsets.UTF_8), Charsets.UTF_8))
+            assertTrue('/' !in title && '\\' !in title, "a separator survived in \"$title\"")
+            assertTrue(title.none { it.isISOControl() })
+        }
+    }
+
     private companion object {
         /** U+1F600: one code point, two UTF-16 units, four UTF-8 bytes. */
         const val GRINNING = "\uD83D\uDE00"

@@ -39,6 +39,21 @@ data class RungResult(
 )
 
 /**
+ * What discovery can do, without saying how.
+ *
+ * The coordinator above this depends on the interface rather than on [DiscoveryRunner] so that its
+ * own logic -- which television stays selected, what a failed lookup remembers, how the round-trip
+ * samples become a path -- can be tested with a fake that answers instantly and never opens a socket.
+ */
+interface ReceiverFinder {
+    suspend fun discover(network: LocalNetwork): List<RungResult>
+
+    suspend fun probeManual(network: LocalNetwork, address: String): ReceiverDevice?
+
+    suspend fun measureRoundTripMillis(network: LocalNetwork, device: ReceiverDevice): List<Double>
+}
+
+/**
  * Runs the discovery ladder against a real network.
  *
  * Every socket opened here is bound to the address the ladder handed down, and none of them is ever
@@ -47,7 +62,7 @@ data class RungResult(
  * television nor anything else useful. `ConnectivityManager.bindProcessToNetwork` does not fix it,
  * because a tether interface is not a `Network` the framework exposes.
  */
-class DiscoveryRunner(context: Context) {
+class DiscoveryRunner(context: Context) : ReceiverFinder {
     private val wifi = context.applicationContext.getSystemService(WifiManager::class.java)
 
     /**
@@ -57,7 +72,7 @@ class DiscoveryRunner(context: Context) {
      * radio, and running four more rungs after the first has already answered is four more rungs of
      * contention for no new information.
      */
-    suspend fun discover(network: LocalNetwork): List<RungResult> {
+    override suspend fun discover(network: LocalNetwork): List<RungResult> {
         val plan = DiscoveryLadder.plan(network)
         val results = mutableListOf<RungResult>()
         for (step in plan) {
@@ -255,10 +270,13 @@ class DiscoveryRunner(context: Context) {
     }
 
     /** Confirms one typed-in address, which is the rung that is always available. */
+    override suspend fun probeManual(network: LocalNetwork, address: String): ReceiverDevice? =
+        probeManual(network, address, ReceiverProbe.PORT)
+
     suspend fun probeManual(
         network: LocalNetwork,
         address: String,
-        port: Int = ReceiverProbe.PORT,
+        port: Int,
     ): ReceiverDevice? = withContext(Dispatchers.IO) {
         val bound = network.boundAddress ?: return@withContext null
         val target = runCatching { InetAddress.getByName(address) as? Inet4Address }.getOrNull()
@@ -278,10 +296,15 @@ class DiscoveryRunner(context: Context) {
      * rather than as no measurement at all. So the phone times its own connect-and-answer instead,
      * and the row says where the number came from.
      */
+    override suspend fun measureRoundTripMillis(
+        network: LocalNetwork,
+        device: ReceiverDevice,
+    ): List<Double> = measureRoundTripMillis(network, device, ROUND_TRIP_ATTEMPTS)
+
     suspend fun measureRoundTripMillis(
         network: LocalNetwork,
         device: ReceiverDevice,
-        samples: Int = ROUND_TRIP_ATTEMPTS,
+        samples: Int,
     ): List<Double> = withContext(Dispatchers.IO) {
         val bound = network.boundAddress ?: return@withContext emptyList()
         val target = runCatching { InetAddress.getByName(device.address) as? Inet4Address }.getOrNull()

@@ -110,9 +110,9 @@ object MobileCapabilityAssessor {
             ProbeOutcome.NOT_PROBED -> return ModeVerdict(
                 mode,
                 ModeStatus.BLOCKED,
-                "Flint has not checked whether this phone will give it a private display to draw the " +
-                    "second screen into, so it cannot say whether the mode would work. It will not " +
-                    "assume the answer from the Android version.",
+                "Flint has not checked whether this phone will give it a display only this app can " +
+                    "see to draw the second screen into, so it cannot say whether the mode would " +
+                    "work. It will not assume the answer from the Android version.",
                 "Run the second-screen check in Settings. It creates a display only this app can see, " +
                     "draws one frame into it and encodes that frame. Nothing appears on the television " +
                     "and nothing is sent anywhere.",
@@ -121,9 +121,9 @@ object MobileCapabilityAssessor {
             ProbeOutcome.UNSUPPORTED -> return ModeVerdict(
                 mode,
                 ModeStatus.IMPOSSIBLE,
-                "This phone refused to create the private display this mode draws into, so Flint has " +
-                    "nothing to render the second screen onto. Mirroring is judged separately and may " +
-                    "still work.",
+                "This phone refused to create the display this mode draws into, so Flint has nothing " +
+                    "to render the second screen onto. Mirroring is judged separately and may still " +
+                    "work.",
             )
 
             ProbeOutcome.SUPPORTED -> Unit

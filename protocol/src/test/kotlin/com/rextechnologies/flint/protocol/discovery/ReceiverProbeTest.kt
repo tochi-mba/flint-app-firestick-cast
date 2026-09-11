@@ -5,6 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -108,5 +109,32 @@ class ReceiverProbeTest {
     fun `an announcement refuses to carry a field separator or an impossible port`() {
         assertFailsWith<IllegalArgumentException> { ReceiverAnnouncement("Fire\tTV", 47_855) }
         assertFailsWith<IllegalArgumentException> { ReceiverAnnouncement("Fire TV", 0) }
+    }
+}
+
+class ReceiverProbeRoundTripTest {
+    @Test
+    fun `parsing what the receiver wrote gives back what it meant, for arbitrary names and ports`() {
+        // Asserted only by example before. The property is the one the two sides actually rely on:
+        // whatever the television calls itself, the phone reads the same name and the same port.
+        val alphabet = listOf("a", "Z", " ", "-", "é", "東", "😀", "\t", "\n", "\r", "")
+        var seed = 7L
+        fun next(): Long {
+            seed = seed * 6_364_136_223_846_793_005L + 1_442_695_040_888_963_407L
+            return seed ushr 33
+        }
+        repeat(500) {
+            val length = (next() % 40).toInt()
+            val name = buildString {
+                repeat(length) { append(alphabet[(next() % alphabet.size).toInt()]) }
+            }
+            val port = (next() % 65_535).toInt() + 1
+            val line = String(ReceiverProbe.responseBytes(name, port), StandardCharsets.UTF_8)
+            val parsed = assertNotNull(ReceiverProbe.parseResponse(line), "\"$name\" at $port")
+            assertEquals(port, parsed.port)
+            assertEquals(ReceiverProbe.sanitizeModelName(name), parsed.modelName)
+            assertTrue(parsed.modelName.isNotBlank())
+            assertTrue(line.toByteArray(StandardCharsets.UTF_8).size <= ReceiverProbe.MAX_RESPONSE_BYTES)
+        }
     }
 }

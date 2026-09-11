@@ -26,52 +26,46 @@ import kotlin.test.assertTrue
 private fun address(value: String): Inet4Address = InetAddress.getByName(value) as Inet4Address
 
 /**
- * Every user-facing constant this module owns.
+ * Every user-facing constant this module owns, discovered rather than listed.
  *
- * Listed explicitly rather than discovered by reflection: a reflective sweep would silently stop
- * covering a new surface the day somebody adds one without noticing, and the point of the list is
- * that adding a surface makes somebody come here.
+ * The earlier version was a hand-maintained list, on the theory that adding a surface should make
+ * somebody come here. It did not: three surfaces and a dozen constants were added without anybody
+ * coming here, and the list silently covered less each time. Reflection over every `object` in the
+ * copy package cannot fall behind, and the count assertion below is what keeps a sweep that matched
+ * nothing from passing.
+ *
+ * Functions that take arguments cannot be enumerated and are sampled explicitly at the end.
  */
 private val everyCopyConstant: List<Pair<String, String>> = buildList {
     fun add(label: String, value: String) = add(label to value)
 
-    add("CastCopy.empty.title", CastCopy.empty.title)
-    add("CastCopy.empty.body", CastCopy.empty.body)
-    add("CastCopy.SECTION_MODES", CastCopy.SECTION_MODES)
-    add("CastCopy.SECTION_NETWORK", CastCopy.SECTION_NETWORK)
-    add("CastCopy.SECTION_RECEIVERS", CastCopy.SECTION_RECEIVERS)
-    add("CastCopy.PROBE_ACTION", CastCopy.PROBE_ACTION)
-    add("CastCopy.PAIR_ACTION", CastCopy.PAIR_ACTION)
-    add("CastCopy.MANUAL_ACTION", CastCopy.MANUAL_ACTION)
-
-    add("PairingCopy.TITLE", PairingCopy.TITLE)
-    add("PairingCopy.BODY", PairingCopy.BODY)
-    add("PairingCopy.INVALID_CODE", PairingCopy.INVALID_CODE)
-    add("PairingCopy.TIMED_OUT", PairingCopy.TIMED_OUT)
-
-    add("ScreenCopy.empty.title", ScreenCopy.empty.title)
-    add("ScreenCopy.empty.body", ScreenCopy.empty.body)
-    add("ScreenCopy.MIRROR_CONSENT", ScreenCopy.MIRROR_CONSENT)
-    add("ScreenCopy.SECOND_SCREEN_NO_CONSENT", ScreenCopy.SECOND_SCREEN_NO_CONSENT)
-    add("ScreenCopy.CONGESTED_EXPLANATION", ScreenCopy.CONGESTED_EXPLANATION)
-
-    add("MediaCopy.empty.title", MediaCopy.empty.title)
-    add("MediaCopy.empty.body", MediaCopy.empty.body)
-    add("MediaCopy.WHY_PUSHED", MediaCopy.WHY_PUSHED)
-
-    add("SettingsCopy.SECOND_SCREEN_PROBE_EXPLANATION", SettingsCopy.SECOND_SCREEN_PROBE_EXPLANATION)
-    add("SettingsCopy.PERMISSIONS_LINE", SettingsCopy.PERMISSIONS_LINE)
-
-    add("DiagnosticsCopy.empty.title", DiagnosticsCopy.empty.title)
-    add("DiagnosticsCopy.empty.body", DiagnosticsCopy.empty.body)
-    add("DiagnosticsCopy.ROUND_TRIP_SOURCE", DiagnosticsCopy.ROUND_TRIP_SOURCE)
-
-    add("NotificationCopy.CHANNEL_DESCRIPTION", NotificationCopy.CHANNEL_DESCRIPTION)
-
-    add("ReceiverSetup.INSTALL_ACTION", ReceiverSetup.INSTALL_ACTION)
-    add("ReceiverSetup.REMOVE_ACTION", ReceiverSetup.REMOVE_ACTION)
-
-    add("MobileCapabilityAssessor.SECOND_SCREEN_BOUNDARY", MobileCapabilityAssessor.SECOND_SCREEN_BOUNDARY)
+    val surfaces = listOf(
+        CastCopy,
+        PairingCopy,
+        ScreenCopy,
+        MediaCopy,
+        SettingsCopy,
+        DiagnosticsCopy,
+        NotificationCopy,
+        Placeholders,
+        ReceiverSetup,
+        MobileCapabilityAssessor,
+    )
+    surfaces.forEach { surface ->
+        val name = surface::class.simpleName
+        surface::class.java.declaredFields
+            .filter { !it.name.equals("INSTANCE") }
+            .forEach { field ->
+                field.isAccessible = true
+                when (val value = field.get(surface)) {
+                    is String -> add("$name.${field.name}", value)
+                    is EmptyStateCopy -> {
+                        add("$name.${field.name}.title", value.title)
+                        add("$name.${field.name}.body", value.body)
+                    }
+                }
+            }
+    }
 
     OnboardingCopy.steps.forEachIndexed { index, step ->
         add("OnboardingCopy.steps[$index].title", step.title)
@@ -80,9 +74,32 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
             add("OnboardingCopy.steps[$index].points[$point]", text)
         }
     }
+
+    // Parameterised copy, sampled at representative inputs.
+    add("PairingCopy.paired", PairingCopy.paired("Fire TV Stick"))
+    add("ScreenCopy.cockpitLine", ScreenCopy.cockpitLine("second screen", "Fire TV Stick"))
+    add("ScreenCopy.encoderFailure", ScreenCopy.encoderFailure(""))
+    add("ScreenCopy.encoderFailure(detail)", ScreenCopy.encoderFailure("no surface"))
+    add("CastCopy.probeFailedBody(none)", CastCopy.probeFailedBody(emptyList()))
+    add(
+        "CastCopy.probeFailedBody(all)",
+        CastCopy.probeFailedBody(com.rextechnologies.flint.castcore.discovery.DiscoveryRung.entries),
+    )
+    add("SettingsCopy.encoderProbeResult(none)", SettingsCopy.encoderProbeResult(emptyList()))
+    add("SettingsCopy.encoderProbeResult(two)", SettingsCopy.encoderProbeResult(listOf("H.264", "H.265")))
+    add("MediaCopy.pushing", MediaCopy.pushing(3, 10))
+    add("NotificationCopy.text", NotificationCopy.text("Fire TV Stick"))
 }
 
 class CopyVoiceTest {
+    @Test
+    fun `the sweep is looking at the copy, not at an empty list`() {
+        // Below the number that existed when the sweep became reflective. A refactor that moved the
+        // copy out of this package would otherwise pass every test here by testing nothing.
+        assertTrue(everyCopyConstant.size >= 90, "only ${everyCopyConstant.size} constants were found")
+        assertEquals(everyCopyConstant.size, everyCopyConstant.map { it.first }.distinct().size)
+    }
+
     @Test
     fun `no string in this app calls the cast link private, secure or encrypted`() {
         // The link is authorised, not encrypted. A token proves which phone is talking; it does not
@@ -114,22 +131,37 @@ class CopyVoiceTest {
     @Test
     fun `every verdict the assessor can produce reads as a sentence and stays inside the bound`() {
         val host = LocalNetwork.PhoneIsHost(SelectedHotspotInterface("ap0", 7, address("192.168.43.1"), 24))
-        val phone = PhoneCapabilities(
-            apiLevel = 34,
-            deviceName = "Pixel",
-            screenWidth = 1080,
-            screenHeight = 2400,
-            densityDpi = 420,
-            hardwareVideoEncoders = setOf(CodecId.H264),
-            encoderProbe = ProbeOutcome.SUPPORTED,
-            virtualDisplayProbe = ProbeOutcome.SUPPORTED,
-            screenCaptureConsentAvailable = true,
-        )
+        // Every probe outcome for both probes, so that no sentence is reachable by the app and
+        // unreachable by this test. Two sentences hid behind a fully probed phone for exactly that
+        // reason.
+        val phones = ProbeOutcome.entries.flatMap { encoder ->
+            ProbeOutcome.entries.map { display ->
+                PhoneCapabilities(
+                    apiLevel = 34,
+                    deviceName = "Pixel",
+                    screenWidth = 1080,
+                    screenHeight = 2400,
+                    densityDpi = 420,
+                    hardwareVideoEncoders = if (encoder == ProbeOutcome.SUPPORTED) setOf(CodecId.H264) else emptySet(),
+                    encoderProbe = encoder,
+                    virtualDisplayProbe = display,
+                    screenCaptureConsentAvailable = true,
+                )
+            }
+        }
         val devices = listOf<ReceiverDevice?>(null) + ReceiverPlatform.entries.map {
-            ReceiverDevice("192.168.43.31", platform = it)
+            ReceiverDevice("192.168.43.31", platform = it, receiverAnswered = true)
         }
 
-        devices.forEach { device ->
+        phones.forEach { phone ->
+            devices.forEach { device ->
+                everyVerdict(host, phone, device)
+            }
+        }
+    }
+
+    private fun everyVerdict(host: LocalNetwork, phone: PhoneCapabilities, device: ReceiverDevice?) {
+        run {
             MobileCapabilityAssessor.assess(AssessmentInput(host, phone, device)).verdicts.forEach { verdict ->
                 assertTrue(HonestyRules.isCompleteSentence(verdict.reason), verdict.reason)
                 assertFalse(HonestyRules.raisesItsVoice(verdict.reason), verdict.reason)

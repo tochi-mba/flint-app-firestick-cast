@@ -33,8 +33,11 @@ after the product is one that gets debugged under pressure.
   `ci.yml` has never had.
 - `paths-ignore` on `ci.yml` for `mobile/**`, `design/**` and `castcore/**`, and deliberately not for
   `protocol/**`, `testdata/golden/**` or the Gradle files, which both builds genuinely share.
-- `.github/workflows/mobile-release.yml`, with signing material read from repository secrets and an
-  unsigned build labelled unsigned rather than published as if releasable.
+- `.github/workflows/mobile-release.yml`, with signing material read from repository secrets. A
+  build is called signed only when all four secrets are present *and* `apksigner verify` accepts the
+  result; anything else is labelled unsigned rather than published as if releasable. The gate it
+  runs is the pull-request gate, from the same composite action, so a release cannot ship what a
+  review would have rejected.
 - `versionCode` from the run number plus a fixed offset; `versionName` from `mobile.version` in
   `gradle.properties`, with a tag that disagrees failing the build rather than becoming a second
   source of truth.
@@ -49,14 +52,15 @@ after the product is one that gets debugged under pressure.
 
 `mobile/build.gradle.kts` reads every piece of signing and version material through
 `providers.gradleProperty` and `providers.environmentVariable`. It deliberately does not copy
-`:receiver`'s pattern of opening `keystore.properties` during configuration: this build has the
-configuration cache switched on, and a file read there silently invalidates it, which would make every
-phone build a cold one.
+`:receiver`'s pattern of opening `keystore.properties` during configuration: a CI runner hands
+secrets in through the environment, and a provider reads them there without a file having to exist
+on disk first.
 
 ## Test-first implementation order
 
 1. The catalog, and the existing modules migrated onto it, so a version can only be wrong in one
-   place.
+   place. (`:receiver` and `:protocol` were migrated later than this slice claimed; until then the
+   catalog carried ten aliases with no consumer and `:receiver` a second copy of every version.)
 2. `mobile.yml`, red, then green.
 3. `ci.yml`'s path filters, verified by a phone-only commit.
 4. The release workflow, verified by a merge.

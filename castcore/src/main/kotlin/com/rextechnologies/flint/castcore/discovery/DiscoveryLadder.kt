@@ -50,9 +50,12 @@ data class SweepBudget(
         /**
          * The largest subnet worth sweeping one host at a time.
          *
-         * A /24 is 254 hosts and finishes in well under a second at this concurrency. A /16 is sixty
-         * thousand, which is not a sweep, it is a denial of the radio — so a subnet that large gets no
-         * line-probe rung at all and the copy says why rather than appearing to hang.
+         * The worst case is every host silent: hosts divided by concurrency, times the connect
+         * timeout. A /24 is 253 hosts, so about six seconds at this concurrency and timeout, and the
+         * permitted /23 about thirteen -- a television that is there answers in the first round, and
+         * the sweep stops at the first rung that finds one. A /16 is sixty thousand, which is not a
+         * sweep, it is a denial of the radio, so a subnet that large gets no line-probe rung at all
+         * and the copy says why rather than appearing to hang.
          */
         const val MAXIMUM_SWEEP_HOSTS: Int = 512
 

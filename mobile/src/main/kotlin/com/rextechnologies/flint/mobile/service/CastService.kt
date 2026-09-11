@@ -78,20 +78,6 @@ class CastService : Service() {
     }
 
     /**
-     * The type this session honestly is.
-     *
-     * Getting this wrong is not cosmetic. On API 34 and above, starting a `mediaProjection` service
-     * without an active projection throws, and asking for a projection before such a service is
-     * running also throws — so a second screen declared as a projection would fail at start, and a
-     * mirror declared as anything else would fail at consent.
-     */
-    private fun foregroundTypeFor(mode: OutputMode): Int = when (mode) {
-        OutputMode.MIRROR -> ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-        OutputMode.SECOND_SCREEN, OutputMode.NONE ->
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
-    }
-
-    /**
      * Held only while something is being sent.
      *
      * A partial lock rather than a screen one: the phone's own screen may sleep during a second
@@ -125,6 +111,20 @@ class CastService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     companion object {
+        /**
+         * The type this session honestly is.
+         *
+         * Getting this wrong is not cosmetic. On API 34 and above, starting a `mediaProjection` service
+         * without an active projection throws, and asking for a projection before such a service is
+         * running also throws — so a second screen declared as a projection would fail at start, and a
+         * mirror declared as anything else would fail at consent.
+         */
+            internal fun foregroundTypeFor(mode: OutputMode): Int = when (mode) {
+            OutputMode.MIRROR -> ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            OutputMode.SECOND_SCREEN, OutputMode.NONE ->
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+        }
+
         /**
          * Whether this service is genuinely in the foreground.
          *

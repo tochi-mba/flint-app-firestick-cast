@@ -46,20 +46,27 @@ object HonestyRules {
         "secured",
     )
 
-    /** Every confidentiality claim in a piece of copy, lower-cased, in the order they appear. */
+    /**
+     * Every confidentiality claim in a piece of copy, lower-cased, in the order they appear in it.
+     *
+     * Each entry is searched for on its own boundaries and the hits are sorted by position. The
+     * earlier form checked the list against the text and returned claims in the order they were
+     * declared above while saying it did not, and it treated a hyphen as part of a word -- so
+     * "privacy-preserving" was one word that matched nothing. A hyphen is a boundary here, which is
+     * what lets "end-to-end" in the list still match as a phrase while "privacy" inside
+     * "privacy-preserving" is found.
+     */
     fun confidentialityClaims(text: String): List<String> {
         val lower = text.lowercase()
-        return CONFIDENTIALITY_WORDS.filter { word ->
-            var index = lower.indexOf(word)
-            while (index >= 0) {
-                val before = lower.getOrNull(index - 1)
-                val after = lower.getOrNull(index + word.length)
-                if (!before.isWordCharacter() && !after.isWordCharacter()) return@filter true
-                index = lower.indexOf(word, index + 1)
-            }
-            false
-        }
+        return CONFIDENTIALITY_WORDS
+            .flatMap { word -> boundedPattern(word).findAll(lower).map { it.range.first to word } }
+            .sortedBy { (position, _) -> position }
+            .map { (_, word) -> word }
     }
+
+    /** [word] with a letter or digit on neither side. The hyphen is deliberately not a word character. */
+    private fun boundedPattern(word: String): Regex =
+        Regex("(?<![\\p{L}\\p{N}])" + Regex.escape(word) + "(?![\\p{L}\\p{N}])")
 
     /** Whether a piece of prose ends the way a sentence does. */
     fun isCompleteSentence(text: String): Boolean {
@@ -71,6 +78,4 @@ object HonestyRules {
     fun raisesItsVoice(text: String): Boolean = '!' in text
 
     private val SENTENCE_ENDINGS = charArrayOf('.', '?', '…', ':')
-
-    private fun Char?.isWordCharacter(): Boolean = this != null && (isLetterOrDigit() || this == '-')
 }

@@ -164,7 +164,7 @@ private fun NoticeBanner(notice: String, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun BottomBar(selected: MobileTab, onSelect: (MobileTab) -> Unit) {
+internal fun BottomBar(selected: MobileTab, onSelect: (MobileTab) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Box(
             modifier = Modifier

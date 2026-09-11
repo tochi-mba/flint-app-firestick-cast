@@ -70,8 +70,9 @@ gesture bar, a status bar — is a different shape entirely. And the receiver dr
   the Windows shell has effectively no motion and a television is not where people turn animation
   off. The phone will have more motion than either, so `FlintTheme` reads that setting once, defends
   against a settings provider that throws, and publishes `LocalReducedMotion` for every animation to
-  gate on. Opacity rather than scale is used for press state precisely so the affordance survives
-  when motion is off.
+  gate on. Nothing consumes it yet: the phone app has no animation today, so the signal is a
+  provision rather than a filled gap, and the first animation added has to read it. Opacity rather
+  than scale is used for press state precisely so the affordance survives when motion is off.
 - **`:receiver` does not consume `:design` in this change.** Switching it touches 36 UI files whose
   rendered text is pinned by 15 approved Robolectric snapshots under
   `receiver/src/test/snapshots/approved/`, and those images cannot be regenerated without an Android
@@ -99,8 +100,9 @@ gesture bar, a status bar — is a different shape entirely. And the receiver dr
   cannot move into the pure-JVM module.
 - Building on foundation primitives means Flint writes and tests its own text field, button and
   dialog behaviour instead of inheriting Material's.
-- The screenshot suite's approved images and the emulator tests for reduced motion are written but
-  have not been run.
+- `:design` has token tests and no screenshot suite yet; the reduced-motion test named below is
+  planned, not written. The receiver's snapshot suite is the one that exists, and a workflow
+  regenerates its approved images on demand for anybody without an Android SDK.
 
 ## Alternatives considered
 

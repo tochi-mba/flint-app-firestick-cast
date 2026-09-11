@@ -108,10 +108,9 @@ encode-and-send path against the simpler surface first.
 
 ```bash
 ./gradlew :protocol:test                 # the wire, and the golden corpus
-./gradlew :castcore:check                # tests, ktlint, and the 95/85 coverage gate
-./gradlew :design:testDebugUnitTest      # the token test and the component screenshots
-./gradlew :mobile:testDebugUnitTest      # Robolectric and the Compose state tests
-./gradlew :mobile:lintDebug
+./gradlew :castcore:check                # tests, ktlint, the source guards, the 95/85 coverage gate
+./gradlew :design:check :design:lintDebug  # the token tests, ktlint, the source guards, lint
+./gradlew :mobile:check :mobile:lintDebug  # the pure-logic unit tests, ktlint, the source guards, lint
 ./gradlew :mobile:assembleDebug
 ```
 
@@ -138,14 +137,18 @@ Stated here rather than discovered later.
 - **No emulator or physical-device test has been run.** The tests that need real hardware are written
   and named as such; none of them has executed. The encoder round trip in particular has not, and
   until it has, nothing in this repository knows whether a phone's encoder produces pixels.
-- **The Android modules have not been compiled anywhere yet.** CI is the first thing that will build
-  them.
-- **The session transport, the encoder, the second-screen host and the foreground service exist but
-  are not wired to a control.** They are slices 05 to 08's implementation, landed ahead of the UI
-  that will offer them, and the Screen tab deliberately does not yet expose a Start button for
-  either mode. A control wired to nothing is exactly the defect the capability verdicts exist to
-  prevent, and one dressed in the verdicts' own clothes would be worse than an obvious one — so
-  where a path is not finished, the app says so rather than offering it.
+- **The Android modules compile in CI and nowhere else so far.** No emulator or device has run the
+  result. The pairing, second-screen and mirror paths are wired end to end -- a code opens a socket,
+  a granted token is stored and reused, the second screen renders into the encoder's surface, the
+  mirror takes a projection after the foreground service is up, and STATS drives the bitrate -- and
+  every one of those sentences describes code that has passed a compiler and not a television.
+- **`:mobile`'s Compose screens have no Robolectric tests yet.** The unit tests there cover the
+  pure logic pulled out of the Android classes (the pixel read, the token envelope); the tab
+  semantics, the back handler and the notice lifecycle are asserted by nothing but reading.
+- **The media picker and the ADB install are not in this build.** The Media tab shows the verdict
+  and says so; the receiver-setup card shows the stage and keeps its install control disabled with
+  the reason on the card. A control wired to nothing is exactly the defect the capability verdicts
+  exist to prevent.
 
 ## Governance
 

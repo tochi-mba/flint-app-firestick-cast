@@ -38,8 +38,9 @@ object SettingsCopy {
         }
 
     const val SECOND_SCREEN_PROBE_SUPPORTED: String =
-        "This phone gave Flint a private display and the frame drawn into it came back intact."
+        "This phone gave Flint a display only this app can see, and the frame drawn into it came " +
+            "back intact."
     const val SECOND_SCREEN_PROBE_UNSUPPORTED: String =
-        "This phone did not produce the frame Flint drew into a private display, so the second " +
-            "screen is not available on it."
+        "This phone did not produce the frame Flint drew into a display only this app can see, so " +
+            "the second screen is not available on it."
 }

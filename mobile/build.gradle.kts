@@ -4,9 +4,10 @@ plugins {
 }
 
 // Everything the release build needs is read through a provider rather than by opening a file
-// during configuration. :receiver reads keystore.properties directly, which silently invalidates
-// the configuration cache this build has switched on; doing the same here would have made every
-// phone build a cold one.
+// during configuration. A file opened during configuration is tracked by the configuration cache
+// as an input, so the cache is rebuilt whenever it changes; environment variables and Gradle
+// properties read through providers are tracked the same way but need no file on disk at all,
+// which is what a CI runner handing secrets in through the environment wants.
 val mobileVersionName = providers.gradleProperty("mobile.version").get()
 val mobileVersionSuffix = providers.gradleProperty("mobile.versionSuffix").getOrElse("")
 val mobileVersionCode = providers.gradleProperty("mobile.versionCode").map(String::toInt).getOrElse(1)

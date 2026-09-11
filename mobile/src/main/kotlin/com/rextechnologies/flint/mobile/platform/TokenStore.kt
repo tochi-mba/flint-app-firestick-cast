@@ -60,27 +60,16 @@ class TokenStore(context: Context) {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, secretKey())
         val ciphertext = cipher.doFinal(value.toByteArray(Charsets.US_ASCII))
-        // The initialisation vector is not a secret and has to survive alongside the ciphertext.
-        // Length-prefixed rather than fixed at twelve bytes, because a provider is entitled to pick
-        // a different nonce size and a hard-coded split would fail on the phone that did.
-        val iv = cipher.iv
-        val packed = ByteArray(1 + iv.size + ciphertext.size)
-        packed[0] = iv.size.toByte()
-        iv.copyInto(packed, 1)
-        ciphertext.copyInto(packed, 1 + iv.size)
+        val packed = TokenEnvelope.pack(cipher.iv, ciphertext)
         Base64.encodeToString(packed, Base64.NO_WRAP)
     }.getOrNull()
 
     private fun decrypt(stored: String): String? = runCatching {
         val packed = Base64.decode(stored, Base64.NO_WRAP)
-        if (packed.isEmpty()) return null
-        val ivLength = packed[0].toInt() and 0xff
-        if (ivLength <= 0 || packed.size <= 1 + ivLength) return null
-        val iv = packed.copyOfRange(1, 1 + ivLength)
-        val ciphertext = packed.copyOfRange(1 + ivLength, packed.size)
+        val envelope = TokenEnvelope.unpack(packed) ?: return null
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE, secretKey(), GCMParameterSpec(GCM_TAG_BITS, iv))
-        String(cipher.doFinal(ciphertext), Charsets.US_ASCII)
+        cipher.init(Cipher.DECRYPT_MODE, secretKey(), GCMParameterSpec(GCM_TAG_BITS, envelope.iv))
+        String(cipher.doFinal(envelope.ciphertext), Charsets.US_ASCII)
     }.getOrNull()
 
     /**

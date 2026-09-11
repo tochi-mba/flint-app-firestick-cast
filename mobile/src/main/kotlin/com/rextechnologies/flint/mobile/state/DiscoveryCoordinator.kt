@@ -5,6 +5,7 @@ import com.rextechnologies.flint.castcore.capability.NetworkPath
 import com.rextechnologies.flint.castcore.capability.ReceiverDevice
 import com.rextechnologies.flint.castcore.discovery.DiscoveryRung
 import com.rextechnologies.flint.mobile.net.DiscoveryRunner
+import com.rextechnologies.flint.mobile.net.ReceiverFinder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +43,7 @@ data class Discovered(
  * radio contention for the same answer, and the second one's results would land on top of the
  * first's in an order nobody chose.
  */
-class DiscoveryCoordinator(private val runner: DiscoveryRunner) {
+class DiscoveryCoordinator(private val runner: ReceiverFinder) {
     private val mutable = MutableStateFlow(Discovered())
     val state: StateFlow<Discovered> = mutable
 
