@@ -83,9 +83,25 @@ val ktlintCheck by tasks.registering(JavaExec::class) {
     description = "Checks Kotlin formatting in this module."
     classpath = ktlint
     mainClass.set("com.pinterest.ktlint.Main")
+    // The glob is relative to the process's working directory, which Gradle does not otherwise
+    // guarantee is this module.
+    workingDir = projectDir
     args("src/**/*.kt", "--reporter=plain", "--relative")
+
+    // Declared so Gradle can skip it when nothing it reads has changed -- and, more usefully, so it
+    // cannot skip it when something has. Without these it re-ran on every build and was cached on
+    // none, which is the wrong answer in both directions.
+    inputs.files(fileTree("src") { include("**/*.kt") }).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(rootProject.file(".editorconfig"))
+    val marker = layout.buildDirectory.file("ktlint/passed.txt")
+    outputs.file(marker)
+    doLast {
+        marker.get().asFile.apply { parentFile.mkdirs() }.writeText("ok\n")
+    }
 }
 
 tasks.named("check") {
     dependsOn(ktlintCheck)
 }
+
+apply(from = rootProject.file("gradle/scripts/source-checks.gradle.kts"))

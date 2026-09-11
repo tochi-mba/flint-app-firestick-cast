@@ -1,4 +1,4 @@
-# The phone app's pull-request gate.
+# The phone app's gate.
 #
 # Separate from ci.yml on purpose. That job runs .NET, Rust, a JDK and the Android SDK on a Windows
 # runner because the host probe reads the driver registry and the engine links against Win32 — none
@@ -6,14 +6,19 @@
 # forty-five Windows minutes to prove something about a desktop it did not touch.
 name: Mobile CI
 
+# On every branch rather than only the default one. The Android modules cannot be compiled anywhere
+# but here, so a branch that waits for a pull request to find out whether it compiles is a branch
+# that finds out too late. The paths filter keeps it to changes that could affect the phone, and the
+# concurrency group below cancels a superseded run rather than letting two pile up.
 on:
   push:
-    branches: [master]
+    branches: ['**']
     paths:
       - 'mobile/**'
       - 'design/**'
       - 'castcore/**'
       - 'protocol/**'
+      - 'receiver/**'
       - 'testdata/golden/**'
       - 'gradle/**'
       - 'gradlew'
@@ -21,6 +26,7 @@ on:
       - '*.gradle.kts'
       - 'gradle.properties'
       - '.editorconfig'
+      - '.github/actions/phone-gate/action.yml'
       - '.github/workflows/mobile.yml'
   pull_request:
     # GitHub Actions does not resolve YAML anchors, so this list is duplicated rather than shared.
@@ -29,6 +35,7 @@ on:
       - 'design/**'
       - 'castcore/**'
       - 'protocol/**'
+      - 'receiver/**'
       - 'testdata/golden/**'
       - 'gradle/**'
       - 'gradlew'
@@ -36,6 +43,7 @@ on:
       - '*.gradle.kts'
       - 'gradle.properties'
       - '.editorconfig'
+      - '.github/actions/phone-gate/action.yml'
       - '.github/workflows/mobile.yml'
   workflow_dispatch:
 
@@ -56,38 +64,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      # ci.yml has no Gradle caching at all, so every Fire TV check there re-downloads the world.
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Install the Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android build tools
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-
-      # The wire is shared with the Fire TV receiver, the Windows host and the Rust engine. A phone
-      # change that breaks a golden vector has to fail here rather than on a television.
-      - name: Check the shared protocol
-        run: ./gradlew :protocol:test --console plain
-
-      # :castcore is Android-free on purpose, which is what lets it carry the same 95% line / 85%
-      # branch gate as :protocol without Robolectric anywhere near it. `check` is tests, the coverage
-      # verification and ktlint.
-      - name: Check the phone's pure logic
-        run: ./gradlew :castcore:check --console plain
-
-      - name: Check the design system
-        run: ./gradlew :design:ktlintCheck :design:testDebugUnitTest :design:lintDebug --console plain
-
-      - name: Check the phone app
-        run: ./gradlew :mobile:ktlintCheck :mobile:testDebugUnitTest :mobile:lintDebug --console plain
+      # Exactly what the release workflow runs. Sharing the steps is the only way to keep a release
+      # from shipping something a pull request would have rejected.
+      - uses: ./.github/actions/phone-gate
 
       - name: Build the debug APK
         run: ./gradlew :mobile:assembleDebug --console plain
