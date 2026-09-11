@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -34,6 +33,7 @@ import com.rextechnologies.flint.design.Pill
 import com.rextechnologies.flint.design.SectionLabel
 import com.rextechnologies.flint.design.SignalButton
 import com.rextechnologies.flint.design.StatusDot
+import com.rextechnologies.flint.design.TextEntry
 import com.rextechnologies.flint.design.Tone
 import com.rextechnologies.flint.design.flintClickable
 import com.rextechnologies.flint.mobile.MobileController

@@ -91,6 +91,14 @@ data class SweepBudget(
 data class DiscoveryStep(
     val rung: DiscoveryRung,
     val boundAddress: Inet4Address,
+    /**
+     * The subnet the address sits in, carried rather than re-derived.
+     *
+     * A rung that had to work the prefix out for itself would have to guess at it, and a guessed
+     * prefix is a hardcoded subnet wearing arithmetic as a disguise. It is derived once, from the
+     * interface, and handed down.
+     */
+    val subnet: Ipv4Subnet,
     val sweep: SweepBudget? = null,
     val broadcastAddress: Inet4Address? = null,
     val requiresMulticastLock: Boolean = false,
@@ -112,18 +120,26 @@ object DiscoveryLadder {
 
         return buildList {
             SweepBudget.forSubnet(subnet)?.let { budget ->
-                add(DiscoveryStep(DiscoveryRung.LINE_PROBE, address, sweep = budget))
+                add(DiscoveryStep(DiscoveryRung.LINE_PROBE, address, subnet, sweep = budget))
             }
-            add(DiscoveryStep(DiscoveryRung.MULTICAST_DNS, address, requiresMulticastLock = true))
+            add(
+                DiscoveryStep(
+                    DiscoveryRung.MULTICAST_DNS,
+                    address,
+                    subnet,
+                    requiresMulticastLock = true,
+                ),
+            )
             add(
                 DiscoveryStep(
                     DiscoveryRung.UDP_BROADCAST,
                     address,
+                    subnet,
                     broadcastAddress = subnet.broadcastAddress,
                 ),
             )
-            add(DiscoveryStep(DiscoveryRung.SSDP, address, requiresMulticastLock = true))
-            add(DiscoveryStep(DiscoveryRung.MANUAL, address))
+            add(DiscoveryStep(DiscoveryRung.SSDP, address, subnet, requiresMulticastLock = true))
+            add(DiscoveryStep(DiscoveryRung.MANUAL, address, subnet))
         }
     }
 }

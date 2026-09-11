@@ -2,7 +2,6 @@ package com.rextechnologies.flint.mobile
 
 import android.os.Build
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
@@ -50,14 +49,5 @@ class MobileActivity : ComponentActivity() {
     override fun onDestroy() {
         controller.stop()
         super.onDestroy()
-    }
-
-    /** Held only while something is actually being sent, and released the moment it is not. */
-    fun keepScreenOn(enabled: Boolean) {
-        if (enabled) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
     }
 }

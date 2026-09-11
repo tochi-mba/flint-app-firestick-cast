@@ -28,7 +28,6 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.MulticastSocket
 import java.net.NetworkInterface
-import java.net.Socket
 import java.nio.charset.StandardCharsets
 
 /** What one rung of the ladder produced, kept separately so diagnostics can say which one worked. */
@@ -113,33 +112,8 @@ class DiscoveryRunner(context: Context) {
         return RungResult(step.rung, found, attempted = true, detail = "Swept ${budget.hostCount} addresses.")
     }
 
-    private fun subnetHosts(step: DiscoveryStep, limit: Int): List<Inet4Address> {
-        val subnet = com.rextechnologies.flint.protocol.network.Ipv4Subnet(
-            step.boundAddress,
-            prefixLengthOf(step),
-        )
-        return subnet.hosts(maximumHosts = limit).toList()
-    }
-
-    private fun prefixLengthOf(step: DiscoveryStep): Int =
-        step.broadcastAddress?.let { broadcast ->
-            // Derived rather than carried: the ladder already proved the subnet is sweepable, and the
-            // broadcast address is the only part of it this step needs to reconstruct.
-            prefixFromBroadcast(step.boundAddress, broadcast)
-        } ?: DEFAULT_PREFIX
-
-    private fun prefixFromBroadcast(address: Inet4Address, broadcast: Inet4Address): Int {
-        val host = address.address.fold(0L) { acc, b -> (acc shl 8) or (b.toLong() and 0xff) }
-        val cast = broadcast.address.fold(0L) { acc, b -> (acc shl 8) or (b.toLong() and 0xff) }
-        val differing = host xor cast
-        var prefix = 32
-        var mask = 1L
-        while (prefix > 0 && (differing and mask) != 0L) {
-            prefix--
-            mask = (mask shl 1) or 1L
-        }
-        return prefix
-    }
+    private fun subnetHosts(step: DiscoveryStep, limit: Int): List<Inet4Address> =
+        step.subnet.hosts(maximumHosts = limit).toList()
 
     private fun probeOne(
         binder: InterfaceSocketBinder,
@@ -339,14 +313,5 @@ class DiscoveryRunner(context: Context) {
         const val BROADCAST_TIMEOUT_MILLIS = 1_000
         const val MANUAL_TIMEOUT_MILLIS = 1_500
         const val ROUND_TRIP_SAMPLES = 5
-
-        /**
-         * The fallback when a step carries no broadcast address to derive a prefix from.
-         *
-         * Only the line-probe step can reach it, and the ladder only emits that step for a subnet it
-         * has already proved is sweepable, so this is the narrow case of a subnet that is a /24 in
-         * everything but the arithmetic.
-         */
-        const val DEFAULT_PREFIX = 24
     }
 }

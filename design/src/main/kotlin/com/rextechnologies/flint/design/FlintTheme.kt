@@ -67,10 +67,7 @@ fun FlintTheme(content: @Composable () -> Unit) {
  * settings provider, and an app that crashes on start because it asked about animation is worse than
  * one that animates when it should not have.
  */
-private fun animationsAreDisabled(resolver: android.content.ContentResolver): Boolean = try {
-    Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
-} catch (_: Settings.SettingNotFoundException) {
-    false
-} catch (_: SecurityException) {
-    false
-}
+private fun animationsAreDisabled(resolver: android.content.ContentResolver): Boolean =
+    runCatching {
+        Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+    }.getOrDefault(1f) == 0f
