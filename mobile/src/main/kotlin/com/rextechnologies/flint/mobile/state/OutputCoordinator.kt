@@ -185,7 +185,19 @@ class OutputCoordinator(
 
     /** Stops whatever is running, in the order that leaves nothing pointing at a released surface. */
     suspend fun stop() {
-        if (mutable.value == null && encoder == null) return
+        // A start can fail after the foreground service has been requested but before an encoder or
+        // LiveOutput exists. That half-start still needs a stop intent; returning here used to leave
+        // its notification and wake lock alive with no output that could later clean them up.
+        if (
+            mutable.value == null &&
+            encoder == null &&
+            secondScreen == null &&
+            projection == null &&
+            mirrorDisplay == null
+        ) {
+            CastService.stop(applicationContext)
+            return
+        }
         withContext(Dispatchers.Main.immediate) {
             runCatching { secondScreen?.close() }
             secondScreen = null
