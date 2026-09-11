@@ -142,7 +142,7 @@ fun PairingSheet(
  * keeps the caret where the person put it: one space appears after the third digit, so every
  * position past it shifts by exactly one.
  */
-private object GroupedDigits : VisualTransformation {
+internal object GroupedDigits : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
         val digits = text.text.take(PairingCopy.DIGITS)
         val grouped = PairingCopy.grouped(digits)
