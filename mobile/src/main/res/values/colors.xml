@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The two palette values Android needs before Compose exists: the window background painted during
+  the cold start, and the system bars. Every other colour is in :design. These two are duplicated
+  because a theme attribute cannot read a Kotlin object, and FlintTokenTest asserts they match.
+-->
+<resources>
+    <color name="ink">#080A09</color>
+    <color name="signal">#D7FF3F</color>
+</resources>

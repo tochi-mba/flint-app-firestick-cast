@@ -1,0 +1,98 @@
+# The phone app's gate.
+#
+# Separate from ci.yml on purpose. That job runs .NET, Rust, a JDK and the Android SDK on a Windows
+# runner because the host probe reads the driver registry and the engine links against Win32 — none
+# of which a phone-app change can affect. Left alone, every :mobile pull request would have paid
+# forty-five Windows minutes to prove something about a desktop it did not touch.
+name: Mobile CI
+
+# On every branch rather than only the default one. The Android modules cannot be compiled anywhere
+# but here, so a branch that waits for a pull request to find out whether it compiles is a branch
+# that finds out too late. The paths filter keeps it to changes that could affect the phone, and the
+# concurrency group below cancels a superseded run rather than letting two pile up.
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'mobile/**'
+      - 'design/**'
+      - 'castcore/**'
+      - 'protocol/**'
+      - 'receiver/**'
+      - 'testdata/golden/**'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+      - '.editorconfig'
+      - '.github/actions/phone-gate/action.yml'
+      - '.github/workflows/mobile.yml'
+  pull_request:
+    # GitHub Actions does not resolve YAML anchors, so this list is duplicated rather than shared.
+    paths:
+      - 'mobile/**'
+      - 'design/**'
+      - 'castcore/**'
+      - 'protocol/**'
+      - 'receiver/**'
+      - 'testdata/golden/**'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+      - '.editorconfig'
+      - '.github/actions/phone-gate/action.yml'
+      - '.github/workflows/mobile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # A cold run with empty caches sits well inside this. Long enough not to flap, short enough that
+    # a hung Gradle daemon fails visibly rather than burning an hour.
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Exactly what the release workflow runs. Sharing the steps is the only way to keep a release
+      # from shipping something a pull request would have rejected.
+      - uses: ./.github/actions/phone-gate
+
+      - name: Build the debug APK
+        run: ./gradlew :mobile:assembleDebug --console plain
+
+      # So a reviewer can install the branch on a real phone instead of taking the diff's word for it.
+      - name: Upload the debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: flint-mobile-debug-apk
+          path: mobile/build/outputs/apk/debug/*.apk
+          retention-days: 7
+          if-no-files-found: error
+
+      # Reports are the only way to see which case failed once the runner is gone.
+      - name: Upload test and lint reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-test-reports
+          path: |
+            castcore/build/reports/**
+            castcore/build/test-results/**
+            design/build/reports/**
+            design/build/test-results/**
+            mobile/build/reports/**
+            mobile/build/test-results/**
+            protocol/build/reports/**
+          retention-days: 7
+          if-no-files-found: ignore

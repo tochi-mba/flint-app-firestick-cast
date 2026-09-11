@@ -170,6 +170,19 @@ class SenderHandshake(
     var grantedToken: SessionToken? = null
         private set
 
+    /**
+     * The version every frame after HELLO rides on, or `null` before the receiver has answered.
+     *
+     * Exposed because the caller needs it one message earlier than [HandshakeOutcome.Established]
+     * carries it: the AUTH reply that `onHello` returns must already go out on the negotiated
+     * envelope. Without this the caller had to run `VersionNegotiator.negotiate` a second time on
+     * the same HELLO and hope the two agreed -- and carry a fallback for the case where its own
+     * negotiation failed, which cannot happen, because a failed negotiation is why this returns
+     * `Rejected` instead.
+     */
+    val negotiatedVersion: Int?
+        get() = pendingParameters?.protocolVersion
+
     fun start(): WireMessage {
         check(!sentHello) { "Handshake already started" }
         sentHello = true

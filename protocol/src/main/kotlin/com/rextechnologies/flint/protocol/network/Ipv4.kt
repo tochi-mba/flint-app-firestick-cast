@@ -60,6 +60,31 @@ data class Ipv4Subnet(
     fun contains(address: Inet4Address): Boolean =
         (Ipv4.toUnsignedLong(address) and mask) == (localValue and mask)
 
+    /** The first address [hosts] would yield, as a number. */
+    private val firstHostValue: Long
+        get() = Ipv4.toUnsignedLong(networkAddress) + if (prefixLength <= 30) 1 else 0
+
+    /** The last address [hosts] would yield, as a number. */
+    private val lastHostValue: Long
+        get() = Ipv4.toUnsignedLong(broadcastAddress) - if (prefixLength <= 30) 1 else 0
+
+    /**
+     * How many addresses [hosts] would yield, without walking them.
+     *
+     * Counted here rather than by whoever needs the number, so that a caller sizing a sweep and the
+     * sequence it then sweeps can never disagree. They did: the discovery sweep subtracted the local
+     * address unconditionally where this subtracts it only when it actually falls inside the host
+     * range, which on a subnet whose local address sits outside that range is one host the sweep
+     * budgeted for and the sequence never produced.
+     */
+    fun usableHostCount(excludeLocalAddress: Boolean = true): Long {
+        val first = firstHostValue
+        val last = lastHostValue
+        val rawCount = if (last < first) 0 else last - first + 1
+        val localIsIncluded = excludeLocalAddress && localValue in first..last
+        return rawCount - if (localIsIncluded) 1 else 0
+    }
+
     /**
      * Enumerates usable peer addresses. Network/broadcast addresses are omitted
      * for prefixes /0 through /30; both endpoints are usable for /31 (RFC 3021).
@@ -69,17 +94,13 @@ data class Ipv4Subnet(
         maximumHosts: Int = 65_536,
     ): Sequence<Inet4Address> {
         require(maximumHosts > 0)
-        val network = Ipv4.toUnsignedLong(networkAddress)
-        val broadcast = Ipv4.toUnsignedLong(broadcastAddress)
-        val first = if (prefixLength <= 30) network + 1 else network
-        val last = if (prefixLength <= 30) broadcast - 1 else broadcast
-        val rawCount = if (last < first) 0 else last - first + 1
-        val localIsIncluded = excludeLocalAddress && localValue in first..last
-        val resultCount = rawCount - if (localIsIncluded) 1 else 0
+        val resultCount = usableHostCount(excludeLocalAddress)
         require(resultCount <= maximumHosts.toLong()) {
             "Subnet has $resultCount hosts; maximumHosts is $maximumHosts"
         }
 
+        val first = firstHostValue
+        val last = lastHostValue
         return sequence {
             var value = first
             while (value <= last) {

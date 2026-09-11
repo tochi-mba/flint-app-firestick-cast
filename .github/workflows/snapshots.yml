@@ -1,0 +1,85 @@
+# Regenerates the approved Robolectric images, by hand.
+#
+# The snapshot suites hold rendered UI to approved PNGs, and a missing or changed image is a failure
+# rather than an automatic approval -- which is right, and which also means a deliberate copy or
+# layout change cannot be landed by anybody without an Android SDK. This is how that unblocks: run
+# it, look at the images it produces, and commit the ones that are correct.
+#
+# It never commits anything itself. An approval is somebody deciding a rendered frame looks right,
+# and a workflow cannot do that.
+name: Snapshots
+
+on:
+  workflow_dispatch:
+    inputs:
+      modules:
+        description: 'Gradle test tasks to regenerate against'
+        required: false
+        default: ':receiver:testDebugUnitTest :design:testDebugUnitTest :mobile:testDebugUnitTest'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snapshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install the Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "build-tools;35.0.0"
+
+      # FLINT_UPDATE_SNAPSHOTS is what the harness reads to overwrite rather than assert. Failures
+      # are tolerated here on purpose: a test that fails for an unrelated reason should not stop the
+      # images that did render from being collected.
+      - name: Render and approve
+        continue-on-error: true
+        env:
+          FLINT_UPDATE_SNAPSHOTS: '1'
+        run: ./gradlew ${{ inputs.modules }} --console plain
+
+      - name: Collect the images
+        run: |
+          set -euo pipefail
+          mkdir -p regenerated
+          found=0
+          for module in receiver design mobile; do
+            directory="$module/src/test/snapshots/approved"
+            if [ -d "$directory" ]; then
+              mkdir -p "regenerated/$module"
+              cp -r "$directory/." "regenerated/$module/"
+              found=1
+            fi
+          done
+          if [ "$found" != "1" ]; then
+            echo "No snapshot directory was produced; nothing rendered." >&2
+            exit 1
+          fi
+          find regenerated -name '*.png' -printf '%p %s bytes\n' | sort
+
+      # Downloaded, looked at, and committed by a person. That last part is the point.
+      - name: Upload the regenerated images
+        uses: actions/upload-artifact@v4
+        with:
+          name: flint-snapshots
+          path: regenerated/**
+          retention-days: 14
+          if-no-files-found: error

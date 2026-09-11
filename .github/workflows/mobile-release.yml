@@ -1,0 +1,230 @@
+# The downloadable phone APK.
+#
+# Two cadences, one job. Every merge to the default branch replaces a rolling `latest` prerelease so
+# the download link on a phone's browser never changes and always points at the newest build; a
+# `v*` tag cuts an immutable release that will still be exactly these bytes in five years.
+#
+# Sideloading is the whole distribution story for this app — there is no store listing — so the APK
+# has to be signed with a key that never changes. An install signed by a different key is not an
+# update, it is a different app, and Android refuses to upgrade across it.
+name: Mobile release
+
+# Deliberately unfiltered by path, unlike mobile.yml. A push event carries one paths filter for both
+# its branch and its tag patterns, and a tag push is matched against the diff of whatever commit it
+# names -- so a `v*` tag placed on a commit that happened to touch nothing under mobile/ would be
+# skipped silently. A release that does not happen is a worse failure than a build that did not need
+# to run, so this one runs on every merge and every tag.
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mobile-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # versionName has one source: mobile.version in gradle.properties. A tag that disagrees with it
+      # is a mistake worth failing on rather than a second source of truth worth honouring.
+      - name: Resolve the version
+        id: version
+        run: |
+          set -euo pipefail
+          base="$(sed -n 's/^mobile\.version=//p' gradle.properties)"
+          if [ -z "$base" ]; then
+            echo "gradle.properties has no mobile.version" >&2
+            exit 1
+          fi
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            tagged="${GITHUB_REF#refs/tags/v}"
+            if [ "$tagged" != "$base" ]; then
+              echo "Tag v$tagged does not match mobile.version=$base in gradle.properties." >&2
+              exit 1
+            fi
+            echo "name=$base" >> "$GITHUB_OUTPUT"
+            echo "suffix=" >> "$GITHUB_OUTPUT"
+            echo "tagged=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=$base" >> "$GITHUB_OUTPUT"
+            echo "suffix=-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+            echo "tagged=false" >> "$GITHUB_OUTPUT"
+          fi
+          # Monotonic and reproducible from the run alone. The offset keeps it clear of the codes a
+          # hand-built APK may already have installed on somebody's phone.
+          echo "code=$(( 1000 + GITHUB_RUN_NUMBER ))" >> "$GITHUB_OUTPUT"
+
+      # An unsigned build must look unsigned. Producing something that reads as releasable when
+      # nobody could install it as an upgrade is the failure this step exists to prevent.
+      #
+      # All four secrets or none. mobile/build.gradle.kts refuses to configure a half-populated
+      # signing block, so with only the keystore present it produces an unsigned APK -- and this step
+      # used to write signed=true anyway, which named that APK as though it were signed.
+      - name: Decode the signing key
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.MOBILE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          missing=""
+          [ -z "${KEYSTORE_BASE64:-}" ] && missing="$missing MOBILE_KEYSTORE_BASE64"
+          [ -z "${KEYSTORE_PASSWORD:-}" ] && missing="$missing MOBILE_KEYSTORE_PASSWORD"
+          [ -z "${KEY_ALIAS:-}" ] && missing="$missing MOBILE_KEY_ALIAS"
+          [ -z "${KEY_PASSWORD:-}" ] && missing="$missing MOBILE_KEY_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "Signing is incomplete (missing:$missing); the APK will be unsigned." >&2
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          install -d -m 700 "${RUNNER_TEMP}/signing"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "${RUNNER_TEMP}/signing/flint-mobile.jks"
+          chmod 600 "${RUNNER_TEMP}/signing/flint-mobile.jks"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      # Exactly the checks a pull request runs, from the same composite action. A release must never
+      # ship code that would have been rejected on review.
+      - uses: ./.github/actions/phone-gate
+
+      # The Fire TV package the phone can install over ADB. It is built from this same commit, so the
+      # version the phone offers to install is never a mystery. Debug rather than release on purpose:
+      # `pm install` refuses an unsigned APK, and the receiver's release signing key is not available
+      # to this workflow.
+      - name: Build the receiver package to bundle
+        run: ./gradlew :receiver:assembleDebug --console plain
+
+      - name: Stage the receiver package as an asset
+        run: |
+          set -euo pipefail
+          apk="$(find receiver/build/outputs/apk/debug -name '*.apk' -print -quit)"
+          if [ -z "$apk" ]; then
+            echo "No receiver APK was produced." >&2
+            exit 1
+          fi
+          mkdir -p mobile/src/main/assets
+          cp "$apk" mobile/src/main/assets/flint-receiver.apk
+          {
+            echo "source=$apk"
+            echo "commit=${GITHUB_SHA}"
+            echo "sha256=$(sha256sum "$apk" | cut -d' ' -f1)"
+          } > mobile/src/main/assets/flint-receiver.properties
+          cat mobile/src/main/assets/flint-receiver.properties
+
+      # R8 runs here and nowhere else. package.ps1 only ever assembles debug, so the receiver's
+      # proguard rules have never actually been exercised; the phone's are, every merge.
+      - name: Build the release APK
+        env:
+          MOBILE_KEYSTORE_PATH: ${{ steps.signing.outputs.signed == 'true' && format('{0}/signing/flint-mobile.jks', runner.temp) || '' }}
+          MOBILE_KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          MOBILE_KEY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          MOBILE_KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
+        run: >
+          ./gradlew :mobile:assembleRelease --console plain
+          -Pmobile.versionCode=${{ steps.version.outputs.code }}
+          -Pmobile.versionSuffix=${{ steps.version.outputs.suffix }}
+
+      - name: Name the artifacts
+        id: artifacts
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.name }}${{ steps.version.outputs.suffix }}"
+          suffix=""
+          if [ "${{ steps.signing.outputs.signed }}" != "true" ]; then
+            suffix="-unsigned"
+          fi
+          apk="$(find mobile/build/outputs/apk/release -name '*.apk' -print -quit)"
+          if [ -z "$apk" ]; then
+            echo "No release APK was produced." >&2
+            exit 1
+          fi
+
+          # The signature is verified rather than assumed. steps.signing says what this job was
+          # given; apksigner says what came out, and only the second one is what somebody installs.
+          if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then
+            apksigner="$(find "${ANDROID_HOME}/build-tools" -name apksigner -print -quit)"
+            if [ -z "$apksigner" ]; then
+              echo "apksigner is not installed, so the signature cannot be verified." >&2
+              exit 1
+            fi
+            "$apksigner" verify --print-certs "$apk"
+          fi
+
+          # R8 is on for this build type, so a missing mapping file means a stack trace from a
+          # crashing phone can never be read again. That is worth failing the release for.
+          mapping=mobile/build/outputs/mapping/release/mapping.txt
+          if [ ! -f "$mapping" ]; then
+            echo "Minification is enabled but no mapping.txt was produced." >&2
+            exit 1
+          fi
+
+          mkdir -p dist
+          cp "$apk" "dist/Flint-Mobile-${version}${suffix}.apk"
+          cp "$mapping" "dist/Flint-Mobile-${version}${suffix}-mapping.txt"
+          ls -l dist
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the rolling prerelease
+        # Also guarded on the branch. A workflow_dispatch from any branch would otherwise move
+        # `latest` -- the tag every download link on every phone points at -- to a branch build.
+        if: steps.version.outputs.tagged == 'false' && github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Flint Mobile (rolling)
+          prerelease: true
+          make_latest: false
+          files: dist/*
+          body: |
+            **The newest build of the phone app, replaced on every merge.** Version
+            `${{ steps.artifacts.outputs.version }}`. For a build that will not change under you,
+            use a `v*` release instead.
+
+            **Android 8.0 or newer.** Download the APK on the phone, open it, and allow installation
+            from your browser when Android asks. This is not a Play Store listing, so Android will
+            warn you about an unknown developer — that warning is accurate, not a formality.
+
+            The phone becomes the host: turn on its hotspot, join the Fire TV to it, and Flint casts
+            over that link. Check the TV first — **Settings → My Fire TV → About**. Fire OS 7 or 8
+            works; Vega OS cannot, and no future version will change that.
+
+      # After the release, not before. action-gh-release will not move a tag that already exists, so
+      # the rolling tag is moved by hand -- and moving it first meant a publish that failed left
+      # `latest` pointing at bytes nobody had published, which is the one state a download link must
+      # never be in.
+      - name: Move the rolling tag
+        if: steps.version.outputs.tagged == 'false' && github.ref == 'refs/heads/master'
+        run: |
+          set -euo pipefail
+          git tag -f latest "${GITHUB_SHA}"
+          git push -f origin refs/tags/latest
+
+      - name: Publish the tagged release
+        if: steps.version.outputs.tagged == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          body: |
+            **Android 8.0 or newer.** Download the APK on the phone, open it, and allow installation
+            from your browser when Android asks. The build is not distributed through a store, so
+            Android will warn you about an unknown developer.
+
+            The phone becomes the host: turn on its hotspot, join the Fire TV to it, and Flint casts
+            over that link. Check the TV first — **Settings → My Fire TV → About**. Fire OS 7 or 8
+            works; Vega OS cannot, and no future version will change that.
+
+            See the [installation guide](docs/INSTALL.md).

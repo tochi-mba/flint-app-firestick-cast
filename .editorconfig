@@ -2,10 +2,15 @@ root = true
 
 [*]
 charset = utf-8
-end_of_line = crlf
 insert_final_newline = true
 indent_style = space
 trim_trailing_whitespace = true
+
+# CRLF is the convention of the Windows projects and nothing else. Set repository-wide, as it was,
+# it told `ktlint --format` on Linux to rewrite every Kotlin file's line endings, and git to report a
+# change on every line of every file it touched.
+[*.{cs,csproj,props,targets,axaml,xaml,ps1,sln}]
+end_of_line = crlf
 
 [*.{cs,csproj,props,targets}]
 indent_size = 4
@@ -18,6 +23,24 @@ indent_size = 4
 
 [*.{kt,kts}]
 indent_size = 4
+max_line_length = 120
+
+# ktlint settings. Nothing else reads these, and ktlint only runs on :castcore, :design and
+# :mobile today, but the file is the tool's own configuration mechanism so it belongs here.
+#
+# intellij_idea rather than ktlint_official: the official style rewrites signatures and expression
+# bodies to its own taste, which would put a formatter's opinion in the diff of every change to
+# code that already reads consistently. The rules that matter -- imports, indentation, spacing,
+# no wildcard imports -- are in both.
+ktlint_code_style = intellij_idea
+# Composable functions are PascalCase by the framework's own convention, which the function-naming
+# rule reads as a violation on every component in :design.
+ktlint_function_naming_ignore_when_annotated_with = Composable
+# These two collapse a multi-line signature onto one line whenever it happens to fit, which is the
+# opposite of how every other Kotlin file in this repository is written. Leaving them on would put a
+# formatter's opinion into the diff of every change to code that already reads consistently.
+ktlint_standard_class-signature = disabled
+ktlint_standard_function-signature = disabled
 
 [*.{md,yml,yaml,json}]
 indent_size = 2

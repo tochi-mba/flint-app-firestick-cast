@@ -347,3 +347,63 @@ Hardware probe entry points (opt-in, ignore when no device):
 - Script: `scripts/test-receiver-browser.ps1 -Mode Device` plus manual `dumpsys meminfo` while mosaic
   holds N live panes
 
+
+## Flint Mobile (targets and measurement vocabulary)
+
+**Nothing in this section is a measurement.** Glass to glass has never been measured on a phone, the
+camera procedure below has not been run against any named phone-and-television pair, and no stage of
+the phone's own pipeline has been timed on real hardware. Every figure here is a target, and it stays
+one until a repeatable run against a named pair puts it in a measured table of its own.
+
+The phone path is not the desktop path with a different capture source. It has stages the desktop
+does not — a `VirtualDisplay` and, on the mirror path, a `MediaProjection` — and it runs on a shared
+SoftAP link where the phone is the access point rather than a client, which changes what the network
+term is competing with.
+
+### Targets (not claims)
+
+| Stage | Target | Owner | Why this bound |
+|---|---|---|---|
+| Compose render into the virtual display | ~8 ms | `:mobile` | One frame at 120 Hz. The second screen draws its own content, so this is a normal Compose frame rather than a capture. |
+| VirtualDisplay to encoder input surface | ~0 ms | platform | The display writes straight into the encoder's input `Surface`. There is no copy here to bound; if one appears, the surface has been wired wrongly. |
+| MediaProjection to encoder input surface | ~0 ms | platform | The same, on the mirror path. |
+| Encode | ~6-10 ms | platform | A hardware encoder at 1080p60 with no B-frames, `KEY_LATENCY = 1`, and `KEY_LOW_LATENCY = 1` where `FEATURE_LowLatency` is supported. Vendor variance here is large and is the main reason this is a range. |
+| Frame and socket write | <1 ms | `:protocol` | `FrameWriter` writes the envelope from a reused header array and the payload straight from the encoder's buffer. Nothing on this path allocates. |
+| Wi-Fi traversal, SoftAP | ~5-15 ms | network | The phone is the access point, so this is one hop rather than two. It is also the term the bitrate controller is protecting: an over-large stream degrades every other hotspot client. |
+| Receiver jitter queue | ~2 frames | `:receiver` | `MirrorVideoDecoder` holds three frames and discards the whole queue on overflow. Two is the working depth; the third is the margin. |
+| Decode | unknown | television | Not under Flint's control and not measured. On the desktop path this term is already larger than everything on the host side put together. |
+| Present | unknown | television | Panel processing. Also not under Flint's control, and a television's own picture modes can add more than every other stage combined. |
+
+The last two are deliberately blank rather than estimated. They are the two largest terms, and
+guessing at them would make a total that looked authoritative and was not.
+
+### Measurement procedure
+
+The same procedure the desktop path uses, adapted for a phone. It is written down here so that the
+slice that runs it does not have to invent it.
+
+1. Name the pair. The phone's model and Android version, the television's model and Fire OS version,
+   and the hotspot band. A figure without a named pair is not a measurement.
+2. Put the phone into second-screen mode showing a full-screen surface that alternates between two
+   flat colours on a known frame boundary. Second screen rather than mirror, because it has no
+   capture stage and so measures the pipeline rather than the pipeline plus `MediaProjection`.
+3. Film the phone and the television in one frame at 240 fps.
+4. Count frames between the change on the phone and the change on the television. At 240 fps each
+   frame is 4.17 ms, and that is the resolution of the result — quote it as a range, not a point.
+5. Repeat at least five times and report the median and the spread. A single run is an anecdote.
+6. Repeat the whole thing in mirror mode. The difference between the two is the cost of
+   `MediaProjection`, which is the one term this product can actually choose to avoid.
+
+### Required record fields
+
+Every recorded run carries: phone model, Android version, television model, Fire OS version, hotspot
+band and channel, negotiated codec, encoder name as reported by `MediaCodecInfo`, resolution, frame
+rate, bitrate at the time of the run, and the thermal status. The last two matter because a run taken
+while the phone was throttling is not a run of the same system.
+
+### What must not happen
+
+No figure moves out of this section into a measured table without that procedure and that record. No
+figure from this section is quoted in the app, in the release notes, in a commit message, or in a
+pull request description. The app has no latency readout at all for this reason: a number on the live
+strip would be read as a measurement, and there is not one to show.

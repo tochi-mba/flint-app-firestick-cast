@@ -112,6 +112,54 @@ stays disabled until a properly signed driver ships. Everything else works witho
 
 See the [latency budget](LATENCY_BUDGET.md) for what has and has not been measured.
 
+## Flint Mobile (phone as host)
+
+There is a second way to use Flint, and it needs no PC at all: the phone becomes the host and the
+television becomes the screen. The phone runs the hotspot, the Fire TV joins it, and Flint casts over
+that link.
+
+**Check the television first.** On the TV, open **Settings → My Fire TV → About**. Fire OS 7 and Fire
+OS 8 work. Vega OS cannot: it is not Android, so no app can be installed on it by any method, and no
+future version of Flint will change that. Nothing below will help on a Vega device.
+
+**You need Android 8.0 or newer**, and a phone that can run a hotspot.
+
+1. On the phone, open the [latest release](https://github.com/tochi-mba/flint-app-firestick-cast/releases)
+   and download the `Flint-Mobile-*.apk` file.
+2. Open it. Android will ask whether to allow installing apps from your browser; allow it, and then
+   turn the permission off again afterwards if you would rather.
+3. Android will warn you about an unknown developer. That warning is accurate rather than a
+   formality: the app is not distributed through a store and is signed by a key that no store has
+   vouched for. Building from source avoids the warning and is the same code.
+4. Turn on the phone's hotspot.
+5. On the TV, open **Settings → Network** and join that hotspot.
+6. Open Flint on the phone. It will say which end of the network it is on and what it can do with the
+   television it finds.
+7. Open Flint on the TV and type the six-digit code it shows into the phone.
+
+The phone's own hotspot is the arrangement Flint is built around, and not only because it needs no
+router. An access point can always reach its own clients, so the setting that silently breaks casting
+on somebody else's Wi-Fi — client isolation — does not apply. Joining both devices to the same Wi-Fi
+also works, and Flint will say so and warn you about that setting if it is what you have done.
+
+### Installing the receiver from the phone
+
+If the TV has no Flint receiver on it yet, the phone can install one over ADB. It needs ADB debugging
+switched on, which is the same setting described under **Turning on ADB debugging** above, and it
+needs you to accept the authorisation prompt the television shows. Flint waits for that prompt rather
+than working around it: it is the television owner's only say in what runs on it.
+
+Before it installs anything, the phone shows exactly what it will install — the package name, the
+version, the size and where it came from — and the screen that offers to install it also offers to
+remove it.
+
+### What Flint Mobile does not ask for
+
+It never asks for location permission, because it never scans for Wi-Fi networks. It reads its own
+network interfaces, which needs no permission, and looks for a television on the subnet it derives
+from them. Every other casting app on a phone asks for location, and people have reasonably learned
+to assume it is unavoidable. It is not.
+
 ## Build it yourself
 
 Takes about two minutes on a machine that already has the tooling.

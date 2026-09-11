@@ -13,15 +13,15 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.rextechnologies.flint.receiver"
-    compileSdk = 36
+    compileSdk = libs.versions.compile.sdk.get().toInt()
     // Pin away from a corrupted local build-tools 36.0.0 install (missing aidl.exe).
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
         applicationId = "com.rextechnologies.flint.receiver"
         // Fire OS 6 reports API 25; keeping this at 25 includes older Fire TV hardware.
-        minSdk = 25
-        targetSdk = 36
+        minSdk = libs.versions.receiver.min.sdk.get().toInt()
+        targetSdk = libs.versions.target.sdk.get().toInt()
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -106,40 +106,40 @@ android {
 
 dependencies {
     // WireGuard embedding requires desugaring (see wireguard-android README).
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
-    val composeBom = platform("androidx.compose:compose-bom:2026.05.00")
+    val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
-    implementation("com.wireguard.android:tunnel:1.0.20260102")
-    implementation("androidx.activity:activity-compose:1.13.0")
-    implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.tv:tv-material:1.1.0")
+    implementation(libs.wireguard.tunnel)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.androidx.tv.material)
     // Feature-gated WebView APIs. The platform classes alone cannot ask whether a capability is
     // present, and the browser refuses to claim one it has not checked for.
-    implementation("androidx.webkit:webkit:1.12.1")
-    implementation("androidx.media3:media3-exoplayer:1.10.1")
-    implementation("androidx.media3:media3-exoplayer-dash:1.10.1")
-    implementation("androidx.media3:media3-exoplayer-hls:1.10.1")
-    implementation("androidx.media3:media3-ui:1.10.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
-    implementation("com.google.zxing:core:3.5.3")
-    implementation("org.bouncycastle:bcpkix-jdk18on:1.81")
+    implementation(libs.androidx.webkit)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.exoplayer.dash)
+    implementation(libs.media3.exoplayer.hls)
+    implementation(libs.media3.ui)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.zxing.core)
+    implementation(libs.bouncycastle.pkix)
     implementation(project(":protocol"))
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation(libs.compose.ui.tooling)
 
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(libs.junit)
     testImplementation(kotlin("test-junit"))
-    testImplementation("androidx.test:core:1.7.0")
-    testImplementation("org.robolectric:robolectric:4.16.1")
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.robolectric)
     testImplementation(composeBom)
-    testImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
-    androidTestImplementation("androidx.test.ext:junit:1.3.0")
-    androidTestImplementation("androidx.test:runner:1.7.0")
-    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.4.0")
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.uiautomator)
 }
 

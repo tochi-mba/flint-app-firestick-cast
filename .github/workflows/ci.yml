@@ -1,10 +1,31 @@
 # The same checks scripts/build.ps1 runs locally, so a green local run means a green CI run.
 name: CI
 
+# The phone app lives in the same repository but shares none of this job's toolchains, so a change
+# confined to it does not run three toolchains on a Windows runner to prove nothing. Anything the
+# two builds genuinely share -- :protocol, the golden corpus, the Gradle files -- is deliberately
+# absent from this list, so a change there still runs both.
+#
+# If this workflow is ever made a required status check, add the same paths to the branch rule's
+# exemptions: GitHub reports a path-filtered workflow as pending rather than passing, and a
+# mobile-only pull request would wait for a job that is never going to start.
 on:
   push:
     branches: [master]
+    paths-ignore:
+      - 'mobile/**'
+      - 'design/**'
+      - 'castcore/**'
+      - '.github/workflows/mobile.yml'
+      - '.github/workflows/mobile-release.yml'
   pull_request:
+    # Duplicated rather than shared: GitHub Actions does not resolve YAML anchors.
+    paths-ignore:
+      - 'mobile/**'
+      - 'design/**'
+      - 'castcore/**'
+      - '.github/workflows/mobile.yml'
+      - '.github/workflows/mobile-release.yml'
   workflow_dispatch:
 
 permissions:

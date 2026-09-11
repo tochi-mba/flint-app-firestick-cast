@@ -9,7 +9,7 @@ kotlin {
 
 dependencies {
     testImplementation(kotlin("test-junit"))
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(libs.junit)
 }
 
 tasks.test {
@@ -18,7 +18,7 @@ tasks.test {
 }
 
 jacoco {
-    toolVersion = "0.8.14"
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {
