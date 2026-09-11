@@ -140,6 +140,12 @@ Stated here rather than discovered later.
   until it has, nothing in this repository knows whether a phone's encoder produces pixels.
 - **The Android modules have not been compiled anywhere yet.** CI is the first thing that will build
   them.
+- **The session transport, the encoder, the second-screen host and the foreground service exist but
+  are not wired to a control.** They are slices 05 to 08's implementation, landed ahead of the UI
+  that will offer them, and the Screen tab deliberately does not yet expose a Start button for
+  either mode. A control wired to nothing is exactly the defect the capability verdicts exist to
+  prevent, and one dressed in the verdicts' own clothes would be worse than an obvious one — so
+  where a path is not finished, the app says so rather than offering it.
 
 ## Governance
 

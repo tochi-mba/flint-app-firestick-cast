@@ -193,7 +193,10 @@ def write_android_icons(root: Path) -> None:
     """Emit the phone app's adaptive icon layers and its notification silhouette."""
     res = root / "mobile" / "src" / "main" / "res"
     drawable = res / "drawable"
-    mipmap = res / "mipmap-anydpi-v26"
+    # anydpi rather than anydpi-v26: the phone app's floor is API 26, which is exactly where
+    # adaptive icons arrived, so the version qualifier would only add a configuration that can
+    # never be selected and a default that would then be missing.
+    mipmap = res / "mipmap-anydpi"
     drawable.mkdir(parents=True, exist_ok=True)
     mipmap.mkdir(parents=True, exist_ok=True)
 
