@@ -13,8 +13,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <!--
       Two service types, because the two modes genuinely need different things. A mirror captures the
-      screen and must run under mediaProjection; a second screen captures nothing at all -- it draws
-      into a display this app owns -- and declaring it as a projection would be a claim about what
+      screen and must run under mediaProjection; a second screen captures nothing at all — it draws
+      into a display this app owns — and declaring it as a projection would be a claim about what
       the app is doing that is not true.
     -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
@@ -46,7 +46,7 @@
           device-transfer stream is a copy of that proof.
 
           There is deliberately no android:usesCleartextTraffic here, unlike the receiver. That flag
-          governs the platform HTTP stack -- URLConnection, WebView, OkHttp -- and every socket this
+          governs the platform HTTP stack — URLConnection, WebView, OkHttp — and every socket this
           app opens is a raw one: the cast protocol, the ADB channel and the hand-rolled HTTP in
           :protocol are all unaffected by it. Leaving it off costs nothing and keeps a true statement
           true.
