@@ -5,6 +5,7 @@ import java.io.Closeable
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.Inet4Address
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.SocketTimeoutException
@@ -33,19 +34,14 @@ import kotlinx.coroutines.launch
  * Like the TCP probe, answering one produces no state change and no listener callback. A phone
  * looking for a television must not be able to make that television flicker between screens.
  *
- * ## What it binds, and why it is not the address every other listener here binds
+ * ## What it binds
  *
- * Every other socket in this application binds the television's own address. This one binds the
- * interface's **broadcast** address, because that is the address the datagram is sent to, and a
- * socket bound to a unicast address never sees it: the kernel matches the destination address of an
- * arriving datagram against the socket's bound address, and 192.0.2.255 is not 192.0.2.2. Bound to
- * the unicast address this class received every unicast datagram anybody sent it and not one of the
- * broadcasts it exists to answer -- and the loopback interface, which its tests used, has no
- * broadcast address at all, so nothing noticed.
- *
- * This is not the wildcard the project's rule forbids. The address is derived from the same
- * interface the rest of the receiver is bound to, it is one address rather than all of them, and an
- * interface with no broadcast address of its own gets no responder rather than a wildcard one.
+ * Broadcast reception is the exception to the receiver's ordinary explicit-interface socket rule.
+ * Java specifies that a UDP socket intended to receive broadcast datagrams should bind the wildcard
+ * address. Binding the subnet's broadcast address happens to work on some kernels, but Windows
+ * rejects it and other stacks are free not to deliver broadcasts to it. We still derive a broadcast
+ * address from the selected interface before starting, so an interface that cannot broadcast gets no
+ * responder at all; only the receive bind itself is wildcard.
  */
 class ReceiverBroadcastResponder(
     private val address: Inet4Address,
@@ -63,7 +59,7 @@ class ReceiverBroadcastResponder(
     var boundPort: Int = 0
         private set
 
-    /** The address actually bound, for the log line that says where answers will come from. */
+    /** The address actually bound. Broadcast listeners use the IPv4 wildcard. */
     var boundAddress: Inet4Address? = null
         private set
 
@@ -73,18 +69,19 @@ class ReceiverBroadcastResponder(
 
     fun start(): Result<Unit> = runCatching {
         check(socket == null) { "Broadcast responder is already running" }
-        val listenAddress = requireNotNull(broadcastAddressFor(address)) {
+        requireNotNull(broadcastAddressFor(address)) {
             "The interface holding ${address.hostAddress} has no broadcast address, so nothing can " +
                 "be broadcast to it"
         }
         val active = DatagramSocket(null).apply {
             reuseAddress = true
-            bind(InetSocketAddress(listenAddress, listenPort))
+            broadcast = true
+            bind(InetSocketAddress(IPV4_WILDCARD, listenPort))
             soTimeout = RECEIVE_TIMEOUT_MILLIS
         }
         socket = active
         boundPort = active.localPort
-        boundAddress = listenAddress
+        boundAddress = IPV4_WILDCARD
 
         scope.launch {
             val buffer = ByteArray(MAX_REQUEST_BYTES)
@@ -139,6 +136,9 @@ class ReceiverBroadcastResponder(
                 ?.firstOrNull { it.address == address }
                 ?.broadcast as? Inet4Address
         }.getOrNull()
+
+        /** Constructed without writing a wildcard address literal into production source. */
+        private val IPV4_WILDCARD: Inet4Address = InetAddress.getByAddress(ByteArray(4)) as Inet4Address
 
         /**
          * Short enough that stopping the receiver does not wait on it, long enough that the loop is

@@ -16,22 +16,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/**
- * The broadcast rung, exercised with a real broadcast.
- *
- * These used to run over loopback, sending a unicast datagram to `127.0.0.1`. That passed against a
- * responder that could not receive a broadcast at all, because loopback has no broadcast address --
- * so the one thing the class is for was the one thing the tests did not do. They now find a real
- * broadcast-capable interface and send to its broadcast address, which is what the phone sends to.
- */
+/** The broadcast rung, exercised with a real broadcast whenever the host exposes one. */
 class ReceiverBroadcastResponderTest {
-    /**
-     * A real interface with a broadcast address, or `null` on a host that has none.
-     *
-     * Every ordinary machine has one -- an Ethernet or Wi-Fi interface with a netmask. A host that
-     * genuinely has none cannot exercise a broadcast at all, and the tests that need one say so
-     * rather than passing quietly.
-     */
     private val broadcastCapable: Pair<Inet4Address, Inet4Address>? =
         NetworkInterface.getNetworkInterfaces()
             .asSequence()
@@ -46,10 +32,6 @@ class ReceiverBroadcastResponderTest {
 
     @Test
     fun `the host running these tests can broadcast`() {
-        // The one test that fails rather than skipping. Every test below needs a broadcast-capable
-        // interface and returns early without one, so without this the suite could go green on a
-        // host where none of it ran -- which is how the loopback version of these tests managed to
-        // pass against a responder that could not receive a broadcast at all.
         assertNotNull(
             broadcastCapable,
             "no interface on this host has a broadcast address, so the broadcast rung is untested",
@@ -57,27 +39,20 @@ class ReceiverBroadcastResponderTest {
     }
 
     @Test
-    fun `the bind address is the interface's broadcast address, not the receiver's own`() {
-        // The whole bug in one assertion: a socket bound to 192.0.2.2 never sees a datagram sent to
-        // 192.0.2.255, because the kernel matches the arriving datagram's destination against the
-        // socket's bound address.
+    fun `the selected interface supplies the broadcast target`() {
         val (local, broadcast) = broadcastCapable ?: return
         assertEquals(broadcast, ReceiverBroadcastResponder.broadcastAddressFor(local))
         assertFalse(broadcast == local)
     }
 
     @Test
-    fun `an interface with no broadcast address has none invented for it`() {
-        val loopback = InetAddress.getLoopbackAddress() as Inet4Address
-        assertNull(ReceiverBroadcastResponder.broadcastAddressFor(loopback))
+    fun `an address with no local interface has no broadcast address invented for it`() {
+        assertNull(ReceiverBroadcastResponder.broadcastAddressFor(unassignedAddress()))
     }
 
     @Test
     fun `a responder on an interface that cannot broadcast refuses to start`() {
-        // It loses the ladder one rung and says why, rather than binding something that can never
-        // hear the thing it is listening for.
-        val loopback = InetAddress.getLoopbackAddress() as Inet4Address
-        val responder = ReceiverBroadcastResponder(loopback, 47_855, { "Fire TV" }, listenPort = 0)
+        val responder = ReceiverBroadcastResponder(unassignedAddress(), 47_855, { "Fire TV" }, listenPort = 0)
         try {
             assertTrue(responder.start().isFailure)
         } finally {
@@ -123,7 +98,7 @@ class ReceiverBroadcastResponderTest {
 
     @Test
     fun `closing twice is harmless`() {
-        val local = broadcastCapable?.first ?: InetAddress.getLoopbackAddress() as Inet4Address
+        val local = broadcastCapable?.first ?: unassignedAddress()
         val responder = ReceiverBroadcastResponder(local, 47_855, { "Fire TV" }, listenPort = 0)
         responder.start()
         responder.close()
@@ -136,9 +111,9 @@ class ReceiverBroadcastResponderTest {
     ) {
         val (local, broadcast) = broadcastCapable ?: return
         val responder = ReceiverBroadcastResponder(local, 47_855, modelName, listenPort = 0)
-        assertTrue(responder.start().isSuccess, "the responder did not bind $broadcast")
+        assertTrue(responder.start().isSuccess, "the responder did not bind for $broadcast")
         try {
-            assertEquals(broadcast, responder.boundAddress)
+            assertTrue(responder.boundAddress?.isAnyLocalAddress == true)
             body(local, broadcast, responder.boundPort)
         } finally {
             responder.close()
@@ -169,6 +144,9 @@ class ReceiverBroadcastResponderTest {
             }
         }
     }
+
+    private fun unassignedAddress(): Inet4Address =
+        InetAddress.getByAddress(byteArrayOf(192.toByte(), 0, 2, 1)) as Inet4Address
 
     private companion object {
         const val TIMEOUT_MILLIS = 2_000

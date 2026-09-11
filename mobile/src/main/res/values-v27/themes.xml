@@ -1,16 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!--
-      A bare platform theme. The app takes no Material dependency: every component is drawn from
-      foundation primitives in :design, so there is no Material theme for this to have to agree with.
-      What it has to get right is the window before Compose has drawn anything — an app that flashes
-      white on launch and then turns near-black reads as broken on the very first impression.
-    -->
+    <!-- API 27 introduced windowLightNavigationBar, so keep it out of the API 26 base theme. -->
     <style name="Theme.FlintMobile" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/ink</item>
         <item name="android:colorBackground">@color/ink</item>
         <item name="android:statusBarColor">@color/ink</item>
         <item name="android:navigationBarColor">@color/ink</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
 </resources>
