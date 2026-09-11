@@ -52,6 +52,19 @@ class SocketBindingGuardTest {
     }
 
     @Test
+    fun `no phone source declares a colour of its own`() {
+        // The invariant behind ADR-0030. :design owns the palette; a Color literal anywhere in
+        // :mobile is a token that has escaped it, and nothing about that fails to compile -- the
+        // product simply stops looking like one product, slowly, one screen at a time.
+        val offences = scanModule("mobile") { line -> COLOUR_LITERAL.containsMatchIn(line) }
+        if (offences.isNotEmpty()) {
+            fail(
+                "Colour belongs to :design, not to a screen:\n" + offences.joinToString("\n"),
+            )
+        }
+    }
+
+    @Test
     fun `the guard is actually looking at something`() {
         // A scan that silently matches no files is a passing test that proves nothing, which is worse
         // than no test at all.
@@ -61,18 +74,19 @@ class SocketBindingGuardTest {
         assertTrue(scanned > 10, "expected to scan the phone's sources, found $scanned files")
     }
 
-    private fun scan(offends: (String) -> Boolean): List<String> = buildList {
-        guardedModules.forEach { module ->
-            val root = sourceRoot(module) ?: return@forEach
-            root.walkTopDown()
-                .filter { it.isFile && it.extension == "kt" }
-                .forEach { file ->
-                    file.readLines().forEachIndexed { index, line ->
-                        val code = line.substringBefore("//")
-                        if (offends(code)) add("${file.path}:${index + 1}: ${line.trim()}")
-                    }
+    private fun scan(offends: (String) -> Boolean): List<String> =
+        guardedModules.flatMap { scanModule(it, offends) }
+
+    private fun scanModule(module: String, offends: (String) -> Boolean): List<String> = buildList {
+        val root = sourceRoot(module) ?: return@buildList
+        root.walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }
+            .forEach { file ->
+                file.readLines().forEachIndexed { index, line ->
+                    val code = line.substringBefore("//")
+                    if (offends(code)) add("${file.path}:${index + 1}: ${line.trim()}")
                 }
-        }
+            }
     }
 
     private fun sourceRoot(module: String): File? {
@@ -103,5 +117,8 @@ class SocketBindingGuardTest {
          * group and the SSDP one are the same numbers on every network in the world.
          */
         val PERMITTED_ADDRESSES = setOf("224.0.0.251", "239.255.255.250")
+
+        /** `Color(0xFF…)`, in any of the forms Compose accepts. */
+        val COLOUR_LITERAL = Regex("""\bColor\s*\(\s*0[xX]""")
     }
 }
