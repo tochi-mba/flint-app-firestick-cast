@@ -349,3 +349,47 @@ fun Readout(value: String, modifier: Modifier = Modifier, tone: Tone? = null) {
         maxLines = 1,
     )
 }
+
+/**
+ * The one text field in the system.
+ *
+ * `BasicTextField` rather than a Material one, for the same reason as everything else here: the app
+ * takes no Material dependency, so there is no theme for a field to have to agree with. The cursor
+ * and selection are painted in Signal, which is the only place in the app that colour appears
+ * without meaning "ready".
+ */
+@Composable
+fun TextEntry(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    enabled: Boolean = true,
+    keyboardOptions: androidx.compose.foundation.text.KeyboardOptions =
+        androidx.compose.foundation.text.KeyboardOptions.Default,
+    textStyle: TextStyle = FlintType.BodyMedium,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = FlintSpace.TouchTarget)
+            .background(FlintColors.Raised, FlintShapes.Small)
+            .border(FlintSpace.Hairline, FlintColors.Line, FlintShapes.Small)
+            .padding(horizontal = FlintSpace.Compact, vertical = FlintSpace.Compact),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        if (value.isEmpty() && placeholder.isNotEmpty()) {
+            FlintText(text = placeholder, style = FlintType.BodySmall)
+        }
+        androidx.compose.foundation.text.BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            enabled = enabled,
+            singleLine = true,
+            keyboardOptions = keyboardOptions,
+            textStyle = LocalFlintTextStyle.current.merge(textStyle),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(FlintColors.Signal),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}

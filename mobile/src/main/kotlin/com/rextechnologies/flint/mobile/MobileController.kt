@@ -98,6 +98,42 @@ class MobileController(
         mutable.value = mutable.value.copy(introductionSeen = true)
     }
 
+    fun replayIntroduction() {
+        mutable.value = mutable.value.copy(introductionSeen = false, tab = MobileTab.CAST)
+    }
+
+    /**
+     * Starts an output mode.
+     *
+     * The encoder, the projection consent and the foreground service are the next slices' work. Until
+     * they exist this refuses rather than pretending, because a control that fails when pressed is
+     * exactly what the capability verdicts are there to prevent -- and one wired to nothing would be
+     * the same defect wearing the verdicts' own clothes.
+     */
+    fun requestOutput(mode: OutputMode) {
+        val verdict = mutable.value.report?.get(
+            when (mode) {
+                OutputMode.MIRROR -> com.rextechnologies.flint.castcore.capability.CastMode.MIRROR
+                OutputMode.SECOND_SCREEN ->
+                    com.rextechnologies.flint.castcore.capability.CastMode.SECOND_SCREEN
+
+                OutputMode.NONE -> return
+            },
+        )
+        if (verdict?.isOfferable != true) {
+            mutable.value = mutable.value.copy(notice = verdict?.reason ?: "Nothing has been probed yet.")
+            return
+        }
+        mutable.value = mutable.value.copy(
+            notice = "The encode-and-send path is not in this build yet, so nothing was started. " +
+                "The verdict above is what this phone and this television can do once it is.",
+        )
+    }
+
+    fun stopOutput() {
+        mutable.value = mutable.value.copy(output = null)
+    }
+
     /** Runs the ladder, then measures the path against whatever answered. */
     fun probe() {
         if (mutable.value.isProbing) return

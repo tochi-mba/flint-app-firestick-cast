@@ -5,6 +5,7 @@ import android.content.Intent
 import android.media.AudioManager
 import android.os.Binder
 import android.os.IBinder
+import android.os.Build
 import android.util.Log
 import android.view.KeyEvent
 import android.view.Surface
@@ -72,6 +73,8 @@ import java.io.File
 import com.rextechnologies.flint.receiver.browser.net.BrowserSecureSessionListener
 import com.rextechnologies.flint.receiver.browser.net.BrowserTlsServer
 import com.rextechnologies.flint.receiver.net.ReceiverServer
+import com.rextechnologies.flint.protocol.discovery.ReceiverProbe
+import com.rextechnologies.flint.receiver.net.ReceiverBroadcastResponder
 import com.rextechnologies.flint.receiver.net.ReceiverMdnsResponder
 import com.rextechnologies.flint.receiver.net.ReceiverSessionListener
 import com.rextechnologies.flint.receiver.net.ReceiverState
@@ -116,6 +119,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
     private var pairingCode = PairingCode.generate()
     private var server: ReceiverServer? = null
     private var mdns: ReceiverMdnsResponder? = null
+    private var broadcastResponder: ReceiverBroadcastResponder? = null
     private var serverStateJob: Job? = null
     private var currentAddress: Inet4Address? = null
     private val notifications = ReceiverNotifications(this)
@@ -344,6 +348,8 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
         browserController.close()
         mdns?.close()
         mdns = null
+        broadcastResponder?.close()
+        broadcastResponder = null
         currentAddress = address
         if (address == null) {
             player.stop()
@@ -433,6 +439,21 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                     // receiver by having its address typed in — which looks like the feature not
                     // working rather than like discovery being unavailable.
                     Log.w(TAG, "Receiver advertisement unavailable; discovery will not find this TV", failure)
+                    responder.close()
+                }
+        }
+        // The phone's third discovery rung. Additive: a phone that never sends a broadcast is
+        // unaffected, and a failure here costs the ladder one rung rather than the whole feature.
+        ReceiverBroadcastResponder(
+            address = address,
+            servicePort = candidate.port,
+            // The same name the TCP probe answers with, from the same place.
+            modelName = { Build.MODEL.orEmpty().ifBlank { ReceiverProbe.FALLBACK_MODEL_NAME } },
+        ).also { responder ->
+            responder.start()
+                .onSuccess { broadcastResponder = responder }
+                .onFailure { failure ->
+                    Log.w(TAG, "Broadcast discovery unavailable; the other rungs still work", failure)
                     responder.close()
                 }
         }
@@ -879,6 +900,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
         server?.close()
         browserController.close()
         mdns?.close()
+        broadcastResponder?.close()
         player.removeListener(this)
         player.release()
         videoDecoder.close()
