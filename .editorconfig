@@ -31,6 +31,11 @@ ktlint_code_style = intellij_idea
 # Composable functions are PascalCase by the framework's own convention, which the function-naming
 # rule reads as a violation on every component in :design.
 ktlint_function_naming_ignore_when_annotated_with = Composable
+# These two collapse a multi-line signature onto one line whenever it happens to fit, which is the
+# opposite of how every other Kotlin file in this repository is written. Leaving them on would put a
+# formatter's opinion into the diff of every change to code that already reads consistently.
+ktlint_standard_class-signature = disabled
+ktlint_standard_function-signature = disabled
 
 [*.{md,yml,yaml,json}]
 indent_size = 2
