@@ -135,12 +135,14 @@ class DiscoveryCoordinator(private val runner: ReceiverFinder) {
         val sorted = samples.sorted()
         val median = sorted[sorted.size / 2]
         val jitter = sorted.last() - sorted.first()
-        val delivered = samples.size.toDouble() / DiscoveryRunner.ROUND_TRIP_ATTEMPTS
+        val attempts = DiscoveryRunner.ROUND_TRIP_ATTEMPTS
+        val delivered = samples.size.coerceAtMost(attempts)
+        val lost = attempts - delivered
         return NetworkPath(
             roundTripMs = median,
             jitterMs = jitter,
             throughputMbps = 0.0,
-            packetLossPercent = ((1.0 - delivered) * 100.0).coerceIn(0.0, 100.0),
+            packetLossPercent = (lost * 100.0 / attempts).coerceIn(0.0, 100.0),
             throughputMeasured = false,
         )
     }
