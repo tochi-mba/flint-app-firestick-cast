@@ -1,5 +1,6 @@
 # Publishes site/ to GitHub Pages. The site is plain static HTML with no build step, so there is
 # nothing to compile — only a correctness check before it goes live.
+# Redeploy marker: 2026-09-11
 name: Pages
 
 on:
