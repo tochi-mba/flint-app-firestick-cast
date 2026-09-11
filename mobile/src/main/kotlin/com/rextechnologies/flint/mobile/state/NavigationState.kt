@@ -43,9 +43,9 @@ class NavigationState(
     val state: StateFlow<Navigation> = mutable
 
     init {
-        // Read off the main thread, like every other preference access in this app. Until it
-        // arrives `introductionSeen` is null and the app shows neither screen, which is a frame or
-        // two of the background colour rather than a wrong screen that then swaps.
+        // Read off the main thread. Until it arrives `introductionSeen` is null and the app shows
+        // neither screen, which is a frame or two of the background colour rather than a wrong
+        // screen that then swaps.
         scope.launch {
             val seen = withContext(Dispatchers.IO) { preferences.getBoolean(KEY_SEEN, false) }
             mutable.update { if (it.introductionSeen == null) it.copy(introductionSeen = seen) else it }
@@ -104,7 +104,10 @@ class NavigationState(
 
     fun markIntroductionSeen() {
         mutable.update { it.copy(introductionSeen = true) }
-        persist(true)
+        // apply() updates the in-memory preferences immediately and schedules the disk write itself.
+        // Wrapping it in another coroutine created a race where an immediate cold start could still
+        // observe the old value even though this call had already returned.
+        preferences.edit().putBoolean(KEY_SEEN, true).apply()
     }
 
     /**
@@ -115,14 +118,6 @@ class NavigationState(
      */
     fun replayIntroduction() {
         mutable.update { it.copy(introductionSeen = false, tab = MobileTab.CAST) }
-    }
-
-    private fun persist(seen: Boolean) {
-        scope.launch {
-            withContext(Dispatchers.IO) {
-                preferences.edit().putBoolean(KEY_SEEN, seen).apply()
-            }
-        }
     }
 
     private companion object {
