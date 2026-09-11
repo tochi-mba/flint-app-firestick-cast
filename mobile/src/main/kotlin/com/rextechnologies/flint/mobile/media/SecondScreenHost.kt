@@ -43,7 +43,7 @@ class SecondScreenHost(
     private val densityDpi: Int,
 ) : Closeable {
     private var display: VirtualDisplay? = null
-    private var presentation: Presentation? = null
+    private var presentation: ComposePresentation? = null
 
     /**
      * Starts drawing [content] onto a private display backed by [surface].
@@ -74,8 +74,12 @@ class SecondScreenHost(
         display = created
 
         val shown = ComposePresentation(activity, created.display, content)
-        shown.show()
         presentation = shown
+        shown.show()
+    }.onFailure {
+        // start() is transactional. If the Presentation cannot be shown, neither the private display
+        // nor its lifecycle owner may survive as an unreachable half-started session.
+        close()
     }
 
     override fun close() {
