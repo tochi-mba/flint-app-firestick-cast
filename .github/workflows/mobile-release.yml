@@ -66,12 +66,8 @@ jobs:
           # hand-built APK may already have installed on somebody's phone.
           echo "code=$(( 1000 + GITHUB_RUN_NUMBER ))" >> "$GITHUB_OUTPUT"
 
-      # An unsigned build must look unsigned. Producing something that reads as releasable when
-      # nobody could install it as an upgrade is the failure this step exists to prevent.
-      #
-      # All four secrets or none. mobile/build.gradle.kts refuses to configure a half-populated
-      # signing block, so with only the keystore present it produces an unsigned APK -- and this step
-      # used to write signed=true anyway, which named that APK as though it were signed.
+      # Release signing is mandatory. Publishing an unsigned APK creates a download Android cannot
+      # install, so missing credentials are a release failure rather than a degraded build mode.
       - name: Decode the signing key
         id: signing
         env:
@@ -87,13 +83,20 @@ jobs:
           [ -z "${KEY_ALIAS:-}" ] && missing="$missing MOBILE_KEY_ALIAS"
           [ -z "${KEY_PASSWORD:-}" ] && missing="$missing MOBILE_KEY_PASSWORD"
           if [ -n "$missing" ]; then
-            echo "Signing is incomplete (missing:$missing); the APK will be unsigned." >&2
-            echo "signed=false" >> "$GITHUB_OUTPUT"
-            exit 0
+            echo "Release signing is required; missing:$missing" >&2
+            exit 1
           fi
           install -d -m 700 "${RUNNER_TEMP}/signing"
           printf '%s' "$KEYSTORE_BASE64" | base64 -d > "${RUNNER_TEMP}/signing/flint-mobile.jks"
           chmod 600 "${RUNNER_TEMP}/signing/flint-mobile.jks"
+          if [ ! -s "${RUNNER_TEMP}/signing/flint-mobile.jks" ]; then
+            echo "Decoded signing keystore is empty." >&2
+            exit 1
+          fi
+          keytool -list \
+            -keystore "${RUNNER_TEMP}/signing/flint-mobile.jks" \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -alias "$KEY_ALIAS" >/dev/null
           echo "signed=true" >> "$GITHUB_OUTPUT"
 
       # Exactly the checks a pull request runs, from the same composite action. A release must never
@@ -102,8 +105,7 @@ jobs:
 
       # The Fire TV package the phone can install over ADB. It is built from this same commit, so the
       # version the phone offers to install is never a mystery. Debug rather than release on purpose:
-      # `pm install` refuses an unsigned APK, and the receiver's release signing key is not available
-      # to this workflow.
+      # Android's debug signing makes this receiver package installable without a second release key.
       - name: Build the receiver package to bundle
         run: ./gradlew :receiver:assembleDebug --console plain
 
@@ -128,7 +130,7 @@ jobs:
       # proguard rules have never actually been exercised; the phone's are, every merge.
       - name: Build the release APK
         env:
-          MOBILE_KEYSTORE_PATH: ${{ steps.signing.outputs.signed == 'true' && format('{0}/signing/flint-mobile.jks', runner.temp) || '' }}
+          MOBILE_KEYSTORE_PATH: ${{ format('{0}/signing/flint-mobile.jks', runner.temp) }}
           MOBILE_KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
           MOBILE_KEY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
           MOBILE_KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
@@ -137,31 +139,24 @@ jobs:
           -Pmobile.versionCode=${{ steps.version.outputs.code }}
           -Pmobile.versionSuffix=${{ steps.version.outputs.suffix }}
 
-      - name: Name the artifacts
+      - name: Name and verify the artifacts
         id: artifacts
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.name }}${{ steps.version.outputs.suffix }}"
-          suffix=""
-          if [ "${{ steps.signing.outputs.signed }}" != "true" ]; then
-            suffix="-unsigned"
-          fi
           apk="$(find mobile/build/outputs/apk/release -name '*.apk' -print -quit)"
           if [ -z "$apk" ]; then
             echo "No release APK was produced." >&2
             exit 1
           fi
 
-          # The signature is verified rather than assumed. steps.signing says what this job was
-          # given; apksigner says what came out, and only the second one is what somebody installs.
-          if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then
-            apksigner="$(find "${ANDROID_HOME}/build-tools" -name apksigner -print -quit)"
-            if [ -z "$apksigner" ]; then
-              echo "apksigner is not installed, so the signature cannot be verified." >&2
-              exit 1
-            fi
-            "$apksigner" verify --print-certs "$apk"
+          # Never publish on faith: verify the APK bytes that will actually be downloaded.
+          apksigner="$(find "${ANDROID_HOME}/build-tools" -name apksigner -print -quit)"
+          if [ -z "$apksigner" ]; then
+            echo "apksigner is not installed, so the signature cannot be verified." >&2
+            exit 1
           fi
+          "$apksigner" verify --verbose --print-certs "$apk"
 
           # R8 is on for this build type, so a missing mapping file means a stack trace from a
           # crashing phone can never be read again. That is worth failing the release for.
@@ -172,10 +167,24 @@ jobs:
           fi
 
           mkdir -p dist
-          cp "$apk" "dist/Flint-Mobile-${version}${suffix}.apk"
-          cp "$mapping" "dist/Flint-Mobile-${version}${suffix}-mapping.txt"
+          cp "$apk" "dist/Flint-Mobile-${version}.apk"
+          cp "$mapping" "dist/Flint-Mobile-${version}-mapping.txt"
           ls -l dist
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # A rolling release is mutable by design, so remove every asset from the previous rolling build
+      # before uploading the newly verified pair. This also clears any historical unsigned APKs.
+      - name: Clear previous rolling assets
+        if: steps.version.outputs.tagged == 'false' && github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view latest >/dev/null 2>&1; then
+            gh release view latest --json assets --jq '.assets[].name' | while IFS= read -r asset; do
+              [ -z "$asset" ] || gh release delete-asset latest "$asset" --yes
+            done
+          fi
 
       - name: Publish the rolling prerelease
         # Also guarded on the branch. A workflow_dispatch from any branch would otherwise move
