@@ -5,9 +5,9 @@ import android.content.pm.PackageInfo
 import android.os.Build
 import com.rextechnologies.flint.castcore.setup.BundledReceiver
 import com.rextechnologies.flint.mobile.BuildConfig
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /**
  * The Fire TV package this build carries, if it carries one.

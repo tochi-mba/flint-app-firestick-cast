@@ -14,6 +14,7 @@ import com.rextechnologies.flint.castcore.copy.SettingsCopy
 import com.rextechnologies.flint.castcore.setup.ReceiverSetup
 import com.rextechnologies.flint.design.AdvisoryBlock
 import com.rextechnologies.flint.design.DiagnosticRow
+import com.rextechnologies.flint.design.EmptyState
 import com.rextechnologies.flint.design.FlintSpace
 import com.rextechnologies.flint.design.FlintText
 import com.rextechnologies.flint.design.FlintType
@@ -26,6 +27,7 @@ import com.rextechnologies.flint.mobile.BuildConfig
 import com.rextechnologies.flint.mobile.MobileActivity
 import com.rextechnologies.flint.mobile.MobileController
 import com.rextechnologies.flint.mobile.MobileUiState
+import com.rextechnologies.flint.protocol.text.Decimal
 
 /** The Settings tab: the receiver on the TV, the checks, the diagnostics and the about card. */
 @Composable
@@ -44,15 +46,27 @@ fun SettingsScreen(state: MobileUiState, controller: MobileController, activity:
             text = SettingsCopy.SECOND_SCREEN_PROBE_EXPLANATION,
             style = FlintType.BodyMedium,
         )
+        // Each button says while it is running rather than looking untouched for a second, and each
+        // one's result is announced through the banner rather than only changing a diagnostics row.
         Row(horizontalArrangement = Arrangement.spacedBy(FlintSpace.Small)) {
             OutlineAction(
-                text = SettingsCopy.RUN_SECOND_SCREEN_PROBE,
+                text = if (state.secondScreenProbeRunning) {
+                    SettingsCopy.PROBE_RUNNING
+                } else {
+                    SettingsCopy.RUN_SECOND_SCREEN_PROBE
+                },
                 onClick = { controller.runSecondScreenProbe(activity) },
+                enabled = !state.secondScreenProbeRunning,
             )
         }
         OutlineAction(
-            text = SettingsCopy.RUN_ENCODER_PROBE,
+            text = if (state.encoderProbeRunning) {
+                SettingsCopy.PROBE_RUNNING
+            } else {
+                SettingsCopy.RUN_ENCODER_PROBE
+            },
             onClick = controller::runEncoderProbe,
+            enabled = !state.encoderProbeRunning,
         )
     }
 
@@ -67,9 +81,19 @@ fun SettingsScreen(state: MobileUiState, controller: MobileController, activity:
         DiagnosticRow(label = "Package", value = BuildConfig.APPLICATION_ID)
         DiagnosticRow(label = "Permissions", value = "No location", isLast = true)
         FlintText(text = SettingsCopy.PERMISSIONS_LINE, style = FlintType.BodySmall)
+        Row(horizontalArrangement = Arrangement.spacedBy(FlintSpace.Small)) {
+            OutlineAction(
+                text = SettingsCopy.REPLAY_INTRODUCTION,
+                onClick = controller::replayIntroduction,
+            )
+        }
+        // Removal is offered wherever something is stored, on the same screen as the thing that
+        // stores it. A phone that is lent out carries a standing proof that it may cast to somebody
+        // else's television until this is pressed.
         OutlineAction(
-            text = SettingsCopy.REPLAY_INTRODUCTION,
-            onClick = controller::replayIntroduction,
+            text = SettingsCopy.FORGET_PAIRINGS,
+            onClick = controller::forgetEveryPairing,
+            tone = Tone.Live,
         )
     }
 }
@@ -81,7 +105,6 @@ private fun ReceiverSetupCard(state: MobileUiState) {
         stage = state.installStage,
         bundled = state.bundledReceiver,
         deviceName = state.selected?.displayName ?: "the TV",
-        failureDetail = state.installDetail,
     )
 
     InfoCard(borderTone = if (plan.installAction != null) Tone.Signal else Tone.Line) {
@@ -113,6 +136,17 @@ private fun ReceiverSetupCard(state: MobileUiState) {
 @Composable
 private fun DiagnosticsCard(state: MobileUiState) {
     val report = state.report
+    if (report == null && state.path == null && state.network.boundAddress == null) {
+        // Nothing has been measured, and a stack of five "not measured" rows is a worse way of
+        // saying so than one sentence that also says what to do about it.
+        EmptyState(
+            glyph = DiagnosticsCopy.empty.glyph,
+            title = DiagnosticsCopy.empty.title,
+            body = DiagnosticsCopy.empty.body,
+        )
+        return
+    }
+
     InfoCard {
         DiagnosticRow(
             label = "Local network",
@@ -132,7 +166,17 @@ private fun DiagnosticsCard(state: MobileUiState) {
         )
         DiagnosticRow(
             label = "Round trip",
-            value = state.path?.let { "${it.roundTripMs.toLong()} ms" } ?: Placeholders.NOT_MEASURED,
+            value = state.path?.let { "${Decimal.whole(it.roundTripMs)} ms" }
+                ?: Placeholders.NOT_MEASURED,
+        )
+        DiagnosticRow(
+            label = "Session",
+            value = when {
+                state.isConnected -> "Connected"
+                state.isConnecting -> "Connecting"
+                state.sessionFailure != null -> "Ended"
+                else -> Placeholders.NONE
+            },
         )
         DiagnosticRow(
             label = "Throughput",
@@ -151,3 +195,4 @@ private fun codecName(value: Int): String = when (value) {
     5 -> "AV1"
     else -> "Codec $value"
 }
+

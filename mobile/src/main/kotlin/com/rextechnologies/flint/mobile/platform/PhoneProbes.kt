@@ -20,11 +20,11 @@ import android.view.View
 import com.rextechnologies.flint.castcore.capability.PhoneCapabilities
 import com.rextechnologies.flint.castcore.capability.ProbeOutcome
 import com.rextechnologies.flint.protocol.wire.CodecId
-import kotlin.math.abs
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.math.abs
 
 /**
  * Asks this phone what it can do, rather than inferring it from the model name or the API level.

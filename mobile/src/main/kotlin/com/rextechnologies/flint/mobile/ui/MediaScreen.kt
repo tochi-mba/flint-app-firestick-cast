@@ -9,7 +9,10 @@ import com.rextechnologies.flint.castcore.copy.MediaCopy
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.design.AdvisoryBlock
 import com.rextechnologies.flint.design.EmptyState
+import com.rextechnologies.flint.design.FlintColors
 import com.rextechnologies.flint.design.FlintSpace
+import com.rextechnologies.flint.design.FlintText
+import com.rextechnologies.flint.design.FlintType
 import com.rextechnologies.flint.design.InfoCard
 import com.rextechnologies.flint.design.PageHeading
 import com.rextechnologies.flint.design.SectionLabel
@@ -28,21 +31,31 @@ fun MediaScreen(state: MobileUiState) {
     PageHeading(eyebrow = tab.eyebrow, headline = tab.title)
 
     Spacer(Modifier.height(FlintSpace.Small))
-    state.report?.let { report ->
-        SectionLabel("What this pair can do")
-        ModeCard(report[CastMode.MEDIA_HANDOFF])
+    val report = state.report
+    if (report == null) {
+        // One state, not two. Rendering the empty state under a verdict card said both "nothing is
+        // known about this pair" and "here is what this pair can do" on the same screen.
+        EmptyState(
+            glyph = MediaCopy.empty.glyph,
+            title = MediaCopy.empty.title,
+            body = MediaCopy.empty.body,
+        )
+        return
     }
 
-    Spacer(Modifier.height(FlintSpace.Small))
-    EmptyState(
-        glyph = MediaCopy.empty.glyph,
-        title = MediaCopy.empty.title,
-        body = MediaCopy.empty.body,
-    )
+    SectionLabel("What this pair can do")
+    ModeCard(report[CastMode.MEDIA_HANDOFF])
 
     Spacer(Modifier.height(FlintSpace.Small))
     InfoCard(borderTone = Tone.Line) {
         SectionLabel("How it will work")
         AdvisoryBlock(heading = "WHY IT IS SENT RATHER THAN FETCHED", body = MediaCopy.WHY_PUSHED)
+        // No picker and no transport control. Pushing a file is slice 09's work, and a control
+        // wired to nothing is the defect the verdict above exists to prevent.
+        FlintText(
+            text = "Choosing a file is not in this build yet. The verdict above is what this phone " +
+                "and this television can do once it is.",
+            style = FlintType.BodySmall.copy(color = FlintColors.Muted),
+        )
     }
 }

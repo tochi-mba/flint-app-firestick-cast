@@ -29,13 +29,21 @@ import com.rextechnologies.flint.design.Pill
 import com.rextechnologies.flint.design.Readout
 import com.rextechnologies.flint.design.SectionLabel
 import com.rextechnologies.flint.design.Tone
+import com.rextechnologies.flint.mobile.LiveOutput
+import com.rextechnologies.flint.mobile.MobileActivity
 import com.rextechnologies.flint.mobile.MobileController
 import com.rextechnologies.flint.mobile.MobileUiState
 import com.rextechnologies.flint.mobile.OutputMode
+import com.rextechnologies.flint.protocol.text.Decimal
 
 /** The Screen tab: mirror and second screen, their live strip, and their stopped states. */
 @Composable
-fun ScreenTab(state: MobileUiState, controller: MobileController) {
+fun ScreenTab(
+    state: MobileUiState,
+    controller: MobileController,
+    activity: MobileActivity,
+    onRequestMirror: () -> Unit,
+) {
     val tab = MobileTab.SCREEN
     PageHeading(
         eyebrow = tab.eyebrow,
@@ -61,13 +69,27 @@ fun ScreenTab(state: MobileUiState, controller: MobileController) {
         return
     }
 
+    if (!state.isConnected) {
+        // The one thing missing is the session, and saying which one it is beats letting somebody
+        // read three Blocked cards to work it out.
+        Spacer(Modifier.height(FlintSpace.Small))
+        InfoCard(borderTone = Tone.Line) {
+            FlintText(text = "Not connected", style = FlintType.TitleMedium)
+            FlintText(
+                text = ScreenCopy.NOT_PAIRED,
+                style = FlintType.BodyMedium.copy(color = FlintColors.Muted),
+            )
+        }
+    }
+
     Spacer(Modifier.height(FlintSpace.Small))
-    SectionLabel("Second screen")
+    SectionLabel(ScreenCopy.SECOND_SCREEN_TITLE)
     ModeStarter(
         presentation = ModePresentation.of(report[CastMode.SECOND_SCREEN]),
         action = ScreenCopy.START_SECOND_SCREEN,
         note = ScreenCopy.SECOND_SCREEN_NO_CONSENT,
-        onStart = { controller.requestOutput(OutputMode.SECOND_SCREEN) },
+        enabled = state.isConnected,
+        onStart = { controller.startSecondScreen(activity) },
     )
 
     Spacer(Modifier.height(FlintSpace.Small))
@@ -76,22 +98,25 @@ fun ScreenTab(state: MobileUiState, controller: MobileController) {
         presentation = ModePresentation.of(report[CastMode.MIRROR]),
         action = ScreenCopy.START_MIRROR,
         note = ScreenCopy.MIRROR_CONSENT,
-        onStart = { controller.requestOutput(OutputMode.MIRROR) },
+        enabled = state.isConnected,
+        onStart = onRequestMirror,
     )
 }
 
 /**
  * One startable mode.
  *
- * The button's enabled state is the verdict's, and nothing else. A second, independently-maintained
- * gate here is exactly how a page ends up offering a control the capability report already knows is
- * empty.
+ * The button's enabled state is the verdict's, and whether a session is open. A second,
+ * independently-maintained gate here is exactly how a page ends up offering a control the capability
+ * report already knows is empty — so the only thing added to the verdict is the one fact the verdict
+ * does not carry.
  */
 @Composable
 private fun ModeStarter(
     presentation: ModePresentation,
     action: String,
     note: String,
+    enabled: Boolean,
     onStart: () -> Unit,
 ) {
     InfoCard(borderTone = presentation.tone.toDesignTone()) {
@@ -112,7 +137,12 @@ private fun ModeStarter(
         }
         if (presentation.isOfferable) {
             AdvisoryBlock(heading = "BEFORE YOU START", body = note)
-            OutlineAction(text = action, onClick = onStart, tone = Tone.Signal)
+            OutlineAction(
+                text = action,
+                onClick = onStart,
+                enabled = enabled,
+                tone = Tone.Signal,
+            )
         }
     }
 }
@@ -125,7 +155,7 @@ private fun ModeStarter(
  * a number on this strip would be read as one.
  */
 @Composable
-private fun LiveStrip(output: com.rextechnologies.flint.mobile.LiveOutput, controller: MobileController) {
+private fun LiveStrip(output: LiveOutput, controller: MobileController) {
     val modeName = when (output.mode) {
         OutputMode.MIRROR -> ScreenCopy.MIRROR_TITLE
         OutputMode.SECOND_SCREEN -> ScreenCopy.SECOND_SCREEN_TITLE
@@ -161,7 +191,9 @@ private fun LiveStrip(output: com.rextechnologies.flint.mobile.LiveOutput, contr
 
         DiagnosticRow(
             label = "Bitrate",
-            value = "${output.bitrateBitsPerSecond / 1_000_000} Mbit/s",
+            // One decimal place rather than integer division, which printed "0 Mbit/s" for every
+            // bitrate the controller can back off to.
+            value = "${Decimal.oneDecimal(output.bitrateBitsPerSecond / 1_000_000.0)} Mbit/s",
             isLast = true,
         )
 

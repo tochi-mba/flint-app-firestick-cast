@@ -9,6 +9,8 @@ import com.rextechnologies.flint.castcore.discovery.DiscoveryRung
 import com.rextechnologies.flint.castcore.session.SessionFailure
 import com.rextechnologies.flint.castcore.setup.BundledReceiver
 import com.rextechnologies.flint.castcore.setup.ReceiverInstallStage
+import com.rextechnologies.flint.mobile.state.LinkState
+import com.rextechnologies.flint.mobile.state.LookupState
 import com.rextechnologies.flint.protocol.media.LinkHealth
 
 /** What the phone is sending, if anything. */
@@ -30,27 +32,49 @@ data class LiveOutput(
     val degradedReason: String? = null,
 )
 
-/** Everything on screen, in one value. */
+/**
+ * Everything on screen, in one value.
+ *
+ * Assembled from the coordinators rather than mutated by them. Each of those owns one question --
+ * what the network is, what discovery found, what the phone can do, whether a session is open, what
+ * is being sent -- and this is the single place their answers meet, so no screen has to combine them
+ * and no two screens can combine them differently.
+ */
 data class MobileUiState(
     val tab: MobileTab = MobileTab.CAST,
-    val introductionSeen: Boolean = false,
+    /** `null` until the stored answer has been read. Neither screen shows while it is unknown. */
+    val introductionSeen: Boolean? = null,
     val network: LocalNetwork = LocalNetwork.NoLocalNetwork,
-    val isProbing: Boolean = false,
+    val lookup: LookupState = LookupState.Idle,
+    val manualLookup: LookupState = LookupState.Idle,
     val report: CapabilityReport? = null,
     val receivers: List<ReceiverDevice> = emptyList(),
     val selected: ReceiverDevice? = null,
     val rungsAttempted: List<DiscoveryRung> = emptyList(),
     val path: NetworkPath? = null,
-    val isPaired: Boolean = false,
+    val link: LinkState = LinkState.Idle,
     val pairingVisible: Boolean = false,
     val pairingError: String? = null,
-    val sessionFailure: SessionFailure? = null,
+    val encoderProbeRunning: Boolean = false,
+    val secondScreenProbeRunning: Boolean = false,
     val output: LiveOutput? = null,
     val bundledReceiver: BundledReceiver? = null,
-    val installStage: ReceiverInstallStage = ReceiverInstallStage.UNKNOWN,
-    val installDetail: String = "",
+    val installStage: ReceiverInstallStage = ReceiverInstallStage.Unknown,
     val notice: String? = null,
 ) {
+    val isProbing: Boolean
+        get() = lookup is LookupState.Running || manualLookup is LookupState.Running
+
+    /** A session is open right now, which is the strongest evidence of reachability there is. */
+    val isConnected: Boolean
+        get() = link is LinkState.Connected
+
+    val isConnecting: Boolean
+        get() = link is LinkState.Connecting
+
+    val sessionFailure: SessionFailure?
+        get() = (link as? LinkState.Closed)?.failure
+
     /**
      * Whether the phone has nothing to show yet.
      *
@@ -58,5 +82,13 @@ data class MobileUiState(
      * from one that has never run, and collapsing the two would lose the only thing worth saying.
      */
     val showEmptyState: Boolean
-        get() = report == null && !isProbing && sessionFailure == null
+        get() = report == null && !isProbing && lookup is LookupState.Idle
+
+    /** A probe that ran, tried something, and found nothing. Its own panel, not the empty state. */
+    val showProbeFailed: Boolean
+        get() = lookup is LookupState.FoundNothing && receivers.isEmpty()
+
+    /** There is no local network at all, which has one thing to do about it and no probe to run. */
+    val showNoNetwork: Boolean
+        get() = network is LocalNetwork.NoLocalNetwork
 }

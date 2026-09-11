@@ -28,11 +28,13 @@ receiver-min-sdk = "25"
 # AndroidX
 androidx-core = "1.16.0"
 androidx-activity-compose = "1.13.0"
-# Declared as floors rather than as the resolved version: activity-compose already brings both
-# in, and naming them here is about the phone app using them directly rather than by accident
-# through somebody else's api dependency.
+# A floor rather than the resolved version: activity-compose already brings lifecycle in, and naming
+# it here is about the phone app using it directly rather than by accident through somebody else's
+# api dependency.
 androidx-lifecycle = "2.8.0"
-androidx-savedstate = "1.2.1"
+# 1.3 is where savedstate-ktx became an empty shim and setViewTreeSavedStateRegistryOwner moved into
+# the main artifact, which is the function the second screen's Presentation needs.
+androidx-savedstate = "1.3.0"
 compose-bom = "2026.05.00"
 androidx-tv-material = "1.1.0"
 androidx-webkit = "1.12.1"
@@ -57,7 +59,10 @@ androidx-test-uiautomator = "2.4.0"
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity-compose" }
 androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
-androidx-savedstate = { module = "androidx.savedstate:savedstate-ktx", version.ref = "androidx-savedstate" }
+# Declared because SecondScreenHost's Presentation supplies all three ViewTree owners itself, so it
+# uses ViewModelStore and the saved-state registry directly rather than through activity-compose.
+androidx-lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
+androidx-savedstate = { module = "androidx.savedstate:savedstate", version.ref = "androidx-savedstate" }
 
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 compose-foundation = { module = "androidx.compose.foundation:foundation" }

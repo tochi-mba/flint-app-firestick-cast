@@ -9,7 +9,6 @@ import com.rextechnologies.flint.castcore.capability.LocalNetwork
 import com.rextechnologies.flint.castcore.capability.LocalNetworkAssessor
 import com.rextechnologies.flint.protocol.network.JvmNetworkInterfaceSource
 import com.rextechnologies.flint.protocol.network.NetworkInterfaceSource
-import java.io.Closeable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -20,6 +19,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.io.Closeable
 
 /**
  * Watches which end of the local network this phone is on.

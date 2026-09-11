@@ -13,6 +13,12 @@ import com.rextechnologies.flint.protocol.wire.AuthMethod
 import com.rextechnologies.flint.protocol.wire.FrameWriter
 import com.rextechnologies.flint.protocol.wire.WireCodec
 import com.rextechnologies.flint.protocol.wire.WireMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.Closeable
@@ -24,12 +30,6 @@ import java.net.Socket
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 /** What the app hears from a live session. */
 interface CastConnectionListener {

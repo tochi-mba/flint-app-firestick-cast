@@ -2,83 +2,141 @@ package com.rextechnologies.flint.mobile
 
 import android.app.Activity
 import android.content.Context
-import com.rextechnologies.flint.castcore.capability.LocalNetwork
+import android.content.Intent
+import com.rextechnologies.flint.castcore.capability.AssessmentInput
 import com.rextechnologies.flint.castcore.capability.MobileCapabilityAssessor
-import com.rextechnologies.flint.castcore.capability.NetworkPath
 import com.rextechnologies.flint.castcore.capability.ProbeOutcome
 import com.rextechnologies.flint.castcore.capability.ReceiverDevice
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.PairingCopy
+import com.rextechnologies.flint.castcore.copy.ScreenCopy
+import com.rextechnologies.flint.castcore.copy.SettingsCopy
 import com.rextechnologies.flint.mobile.net.DiscoveryRunner
 import com.rextechnologies.flint.mobile.platform.AndroidNetworkWatcher
-import com.rextechnologies.flint.mobile.platform.PhoneProbes
-import com.rextechnologies.flint.mobile.platform.ReceiverPackage
 import com.rextechnologies.flint.mobile.platform.TokenStore
-import com.rextechnologies.flint.protocol.wire.CodecId
+import com.rextechnologies.flint.mobile.state.CapabilityCoordinator
+import com.rextechnologies.flint.mobile.state.DiscoveryCoordinator
+import com.rextechnologies.flint.mobile.state.LinkState
+import com.rextechnologies.flint.mobile.state.LookupState
+import com.rextechnologies.flint.mobile.state.NavigationState
+import com.rextechnologies.flint.mobile.state.OutputCoordinator
+import com.rextechnologies.flint.mobile.state.ReceiverSetupCoordinator
+import com.rextechnologies.flint.mobile.state.SessionCoordinator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
- * The one object that holds the app's state.
+ * The one object the UI talks to.
  *
  * Not an `androidx.lifecycle.ViewModel`. The activity declares every configuration change it handles
  * and so is never recreated underneath a running cast — which is the reason the declaration is there
  * — so the survival a ViewModel buys is survival from something that does not happen here, and the
  * dependency would be carried for nothing.
+ *
+ * It holds no state of its own beyond navigation. Each coordinator owns one question and answers it
+ * in its own flow; this combines those answers into [MobileUiState] and routes the presses. That
+ * split is what removed the lost update the old single-state version had: a handler that read the
+ * whole state, suspended for several seconds on a network sweep and then wrote the whole state back
+ * silently discarded everything the network watcher had learned in between.
  */
 class MobileController(
     context: Context,
+    deviceName: String,
+    screenWidth: Int,
+    screenHeight: Int,
+    densityDpi: Int,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
 ) {
     private val applicationContext = context.applicationContext
+
     private val watcher = AndroidNetworkWatcher(applicationContext)
-    private val discovery = DiscoveryRunner(applicationContext)
-    private val tokens = TokenStore(applicationContext)
+    private val navigation = NavigationState(applicationContext, scope)
+    private val discovery = DiscoveryCoordinator(DiscoveryRunner(applicationContext))
+    private val capability = CapabilityCoordinator(
+        context = applicationContext,
+        deviceName = deviceName.ifBlank { "This phone" },
+        screenWidth = screenWidth.coerceAtLeast(1),
+        screenHeight = screenHeight.coerceAtLeast(1),
+        densityDpi = densityDpi.coerceAtLeast(1),
+    )
+    private val session = SessionCoordinator(TokenStore(applicationContext), scope)
+    private val output = OutputCoordinator(applicationContext, session, scope)
+    private val setup = ReceiverSetupCoordinator(applicationContext, scope)
 
-    private val mutable = MutableStateFlow(MobileUiState())
-    val state: StateFlow<MobileUiState> = mutable
+    /**
+     * Work that belongs to one run of the app rather than to this object.
+     *
+     * Cancelled by [stop] so that a stop-and-start cycle works. Cancelling the scope itself, which
+     * is what this used to do, left the controller permanently dead — every later launch was a
+     * no-op, and nothing said so.
+     */
+    private val work = SupervisorJob(scope.coroutineContext[Job])
 
-    private var encoders: Set<CodecId> = emptySet()
-    private var encoderProbe: ProbeOutcome = ProbeOutcome.NOT_PROBED
-    private var virtualDisplayProbe: ProbeOutcome = ProbeOutcome.NOT_PROBED
-
-    private var screenWidth = 1080
-    private var screenHeight = 1920
-    private var densityDpi = 420
-    private var deviceName = "This phone"
-
-    fun start(
-        deviceName: String,
-        screenWidth: Int,
-        screenHeight: Int,
-        densityDpi: Int,
-    ) {
-        this.deviceName = deviceName.ifBlank { "This phone" }
-        this.screenWidth = screenWidth.coerceAtLeast(1)
-        this.screenHeight = screenHeight.coerceAtLeast(1)
-        this.densityDpi = densityDpi.coerceAtLeast(1)
-
-        watcher.start()
-        scope.launch {
-            watcher.localNetwork.collect { network ->
-                mutable.value = mutable.value.copy(network = network)
-                reassess()
-            }
-        }
-        mutable.value = mutable.value.copy(
-            bundledReceiver = ReceiverPackage.bundled(applicationContext),
+    val state: StateFlow<MobileUiState> = combine(
+        navigation.state,
+        watcher.localNetwork,
+        discovery.state,
+        capability.state,
+        combine(session.state, output.state, setup.state, ::Triple),
+    ) { nav, network, discovered, probed, live ->
+        val (link, sending, receiverSetup) = live
+        val phone = capability.capabilities(probed)
+        MobileUiState(
+            tab = nav.tab,
+            introductionSeen = nav.introductionSeen,
+            network = network,
+            lookup = discovered.lookup,
+            manualLookup = discovered.manualLookup,
+            report = MobileCapabilityAssessor.assess(
+                AssessmentInput(
+                    network = network,
+                    phone = phone,
+                    device = discovered.selected,
+                    path = discovered.path,
+                    pairedSessionActive = link is LinkState.Connected,
+                ),
+            ).takeIf { probed.hasBeenAsked || discovered.lookup !is LookupState.Idle },
+            receivers = discovered.receivers,
+            selected = discovered.selected,
+            rungsAttempted = discovered.rungsAttempted,
+            path = discovered.path,
+            link = link,
+            pairingVisible = nav.pairingVisible,
+            pairingError = nav.pairingError,
+            encoderProbeRunning = probed.encoderProbeRunning,
+            secondScreenProbeRunning = probed.secondScreenProbeRunning,
+            output = sending,
+            bundledReceiver = receiverSetup.bundled,
+            installStage = receiverSetup.stage,
+            notice = nav.notice,
         )
+    }.stateIn(scope, SharingStarted.Eagerly, MobileUiState())
+
+    fun start() {
+        watcher.start()
+        setup.load()
     }
 
+    /** Ends this run. [start] may be called again afterwards, and works. */
     fun stop() {
         watcher.stop()
-        scope.cancel()
+        scope.launch { output.stop() }
+        session.close()
+        work.cancelChildren()
+    }
+
+    /** Releases everything for good, when the activity is finishing rather than pausing. */
+    fun close() {
+        stop()
+        watcher.close()
     }
 
     /** Re-reads the interface list now, without running a discovery sweep. */
@@ -86,192 +144,152 @@ class MobileController(
         watcher.resample()
     }
 
-    fun selectTab(tab: MobileTab) {
-        mutable.value = mutable.value.copy(tab = tab)
-    }
+    fun selectTab(tab: MobileTab) = navigation.selectTab(tab)
 
-    fun dismissNotice() {
-        mutable.value = mutable.value.copy(notice = null, sessionFailure = null, pairingError = null)
-    }
+    fun onBack(): Boolean = navigation.onBack()
 
-    fun markIntroductionSeen() {
-        mutable.value = mutable.value.copy(introductionSeen = true)
-    }
+    fun dismissNotice() = navigation.dismissNotice()
 
-    fun replayIntroduction() {
-        mutable.value = mutable.value.copy(introductionSeen = false, tab = MobileTab.CAST)
-    }
+    fun markIntroductionSeen() = navigation.markIntroductionSeen()
 
-    /**
-     * Starts an output mode.
-     *
-     * The encoder, the projection consent and the foreground service are the next slices' work. Until
-     * they exist this refuses rather than pretending, because a control that fails when pressed is
-     * exactly what the capability verdicts are there to prevent -- and one wired to nothing would be
-     * the same defect wearing the verdicts' own clothes.
-     */
-    fun requestOutput(mode: OutputMode) {
-        val verdict = mutable.value.report?.get(
-            when (mode) {
-                OutputMode.MIRROR -> com.rextechnologies.flint.castcore.capability.CastMode.MIRROR
-                OutputMode.SECOND_SCREEN ->
-                    com.rextechnologies.flint.castcore.capability.CastMode.SECOND_SCREEN
+    fun replayIntroduction() = navigation.replayIntroduction()
 
-                OutputMode.NONE -> return
-            },
-        )
-        if (verdict?.isOfferable != true) {
-            mutable.value = mutable.value.copy(notice = verdict?.reason ?: "Nothing has been probed yet.")
-            return
-        }
-        mutable.value = mutable.value.copy(
-            notice = "The encode-and-send path is not in this build yet, so nothing was started. " +
-                "The verdict above is what this phone and this television can do once it is.",
-        )
-    }
-
-    fun stopOutput() {
-        mutable.value = mutable.value.copy(output = null)
-    }
+    fun showPairing(visible: Boolean) = navigation.showPairing(visible)
 
     /** Runs the ladder, then measures the path against whatever answered. */
     fun probe() {
-        if (mutable.value.isProbing) return
-        mutable.value = mutable.value.copy(isProbing = true, notice = null)
-        scope.launch {
+        launchWork {
+            navigation.notice(null)
             watcher.resample()
-            val network = watcher.localNetwork.value
-            val results = withContext(Dispatchers.IO) { discovery.discover(network) }
-            val found = results.flatMap { it.receivers }.distinctBy { it.address }
-            val selected = found.firstOrNull() ?: mutable.value.selected
-
-            val path = selected?.let { measurePath(network, it) }
-            mutable.value = mutable.value.copy(
-                isProbing = false,
-                network = network,
-                receivers = found,
-                selected = selected,
-                rungsAttempted = results.filter { it.attempted }.map { it.rung },
-                path = path,
-            )
-            reassess()
+            val outcome = discovery.probe(watcher.localNetwork.value)
+            if (outcome is LookupState.Found) reconnectIfRemembered()
         }
-    }
-
-    /**
-     * The round trip, measured by this phone rather than taken from the television.
-     *
-     * The receiver reports zero in every STATS frame because it never measures one, and a zero on a
-     * diagnostics row reads as an extraordinarily good link rather than as no measurement at all.
-     * Throughput is left unmeasured here, and reported as unmeasured, because measuring it properly
-     * needs a receiver willing to sink traffic and this probe is not that.
-     */
-    private suspend fun measurePath(network: LocalNetwork, device: ReceiverDevice): NetworkPath? {
-        val samples = discovery.measureRoundTripMillis(network, device)
-        if (samples.isEmpty()) return null
-        val median = samples.sorted()[samples.size / 2]
-        val jitter = samples.maxOrNull()!! - samples.minOrNull()!!
-        val loss = (1.0 - samples.size.toDouble() / 5.0) * 100.0
-        return NetworkPath(
-            roundTripMs = median,
-            jitterMs = jitter,
-            throughputMbps = 0.0,
-            packetLossPercent = loss.coerceIn(0.0, 100.0),
-            throughputMeasured = false,
-        )
     }
 
     /** Confirms one typed-in address. Discovery is never the only route to a television. */
     fun probeManualAddress(address: String) {
-        scope.launch {
-            val network = watcher.localNetwork.value
-            val found = withContext(Dispatchers.IO) { discovery.probeManual(network, address.trim()) }
+        launchWork {
+            val found = discovery.probeManual(watcher.localNetwork.value, address)
             if (found == null) {
-                mutable.value = mutable.value.copy(
-                    notice = "Nothing answered at ${address.trim()}. Check the address on the TV " +
-                        "under Settings, My Fire TV, About, Network.",
+                navigation.notice(
+                    "Nothing answered at ${address.trim()}. Check the address on the TV under " +
+                        "Settings, My Fire TV, About, Network.",
                 )
-                return@launch
+            } else {
+                reconnectIfRemembered()
             }
-            mutable.value = mutable.value.copy(
-                receivers = (mutable.value.receivers + found).distinctBy { it.address },
-                selected = found,
-                path = measurePath(network, found),
-            )
-            reassess()
         }
     }
 
     fun select(device: ReceiverDevice) {
-        mutable.value = mutable.value.copy(selected = device)
-        reassess()
-    }
-
-    fun showPairing(visible: Boolean) {
-        mutable.value = mutable.value.copy(pairingVisible = visible, pairingError = null)
+        discovery.select(device)
+        launchWork { reconnectIfRemembered() }
     }
 
     fun submitPairingCode(code: String) {
-        if (!PairingCopy.isWellFormed(code)) {
-            mutable.value = mutable.value.copy(pairingError = PairingCopy.INVALID_CODE)
+        val failure = session.pair(
+            network = watcher.localNetwork.value,
+            device = discovery.state.value.selected,
+            phone = capability.capabilities(),
+            code = code,
+        )
+        if (failure != null) {
+            navigation.pairingError(failure)
             return
         }
-        mutable.value = mutable.value.copy(pairingError = null)
-        // Holding the session open is the next slice's work. What exists today is the verdict, the
-        // discovery ladder and the state machine underneath them; claiming a pairing succeeded here
-        // would be exactly the kind of control that fails when pressed.
-        mutable.value = mutable.value.copy(
-            pairingVisible = false,
-            notice = "Pairing is not wired to the socket in this build yet, so nothing was sent.",
-        )
+        navigation.showPairing(false)
+        launchWork {
+            val settled = session.awaitSettled()
+            navigation.notice(pairingOutcome(settled))
+        }
     }
 
     /** Asks the platform what it can encode. Until this runs, the verdicts say it has not been asked. */
     fun runEncoderProbe() {
-        scope.launch {
-            val found = withContext(Dispatchers.Default) { PhoneProbes.probeHardwareEncoders() }
-            encoders = found
-            encoderProbe = if (found.isEmpty()) ProbeOutcome.UNSUPPORTED else ProbeOutcome.SUPPORTED
-            reassess()
+        launchWork {
+            val found = capability.probeEncoders()
+            navigation.notice(SettingsCopy.encoderProbeResult(found.map { codecName(it.value) }))
         }
     }
 
-    /**
-     * The second-screen check.
-     *
-     * It runs on the main thread because it puts a Presentation on a display, and a Dialog belongs to
-     * the thread that made it. It takes about a second at worst, bounded by its own timeout.
-     */
+    /** The second-screen check, which needs an Activity because a Presentation is a Dialog. */
     fun runSecondScreenProbe(activity: Activity) {
-        scope.launch {
-            virtualDisplayProbe = PhoneProbes.probeVirtualDisplay(activity)
-            reassess()
+        launchWork {
+            navigation.notice(
+                when (capability.probeSecondScreen(activity)) {
+                    ProbeOutcome.SUPPORTED -> SettingsCopy.SECOND_SCREEN_PROBE_SUPPORTED
+                    ProbeOutcome.UNSUPPORTED -> SettingsCopy.SECOND_SCREEN_PROBE_UNSUPPORTED
+                    ProbeOutcome.NOT_PROBED -> null
+                },
+            )
         }
     }
 
-    private fun reassess() {
-        val capabilities = PhoneProbes.capabilities(
-            context = applicationContext,
-            deviceName = deviceName,
-            screenWidth = screenWidth,
-            screenHeight = screenHeight,
-            densityDpi = densityDpi,
-            encoders = encoders,
-            encoderProbe = encoderProbe,
-            virtualDisplayProbe = virtualDisplayProbe,
-        )
-        val current = mutable.value
-        val paired = current.selected?.let { tokens.tokenFor(it.address) != null } ?: false
-        mutable.value = current.copy(
-            isPaired = paired,
-            report = MobileCapabilityAssessor.assess(
-                network = current.network,
-                phone = capabilities,
-                device = current.selected,
-                path = current.path,
-                pairedSessionActive = paired,
-            ),
-        )
+    /** Starts the second screen, which needs no consent dialog and no projection. */
+    fun startSecondScreen(activity: Activity) {
+        launchWork {
+            navigation.notice(output.startSecondScreen(activity, capability.capabilities()))
+        }
     }
 
+    /** Continues a mirror after the system's capture dialog has been answered. */
+    fun onProjectionConsent(resultCode: Int, consent: Intent?) {
+        if (consent == null) {
+            navigation.notice(ScreenCopy.MIRROR_CONSENT_DECLINED)
+            return
+        }
+        launchWork {
+            navigation.notice(output.startMirror(capability.capabilities(), resultCode, consent))
+        }
+    }
+
+    /** Says what happened when notifications were refused, and carries on regardless. */
+    fun onNotificationPermission(granted: Boolean) {
+        if (!granted) navigation.notice(ScreenCopy.NOTIFICATIONS_DECLINED)
+    }
+
+    fun stopOutput() {
+        launchWork { output.stop() }
+    }
+
+    /** Ends the session with the television, leaving the stored pairing in place. */
+    fun disconnect() {
+        launchWork {
+            output.stop()
+            session.close()
+        }
+    }
+
+    /** Unpairs every television, so a lent phone can be handed back. */
+    fun forgetEveryPairing() {
+        session.forgetEverything()
+        navigation.notice(SettingsCopy.FORGOTTEN)
+    }
+
+    private suspend fun reconnectIfRemembered() {
+        if (session.state.value is LinkState.Connected) return
+        val device = discovery.state.value.selected ?: return
+        session.reconnect(watcher.localNetwork.value, device, capability.capabilities())
+    }
+
+    private fun pairingOutcome(settled: LinkState): String? = when (settled) {
+        is LinkState.Connected ->
+            PairingCopy.paired(settled.device.displayName)
+
+        is LinkState.Closed -> settled.failure?.sentence
+        else -> PairingCopy.CONNECTING
+    }
+
+    private fun launchWork(block: suspend CoroutineScope.() -> Unit) {
+        scope.launch(work, block = block)
+    }
+
+    private fun codecName(value: Int): String = when (value) {
+        1 -> "H.264"
+        2 -> "H.265"
+        3 -> "AAC-LC"
+        4 -> "Opus"
+        5 -> "AV1"
+        else -> "codec $value"
+    }
 }

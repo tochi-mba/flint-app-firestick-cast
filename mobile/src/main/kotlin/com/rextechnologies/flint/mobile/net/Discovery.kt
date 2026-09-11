@@ -69,11 +69,11 @@ class DiscoveryRunner(context: Context) {
         return results
     }
 
-    private suspend fun runStep(step: DiscoveryStep): RungResult = when (step.rung) {
-        DiscoveryRung.LINE_PROBE -> sweep(step)
-        DiscoveryRung.MULTICAST_DNS -> multicastDns(step)
-        DiscoveryRung.UDP_BROADCAST -> broadcast(step)
-        DiscoveryRung.SSDP -> RungResult(
+    private suspend fun runStep(step: DiscoveryStep): RungResult = when (step) {
+        is DiscoveryStep.LineProbe -> sweep(step)
+        is DiscoveryStep.MulticastDns -> multicastDns(step)
+        is DiscoveryStep.UdpBroadcast -> broadcast(step)
+        is DiscoveryStep.Ssdp -> RungResult(
             step.rung,
             emptyList(),
             attempted = false,
@@ -81,7 +81,7 @@ class DiscoveryRunner(context: Context) {
                 "rather than a Flint receiver.",
         )
 
-        DiscoveryRung.MANUAL -> RungResult(step.rung, emptyList(), attempted = false)
+        is DiscoveryStep.Manual -> RungResult(step.rung, emptyList(), attempted = false)
     }
 
     /**
@@ -91,13 +91,8 @@ class DiscoveryRunner(context: Context) {
      * subnet cannot make the television flicker between screens. Concurrency and the connect timeout
      * both come from the budget the ladder derived rather than from numbers chosen here.
      */
-    private suspend fun sweep(step: DiscoveryStep): RungResult {
-        val budget = step.sweep ?: return RungResult(
-            step.rung,
-            emptyList(),
-            attempted = false,
-            detail = "This network is too large to sweep one address at a time.",
-        )
+    private suspend fun sweep(step: DiscoveryStep.LineProbe): RungResult {
+        val budget = step.sweep
         val binder = InterfaceSocketBinder(step.boundAddress)
         val gate = Semaphore(budget.concurrency)
 
@@ -154,7 +149,7 @@ class DiscoveryRunner(context: Context) {
      * Without a `MulticastLock` the Wi-Fi chip filters multicast out before it reaches the app, and
      * the symptom is not an error — it is a rung that silently finds nothing.
      */
-    private suspend fun multicastDns(step: DiscoveryStep): RungResult = withContext(Dispatchers.IO) {
+    private suspend fun multicastDns(step: DiscoveryStep.MulticastDns): RungResult = withContext(Dispatchers.IO) {
         val lock = wifi?.createMulticastLock(MULTICAST_LOCK_TAG)?.apply {
             setReferenceCounted(false)
             runCatching { acquire() }
@@ -220,12 +215,8 @@ class DiscoveryRunner(context: Context) {
      * It needs a responder on the receiver that did not exist before this change, so on an older
      * television it finds nothing and says so rather than appearing to have looked.
      */
-    private suspend fun broadcast(step: DiscoveryStep): RungResult = withContext(Dispatchers.IO) {
-        val target = step.broadcastAddress ?: return@withContext RungResult(
-            step.rung,
-            emptyList(),
-            attempted = false,
-        )
+    private suspend fun broadcast(step: DiscoveryStep.UdpBroadcast): RungResult = withContext(Dispatchers.IO) {
+        val target = step.broadcastAddress
         try {
             val socket = DatagramSocket(InetSocketAddress(step.boundAddress, 0))
             val found = socket.use {
@@ -290,7 +281,7 @@ class DiscoveryRunner(context: Context) {
     suspend fun measureRoundTripMillis(
         network: LocalNetwork,
         device: ReceiverDevice,
-        samples: Int = ROUND_TRIP_SAMPLES,
+        samples: Int = ROUND_TRIP_ATTEMPTS,
     ): List<Double> = withContext(Dispatchers.IO) {
         val bound = network.boundAddress ?: return@withContext emptyList()
         val target = runCatching { InetAddress.getByName(device.address) as? Inet4Address }.getOrNull()
@@ -305,13 +296,21 @@ class DiscoveryRunner(context: Context) {
         }
     }
 
-    private companion object {
-        const val MULTICAST_LOCK_TAG = "flint-mobile-discovery"
-        const val MDNS_GROUP = "224.0.0.251"
-        const val MDNS_PORT = 5353
-        const val MDNS_TIMEOUT_MILLIS = 1_500
-        const val BROADCAST_TIMEOUT_MILLIS = 1_000
-        const val MANUAL_TIMEOUT_MILLIS = 1_500
-        const val ROUND_TRIP_SAMPLES = 5
+    companion object {
+        /**
+         * How many times the round trip is sampled.
+         *
+         * Public because the loss figure is the delivered fraction of these, and a caller working
+         * that out from a number of its own would be reporting loss against a denominator this
+         * class did not use.
+         */
+        const val ROUND_TRIP_ATTEMPTS: Int = 5
+
+        private const val MULTICAST_LOCK_TAG = "flint-mobile-discovery"
+        private const val MDNS_GROUP = "224.0.0.251"
+        private const val MDNS_PORT = 5353
+        private const val MDNS_TIMEOUT_MILLIS = 1_500
+        private const val BROADCAST_TIMEOUT_MILLIS = 1_000
+        private const val MANUAL_TIMEOUT_MILLIS = 1_500
     }
 }
