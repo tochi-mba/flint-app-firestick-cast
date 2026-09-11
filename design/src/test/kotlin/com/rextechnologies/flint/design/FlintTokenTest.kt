@@ -44,8 +44,10 @@ class FlintColorsTest {
 
     @Test
     fun `the washes are the accent and the failure tone at ten per cent`() {
-        assertEquals(0.10f, FlintColors.SignalWash.alpha, 0.001f)
-        assertEquals(0.10f, FlintColors.LiveWash.alpha, 0.001f)
+        // sRGB alpha is stored in 8-bit steps, so 10% is encoded as 26/255 rather than exactly 0.10.
+        val tenPercentAlpha = 26f / 255f
+        assertEquals(tenPercentAlpha, FlintColors.SignalWash.alpha, 0.0001f)
+        assertEquals(tenPercentAlpha, FlintColors.LiveWash.alpha, 0.0001f)
         assertEquals(FlintColors.Signal.red, FlintColors.SignalWash.red)
         assertEquals(FlintColors.Live.red, FlintColors.LiveWash.red)
     }
