@@ -1,558 +1,216 @@
-# Flint Mobile feature completion plan
+# Flint Mobile — the finishing plan, as executed
 
-This document is the execution plan for taking the current Android phone host from a compiled, mostly wired implementation to a hardware-proven product with useful **Second Screen**, **Mirror**, and **Media** modes.
+This is the concrete plan for taking the phone app from "compiles and pairs" to a product with a
+working Second Screen, Mirror and Media Handoff, a receiver it can install, and gates that say what
+was proved where. It replaces the earlier draft, which described the shape of the work without
+naming the files, the tests or the evidence. Every step below names all three.
 
-It is intentionally based on the code that exists now rather than on the older slice documents alone. Several pieces that those documents described as future work are already present; several important gaps are also now visible only because the app has run on a real phone.
+The status column is kept honest. "CI" means the step's tests ran green on the pull request gate.
+"Hardware" means somebody ran it on a named phone and a named Fire TV and wrote down what happened.
+Nothing is called finished on the strength of a compiler.
 
-## Current evidence
+## What the phone has already proved on real hardware
 
-The current phone build has now produced two useful real-device results:
+Two checks in Settings have been run on a physical phone and both passed:
 
-- the private-display check passes: the phone creates a display only Flint can see, draws a known frame into it, and reads that frame back intact;
-- the encoder probe reports hardware H.264 and H.265 encoders.
+- **Second-screen check.** The phone created a display only Flint can see, drew one frame into it,
+  and read that frame back intact.
+- **Encoder check.** The phone reports hardware H.264 and H.265 encoders.
 
-Those are important, but they prove two separate prerequisites rather than the complete cast pipeline. The private-display probe currently renders into an `ImageReader`, not into `ScreenEncoder`, and the encoder probe enumerates hardware codecs rather than encoding and decoding a known frame. The next milestone therefore has to prove **pixels all the way through the same path the product uses**.
+Those are two prerequisites, not the pipeline. The first draws into an `ImageReader`, not into the
+encoder; the second lists codecs rather than exercising one. Step 1 below is what turns them into a
+proof that the production path produces pixels.
 
-## What is already implemented
+## Ground rules that shaped every step
 
-The following should be treated as existing infrastructure, not rebuilt:
-
-- hotspot-aware discovery, pairing, token reuse and a persistent `CastConnection`;
-- H.264/H.265 surface-input encoding through `ScreenEncoder`;
-- direct `ByteBuffer` video writes through the allocation-conscious `FrameWriter` path;
-- receiver-side `VIDEO_CONFIG` / video packet handling and `MirrorVideoDecoder`;
-- `SurfaceMode.MIRROR` and `SurfaceMode.PRESENTATION` receiver surfaces;
-- second-screen private `VirtualDisplay` creation and a Compose `Presentation` host;
-- MediaProjection consent flow and the API-34 foreground-service ordering for mirror start;
-- receiver `STATS` feeding the existing `BitrateController`;
-- on-demand key-frame requests and detection that a vendor encoder ignored one;
-- receiver-side pushed-media assembly, ExoPlayer playback and `PLAYBACK_STATE` reporting;
-- protocol messages for media push, media load/clear, playback state and transport controls;
-- pure `MediaHandoff` helpers for chunk sizing, MIME validation and title sanitisation;
-- a signed rolling mobile release workflow.
-
-The goal is to finish and harden those paths rather than create parallel ones.
-
----
-
-# Delivery order
-
-The order below is deliberate. Each phase leaves a useful, independently testable product state and avoids building UI on top of an unproven media path.
-
-## Phase 0 — prove the real video pipeline on hardware
-
-**Goal:** establish that the exact surface -> encoder -> wire -> decoder path can produce correct pixels before adding more product behaviour.
-
-### 0.1 Add an encoder pixel round-trip test
-
-Create an instrumentation test/hardware harness that:
-
-1. creates a known test pattern;
-2. draws it into `ScreenEncoder.inputSurface` through a private `VirtualDisplay`;
-3. collects `VIDEO_CONFIG` plus encoded frames;
-4. decodes them with a second `MediaCodec`;
-5. reads the decoded pixels;
-6. asserts the pattern survived rather than merely asserting that frames existed.
-
-This is the most important missing test. A valid H.264 stream can still decode to blank/green frames, so structural assertions are not sufficient.
-
-### 0.2 Add a receiver loopback variant
-
-Once the local round trip passes, run the same known pattern through a real `CastConnection` into the receiver and confirm:
-
-- receiver gets `VIDEO_CONFIG` first;
-- first useful frame is an intra frame;
-- decoded dimensions match the config;
-- the receiver reports `mirrorFrameReceived=true`;
-- the rendered TV frame is visibly the known pattern.
-
-### 0.3 Record actual device evidence
-
-For every physical test record:
-
-- phone model / Android version;
-- Fire TV model / Fire OS version;
-- codec selected;
-- output dimensions and frame rate;
-- whether on-demand sync-frame requests are honoured;
-- no claimed latency number unless measured glass-to-glass.
-
-**Exit gate:** no feature work below is called complete until one physical phone and one Fire TV have shown the known pattern end to end.
+- No B-frames, ever. Infinite GOP with IDR on demand, with one documented exception per session.
+- Nothing allocates on the frame path. Media push is not the frame path, so one 512 KiB copy per
+  chunk is allowed there and a whole-file allocation is not.
+- Every listening socket binds a validated interface address; every outgoing socket, ADB included,
+  binds the hotspot interface the ladder chose.
+- No client names a filesystem path. A title is stripped to its leaf; a content URI never leaves the
+  phone.
+- Tokens are authorisation, not encryption. No string may call the link private, secure or
+  encrypted, and the copy sweep enforces it.
+- Nothing is installed on, replaced on, or removed from the TV without showing what and why. The
+  RSA prompt on the television is honoured. Removal is offered wherever installation is.
+- No latency figure is quoted from anything but the camera procedure in `docs/LATENCY_BUDGET.md`.
 
 ---
 
-# Phase 1 — finish Second Screen first
+## Step 1 — prove the production encoder produces pixels, and choose the codec deliberately
 
-Second Screen should remain the first product mode because it avoids MediaProjection consent and proves the streaming pipeline with a Flint-owned source.
+**Why first.** This project has already shipped an encoder whose every structural check passed and
+whose every frame decoded to nothing. Until a frame has gone through `ScreenEncoder` and come out of
+a decoder looking like what went in, "Ready" on a mode card is a guess.
 
-## 1.1 Fix the output geometry
+**Code.**
 
-`startSecondScreen()` currently derives its encoded dimensions from the phone screen. That is correct for mirror and wrong for a TV-oriented Flint surface: a portrait phone can therefore create a portrait second screen.
+- `castcore/.../media/PatternCheck.kt` — a four-quadrant test pattern (four saturated colours), the
+  expected colour at each quadrant centre, `YuvToRgb.convert` (BT.601 limited range), and
+  `PatternCheck.verdict(samples)` which requires every quadrant to match within a tolerance wide
+  enough for chroma subsampling and codec loss and narrow enough that a flat frame of any colour
+  fails. Pure, unit-tested against exact values, a flat green frame, a flat black frame and a
+  swapped-quadrant frame.
+- `mobile/.../platform/EncoderRoundTrip.kt` — on the main thread, creates a private `VirtualDisplay`
+  on `ScreenEncoder.inputSurface` and shows a `Presentation` painting the pattern; collects the
+  `VIDEO_CONFIG` and the first key frame plus a few packets on the encoder thread; stops; then off
+  the main thread decodes them with a second `MediaCodec` into a `YUV_420_888` `ImageReader`, samples
+  the quadrant centres through the planes' own strides, and returns a verdict with a reason. Every
+  resource is released in `finally`, and a timeout is a failure with the stage it reached in the
+  detail.
+- `CapabilityCoordinator.probeEncoders(activity)` runs the enumeration and then the round trip on the
+  codec the session would choose. `PhoneCapabilities` gains `encoderRoundTrip: ProbeOutcome` and a
+  `roundTripDetail`. The assessor blocks both streaming modes until the round trip has passed on
+  this phone, and reports IMPOSSIBLE with the detail when frames decoded to nothing. When the phone
+  refused a private display the round trip is reported as not run rather than failed, because a
+  mirror through a projection may still work.
+- `castcore/.../media/CodecChoice.kt` — the session's negotiated codec wins when the phone can
+  encode it; otherwise H.264 before H.265; and a fallback to the other hardware codec when the
+  encoder refuses to start. `OutputCoordinator.startEncoder` uses it instead of the first element
+  of a set. `LiveOutput.codec` is shown on the live strip.
+- `mobile/src/androidTest/.../EncoderRoundTripTest.kt` — the same harness under the instrumentation
+  runner, for an emulator or device lane. It is not part of the PR gate and says so.
 
-Introduce a presentation output policy separate from mirror sizing:
+**Evidence.** CI: `PatternCheck`, `YuvToRgb`, `CodecChoice` and the assessor's new gate. Hardware: the
+encoder check in Settings reports "a test frame survived the trip through H.264" on a named phone.
 
-- Second Screen uses a landscape canvas, initially 1920x1080 bounded by `EncoderPolicy` and the selected encoder's supported size/rate.
-- Mirror continues to follow the phone's current orientation and aspect ratio.
-- Do not pretend the receiver advertised a resolution until the protocol actually carries one.
+## Step 2 — make Mirror and Second Screen survive what happens to them
 
-Keep the two policies separate so changing phone orientation never rotates the app-owned Second Screen canvas.
+**Code.**
 
-## 1.2 Replace the static placeholder with a scene model
+- `MobileActivity.onConfigurationChanged` → `MobileController.onDisplayChanged(width, height, dpi)`
+  → `OutputCoordinator.reconfigureMirror`. Order: new encoder at the new bounded size, the existing
+  `VirtualDisplay` resized and pointed at the new input surface, the old encoder stopped, and the new
+  encoder's own `VIDEO_CONFIG` followed by the sync-frame request `publishConfig` already makes. The
+  projection and the display are reused; consent is never asked for twice. Second Screen ignores
+  rotation entirely.
+- `castcore/.../media/PresentationGeometry.kt` — the second screen is a landscape 1920×1080 canvas
+  regardless of how the phone is held, bounded by `EncoderPolicy`. Tested for a portrait phone.
+- Key-frame fallback: `OutputCoordinator` restarts the encoder once per session with
+  `KeyFrameStrategy.BoundedInterval`, retargeting the display or projection surface, guarded by a
+  session flag so it cannot loop.
+- Transport failure: the sink counts consecutive refused writes and stops the output after a bounded
+  run, keeping the first concrete failure for the notice. `CastConnection.sendVideoPacket` decrements
+  its pending-bytes counter in `finally`.
+- The notification's Stop is observed: when `CastService.isForeground` drops while output is live,
+  `OutputCoordinator.stop()` runs, so a stop from the lock screen releases the encoder rather than
+  leaving it encoding into a socket nobody reads.
+- `castcore/.../screen/SecondScreenScene.kt` — a sealed scene model (`Dashboard`, `NowPlaying`) with
+  no Android in it; `SecondScreenContent` renders it; the live strip becomes a cockpit with the scene,
+  the size, the codec, the link word and Stop.
 
-`SecondScreenContent` currently proves rendering but only displays a Flint holding screen. Turn it into a small scene host rather than growing one giant composable.
+**Evidence.** CI: geometry, scene, the fallback guard, the failure counter, the reconfigure order as
+a pure sequence. Hardware: a mirror rotated portrait → landscape → portrait without the television
+dropping the session; a stop from the notification with the phone locked leaves no service behind.
 
-Add an Android-free model, for example:
+## Step 3 — degrade deliberately when the phone is hot
 
-```text
-SecondScreenScene
-  Dashboard
-  NowPlaying
-  Photo
-```
+**Code.** `mobile/.../platform/ThermalWatch.kt` adapts `PowerManager.OnThermalStatusChangedListener`
+to `ThermalLevel`. `BitrateController` gains a ceiling that is a fraction of the session's own
+maximum and can only ever lower it. `OutputCoordinator` applies `ThermalPolicy.decide` on every
+change, stops at the emergency level with the policy's own sentence, and reports a thermal reason
+separately from a congestion one. `LiveOutput.diagnostics` carries the target bitrate, the receiver
+queue depth, the sender's pending bytes, the dropped-frame delta and the last decision, and the
+Settings diagnostics card shows them. No latency figure appears anywhere.
 
-The first shippable scene should be `Dashboard`: connected TV, link state, current activity and a clear statement that this is Flint-owned content. `NowPlaying` can then reuse media playback state, and `Photo` can be added only once image selection is actually implemented.
+**Evidence.** CI: the ceiling never raises a bitrate; every level maps to a decision; the stop fires
+at the platform's own emergency levels. Hardware: a thermal step-down observed and its sentence
+recorded, or its absence recorded as not yet observed.
 
-Do **not** describe or implement this as Android desktop extension. A private `VirtualDisplay` can show only Flint's own content.
+## Step 4 — Media Handoff, end to end
 
-## 1.3 Add phone-side cockpit controls
+**Code.**
 
-While Second Screen is live, the phone should expose:
+- `MobileActivity` registers an `OpenDocument` launcher for `video/*`; the URI goes to the controller
+  and nowhere else. `mobile/.../media/ContentMediaSource.kt` reads display name, MIME type and size
+  through the `ContentResolver`, opens a stream, and never asks for a path.
+- `mobile/.../state/MediaCoordinator.kt` with a sealed `MediaState` (`Idle`, `Preparing`,
+  `Sending(bytesSent, totalBytes?)`, `Buffering`, `Playing`, `Paused`, `Ended`, `Failed`). It streams
+  `MediaHandoff.CHUNK_BYTES` chunks in order on the IO dispatcher through one reused buffer, marks
+  exactly one final chunk, refuses an empty file before sending anything, updates progress per
+  chunk, cancels between chunks, stops reading the moment a write is refused, and then sends
+  `MediaHandoff.playPushedFile`. It reduces `PLAYBACK_STATE` into the state and sends
+  `TransportControl` for play, pause, seek and stop with a monotonic sequence number.
+- `MediaScreen` becomes the remote: Choose video, the title and size, send progress, the receiver's
+  state, play/pause, a scrubber driven by the receiver's reported position, Stop and Clear, and the
+  receiver's own error wording where it sent one.
+- Receiver: `receiver/.../media/PushedMediaSink.kt` extracts the pushed-file assembly from
+  `ReceiverService` into a class with tests: one transfer at a time, a new transfer discards a
+  previous pending file, a size cap against usable cache space, partial files deleted on error and
+  disconnect, and the same bytes out as in, checked by hash.
+- `castcore/.../screen/SurfaceReducer.kt` — one authority for `Idle | Presentation | Mirror | Media`.
+  Starting media while a second screen is live stops the presentation stream before the LOAD;
+  clearing media that displaced a second screen tells the person rather than restarting it silently.
 
-- current scene;
-- output resolution;
-- link health and bitrate;
-- change scene where meaningful;
-- Stop.
+**Evidence.** CI: chunk boundaries at 1 byte, 512 KiB, 512 KiB + 1 and several chunks; cancellation
+and refusal mid-transfer; the empty-file refusal; the reducer's every transition; the receiver sink's
+hash equality and cleanup. Hardware: a real MP4 chosen on the phone plays on the Fire TV, is paused,
+seeked and stopped from the phone, and the temporary file is gone afterwards.
 
-Keep controls on the phone. The TV's existing mirror/presentation overlay remains a secondary emergency control, not a second full UI.
+## Step 5 — mirror audio, honestly
 
-## 1.4 Make lifecycle failure explicit
+**Code.** `mobile/.../media/AudioCapture.kt` uses `AudioPlaybackCaptureConfiguration` and
+`AudioRecord` on API 29 and above, encodes AAC-LC with a `MediaCodec`, sends `AudioConfigMessage`
+with the codec-specific data and `AudioPacket`s stamped on the same monotonic clock as the video.
+`RECORD_AUDIO` is requested before the capture dialog, once. The live strip distinguishes: platform
+too old; capture running but nothing capturable (measured, not assumed); encoder failed; working.
+Video never waits for audio.
 
-Cover:
+**Evidence.** CI: the level detector and the timestamp arithmetic. Hardware: an app that allows
+capture produces synchronised sound on the television; an app that opts out mirrors video with the
+strip saying why there is no sound.
 
-- activity background/foreground;
-- TV/session disconnect;
-- Presentation dismissal;
-- encoder failure;
-- display release;
-- service stop after partial startup failure.
+## Step 6 — install and remove the receiver from the phone
 
-`OutputCoordinator.stop()` remains the single cleanup boundary.
+**Code.**
 
-## 1.5 Tests
+- `mobile/.../platform/AdbIdentityStore.kt` — one RSA key pair per phone, generated once, stored
+  encrypted with the same keystore-held AES key the session tokens use, so the television's accepted
+  identity survives reinstalls of nothing and restarts of everything.
+- `castcore/.../setup/FireOsPlatformResolver.kt` — the Windows host's rules ported exactly: known
+  Vega build models first, then documented API-level ranges, and Unknown for anything undocumented.
+- `mobile/.../net/AdbClient.kt` — a socket bound to the hotspot interface, the bounded 5555–5585 port
+  scan for the selected television only, `AdbConnection` from `:protocol`, read-only identification
+  (banner, `ro.build.version.sdk`, `ro.build.version.release`, `ro.product.model`, `pm list
+  packages` for the receiver), then `installApk` of the staged bundled package and
+  `uninstallPackage`. `AdbAuthorizationRequiredException` becomes `AwaitingAuthorisation`.
+- `castcore/.../setup/InstallFlow.kt` — a pure reducer from events to `ReceiverInstallStage`, so the
+  card's every transition is a table with a test. The Settings card's Install and Remove become live,
+  Remove needs a second press that names the package and the television.
 
-Add:
+**Evidence.** CI: the resolver, the reducer, the identity codec. Hardware: an install and a removal
+on a real Fire TV from the phone alone, the RSA prompt shown and accepted on the remote.
 
-- Robolectric tests for `ComposePresentation` owner/lifecycle wiring;
-- a test that Second Screen chooses landscape presentation dimensions independently of phone orientation;
-- scene-model unit tests;
-- UI semantics tests for the live cockpit;
-- physical known-pattern test from Phase 0 through `SecondScreenHost`.
+## Step 7 — the receiver stops calling every peer a PC
 
-**Exit gate:** tapping Start Second Screen on the real phone shows a stable Flint-owned landscape surface on the Fire TV for at least 30 minutes, survives app background/foreground, and stops cleanly.
+**Code.** The idle, mirror and playback surfaces use the peer's own name from `HELLO` where they have
+it and peer-neutral wording where they do not. The approved snapshots that pin those strings are
+regenerated through the Snapshots workflow, looked at, and committed.
+
+**Evidence.** CI: the receiver snapshot suite green against the new images.
+
+## Step 8 — documentation that matches the code
+
+The implementation README's "what is not in this change" is rewritten to what is actually not in it.
+`HARDWARE-EVIDENCE.md` records every physical run: phone model and Android version, Fire TV model
+and Fire OS version, codec, size and frame rate, whether sync-frame requests were honoured, and what
+was seen. The two probe results already obtained are its first two entries, with the device names
+left for the person who ran them to fill in.
 
 ---
 
-# Phase 2 — finish Mirror
-
-Most of the initial mirror path is present. The main missing product work is configuration-change handling, reconfiguration safety and real-hardware proof.
-
-## 2.1 Implement rotation instead of only declaring support for it
-
-The manifest tells Android that `MobileActivity` handles configuration changes, but the activity currently has no `onConfigurationChanged()` implementation that reconfigures a live mirror.
-
-Add:
-
-```text
-MobileActivity.onConfigurationChanged
-  -> controller.onDisplayConfigurationChanged(...)
-  -> OutputCoordinator.reconfigureMirror(...)
-```
-
-The current screen dimensions stored in `PhoneCapabilities` are captured at app creation, so live display metrics also need to become updateable rather than frozen constructor values.
-
-## 2.2 Reconfigure the existing projection safely
-
-On Android 14+ a MediaProjection consent/session must not be treated as reusable for creating repeated captures. Rotation must therefore keep the same projection and virtual display rather than asking for another consent token.
-
-Safe reconfiguration order:
-
-1. calculate the new bounded mirror dimensions;
-2. detach the old encoder surface from the existing `VirtualDisplay`;
-3. stop the old encoder;
-4. start a new encoder at the new dimensions;
-5. resize the existing `VirtualDisplay`;
-6. attach the new encoder input surface;
-7. let the new encoder emit a fresh `VIDEO_CONFIG`;
-8. immediately require/request a key frame.
-
-The receiver already treats `VIDEO_CONFIG` as a decoder reset, so the first frame after it must be independently decodable.
-
-## 2.3 Make codec selection explicit
-
-The current path takes `advertisedCodecs.firstOrNull()` from a set. Replace that with deterministic policy:
-
-1. prefer H.264 unless there is a measured reason to prefer H.265;
-2. verify the receiver negotiated/supports it;
-3. fall back to the other hardware codec only if encoder creation/configuration fails before streaming starts;
-4. surface the chosen codec in diagnostics.
-
-This also avoids a set iteration order silently deciding what gets sent.
-
-## 2.4 Correct key-frame fallback
-
-Today `ScreenEncoder` can detect an encoder that ignores `PARAMETER_KEY_REQUEST_SYNC_FRAME`, and the UI reports the degradation, but `OutputCoordinator` does not yet perform the documented fallback.
-
-Implement a one-time restart per session:
-
-- mark strategy as bounded 2-second GOP;
-- restart the encoder with that strategy;
-- preserve the same projection / display source;
-- emit new `VIDEO_CONFIG`;
-- never switch back to infinite/on-demand GOP during that session.
-
-Prevent restart loops with an explicit session-level state flag.
-
-## 2.5 Stop/error behaviour
-
-Mirror must stop when:
-
-- Android revokes MediaProjection from the system UI;
-- the cast connection closes;
-- encoder fails;
-- foreground service fails;
-- user presses Stop in app or notification.
-
-Every path must release in one order: source surface -> projection/display -> encoder -> service -> UI state.
-
-## 2.6 Tests
-
-Add:
-
-- API 34/35/36 service/projection ordering tests;
-- rotation test asserting exactly one active projection and one virtual display;
-- `VIDEO_CONFIG` then key-frame ordering test;
-- deterministic codec selection tests;
-- ignored-key-frame fallback restart tests;
-- repeated start/stop stress test;
-- real phone portrait -> landscape -> portrait session on a real TV.
-
-**Exit gate:** a real mirror runs for 30 minutes, rotates both directions without disconnecting, can be stopped from the notification while the phone is locked, and leaves no foreground service behind.
-
----
-
-# Phase 3 — resilience: bitrate, thermals and backpressure
-
-The receiver statistics path already changes encoder bitrate. Finish the parts that currently exist only as policy/docs.
-
-## 3.1 Complete adaptive bitrate behaviour
-
-Keep `BitrateController` as the authority. Add explicit session diagnostics for:
-
-- current target bitrate;
-- receiver queue depth;
-- sender pending bytes;
-- drop-count delta;
-- last bitrate decision/reason.
-
-Do not expose unmeasured latency as a product metric.
-
-## 3.2 Implement thermal policy
-
-Add a `ThermalCoordinator` backed by `PowerManager.OnThermalStatusChangedListener`.
-
-Policy should:
-
-- cap bitrate progressively as thermal status rises;
-- optionally cap frame rate/resolution only through an explicit encoder restart policy;
-- stop the cast at the severe platform-defined threshold chosen by the policy;
-- expose a separate thermal degradation reason from network congestion.
-
-The bitrate ceiling must be a fraction of the session's starting ceiling so thermal logic can never accidentally increase a conservative session.
-
-## 3.3 Make socket failure visible to the output path
-
-`send()` and `sendVideoPacket()` return booleans. The live output path should not continue encoding indefinitely after writes fail.
-
-- count consecutive write failures;
-- terminate output/session after a small bounded threshold;
-- keep the first concrete transport failure for user-visible diagnostics;
-- ensure `pendingSendBytes` is decremented in `finally` even when a frame write throws.
-
-## 3.4 Long-run tests
-
-Add a soak harness that can inject:
-
-- queue growth;
-- packet loss/drop reports;
-- stalled receiver reads;
-- thermal state transitions;
-- disconnect/reconnect.
-
-**Exit gate:** under congestion the picture degrades rather than repeatedly freezing, and no encoder/service survives a dead socket.
-
----
-
-# Phase 4 — mirror audio
-
-Audio should be an additive sub-feature of Mirror, not a prerequisite for video.
-
-## 4.1 Implement playback capture on API 29+
-
-Use `AudioPlaybackCaptureConfiguration` + `AudioRecord` and encode AAC-LC into the existing:
-
-- `AudioConfigMessage`;
-- `AudioPacket`;
-- `CastConnection.sendAudioPacket()`;
-- receiver `MirrorAudioDecoder`.
-
-## 4.2 Be truthful when audio cannot be captured
-
-Some apps opt out of playback capture. Flint must distinguish:
-
-- platform too old;
-- playback capture available but source app opted out / produced no capturable audio;
-- audio encoder failure;
-- audio is working.
-
-Video continues even when audio is unavailable unless the user explicitly chooses otherwise.
-
-## 4.3 Sync and lifecycle
-
-Use the same monotonic presentation-time origin for audio and video. Stop audio before releasing projection/session resources.
-
-**Exit gate:** a capturable app produces synchronized TV audio/video, and an opt-out app mirrors video with an honest no-audio explanation.
-
----
-
-# Phase 5 — implement Media Handoff end to end
-
-The receiver side and wire format are already substantially ready. The missing work is almost entirely on the phone.
-
-## 5.1 System file picker
-
-Use `ActivityResultContracts.OpenDocument()` / Storage Access Framework for video selection.
-
-Rules:
-
-- request `video/*`;
-- read only through `ContentResolver`;
-- never require a filesystem path;
-- never copy the whole video into app storage;
-- obtain display name, MIME type and length from metadata when available;
-- unknown length must remain a supported state.
-
-## 5.2 Introduce `MediaCoordinator`
-
-Do not put file I/O into `MobileController`.
-
-Suggested state:
-
-```text
-MediaState
-  Idle
-  Preparing(metadata)
-  Sending(bytesSent, totalBytes?)
-  Buffering(metadata)
-  Playing(playback)
-  Paused(playback)
-  Ended(playback)
-  Failed(message)
-```
-
-Responsibilities:
-
-- own the selected content URI only for the active operation;
-- stream 512 KiB chunks using `MediaHandoff.CHUNK_BYTES`;
-- send `MediaDataMessage` in strict order;
-- mark exactly one final chunk;
-- after the final bytes, send `MediaHandoff.playPushedFile(...)` with blank URL;
-- process `PlaybackStateMessage` from `SessionCoordinator`;
-- expose play/pause/seek/stop commands.
-
-## 5.3 Handle zero-length and final-chunk semantics explicitly
-
-`MediaHandoff.chunkCount(0)` is currently zero, while the receiver only knows a pushed item is complete when a `MediaDataMessage` has `isFinal=true`.
-
-Choose and test one protocol behaviour before wiring the picker:
-
-- either reject zero-byte media before sending; or
-- send an explicit empty-final representation if the wire permits it.
-
-Do not leave this as an accidental edge case.
-
-## 5.4 Backpressure and responsiveness
-
-Pushing a large file must not block the main thread and should not starve control commands.
-
-- perform ContentResolver reads on IO dispatcher;
-- reuse one 512 KiB buffer;
-- bound outstanding work rather than reading the whole file ahead;
-- update progress after each successful chunk;
-- allow cancellation between chunks;
-- if the cast socket fails, stop reading immediately.
-
-Because media transfer is not the live frame path, a per-chunk payload copy is acceptable, but a whole-file allocation is not.
-
-## 5.5 Playback controls
-
-Use existing `ControlMessage(TransportControl(...))` for:
-
-- PLAY;
-- PAUSE;
-- SEEK_TO;
-- STOP.
-
-Drive the scrubber from receiver `PlaybackStateMessage`, not from a phone-side guessed timer.
-
-## 5.6 Media UI
-
-Replace the current "not in this build yet" card with:
-
-- **Choose video** when connected and media verdict is offerable;
-- selected filename and original MIME/size where known;
-- send progress;
-- buffering state;
-- play/pause button;
-- scrubber with receiver-reported position/duration;
-- Stop / Clear;
-- receiver error detail verbatim where safe.
-
-Do not expose the URI or storage path in UI, logs or protocol messages.
-
-## 5.7 Receiver hardening
-
-Before shipping, add limits around pushed-media reception:
-
-- one active pushed file per session;
-- bounded maximum accepted file size or a documented free-space check;
-- delete partial file on disconnect/error/new transfer;
-- delete completed temporary media when cleared/session ends;
-- refuse malformed ordering rather than appending ambiguous data;
-- hash-based integration test that received bytes equal source bytes.
-
-## 5.8 Tests
-
-Add:
-
-- ContentResolver fake/fixture tests;
-- exact chunk-boundary tests: 1 byte, 512 KiB, 512 KiB + 1, multi-chunk;
-- cancellation mid-transfer;
-- disconnect mid-transfer;
-- hash equality through loopback receiver;
-- title path stripping for `/` and `\\`;
-- MIME >255-byte refusal;
-- playback-state reducer tests;
-- real MP4 playback on Fire TV with play/pause/seek/stop.
-
-**Exit gate:** select a local video on the phone, send it without creating an app-storage copy, play it at original encoded quality on Fire TV, control it from the phone, and clean up the temporary receiver file afterwards.
-
----
-
-# Phase 6 — integrate Second Screen and Media without conflating them
-
-These two features should share state, not transport semantics.
-
-- Media Handoff plays the original file directly through ExoPlayer on the receiver. It should **not** be routed through ScreenEncoder.
-- Second Screen is a live encoded Flint-owned UI surface. It can display a `NowPlaying` view driven by the same playback state, but it must not retranscode the video just to show it.
-- If media playback starts while Second Screen is active, explicitly transition receiver surface to `PLAYER` and stop/pause the presentation stream rather than sending two competing visual surfaces.
-- When playback is cleared, offer returning to the previous Second Screen scene rather than silently restarting it.
-
-Create a small `SurfaceCoordinator`/state reducer so these transitions have one authority:
-
-```text
-Idle
-Presentation(scene)
-Mirror
-Media(item)
-```
-
-Illegal combinations become impossible by construction.
-
----
-
-# Phase 7 — receiver copy and peer identity
-
-The receiver still contains PC-specific copy in several surfaces. Before mobile is considered finished:
-
-- make the peer type/name supplied by the handshake drive copy;
-- replace fallback `Your PC` / `Unknown PC` text for phone sessions;
-- update receiver snapshots intentionally;
-- keep Windows wording unchanged for Windows sessions.
-
-This is cosmetic only after the transport works, but it is required before calling the phone experience finished.
-
----
-
-# Phase 8 — hardware test matrix and release gate
-
-## Minimum physical matrix
-
-At minimum test:
-
-- Android 10/11 class device if available;
-- Android 13;
-- Android 14+ because MediaProjection rules changed materially;
-- one Samsung device because vendor MediaCodec/VirtualDisplay behaviour is worth independent evidence;
-- Fire OS 7;
-- Fire OS 8.
-
-Vega OS remains explicitly unsupported.
-
-## Per-device acceptance run
-
-For each supported phone/TV pair:
-
-1. discover and pair;
-2. run encoder probe and private-display probe;
-3. Second Screen for 30 minutes;
-4. Mirror for 30 minutes;
-5. rotate mirror portrait/landscape repeatedly;
-6. lock/unlock phone;
-7. stop mirror from notification;
-8. induce weak-link behaviour if possible;
-9. play a local media file;
-10. pause, seek, resume, stop;
-11. disconnect TV mid-stream and verify cleanup;
-12. reconnect without reinstalling either app.
-
-## CI additions
-
-Keep the normal PR gate fast, then add separate instrumentation/hardware lanes:
-
-- PR: JVM/unit/lint/source guards;
-- emulator: encoder/decoder pixel round trip where hardware codec support exists;
-- nightly/device-farm: long running rotation, projection lifecycle and media transfer;
-- release: signed APK + physical acceptance evidence recorded for the version.
-
-Do not make a hardware-dependent test silently pass when no codec/device exists. Report it as not executed and keep the release evidence explicit.
-
----
-
-# Concrete PR sequence
-
-Do not put the remaining implementation into one giant PR. Use this order:
-
-| PR | Scope | Merge evidence |
-|---|---|---|
-| 1 | Hardware pixel-round-trip harness + diagnostics | Known pixels survive encode/decode on a physical phone |
-| 2 | Second Screen geometry + scene host + cockpit | Real TV shows stable landscape Flint surface |
-| 3 | Mirror rotation/reconfiguration + deterministic codec policy | Portrait/landscape/portrait without disconnect |
-| 4 | Key-frame fallback + transport failure handling | Forced ignored sync request recovers with bounded GOP |
-| 5 | Thermal policy + long-run degradation | Controlled thermal/network state changes are narrated and bounded |
-| 6 | Mirror audio | Capturable source produces synchronized AAC; opt-out remains video-only |
-| 7 | Media picker + push coordinator | File hash matches on receiver and progress/cancel work |
-| 8 | Media remote UI + receiver cleanup hardening | Real video play/pause/seek/stop and temporary file cleanup |
-| 9 | Surface state reducer + Second Screen/Media integration | No competing surfaces; deterministic transitions |
-| 10 | Receiver phone-aware copy + snapshots | Phone sessions never say "Your PC" |
-| 11 | Hardware matrix / release hardening | Signed release passes recorded physical acceptance run |
-
-Each PR should leave all existing Windows and receiver tests green and should avoid unrelated refactors.
-
----
-
-# Immediate next PR
-
-The next implementation PR after this plan should be **PR 1: hardware pixel-round-trip harness + diagnostics**.
-
-Do not start by making the Media tab prettier or adding more Second Screen scenes. The phone has proved that it can create the display and that hardware codecs exist; the highest-value unknown is now whether the exact production encoder path produces correct pixels and whether the receiver displays them correctly. Once that is green, the rest of the work is product engineering rather than platform speculation.
+## Status
+
+| Step | Code | CI | Hardware |
+|---|---|---|---|
+| 1 Pixel round trip and codec choice | | | second-screen and encoder checks passed; round trip not yet run |
+| 2 Mirror and second-screen hardening | | | |
+| 3 Thermal and diagnostics | | | |
+| 4 Media handoff | | | |
+| 5 Mirror audio | | | |
+| 6 Receiver install over ADB | | | |
+| 7 Peer-neutral receiver copy | | | |
+| 8 Documentation | | | |
+
+The hardware column is filled in only from `HARDWARE-EVIDENCE.md`.
