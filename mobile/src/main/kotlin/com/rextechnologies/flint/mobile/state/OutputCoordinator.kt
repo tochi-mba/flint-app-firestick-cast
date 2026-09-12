@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.Surface
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.rextechnologies.flint.castcore.capability.PhoneCapabilities
@@ -278,7 +279,14 @@ class OutputCoordinator(
         if (withStarted(capture)) audio = capture
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun withStarted(capture: AudioCapture): Boolean = runCatching { capture.start() }.getOrDefault(false)
+
+    /** The capture exists only on API 29 and above; lint is told so in the one place it is stopped. */
+    private fun stopAudio() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        runCatching { audio?.stop() }
+    }
 
     private fun publishAudio(state: AudioState) {
         mutable.update { it?.copy(audio = state) }
@@ -349,7 +357,7 @@ class OutputCoordinator(
             }
             // Sound before the projection it captures from, and off the main thread: stop joins
             // the capture thread.
-            withContext(Dispatchers.Default) { runCatching { audio?.stop() } }
+            withContext(Dispatchers.Default) { stopAudio() }
             audio = null
             runCatching { mirrorDisplay?.release() }
             mirrorDisplay = null
