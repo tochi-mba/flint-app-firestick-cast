@@ -7,7 +7,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.rextechnologies.flint.castcore.copy.MobileTab
@@ -43,9 +43,9 @@ class BottomBarTest {
 
         compose.onAllNodes(tabs).assertCountEquals(MobileTab.entries.size)
         compose.onAllNodes(tabs.and(isSelected())).assertCountEquals(1)
-        compose.onNodeWithText("CAST").assertIsSelected()
+        compose.onNodeWithContentDescription("Cast").assertIsSelected()
 
-        compose.onNodeWithText("SETTINGS").performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
         assertEquals(MobileTab.SETTINGS, selected)
     }
 }
