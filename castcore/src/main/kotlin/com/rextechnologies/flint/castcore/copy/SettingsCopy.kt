@@ -42,8 +42,9 @@ object SettingsCopy {
     const val PROBE_RUNNING: String = "Checking…"
     const val FORGET_PAIRINGS: String = "Forget every paired TV"
     const val FORGOTTEN: String =
-        "Every stored pairing has been removed from this phone. The televisions themselves are " +
-            "unchanged and will show a fresh code next time."
+        "Every stored pairing has been removed from this phone, and so has the key televisions " +
+            "knew it by over ADB. The televisions themselves are unchanged: they will show a fresh " +
+            "code next time, and their own prompt again before this phone can install anything."
 
     /**
      * What a finished encoder check found, said as a result rather than as a status word.

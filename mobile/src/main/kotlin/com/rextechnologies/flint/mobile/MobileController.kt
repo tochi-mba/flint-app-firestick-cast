@@ -52,6 +52,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The one object the UI talks to.
@@ -499,9 +500,17 @@ class MobileController(
         }
     }
 
-    /** Unpairs every television, so a lent phone can be handed back. */
+    /**
+     * Unpairs every television, so a lent phone can be handed back.
+     *
+     * The ADB identity goes with the tokens. A television that accepted this phone's key keeps
+     * trusting that key until its owner revokes it on the television, which the phone cannot do;
+     * what the phone can do is stop presenting it, so the next person holding this phone is asked
+     * for on the television's own screen rather than waved through on somebody else's yes.
+     */
     fun forgetEveryPairing() {
         session.forgetEverything()
+        launchWork { withContext(Dispatchers.IO) { adbIdentity.forget() } }
         navigation.notice(SettingsCopy.FORGOTTEN)
     }
 
