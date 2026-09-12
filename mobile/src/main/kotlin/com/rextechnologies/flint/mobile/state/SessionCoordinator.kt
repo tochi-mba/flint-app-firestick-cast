@@ -113,8 +113,18 @@ class SessionCoordinator(
         return withContext(Dispatchers.IO) { tokens.tokenFor(address) != null }
     }
 
-    /** Sends a control message, or `false` when there is no session to send it on. */
-    fun send(message: WireMessage): Boolean = connection?.send(message) == true
+    /**
+     * Sends a control message, or `false` when there is no session to send it on.
+     *
+     * On the IO dispatcher, whatever thread asks. Every caller of this is a coroutine on the main
+     * dispatcher, and a socket write there is a `NetworkOnMainThreadException` -- which `send`
+     * swallowed into a `false` nobody read, so the SURFACE message that tells the television to
+     * switch screens was never leaving the phone.
+     */
+    suspend fun send(message: WireMessage): Boolean {
+        val current = connection ?: return false
+        return withContext(Dispatchers.IO) { current.send(message) }
+    }
 
     /** The live connection, for the media path. `null` whenever nothing is established. */
     fun active(): CastConnection? =

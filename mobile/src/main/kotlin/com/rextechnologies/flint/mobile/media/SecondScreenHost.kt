@@ -82,6 +82,19 @@ class SecondScreenHost(
         close()
     }
 
+    /**
+     * Points the private display at another surface, keeping the presentation as it is.
+     *
+     * This is how an encoder is swapped underneath a running second screen -- for the key-frame
+     * fallback, which can only be applied by configuring a new codec -- without the television
+     * seeing the presentation torn down and rebuilt. Returns `false` when nothing is running.
+     */
+    fun retarget(surface: Surface): Boolean {
+        val active = display ?: return false
+        active.surface = surface
+        return true
+    }
+
     override fun close() {
         // Dismissed first, so the presentation's own onStop runs while it is still alive, and only
         // then destroyed. A Presentation that had already been destroyed could not be shown again.

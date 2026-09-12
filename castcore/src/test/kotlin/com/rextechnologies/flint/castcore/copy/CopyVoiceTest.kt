@@ -11,6 +11,7 @@ import com.rextechnologies.flint.castcore.capability.ProbeOutcome
 import com.rextechnologies.flint.castcore.capability.ReceiverDevice
 import com.rextechnologies.flint.castcore.capability.ReceiverPlatform
 import com.rextechnologies.flint.castcore.capability.ToneIntent
+import com.rextechnologies.flint.castcore.screen.SceneCopy
 import com.rextechnologies.flint.castcore.setup.ReceiverSetup
 import com.rextechnologies.flint.protocol.media.LinkHealth
 import com.rextechnologies.flint.protocol.network.SelectedHotspotInterface
@@ -49,6 +50,7 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
         NotificationCopy,
         Placeholders,
         ReceiverSetup,
+        SceneCopy,
         MobileCapabilityAssessor,
     )
     surfaces.forEach { surface ->
@@ -80,6 +82,7 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
     add("ScreenCopy.cockpitLine", ScreenCopy.cockpitLine("second screen", "Fire TV Stick"))
     add("ScreenCopy.encoderFailure", ScreenCopy.encoderFailure(""))
     add("ScreenCopy.encoderFailure(detail)", ScreenCopy.encoderFailure("no surface"))
+    add("ScreenCopy.keyFrameFallback", ScreenCopy.keyFrameFallback(2))
     add("CastCopy.probeFailedBody(none)", CastCopy.probeFailedBody(emptyList()))
     add(
         "CastCopy.probeFailedBody(all)",

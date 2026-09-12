@@ -177,15 +177,21 @@ class CastConnection(
         return runCatching {
             synchronized(stream) {
                 pendingSendBytes.addAndGet(length.toLong())
-                frameWriter.writeVideoPacket(
-                    stream,
-                    machine.negotiatedVersion,
-                    presentationTimeUs,
-                    keyFrame,
-                    data,
-                )
-                stream.flush()
-                pendingSendBytes.addAndGet(-length.toLong())
+                try {
+                    frameWriter.writeVideoPacket(
+                        stream,
+                        machine.negotiatedVersion,
+                        presentationTimeUs,
+                        keyFrame,
+                        data,
+                    )
+                    stream.flush()
+                } finally {
+                    // In a finally, because a write that throws is exactly the moment the count
+                    // matters. Left unbalanced it read as a link that never drained, and the bitrate
+                    // controller backed off for the rest of the session on a socket that was fine.
+                    pendingSendBytes.addAndGet(-length.toLong())
+                }
             }
         }.isSuccess
     }

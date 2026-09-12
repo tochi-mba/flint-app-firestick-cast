@@ -2,6 +2,7 @@ package com.rextechnologies.flint.mobile
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
@@ -76,6 +77,20 @@ class MobileActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    /**
+     * The other half of the manifest's promise.
+     *
+     * Declaring that this activity handles configuration changes keeps a rotation from recreating
+     * it; it does not, by itself, do anything about the mirror that is running. This is where the
+     * new geometry reaches the encoder, and a mirror that did not follow the phone round was the
+     * visible result of declaring one without the other.
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val metrics = resources.displayMetrics
+        controller.onDisplayChanged(metrics.widthPixels, metrics.heightPixels, metrics.densityDpi)
     }
 
     override fun onResume() {

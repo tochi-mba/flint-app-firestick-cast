@@ -16,6 +16,7 @@ import com.rextechnologies.flint.castcore.capability.ModePresentation
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.ScreenCopy
 import com.rextechnologies.flint.castcore.media.CodecNames
+import com.rextechnologies.flint.castcore.screen.PlaybackClock
 import com.rextechnologies.flint.design.AdvisoryBlock
 import com.rextechnologies.flint.design.DiagnosticRow
 import com.rextechnologies.flint.design.EmptyState
@@ -180,7 +181,7 @@ private fun LiveStrip(output: LiveOutput, controller: MobileController) {
                 .semantics { liveRegion = LiveRegionMode.Polite },
             horizontalArrangement = Arrangement.spacedBy(FlintSpace.Large),
         ) {
-            Readout(value = elapsed(output.elapsedSeconds))
+            Readout(value = PlaybackClock.format(output.elapsedSeconds * 1_000))
             Readout(value = "${output.width}×${output.height}")
             Readout(
                 value = ScreenCopy.linkHealthWord(output.health),
@@ -190,7 +191,10 @@ private fun LiveStrip(output: LiveOutput, controller: MobileController) {
 
         output.degradedReason?.let { AdvisoryBlock(heading = "WHAT IS HAPPENING", body = it) }
 
+        // The cockpit: what the television is showing, when this phone is drawing it.
+        output.scene?.let { DiagnosticRow(label = "Showing", value = it.title) }
         DiagnosticRow(label = "Codec", value = CodecNames.label(output.codec))
+        if (output.keyFrameFallback) DiagnosticRow(label = "Key frames", value = "Every few seconds")
         DiagnosticRow(
             label = "Bitrate",
             // One decimal place rather than integer division, which printed "0 Mbit/s" for every
@@ -208,10 +212,4 @@ private fun LiveStrip(output: LiveOutput, controller: MobileController) {
             tone = Tone.Live,
         )
     }
-}
-
-private fun elapsed(seconds: Long): String {
-    val minutes = seconds / 60
-    val remainder = seconds % 60
-    return "$minutes:${remainder.toString().padStart(2, '0')}"
 }

@@ -81,6 +81,12 @@ class MobileController(
      */
     private val work = CoroutineScope(scope.coroutineContext + SupervisorJob(scope.coroutineContext[Job]))
 
+    init {
+        // What the output path has to say when it stops on its own -- a dead socket, an encoder that
+        // gave up -- reaches the banner through here, because the coordinator owns no navigation.
+        scope.launch { output.notices.collect { navigation.notice(it) } }
+    }
+
     val state: StateFlow<MobileUiState> = combine(
         navigation.state,
         watcher.localNetwork,
@@ -261,6 +267,11 @@ class MobileController(
 
     fun stopOutput() {
         launchWork { output.stop() }
+    }
+
+    /** The phone was turned. A live mirror follows it; a second screen, being a landscape canvas, does not. */
+    fun onDisplayChanged(width: Int, height: Int, densityDpi: Int) {
+        launchWork { output.reconfigureMirror(width, height, densityDpi) }
     }
 
     /** Ends the session with the television, leaving the stored pairing in place. */

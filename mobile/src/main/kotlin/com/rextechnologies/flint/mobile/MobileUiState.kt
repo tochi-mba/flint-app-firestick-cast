@@ -6,6 +6,7 @@ import com.rextechnologies.flint.castcore.capability.NetworkPath
 import com.rextechnologies.flint.castcore.capability.ReceiverDevice
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.discovery.DiscoveryRung
+import com.rextechnologies.flint.castcore.screen.SecondScreenScene
 import com.rextechnologies.flint.castcore.session.SessionFailure
 import com.rextechnologies.flint.castcore.setup.BundledReceiver
 import com.rextechnologies.flint.castcore.setup.ReceiverInstallStage
@@ -33,6 +34,10 @@ data class LiveOutput(
     val health: LinkHealth,
     val bitrateBitsPerSecond: Int,
     val degradedReason: String? = null,
+    /** What the television is showing, for a second screen; `null` for a mirror. */
+    val scene: SecondScreenScene? = null,
+    /** Whether this session has fallen back to a bounded key-frame interval. Never goes back. */
+    val keyFrameFallback: Boolean = false,
 )
 
 /**
