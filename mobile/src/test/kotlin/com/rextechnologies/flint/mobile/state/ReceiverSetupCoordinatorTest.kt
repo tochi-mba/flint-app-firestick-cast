@@ -90,7 +90,7 @@ class ReceiverSetupCoordinatorTest {
     ) = ReceiverSetupCoordinator(installer, scope, { bundled }, { staged })
 
     @Test
-    fun `identifying a television updates the device and the stage from what it said`() = runBlocking {
+    fun `identifying a television updates the device and the stage from what it said`() = runBlocking<Unit> {
         val installer = Installer(
             answer = AdbAnswer.Identified(
                 5_557,
@@ -123,7 +123,7 @@ class ReceiverSetupCoordinatorTest {
     }
 
     @Test
-    fun `a television holding its prompt is waited for, and the port it answered on is kept`() = runBlocking {
+    fun `a television holding its prompt is waited for, and the port it answered on is kept`() = runBlocking<Unit> {
         val coordinator = coordinator(Installer(answer = AdbAnswer.Unauthorised(5_556)))
         val look = coordinator.identify(host, stick)
         assertEquals(AdbConnectionState.UNAUTHORIZED, look.device.adbState)
@@ -132,7 +132,7 @@ class ReceiverSetupCoordinatorTest {
     }
 
     @Test
-    fun `vega is impossible, and stays so`() = runBlocking {
+    fun `vega is impossible, and stays so`() = runBlocking<Unit> {
         val installer =
             Installer(answer = AdbAnswer.Identified(5_555, "AFTCA002", "14", 34, ReceiverPlatform.VEGA, null))
         val coordinator = coordinator(installer)
@@ -144,7 +144,7 @@ class ReceiverSetupCoordinatorTest {
     }
 
     @Test
-    fun `a refusal and a silence are recorded on the device and change nothing on the card`() = runBlocking {
+    fun `a refusal and a silence are recorded on the device and change nothing on the card`() = runBlocking<Unit> {
         val installer = Installer(answer = AdbAnswer.Refused("refused every port"))
         val coordinator = coordinator(installer)
         assertEquals(AdbConnectionState.REFUSED, coordinator.identify(host, stick).device.adbState)
@@ -155,7 +155,7 @@ class ReceiverSetupCoordinatorTest {
     }
 
     @Test
-    fun `installing sends the staged bytes under the bundled name and reaches installed`() = runBlocking {
+    fun `installing sends the staged bytes under the bundled name and reaches installed`() = runBlocking<Unit> {
         val installer = Installer()
         val coordinator = coordinator(installer)
         coordinator.load()
@@ -172,7 +172,7 @@ class ReceiverSetupCoordinatorTest {
     }
 
     @Test
-    fun `the card says installing while the bytes are in flight`() = runBlocking {
+    fun `the card says installing while the bytes are in flight`() = runBlocking<Unit> {
         val gate = CompletableDeferred<Unit>()
         val coordinator = coordinator(Installer(gate = gate))
         coordinator.load()
@@ -187,7 +187,7 @@ class ReceiverSetupCoordinatorTest {
     }
 
     @Test
-    fun `a failed install keeps the television's words`() = runBlocking {
+    fun `a failed install keeps the television's words`() = runBlocking<Unit> {
         val coordinator =
             coordinator(Installer(installEvent = InstallEvent.InstallFailed("Failure [INSTALL_FAILED_OLDER_SDK]")))
         coordinator.load()
@@ -197,7 +197,7 @@ class ReceiverSetupCoordinatorTest {
     }
 
     @Test
-    fun `nothing is installed from a build that bundles nothing, or whose package cannot be read`() = runBlocking {
+    fun `nothing is installed from a build that bundles nothing, or whose package cannot be read`() = runBlocking<Unit> {
         val installer = Installer()
         assertIs<InstallEvent.InstallFailed>(coordinator(installer, bundled = null).install(host, stick))
         val unreadable = coordinator(installer, staged = null)
@@ -208,7 +208,7 @@ class ReceiverSetupCoordinatorTest {
     }
 
     @Test
-    fun `removal names the package the television was seen to have, and needs to have seen one`() = runBlocking {
+    fun `removal names the package the television was seen to have, and needs to have seen one`() = runBlocking<Unit> {
         val installer = Installer(
             answer = AdbAnswer.Identified(
                 5_555,
@@ -231,7 +231,7 @@ class ReceiverSetupCoordinatorTest {
     }
 
     @Test
-    fun `a different television is a different question`() = runBlocking {
+    fun `a different television is a different question`() = runBlocking<Unit> {
         val installer = Installer(
             answer = AdbAnswer.Identified(
                 5_555,
@@ -254,7 +254,7 @@ class ReceiverSetupCoordinatorTest {
     }
 
     @Test
-    fun `one conversation at a time`() = runBlocking {
+    fun `one conversation at a time`() = runBlocking<Unit> {
         val gate = CompletableDeferred<Unit>()
         val coordinator = coordinator(Installer(gate = gate))
         val first = async { coordinator.identify(host, stick) }
