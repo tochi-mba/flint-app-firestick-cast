@@ -5,8 +5,11 @@
 # layout change cannot be landed by anybody without an Android SDK. This is how that unblocks: run
 # it, look at the images it produces, and commit the ones that are correct.
 #
-# It never commits anything itself. An approval is somebody deciding a rendered frame looks right,
-# and a workflow cannot do that.
+# It approves nothing itself. An approval is somebody deciding a rendered frame looks right, and a
+# workflow cannot do that. What it can do, when asked with `push`, is commit the images it rendered
+# to the branch it was run on, so that a reviewer without an Android SDK sees them in the pull
+# request and decides there. The commit is the workflow's own, under the Actions bot, and it says
+# which run rendered the images.
 name: Snapshots
 
 on:
@@ -16,9 +19,17 @@ on:
         description: 'Gradle test tasks to regenerate against'
         required: false
         default: ':receiver:testDebugUnitTest :design:testDebugUnitTest :mobile:testDebugUnitTest'
+      push:
+        description: 'Commit the regenerated images to this branch for review'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: snapshots-${{ github.ref }}
@@ -83,3 +94,20 @@ jobs:
           path: regenerated/**
           retention-days: 14
           if-no-files-found: error
+
+      # Only the images that changed, only on the branch this was run on, and only when asked.
+      # A branch nobody dispatched this on is never written to.
+      - name: Commit the regenerated images to this branch
+        if: ${{ inputs.push == 'true' }}
+        run: |
+          set -euo pipefail
+          git add -A -- receiver/src/test/snapshots/approved design/src/test/snapshots/approved mobile/src/test/snapshots/approved 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No approved image changed; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --cached --stat
+          git commit -m "Regenerate the approved snapshots" -m "Rendered by the Snapshots workflow, run ${{ github.run_id }}, against ${{ inputs.modules }}. The images are here to be looked at in the pull request; this commit approves nothing." 
+          git push origin "HEAD:${{ github.ref_name }}"

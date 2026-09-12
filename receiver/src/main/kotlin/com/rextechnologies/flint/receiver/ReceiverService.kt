@@ -370,7 +370,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                     mirrorWidth = 0,
                     mirrorHeight = 0,
                     mirrorFrameReceived = false,
-                    detail = "Connect this TV and your PC to the same network",
+                    detail = "Connect this TV and your phone or PC to the same network",
                     error = null,
                 )
             }

@@ -104,7 +104,7 @@ private fun PlaybackLoadingOverlay(state: ReceiverUiState) {
                 modifier = Modifier.fillMaxWidth(0.8f).padding(top = 8.dp),
             )
             Text(
-                text = "Connecting to your PC…",
+                text = "Connecting to your phone or PC…",
                 color = ReceiverColors.Muted,
                 fontSize = 15.sp,
                 lineHeight = 20.sp,

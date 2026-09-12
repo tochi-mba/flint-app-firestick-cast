@@ -145,7 +145,7 @@ private fun RexCodeMark() {
 private fun ReceiverStatusBadge(state: ReceiverUiState) {
     val experience = state.idleExperience()
     val (label, color) = when (experience) {
-        IdleExperience.CONNECTED -> "PC CONNECTED" to ReceiverColors.Success
+        IdleExperience.CONNECTED -> "FLINT CONNECTED" to ReceiverColors.Success
         IdleExperience.READY -> "READY TO PAIR" to ReceiverColors.Signal
         IdleExperience.ATTENTION -> "NEEDS ATTENTION" to ReceiverColors.Live
         IdleExperience.NO_NETWORK -> "WAITING FOR NETWORK" to ReceiverColors.Warning
