@@ -11,6 +11,7 @@ import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.PairingCopy
 import com.rextechnologies.flint.castcore.copy.ScreenCopy
 import com.rextechnologies.flint.castcore.copy.SettingsCopy
+import com.rextechnologies.flint.castcore.media.CodecNames
 import com.rextechnologies.flint.mobile.net.DiscoveryRunner
 import com.rextechnologies.flint.mobile.platform.AndroidNetworkWatcher
 import com.rextechnologies.flint.mobile.platform.TokenStore
@@ -204,11 +205,21 @@ class MobileController(
         }
     }
 
-    /** Asks the platform what it can encode. Until this runs, the verdicts say it has not been asked. */
-    fun runEncoderProbe() {
+    /**
+     * The encoder check: what the platform lists, then whether a test frame survives the encoder a
+     * session would use. Needs the Activity because the frame is drawn through a Presentation.
+     */
+    fun runEncoderProbe(activity: Activity) {
         launchWork {
-            val found = capability.probeEncoders()
-            navigation.notice(SettingsCopy.encoderProbeResult(found.map { codecName(it.value) }))
+            val check = capability.probeEncoders(activity)
+            navigation.notice(
+                SettingsCopy.encoderCheckResult(
+                    found = check.encoders.map(CodecNames::label),
+                    through = check.through?.let(CodecNames::label),
+                    roundTrip = check.roundTrip,
+                    detail = check.detail,
+                ),
+            )
         }
     }
 
@@ -282,14 +293,5 @@ class MobileController(
 
     private fun launchWork(block: suspend CoroutineScope.() -> Unit) {
         work.launch(block = block)
-    }
-
-    private fun codecName(value: Int): String = when (value) {
-        1 -> "H.264"
-        2 -> "H.265"
-        3 -> "AAC-LC"
-        4 -> "Opus"
-        5 -> "AV1"
-        else -> "codec $value"
     }
 }

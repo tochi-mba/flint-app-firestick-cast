@@ -12,6 +12,7 @@ import com.rextechnologies.flint.castcore.setup.ReceiverInstallStage
 import com.rextechnologies.flint.mobile.state.LinkState
 import com.rextechnologies.flint.mobile.state.LookupState
 import com.rextechnologies.flint.protocol.media.LinkHealth
+import com.rextechnologies.flint.protocol.wire.CodecId
 
 /** What the phone is sending, if anything. */
 enum class OutputMode {
@@ -26,6 +27,8 @@ data class LiveOutput(
     val deviceName: String,
     val width: Int,
     val height: Int,
+    /** The codec the frames are going out in, chosen by policy rather than by a set's order. */
+    val codec: CodecId,
     val elapsedSeconds: Long,
     val health: LinkHealth,
     val bitrateBitsPerSecond: Int,

@@ -15,6 +15,7 @@ import com.rextechnologies.flint.castcore.capability.CastMode
 import com.rextechnologies.flint.castcore.capability.ModePresentation
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.ScreenCopy
+import com.rextechnologies.flint.castcore.media.CodecNames
 import com.rextechnologies.flint.design.AdvisoryBlock
 import com.rextechnologies.flint.design.DiagnosticRow
 import com.rextechnologies.flint.design.EmptyState
@@ -189,6 +190,7 @@ private fun LiveStrip(output: LiveOutput, controller: MobileController) {
 
         output.degradedReason?.let { AdvisoryBlock(heading = "WHAT IS HAPPENING", body = it) }
 
+        DiagnosticRow(label = "Codec", value = CodecNames.label(output.codec))
         DiagnosticRow(
             label = "Bitrate",
             // One decimal place rather than integer division, which printed "0 Mbit/s" for every

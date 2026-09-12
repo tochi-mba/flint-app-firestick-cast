@@ -24,6 +24,10 @@ private fun phone(
     encoders: Set<CodecId> = setOf(CodecId.H264, CodecId.H265),
     encoderProbe: ProbeOutcome = ProbeOutcome.SUPPORTED,
     virtualDisplayProbe: ProbeOutcome = ProbeOutcome.SUPPORTED,
+    // A found encoder is a checked encoder unless a test says otherwise: the round trip runs in the
+    // same press as the enumeration, so a phone that has one has ordinarily had both.
+    roundTrip: ProbeOutcome =
+        if (encoderProbe == ProbeOutcome.SUPPORTED) ProbeOutcome.SUPPORTED else ProbeOutcome.NOT_PROBED,
     capture: Boolean = true,
 ) = PhoneCapabilities(
     apiLevel = 34,
@@ -34,6 +38,7 @@ private fun phone(
     hardwareVideoEncoders = encoders,
     encoderProbe = encoderProbe,
     virtualDisplayProbe = virtualDisplayProbe,
+    encoderRoundTrip = roundTrip,
     screenCaptureConsentAvailable = capture,
 )
 
@@ -233,6 +238,45 @@ class MobileCapabilityAssessorTest {
     }
 
     @Test
+    fun `an encoder whose frames decode to nothing makes both streaming modes impossible`() {
+        val report = assess(hostNetwork, phone(roundTrip = ProbeOutcome.UNSUPPORTED), readyDevice())
+        listOf(CastMode.MIRROR, CastMode.SECOND_SCREEN).forEach {
+            assertEquals(ModeStatus.IMPOSSIBLE, report[it].status)
+            assertNull(report[it].remedy)
+            assertTrue(report[it].reason.contains("watched fail"), report[it].reason)
+        }
+        assertEquals(ModeStatus.AVAILABLE, report[CastMode.MEDIA_HANDOFF].status)
+    }
+
+    @Test
+    fun `a listed encoder that has not been exercised blocks streaming, with the check as the remedy`() {
+        val report = assess(hostNetwork, phone(roundTrip = ProbeOutcome.NOT_PROBED), readyDevice())
+        listOf(CastMode.MIRROR, CastMode.SECOND_SCREEN).forEach {
+            assertEquals(ModeStatus.BLOCKED, report[it].status)
+            assertTrue(assertNotNull(report[it].remedy).contains("encoder check"), report[it].remedy)
+        }
+    }
+
+    @Test
+    fun `when the phone refused a private display, an unchecked encoder still allows a mirror and says so`() {
+        // The round trip draws into the same display the second screen would, so on a phone that
+        // refused one it cannot run. That is not evidence against the encoder, and the mirror,
+        // which captures through a projection instead, is offered with the caveat spelled out.
+        val report = assess(
+            hostNetwork,
+            phone(virtualDisplayProbe = ProbeOutcome.UNSUPPORTED, roundTrip = ProbeOutcome.NOT_PROBED),
+            readyDevice(),
+        )
+        val mirror = report[CastMode.MIRROR]
+        assertEquals(ModeStatus.AVAILABLE, mirror.status)
+        assertTrue(mirror.reason.contains(MobileCapabilityAssessor.ROUND_TRIP_UNCHECKED), mirror.reason)
+        assertEquals(ModeStatus.IMPOSSIBLE, report[CastMode.SECOND_SCREEN].status)
+
+        val checked = assess(hostNetwork, phone(), readyDevice())[CastMode.MIRROR]
+        assertFalse(checked.reason.contains(MobileCapabilityAssessor.ROUND_TRIP_UNCHECKED), checked.reason)
+    }
+
+    @Test
     fun `a phone that cannot capture its screen can still drive a second screen`() {
         // The divergence from Windows that this whole module exists to make expressible. There, a
         // second screen is a mirror plus a display driver, so it inherits every mirror blocker. Here
@@ -349,6 +393,9 @@ class MobileCapabilityAssessorTest {
             phone(encoderProbe = ProbeOutcome.UNSUPPORTED, encoders = emptySet()),
             phone(virtualDisplayProbe = ProbeOutcome.NOT_PROBED),
             phone(virtualDisplayProbe = ProbeOutcome.UNSUPPORTED),
+            phone(roundTrip = ProbeOutcome.NOT_PROBED),
+            phone(roundTrip = ProbeOutcome.UNSUPPORTED),
+            phone(virtualDisplayProbe = ProbeOutcome.UNSUPPORTED, roundTrip = ProbeOutcome.NOT_PROBED),
         )
         val paths = listOf(
             null,

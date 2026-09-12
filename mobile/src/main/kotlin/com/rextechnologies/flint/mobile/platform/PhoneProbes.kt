@@ -222,6 +222,8 @@ object PhoneProbes {
         encoders: Set<CodecId>,
         encoderProbe: ProbeOutcome,
         virtualDisplayProbe: ProbeOutcome,
+        encoderRoundTrip: ProbeOutcome = ProbeOutcome.NOT_PROBED,
+        roundTripDetail: String = "",
     ): PhoneCapabilities = PhoneCapabilities(
         apiLevel = Build.VERSION.SDK_INT,
         deviceName = deviceName,
@@ -231,6 +233,8 @@ object PhoneProbes {
         hardwareVideoEncoders = encoders,
         encoderProbe = encoderProbe,
         virtualDisplayProbe = virtualDisplayProbe,
+        encoderRoundTrip = encoderRoundTrip,
+        roundTripDetail = roundTripDetail,
         screenCaptureConsentAvailable = screenCaptureConsentAvailable(context),
         audioPlaybackCaptureSupported = audioPlaybackCaptureSupported(),
     )

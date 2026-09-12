@@ -189,6 +189,19 @@ data class PhoneCapabilities(
      * vendor's build of it.
      */
     val virtualDisplayProbe: ProbeOutcome = ProbeOutcome.NOT_PROBED,
+    /**
+     * Whether a test frame drawn through the production encoder came back out of a decoder as the
+     * frame that was drawn.
+     *
+     * [encoderProbe] lists what the platform claims. This is the check that the claim is worth
+     * anything: this project has already shipped an encoder that satisfied every structural check
+     * while emitting frames that decoded to nothing, and a list of codec names would have passed
+     * it. [ProbeOutcome.NOT_PROBED] beside a probed encoder means the check could not run, and
+     * [roundTripDetail] says why.
+     */
+    val encoderRoundTrip: ProbeOutcome = ProbeOutcome.NOT_PROBED,
+    /** What the round trip found, in one sentence, for the diagnostics card. Blank until it has run. */
+    val roundTripDetail: String = "",
     /** Whether a MediaProjection consent flow is available to ask for at all. */
     val screenCaptureConsentAvailable: Boolean = false,
     /** Playback capture arrived in API 29 and only ever captures apps that allow it. */
@@ -201,6 +214,9 @@ data class PhoneCapabilities(
         require(densityDpi > 0)
         require(encoderProbe != ProbeOutcome.SUPPORTED || hardwareVideoEncoders.isNotEmpty()) {
             "A probe that found no encoder has not found support"
+        }
+        require(encoderRoundTrip != ProbeOutcome.SUPPORTED || encoderProbe == ProbeOutcome.SUPPORTED) {
+            "A frame cannot have survived an encoder that was not found"
         }
     }
 

@@ -93,7 +93,7 @@ object MobileCapabilityAssessor {
             mode,
             ModeStatus.AVAILABLE,
             "This phone can encode its own screen and the television can decode it." +
-                capacityCaveat(path) + isolationCaveat(input.network) +
+                capacityCaveat(path) + isolationCaveat(input.network) + roundTripCaveat(phone) +
                 " Android asks for capture permission every time a mirror starts, and will not " +
                 "remember the answer.",
         )
@@ -114,8 +114,8 @@ object MobileCapabilityAssessor {
                     "see to draw the second screen into, so it cannot say whether the mode would " +
                     "work. It will not assume the answer from the Android version.",
                 "Run the second-screen check in Settings. It creates a display only this app can see, " +
-                    "draws one frame into it and encodes that frame. Nothing appears on the television " +
-                    "and nothing is sent anywhere.",
+                    "draws one frame into it and reads that frame back. Nothing appears on the " +
+                    "television and nothing is sent anywhere.",
             )
 
             ProbeOutcome.UNSUPPORTED -> return ModeVerdict(
@@ -261,13 +261,23 @@ object MobileCapabilityAssessor {
         }
     }
 
-    /** The encoder gates both streaming modes share. */
+    /**
+     * The encoder gates both streaming modes share.
+     *
+     * Two questions, asked in order. Does the platform list a hardware encoder at all; and did a
+     * test frame drawn through that encoder come back out of a decoder as the frame that was drawn.
+     * The second is the one that matters, because the first has been answered "yes" by an encoder
+     * that produced nothing but green. The round trip needs a display only this app can see to draw
+     * into, so on a phone that refused one it cannot run, and that is reported as unchecked rather
+     * than as failed: a mirror through a projection may still work, and the first mirror is then the
+     * first proof.
+     */
     private fun encoder(phone: PhoneCapabilities): VerdictTemplate? = when {
         phone.encoderProbe == ProbeOutcome.NOT_PROBED -> VerdictTemplate(
             ModeStatus.BLOCKED,
             "Flint has not asked this phone what video it can encode in hardware yet, so it cannot " +
                 "say whether a stream is possible. It will not guess from the model name.",
-            "Run the encoder check in Settings.",
+            ENCODER_CHECK_REMEDY,
         )
 
         phone.encoderProbe == ProbeOutcome.UNSUPPORTED || phone.hardwareVideoEncoders.isEmpty() ->
@@ -277,8 +287,24 @@ object MobileCapabilityAssessor {
                     "latency these modes exist to deliver, so Flint will not offer them.",
             )
 
+        phone.encoderRoundTrip == ProbeOutcome.UNSUPPORTED -> VerdictTemplate(
+            ModeStatus.IMPOSSIBLE,
+            ENCODER_ROUND_TRIP_FAILED,
+        )
+
+        phone.encoderRoundTrip == ProbeOutcome.NOT_PROBED &&
+            phone.virtualDisplayProbe != ProbeOutcome.UNSUPPORTED -> VerdictTemplate(
+            ModeStatus.BLOCKED,
+            ROUND_TRIP_NOT_RUN,
+            ENCODER_CHECK_REMEDY,
+        )
+
         else -> null
     }
+
+    /** Said on an offered mirror when the round trip could not run, so "Ready" does not overstate. */
+    private fun roundTripCaveat(phone: PhoneCapabilities): String =
+        if (phone.encoderRoundTrip == ProbeOutcome.NOT_PROBED) " $ROUND_TRIP_UNCHECKED" else ""
 
     /** The measured-path gates both streaming modes share. */
     private fun pathLimits(mode: CastMode, path: NetworkPath?): ModeVerdict? {
@@ -337,6 +363,25 @@ object MobileCapabilityAssessor {
         "The television shows Flint's own screens — a player, photos, what is playing now — not the " +
             "phone's home screen and not other apps. Android gives an app no way to move another " +
             "app's window onto a second display."
+
+    const val ENCODER_ROUND_TRIP_FAILED: String =
+        "A test frame drawn through this phone's encoder came back from a decoder as something " +
+            "other than what was drawn, so anything it sent would reach the television as a wrong " +
+            "or blank picture. Flint will not offer a stream it has watched fail."
+
+    const val ROUND_TRIP_NOT_RUN: String =
+        "This phone lists hardware encoders, but no test frame has been drawn through one and " +
+            "decoded yet, so Flint cannot say whether its frames would reach the television as a " +
+            "picture."
+
+    const val ROUND_TRIP_UNCHECKED: String =
+        "The encoder's output could not be checked on this phone, because it refused the display " +
+            "the check draws into, so the first mirror is the first proof."
+
+    const val ENCODER_CHECK_REMEDY: String =
+        "Run the encoder check in Settings. It lists the hardware encoders, then encodes and " +
+            "decodes one test frame on this phone. Nothing appears on the television and nothing " +
+            "is sent anywhere."
 
     private const val LINK_REMEDY: String =
         "Move the television closer to the phone, or switch the hotspot to 5 GHz if it offers the " +

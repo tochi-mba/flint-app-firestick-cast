@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.Looper
 import com.rextechnologies.flint.castcore.capability.PhoneCapabilities
 import com.rextechnologies.flint.castcore.copy.ScreenCopy
+import com.rextechnologies.flint.castcore.media.CodecChoice
 import com.rextechnologies.flint.castcore.media.EncoderPolicy
 import com.rextechnologies.flint.castcore.media.KeyFrameStrategy
 import com.rextechnologies.flint.mobile.LiveOutput
@@ -24,6 +25,7 @@ import com.rextechnologies.flint.mobile.ui.SecondScreenContent
 import com.rextechnologies.flint.protocol.media.BitrateController
 import com.rextechnologies.flint.protocol.media.LinkHealth
 import com.rextechnologies.flint.protocol.media.LinkSample
+import com.rextechnologies.flint.protocol.wire.CodecId
 import com.rextechnologies.flint.protocol.wire.StatsMessage
 import com.rextechnologies.flint.protocol.wire.SurfaceMessage
 import com.rextechnologies.flint.protocol.wire.SurfaceMode
@@ -100,7 +102,7 @@ class OutputCoordinator(
             EncoderPolicy.MAXIMUM_LONG_EDGE,
         )
         val started = startEncoder(connection, phone, width, height) ?: return startFailure()
-        val surface = started.inputSurface ?: return startFailure()
+        val surface = started.encoder.inputSurface ?: return startFailure()
 
         val host = SecondScreenHost(activity, width, height, phone.densityDpi)
         val outcome = host.start(surface) { SecondScreenContent(deviceName = deviceName) }
@@ -111,7 +113,7 @@ class OutputCoordinator(
         secondScreen = host
 
         session.send(SurfaceMessage(SurfaceMode.PRESENTATION, caption = phone.deviceName))
-        publish(OutputMode.SECOND_SCREEN, deviceName, width, height)
+        publish(OutputMode.SECOND_SCREEN, deviceName, width, height, started.codec)
         return null
     }
 
@@ -163,7 +165,7 @@ class OutputCoordinator(
             EncoderPolicy.MAXIMUM_LONG_EDGE,
         )
         val started = startEncoder(connection, phone, width, height) ?: return startFailure()
-        val surface = started.inputSurface ?: return startFailure()
+        val surface = started.encoder.inputSurface ?: return startFailure()
 
         mirrorDisplay = runCatching {
             granted.createVirtualDisplay(
@@ -179,7 +181,7 @@ class OutputCoordinator(
         }.getOrNull() ?: return startFailure()
 
         session.send(SurfaceMessage(SurfaceMode.MIRROR, caption = phone.deviceName))
-        publish(OutputMode.MIRROR, deviceName, width, height)
+        publish(OutputMode.MIRROR, deviceName, width, height, started.codec)
         return null
     }
 
@@ -215,27 +217,42 @@ class OutputCoordinator(
         mutable.value = null
     }
 
+    /** An encoder that started, and the codec it started with. */
+    private class StartedEncoder(val encoder: ScreenEncoder, val codec: CodecId)
+
+    /**
+     * Starts an encoder for the first codec both ends can use, falling back to the next when the
+     * platform refuses to configure one.
+     *
+     * The order is [CodecChoice]'s, bounded by what the receiver said it decodes in its HELLO and
+     * what this phone's probe found it can encode. It used to be the first element of a set, which
+     * is whichever codec the hash table happened to put first.
+     */
     private fun startEncoder(
         connection: CastConnection,
         phone: PhoneCapabilities,
         width: Int,
         height: Int,
-    ): ScreenEncoder? {
-        val codec = phone.advertisedCodecs.firstOrNull() ?: return null
+    ): StartedEncoder? {
+        val receiverCodecs = (session.state.value as? LinkState.Connected)
+            ?.parameters?.peer?.codecCapabilities.orEmpty()
         val controller = BitrateController()
         bitrate = controller
-        val config = EncoderPolicy.forSession(
-            codec = codec,
-            sourceWidth = width,
-            sourceHeight = height,
-            bitrateBitsPerSecond = controller.currentBitrate,
-            apiLevel = phone.apiLevel,
-        )
-        val created = ScreenEncoder(config, Sink(connection))
-        return runCatching {
-            created.start()
-            created
-        }.getOrNull().also { encoder = it }
+        for (codec in CodecChoice.order(receiverCodecs, phone.advertisedCodecs)) {
+            val config = EncoderPolicy.forSession(
+                codec = codec,
+                sourceWidth = width,
+                sourceHeight = height,
+                bitrateBitsPerSecond = controller.currentBitrate,
+                apiLevel = phone.apiLevel,
+            )
+            val created = ScreenEncoder(config, Sink(connection))
+            if (runCatching { created.start() }.isSuccess) {
+                encoder = created
+                return StartedEncoder(created, codec)
+            }
+        }
+        return null
     }
 
     private suspend fun startFailure(): String {
@@ -243,13 +260,14 @@ class OutputCoordinator(
         return ScreenCopy.encoderFailure("")
     }
 
-    private fun publish(mode: OutputMode, deviceName: String, width: Int, height: Int) {
+    private fun publish(mode: OutputMode, deviceName: String, width: Int, height: Int, codec: CodecId) {
         startedAtMillis = clock()
         mutable.value = LiveOutput(
             mode = mode,
             deviceName = deviceName,
             width = width,
             height = height,
+            codec = codec,
             elapsedSeconds = 0,
             health = LinkHealth.Stable,
             bitrateBitsPerSecond = bitrate?.currentBitrate ?: 0,

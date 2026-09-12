@@ -85,8 +85,22 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
         "CastCopy.probeFailedBody(all)",
         CastCopy.probeFailedBody(com.rextechnologies.flint.castcore.discovery.DiscoveryRung.entries),
     )
-    add("SettingsCopy.encoderProbeResult(none)", SettingsCopy.encoderProbeResult(emptyList()))
-    add("SettingsCopy.encoderProbeResult(two)", SettingsCopy.encoderProbeResult(listOf("H.264", "H.265")))
+    add(
+        "SettingsCopy.encoderCheckResult(none)",
+        SettingsCopy.encoderCheckResult(emptyList(), null, ProbeOutcome.NOT_PROBED, ""),
+    )
+    add(
+        "SettingsCopy.encoderCheckResult(passed)",
+        SettingsCopy.encoderCheckResult(listOf("H.264", "H.265"), "H.264", ProbeOutcome.SUPPORTED, "Intact."),
+    )
+    add(
+        "SettingsCopy.encoderCheckResult(failed)",
+        SettingsCopy.encoderCheckResult(listOf("H.264"), "H.264", ProbeOutcome.UNSUPPORTED, "The frame was green"),
+    )
+    add(
+        "SettingsCopy.encoderCheckResult(unchecked)",
+        SettingsCopy.encoderCheckResult(listOf("H.264"), null, ProbeOutcome.NOT_PROBED, ""),
+    )
     add("MediaCopy.pushing", MediaCopy.pushing(3, 10))
     add("NotificationCopy.text", NotificationCopy.text("Fire TV Stick"))
 }
@@ -135,18 +149,24 @@ class CopyVoiceTest {
         // unreachable by this test. Two sentences hid behind a fully probed phone for exactly that
         // reason.
         val phones = ProbeOutcome.entries.flatMap { encoder ->
-            ProbeOutcome.entries.map { display ->
-                PhoneCapabilities(
-                    apiLevel = 34,
-                    deviceName = "Pixel",
-                    screenWidth = 1080,
-                    screenHeight = 2400,
-                    densityDpi = 420,
-                    hardwareVideoEncoders = if (encoder == ProbeOutcome.SUPPORTED) setOf(CodecId.H264) else emptySet(),
-                    encoderProbe = encoder,
-                    virtualDisplayProbe = display,
-                    screenCaptureConsentAvailable = true,
-                )
+            ProbeOutcome.entries.flatMap { display ->
+                ProbeOutcome.entries.map { roundTrip ->
+                    PhoneCapabilities(
+                        apiLevel = 34,
+                        deviceName = "Pixel",
+                        screenWidth = 1080,
+                        screenHeight = 2400,
+                        densityDpi = 420,
+                        hardwareVideoEncoders =
+                        if (encoder == ProbeOutcome.SUPPORTED) setOf(CodecId.H264) else emptySet(),
+                        encoderProbe = encoder,
+                        virtualDisplayProbe = display,
+                        // A frame cannot have survived an encoder that was not found.
+                        encoderRoundTrip =
+                        if (encoder == ProbeOutcome.SUPPORTED) roundTrip else ProbeOutcome.NOT_PROBED,
+                        screenCaptureConsentAvailable = true,
+                    )
+                }
             }
         }
         val devices = listOf<ReceiverDevice?>(null) + ReceiverPlatform.entries.map {

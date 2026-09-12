@@ -11,6 +11,7 @@ import com.rextechnologies.flint.castcore.copy.DiagnosticsCopy
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.Placeholders
 import com.rextechnologies.flint.castcore.copy.SettingsCopy
+import com.rextechnologies.flint.castcore.media.CodecNames
 import com.rextechnologies.flint.castcore.setup.ReceiverSetup
 import com.rextechnologies.flint.design.AdvisoryBlock
 import com.rextechnologies.flint.design.DiagnosticRow
@@ -59,13 +60,17 @@ fun SettingsScreen(state: MobileUiState, controller: MobileController, activity:
                 enabled = !state.secondScreenProbeRunning,
             )
         }
+        FlintText(
+            text = SettingsCopy.ENCODER_PROBE_EXPLANATION,
+            style = FlintType.BodyMedium,
+        )
         OutlineAction(
             text = if (state.encoderProbeRunning) {
                 SettingsCopy.PROBE_RUNNING
             } else {
                 SettingsCopy.RUN_ENCODER_PROBE
             },
-            onClick = controller::runEncoderProbe,
+            onClick = { controller.runEncoderProbe(activity) },
             enabled = !state.encoderProbeRunning,
         )
     }
@@ -156,7 +161,12 @@ private fun DiagnosticsCard(state: MobileUiState) {
             label = "Encoders",
             value = report?.phone?.hardwareVideoEncoders
                 ?.takeIf { it.isNotEmpty() }
-                ?.joinToString { codecName(it.value) }
+                ?.joinToString { CodecNames.label(it) }
+                ?: Placeholders.NOT_PROBED,
+        )
+        DiagnosticRow(
+            label = "Encoder check",
+            value = report?.phone?.encoderRoundTrip?.let { SettingsCopy.roundTripWord(it) }
                 ?: Placeholders.NOT_PROBED,
         )
         DiagnosticRow(
@@ -183,15 +193,12 @@ private fun DiagnosticsCard(state: MobileUiState) {
             value = state.path?.throughputLabel ?: Placeholders.NOT_MEASURED,
             isLast = true,
         )
+        // The round trip's own sentence, when it has one. A row can hold a word; what a decoder
+        // made of the frame takes a sentence, and it is the sentence somebody reporting a fault
+        // would want to quote.
+        report?.phone?.roundTripDetail?.takeIf { it.isNotBlank() }?.let {
+            FlintText(text = it, style = FlintType.BodySmall)
+        }
         FlintText(text = DiagnosticsCopy.ROUND_TRIP_SOURCE, style = FlintType.BodySmall)
     }
-}
-
-private fun codecName(value: Int): String = when (value) {
-    1 -> "H.264"
-    2 -> "H.265"
-    3 -> "AAC-LC"
-    4 -> "Opus"
-    5 -> "AV1"
-    else -> "Codec $value"
 }
