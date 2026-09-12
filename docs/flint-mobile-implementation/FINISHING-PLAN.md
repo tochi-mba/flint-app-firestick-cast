@@ -179,8 +179,17 @@ strip saying why there is no sound.
   card's every transition is a table with a test. The Settings card's Install and Remove become live,
   Remove needs a second press that names the package and the television.
 
-**Evidence.** CI: the resolver, the reducer, the identity codec. Hardware: an install and a removal
-on a real Fire TV from the phone alone, the RSA prompt shown and accepted on the remote.
+**Evidence.** CI: the resolver, the reducer, the identity codec, the port order, the coordinator
+against a fake installer, and the client against a scripted device on a loopback socket that speaks
+the real ADB framing. Hardware: an install and a removal on a real Fire TV from the phone alone, the
+RSA prompt shown and accepted on the remote.
+
+**What was not in the draft.** A television with no receiver on it answers nothing on the receiver's
+port and so could never have been selected, which made installing impossible in exactly the case it
+exists for. Typing its address now falls through to a read-only ADB look, and a television that
+answers that way joins the list with what it said about itself. And a television identified over ADB
+whose receiver is not answering used to be assessed as ready to cast; it is blocked now, with the
+install remedy.
 
 ## Step 7 — the receiver stops calling every peer a PC
 
@@ -204,13 +213,23 @@ left for the person who ran them to fill in.
 
 | Step | Code | CI | Hardware |
 |---|---|---|---|
-| 1 Pixel round trip and codec choice | | | second-screen and encoder checks passed; round trip not yet run |
-| 2 Mirror and second-screen hardening | | | |
-| 3 Thermal and diagnostics | | | |
-| 4 Media handoff | | | |
-| 5 Mirror audio | | | |
-| 6 Receiver install over ADB | | | |
-| 7 Peer-neutral receiver copy | | | |
-| 8 Documentation | | | |
+| 1 Pixel round trip and codec choice | done | green: Mobile CI on `ad10785` | second-screen check and encoder listing passed; the pixel round trip has not been run |
+| 2 Mirror and second-screen hardening | done | green: Mobile CI on `ad10785` | not run |
+| 3 Thermal and diagnostics | done | green: Mobile CI on `ad10785` | not run |
+| 4 Media handoff | done | green: Mobile CI on `ad10785`; receiver CI on `c01603d` | not run |
+| 5 Mirror audio | done | green: Mobile CI on `ad10785` | not run |
+| 6 Receiver install over ADB | done | green: Mobile CI on `ad10785` | not run; the RSA prompt has not been shown or accepted on a television |
+| 7 Peer-neutral receiver copy | done | green: receiver CI on `c01603d`, against images rendered by Snapshots run 34685433516 | not applicable |
+| 8 Documentation | done | not applicable | not applicable |
 
-The hardware column is filled in only from `HARDWARE-EVIDENCE.md`.
+The hardware column is filled in only from `HARDWARE-EVIDENCE.md`. "Green" names the commit the gate
+ran on; a later commit that touched only the phone modules does not re-run the receiver gate, and a
+commit that touched only the receiver does not re-run the phone gate, so two commits are named where
+two gates apply.
+
+Two things happened on the way that the table cannot show. The Snapshots workflow gained a `push`
+input, because the environment this was built in could not download workflow artifacts and the
+regenerated images had to reach the branch some other way; the commit it makes is the workflow's
+own and says which run rendered the images. And the phone gate was red for one commit on a double
+hyphen inside a manifest comment, which XML forbids and which the gate's cancellation on the next
+push had hidden; that is why every step above names the same final commit rather than its own.

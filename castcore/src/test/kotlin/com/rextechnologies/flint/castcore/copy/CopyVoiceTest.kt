@@ -11,6 +11,7 @@ import com.rextechnologies.flint.castcore.capability.ProbeOutcome
 import com.rextechnologies.flint.castcore.capability.ReceiverDevice
 import com.rextechnologies.flint.castcore.capability.ReceiverPlatform
 import com.rextechnologies.flint.castcore.capability.ToneIntent
+import com.rextechnologies.flint.castcore.screen.SceneCopy
 import com.rextechnologies.flint.castcore.setup.ReceiverSetup
 import com.rextechnologies.flint.protocol.media.LinkHealth
 import com.rextechnologies.flint.protocol.network.SelectedHotspotInterface
@@ -40,6 +41,7 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
     fun add(label: String, value: String) = add(label to value)
 
     val surfaces = listOf(
+        AudioCopy,
         CastCopy,
         PairingCopy,
         ScreenCopy,
@@ -49,6 +51,7 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
         NotificationCopy,
         Placeholders,
         ReceiverSetup,
+        SceneCopy,
         MobileCapabilityAssessor,
     )
     surfaces.forEach { surface ->
@@ -80,15 +83,47 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
     add("ScreenCopy.cockpitLine", ScreenCopy.cockpitLine("second screen", "Fire TV Stick"))
     add("ScreenCopy.encoderFailure", ScreenCopy.encoderFailure(""))
     add("ScreenCopy.encoderFailure(detail)", ScreenCopy.encoderFailure("no surface"))
+    add("ScreenCopy.keyFrameFallback", ScreenCopy.keyFrameFallback(2))
+    add("AudioCopy.failedSentence(detail)", AudioCopy.failedSentence("no AAC encoder"))
+    add("AudioCopy.failedSentence(none)", AudioCopy.failedSentence(""))
     add("CastCopy.probeFailedBody(none)", CastCopy.probeFailedBody(emptyList()))
     add(
         "CastCopy.probeFailedBody(all)",
         CastCopy.probeFailedBody(com.rextechnologies.flint.castcore.discovery.DiscoveryRung.entries),
     )
-    add("SettingsCopy.encoderProbeResult(none)", SettingsCopy.encoderProbeResult(emptyList()))
-    add("SettingsCopy.encoderProbeResult(two)", SettingsCopy.encoderProbeResult(listOf("H.264", "H.265")))
+    add(
+        "SettingsCopy.encoderCheckResult(none)",
+        SettingsCopy.encoderCheckResult(emptyList(), null, ProbeOutcome.NOT_PROBED, ""),
+    )
+    add(
+        "SettingsCopy.encoderCheckResult(passed)",
+        SettingsCopy.encoderCheckResult(listOf("H.264", "H.265"), "H.264", ProbeOutcome.SUPPORTED, "Intact."),
+    )
+    add(
+        "SettingsCopy.encoderCheckResult(failed)",
+        SettingsCopy.encoderCheckResult(listOf("H.264"), "H.264", ProbeOutcome.UNSUPPORTED, "The frame was green"),
+    )
+    add(
+        "SettingsCopy.encoderCheckResult(unchecked)",
+        SettingsCopy.encoderCheckResult(listOf("H.264"), null, ProbeOutcome.NOT_PROBED, ""),
+    )
     add("MediaCopy.pushing", MediaCopy.pushing(3, 10))
+    add("MediaCopy.sendingBytes", MediaCopy.sendingBytes(3L * 1024 * 1024))
+    add("MediaCopy.sendingFraction", MediaCopy.sendingFraction(0.42))
+    add("MediaCopy.sizeLabel", MediaCopy.sizeLabel(3L * 1024 * 1024).orEmpty())
     add("NotificationCopy.text", NotificationCopy.text("Fire TV Stick"))
+    add(
+        "ReceiverSetup.removeConfirmation",
+        ReceiverSetup.removeConfirmation("com.rextechnologies.flint.receiver.debug", "Fire TV Stick"),
+    )
+    add("ReceiverSetup.identified(installed)", ReceiverSetup.identified("Fire TV Stick", "Fire OS 8", true))
+    add("ReceiverSetup.identified(missing)", ReceiverSetup.identified("Fire TV Stick", "Fire OS 8", false))
+    add("ReceiverSetup.unauthorised", ReceiverSetup.unauthorised("Fire TV Stick"))
+    add("ReceiverSetup.notAndroid", ReceiverSetup.notAndroid("Fire TV Stick"))
+    add("ReceiverSetup.installed", ReceiverSetup.installed("Fire TV Stick"))
+    add("ReceiverSetup.removed", ReceiverSetup.removed("Fire TV Stick"))
+    add("ReceiverSetup.failed(none)", ReceiverSetup.failed(""))
+    add("ReceiverSetup.failed(detail)", ReceiverSetup.failed("Failure [INSTALL_FAILED_OLDER_SDK]"))
 }
 
 class CopyVoiceTest {
@@ -135,18 +170,24 @@ class CopyVoiceTest {
         // unreachable by this test. Two sentences hid behind a fully probed phone for exactly that
         // reason.
         val phones = ProbeOutcome.entries.flatMap { encoder ->
-            ProbeOutcome.entries.map { display ->
-                PhoneCapabilities(
-                    apiLevel = 34,
-                    deviceName = "Pixel",
-                    screenWidth = 1080,
-                    screenHeight = 2400,
-                    densityDpi = 420,
-                    hardwareVideoEncoders = if (encoder == ProbeOutcome.SUPPORTED) setOf(CodecId.H264) else emptySet(),
-                    encoderProbe = encoder,
-                    virtualDisplayProbe = display,
-                    screenCaptureConsentAvailable = true,
-                )
+            ProbeOutcome.entries.flatMap { display ->
+                ProbeOutcome.entries.map { roundTrip ->
+                    PhoneCapabilities(
+                        apiLevel = 34,
+                        deviceName = "Pixel",
+                        screenWidth = 1080,
+                        screenHeight = 2400,
+                        densityDpi = 420,
+                        hardwareVideoEncoders =
+                        if (encoder == ProbeOutcome.SUPPORTED) setOf(CodecId.H264) else emptySet(),
+                        encoderProbe = encoder,
+                        virtualDisplayProbe = display,
+                        // A frame cannot have survived an encoder that was not found.
+                        encoderRoundTrip =
+                        if (encoder == ProbeOutcome.SUPPORTED) roundTrip else ProbeOutcome.NOT_PROBED,
+                        screenCaptureConsentAvailable = true,
+                    )
+                }
             }
         }
         val devices = listOf<ReceiverDevice?>(null) + ReceiverPlatform.entries.map {

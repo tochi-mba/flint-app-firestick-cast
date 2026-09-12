@@ -2,6 +2,7 @@ package com.rextechnologies.flint.mobile
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
@@ -52,6 +53,33 @@ class MobileActivity : ComponentActivity() {
         controller.onNotificationPermission(granted)
     }
 
+    /**
+     * The record permission, which is what Android puts playback capture behind.
+     *
+     * Asked for on the way to the capture dialog rather than at launch, because it is only sound on
+     * a mirror that needs it, and a permission asked for before the person has seen why is the one
+     * they refuse. Refusing it is fine: the mirror carries the picture and the strip says why not
+     * the sound.
+     */
+    private val audioPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        controller.onAudioPermission(granted)
+        launchMirrorConsent()
+    }
+
+    /**
+     * The system's own file picker, which is the only way this app ever sees a file.
+     *
+     * Flint never browses storage. The picker hands back a content URI and a read grant, and the
+     * bytes are streamed through the resolver straight to the socket; no path is ever resolved.
+     */
+    private val videoPicker = registerForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        uri?.let { controller.chooseVideo(it.toString()) }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -73,9 +101,24 @@ class MobileActivity : ComponentActivity() {
                     controller = controller,
                     activity = this,
                     onRequestMirror = ::requestMirrorConsent,
+                    onPickVideo = { videoPicker.launch(arrayOf(VIDEO_MIME)) },
                 )
             }
         }
+    }
+
+    /**
+     * The other half of the manifest's promise.
+     *
+     * Declaring that this activity handles configuration changes keeps a rotation from recreating
+     * it; it does not, by itself, do anything about the mirror that is running. This is where the
+     * new geometry reaches the encoder, and a mirror that did not follow the phone round was the
+     * visible result of declaring one without the other.
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val metrics = resources.displayMetrics
+        controller.onDisplayChanged(metrics.widthPixels, metrics.heightPixels, metrics.densityDpi)
     }
 
     override fun onResume() {
@@ -98,12 +141,30 @@ class MobileActivity : ComponentActivity() {
      * itself is the one a person is less annoyed by the fourth time.
      */
     private fun requestMirrorConsent() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val recording = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            if (recording != PackageManager.PERMISSION_GRANTED) {
+                audioPermission.launch(Manifest.permission.RECORD_AUDIO)
+                return
+            }
+            controller.onAudioPermission(true)
+        } else {
+            controller.onAudioPermission(false)
+        }
+        launchMirrorConsent()
+    }
+
+    private fun launchMirrorConsent() {
         val manager = getSystemService(MediaProjectionManager::class.java)
         if (manager == null) {
             controller.onProjectionConsent(RESULT_CANCELED, null)
             return
         }
         projectionConsent.launch(manager.createScreenCaptureIntent())
+    }
+
+    private companion object {
+        const val VIDEO_MIME = "video/*"
     }
 
     private fun requestNotificationPermissionOnce() {

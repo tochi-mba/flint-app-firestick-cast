@@ -6,12 +6,17 @@ import com.rextechnologies.flint.castcore.capability.NetworkPath
 import com.rextechnologies.flint.castcore.capability.ReceiverDevice
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.discovery.DiscoveryRung
+import com.rextechnologies.flint.castcore.media.AudioState
+import com.rextechnologies.flint.castcore.media.MediaState
+import com.rextechnologies.flint.castcore.media.SessionDiagnostics
+import com.rextechnologies.flint.castcore.screen.SecondScreenScene
 import com.rextechnologies.flint.castcore.session.SessionFailure
 import com.rextechnologies.flint.castcore.setup.BundledReceiver
 import com.rextechnologies.flint.castcore.setup.ReceiverInstallStage
 import com.rextechnologies.flint.mobile.state.LinkState
 import com.rextechnologies.flint.mobile.state.LookupState
 import com.rextechnologies.flint.protocol.media.LinkHealth
+import com.rextechnologies.flint.protocol.wire.CodecId
 
 /** What the phone is sending, if anything. */
 enum class OutputMode {
@@ -26,10 +31,20 @@ data class LiveOutput(
     val deviceName: String,
     val width: Int,
     val height: Int,
+    /** The codec the frames are going out in, chosen by policy rather than by a set's order. */
+    val codec: CodecId,
     val elapsedSeconds: Long,
     val health: LinkHealth,
     val bitrateBitsPerSecond: Int,
     val degradedReason: String? = null,
+    /** What the television is showing, for a second screen; `null` for a mirror. */
+    val scene: SecondScreenScene? = null,
+    /** Whether this session has fallen back to a bounded key-frame interval. Never goes back. */
+    val keyFrameFallback: Boolean = false,
+    /** The numbers behind the link word and the bitrate, for the strip's diagnostic rows. */
+    val diagnostics: SessionDiagnostics,
+    /** Where a mirror's sound has got to. Always [AudioState.Off] for a second screen. */
+    val audio: AudioState = AudioState.Off,
 )
 
 /**
@@ -58,8 +73,13 @@ data class MobileUiState(
     val encoderProbeRunning: Boolean = false,
     val secondScreenProbeRunning: Boolean = false,
     val output: LiveOutput? = null,
+    val media: MediaState = MediaState.Idle,
     val bundledReceiver: BundledReceiver? = null,
     val installStage: ReceiverInstallStage = ReceiverInstallStage.Unknown,
+    /** The receiver package the selected television listed when last asked over ADB, or `null`. */
+    val installedReceiverPackage: String? = null,
+    /** The phone is identifying, installing or removing right now. The card's buttons wait. */
+    val setupBusy: Boolean = false,
     val notice: String? = null,
 ) {
     val isProbing: Boolean

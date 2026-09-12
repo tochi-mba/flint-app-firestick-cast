@@ -273,7 +273,7 @@ private fun MirrorControls(
                 )
                 Text(
                     text = state.peerName?.takeIf { it.isNotBlank() }
-                        ?: state.title.ifBlank { "Your PC" },
+                        ?: state.title.ifBlank { "Your device" },
                     color = ReceiverColors.Text,
                     fontSize = 22.sp,
                     lineHeight = 28.sp,
@@ -361,7 +361,7 @@ private fun MirrorStatsPanel(state: ReceiverUiState, fitMode: MirrorFitMode) {
             .padding(horizontal = 16.dp, vertical = 13.dp)
             .testTag(ReceiverTags.MIRROR_STATS_PANEL),
     ) {
-        StatsRow("SOURCE", state.peerName?.takeIf { it.isNotBlank() } ?: "Unknown PC")
+        StatsRow("SOURCE", state.peerName?.takeIf { it.isNotBlank() } ?: "Unknown device")
         StatsRow(
             "FRAME",
             mirrorStatsLabel(state.mirrorWidth, state.mirrorHeight, state.mirrorFrameReceived),

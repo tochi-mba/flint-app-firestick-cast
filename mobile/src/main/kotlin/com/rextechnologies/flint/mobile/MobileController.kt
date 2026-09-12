@@ -4,23 +4,43 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import com.rextechnologies.flint.castcore.capability.AssessmentInput
+import com.rextechnologies.flint.castcore.capability.DiscoverySource
 import com.rextechnologies.flint.castcore.capability.MobileCapabilityAssessor
 import com.rextechnologies.flint.castcore.capability.ProbeOutcome
 import com.rextechnologies.flint.castcore.capability.ReceiverDevice
+import com.rextechnologies.flint.castcore.capability.ReceiverPlatform
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.PairingCopy
 import com.rextechnologies.flint.castcore.copy.ScreenCopy
 import com.rextechnologies.flint.castcore.copy.SettingsCopy
+import com.rextechnologies.flint.castcore.media.CodecNames
+import com.rextechnologies.flint.castcore.media.MediaState
+import com.rextechnologies.flint.castcore.screen.ActiveSurface
+import com.rextechnologies.flint.castcore.screen.SurfaceEffect
+import com.rextechnologies.flint.castcore.screen.SurfaceReducer
+import com.rextechnologies.flint.castcore.screen.SurfaceRequest
+import com.rextechnologies.flint.castcore.screen.SurfaceTransition
+import com.rextechnologies.flint.castcore.setup.InstallEvent
+import com.rextechnologies.flint.castcore.setup.ReceiverInstallStage
+import com.rextechnologies.flint.castcore.setup.ReceiverSetup
+import com.rextechnologies.flint.mobile.media.ContentMediaSource
+import com.rextechnologies.flint.mobile.net.AdbAnswer
+import com.rextechnologies.flint.mobile.net.AdbClient
 import com.rextechnologies.flint.mobile.net.DiscoveryRunner
+import com.rextechnologies.flint.mobile.platform.AdbIdentityStore
 import com.rextechnologies.flint.mobile.platform.AndroidNetworkWatcher
+import com.rextechnologies.flint.mobile.platform.ThermalWatch
 import com.rextechnologies.flint.mobile.platform.TokenStore
 import com.rextechnologies.flint.mobile.state.CapabilityCoordinator
 import com.rextechnologies.flint.mobile.state.DiscoveryCoordinator
+import com.rextechnologies.flint.mobile.state.Identification
 import com.rextechnologies.flint.mobile.state.LinkState
 import com.rextechnologies.flint.mobile.state.LookupState
+import com.rextechnologies.flint.mobile.state.MediaCoordinator
 import com.rextechnologies.flint.mobile.state.NavigationState
 import com.rextechnologies.flint.mobile.state.OutputCoordinator
 import com.rextechnologies.flint.mobile.state.ReceiverSetupCoordinator
+import com.rextechnologies.flint.mobile.state.ReceiverSetupState
 import com.rextechnologies.flint.mobile.state.SessionCoordinator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +52,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The one object the UI talks to.
@@ -68,8 +89,17 @@ class MobileController(
         densityDpi = densityDpi.coerceAtLeast(1),
     )
     private val session = SessionCoordinator(TokenStore(applicationContext), scope)
-    private val output = OutputCoordinator(applicationContext, session, scope)
-    private val setup = ReceiverSetupCoordinator(applicationContext, scope)
+    private val thermal = ThermalWatch(applicationContext)
+    private val output = OutputCoordinator(applicationContext, session, scope, thermal.level)
+    private val media = MediaCoordinator(session, ContentMediaSource(applicationContext), scope)
+    private val adbIdentity = AdbIdentityStore(applicationContext)
+    private val setup = ReceiverSetupCoordinator(applicationContext, scope, AdbClient(identity = adbIdentity::identity))
+
+    /**
+     * What this phone has asked the television to show. One value, every transition through the
+     * reducer, so a second screen and a pushed file can never be sent at once.
+     */
+    private var surface: ActiveSurface = ActiveSurface.Idle
 
     /**
      * Work that belongs to one run of the app rather than to this object.
@@ -80,14 +110,39 @@ class MobileController(
      */
     private val work = CoroutineScope(scope.coroutineContext + SupervisorJob(scope.coroutineContext[Job]))
 
+    init {
+        // What the output and media paths have to say when they stop on their own -- a dead socket,
+        // an encoder that gave up, a cancelled send -- reaches the banner through here, because the
+        // coordinators own no navigation.
+        scope.launch { output.notices.collect { navigation.notice(it) } }
+        scope.launch { media.notices.collect { navigation.notice(it) } }
+        // An output that ended on its own -- the notification's Stop, a dead link -- is no longer
+        // the surface, whatever this phone last asked for.
+        scope.launch {
+            output.state.collect { live ->
+                if (live == null && (surface == ActiveSurface.Presentation || surface == ActiveSurface.Mirror)) {
+                    surface = ActiveSurface.Idle
+                }
+            }
+        }
+        scope.launch {
+            session.state.collect { link ->
+                if (link !is LinkState.Connected && surface != ActiveSurface.Idle) {
+                    media.reset()
+                    surface = SurfaceReducer.transition(surface, SurfaceRequest.SessionLost).next
+                }
+            }
+        }
+    }
+
     val state: StateFlow<MobileUiState> = combine(
         navigation.state,
         watcher.localNetwork,
         discovery.state,
         capability.state,
-        combine(session.state, output.state, setup.state, ::Triple),
+        combine(session.state, output.state, setup.state, media.state, ::Live),
     ) { nav, network, discovered, probed, live ->
-        val (link, sending, receiverSetup) = live
+        val (link, sending, receiverSetup, playing) = live
         val phone = capability.capabilities(probed)
         MobileUiState(
             tab = nav.tab,
@@ -114,20 +169,29 @@ class MobileController(
             encoderProbeRunning = probed.encoderProbeRunning,
             secondScreenProbeRunning = probed.secondScreenProbeRunning,
             output = sending,
+            media = playing,
             bundledReceiver = receiverSetup.bundled,
-            installStage = receiverSetup.stage,
+            // The stage is about one television. Shown beside another, it would be a claim about
+            // a device nothing has asked.
+            installStage = receiverSetup.stage.takeIf { receiverSetup.address == discovered.selected?.address }
+                ?: ReceiverInstallStage.Unknown,
+            installedReceiverPackage = receiverSetup.installedPackage
+                .takeIf { receiverSetup.address == discovered.selected?.address },
+            setupBusy = receiverSetup.busy,
             notice = nav.notice,
         )
     }.stateIn(scope, SharingStarted.Eagerly, MobileUiState())
 
     fun start() {
         watcher.start()
+        thermal.start()
         setup.load()
     }
 
     /** Ends this run. [start] may be called again afterwards, and works. */
     fun stop() {
         watcher.stop()
+        thermal.stop()
         scope.launch { output.stop() }
         session.close()
         work.coroutineContext.cancelChildren()
@@ -166,17 +230,37 @@ class MobileController(
         }
     }
 
-    /** Confirms one typed-in address. Discovery is never the only route to a television. */
+    /**
+     * Confirms one typed-in address. Discovery is never the only route to a television.
+     *
+     * A television with no receiver on it answers nothing on the receiver's port, and would
+     * otherwise be unreachable from this app until somebody installed Flint on it by other means.
+     * So when nothing answers there, the same address is asked over ADB, read-only, and a
+     * television that answers that way joins the list with what it said about itself.
+     */
     fun probeManualAddress(address: String) {
         launchWork {
-            val found = discovery.probeManual(watcher.localNetwork.value, address)
-            if (found == null) {
-                navigation.notice(
-                    "Nothing answered at ${address.trim()}. Check the address on the TV under " +
-                        "Settings, My Fire TV, About, Network.",
-                )
-            } else {
+            val trimmed = address.trim()
+            val found = discovery.probeManual(watcher.localNetwork.value, trimmed)
+            if (found != null) {
                 reconnectIfRemembered()
+                return@launchWork
+            }
+            val silent = "Nothing answered at $trimmed on the receiver's port. Check the address on the " +
+                "TV under Settings, My Fire TV, About, Network."
+            val bare = runCatching { ReceiverDevice(address = trimmed, source = DiscoverySource.MANUAL) }.getOrNull()
+            if (bare == null) {
+                navigation.notice(silent)
+                return@launchWork
+            }
+            val look = setup.identify(watcher.localNetwork.value, bare)
+            when (look.answer) {
+                is AdbAnswer.Identified, is AdbAnswer.Unauthorised -> {
+                    discovery.update(look.device)
+                    navigation.notice(sentenceFor(look))
+                }
+
+                else -> navigation.notice("$silent ${sentenceFor(look)}")
             }
         }
     }
@@ -204,11 +288,21 @@ class MobileController(
         }
     }
 
-    /** Asks the platform what it can encode. Until this runs, the verdicts say it has not been asked. */
-    fun runEncoderProbe() {
+    /**
+     * The encoder check: what the platform lists, then whether a test frame survives the encoder a
+     * session would use. Needs the Activity because the frame is drawn through a Presentation.
+     */
+    fun runEncoderProbe(activity: Activity) {
         launchWork {
-            val found = capability.probeEncoders()
-            navigation.notice(SettingsCopy.encoderProbeResult(found.map { codecName(it.value) }))
+            val check = capability.probeEncoders(activity)
+            navigation.notice(
+                SettingsCopy.encoderCheckResult(
+                    found = check.encoders.map(CodecNames::label),
+                    through = check.through?.let(CodecNames::label),
+                    roundTrip = check.roundTrip,
+                    detail = check.detail,
+                ),
+            )
         }
     }
 
@@ -228,7 +322,10 @@ class MobileController(
     /** Starts the second screen, which needs no consent dialog and no projection. */
     fun startSecondScreen(activity: Activity) {
         launchWork {
-            navigation.notice(output.startSecondScreen(activity, capability.capabilities()))
+            request(SurfaceRequest.StartPresentation)
+            val failure = output.startSecondScreen(activity, capability.capabilities())
+            if (failure != null) request(SurfaceRequest.StopOutput)
+            navigation.notice(failure)
         }
     }
 
@@ -239,8 +336,143 @@ class MobileController(
             return
         }
         launchWork {
-            navigation.notice(output.startMirror(capability.capabilities(), resultCode, consent))
+            request(SurfaceRequest.StartMirror)
+            val failure = output.startMirror(capability.capabilities(), resultCode, consent)
+            if (failure != null) request(SurfaceRequest.StopOutput)
+            navigation.notice(failure)
         }
+    }
+
+    /** A file from the system picker, by its content URI. Never a path. */
+    fun chooseVideo(reference: String) {
+        launchWork {
+            request(SurfaceRequest.StartMedia)
+            if (!media.choose(reference)) request(SurfaceRequest.ClearMedia)
+        }
+    }
+
+    fun playMedia() = media.play()
+
+    fun pauseMedia() = media.pause()
+
+    fun seekMedia(positionMs: Long) = media.seekTo(positionMs)
+
+    fun stopMedia() = media.stop()
+
+    fun cancelMediaTransfer() {
+        launchWork {
+            media.cancel()
+            request(SurfaceRequest.ClearMedia)
+        }
+    }
+
+    /** Returns the television to its idle screen, and says what it is not restarting. */
+    fun clearMedia() {
+        launchWork {
+            val transition = request(SurfaceRequest.ClearMedia)
+            // A failed transfer never became the surface, so the reducer had nothing to clear; the
+            // television may still be holding a partial file, and is told to drop it either way.
+            if (transition.effects.none { it is SurfaceEffect.ClearMedia }) media.clear()
+        }
+    }
+
+    /**
+     * Moves the surface through the reducer and carries out what it asked for.
+     *
+     * Effects run before the new value is taken, so a second screen is stopped before the LOAD that
+     * displaces it goes out and the television never receives two surfaces at once.
+     */
+    private suspend fun request(request: SurfaceRequest): SurfaceTransition {
+        val transition = SurfaceReducer.transition(surface, request)
+        transition.effects.forEach { effect ->
+            when (effect) {
+                SurfaceEffect.StopOutput -> output.stop()
+                SurfaceEffect.ClearMedia -> media.clear()
+                is SurfaceEffect.Say -> navigation.notice(effect.sentence)
+            }
+        }
+        surface = transition.next
+        return transition
+    }
+
+    /** Asks the selected television what it is and whether Flint is on it. Read-only. */
+    fun identifyReceiver() {
+        launchWork {
+            val device = discovery.state.value.selected
+            if (device == null) {
+                navigation.notice(ReceiverSetup.NOTHING_SELECTED)
+                return@launchWork
+            }
+            val look = setup.identify(watcher.localNetwork.value, device)
+            discovery.update(look.device)
+            navigation.notice(sentenceFor(look))
+        }
+    }
+
+    /** Installs the bundled receiver on the selected television, after the card has said what it is. */
+    fun installReceiver() {
+        launchWork {
+            val device = discovery.state.value.selected
+            if (device == null) {
+                navigation.notice(ReceiverSetup.NOTHING_SELECTED)
+                return@launchWork
+            }
+            val event = setup.install(watcher.localNetwork.value, device)
+            navigation.notice(sentenceFor(event, device.displayName))
+            // The receiver was opened as part of installing, so the probe that matters -- does it
+            // answer on its own port -- is worth making now rather than leaving to the next sweep.
+            if (event == InstallEvent.InstallSucceeded) {
+                discovery.probeManual(watcher.localNetwork.value, device.address)
+            }
+        }
+    }
+
+    /** Removes Flint from the selected television. The card has already asked twice. */
+    fun removeReceiver() {
+        launchWork {
+            val device = discovery.state.value.selected
+            if (device == null) {
+                navigation.notice(ReceiverSetup.NOTHING_SELECTED)
+                return@launchWork
+            }
+            val event = setup.remove(watcher.localNetwork.value, device)
+            navigation.notice(sentenceFor(event, device.displayName))
+            // Whatever answered on the receiver's port before is gone. The verdicts say so.
+            if (event == InstallEvent.RemoveSucceeded) discovery.update(device.copy(receiverAnswered = false))
+        }
+    }
+
+    private fun sentenceFor(look: Identification): String {
+        val name = look.device.displayName
+        return when (val answer = look.answer) {
+            is AdbAnswer.Identified ->
+                if (answer.platform == ReceiverPlatform.VEGA) {
+                    ReceiverSetup.notAndroid(name)
+                } else {
+                    ReceiverSetup.identified(name, answer.platform.displayLabel, answer.receiverInstalled)
+                }
+
+            is AdbAnswer.Unauthorised -> ReceiverSetup.unauthorised(name)
+            is AdbAnswer.Refused -> ReceiverSetup.failed(answer.detail)
+            is AdbAnswer.Silent -> ReceiverSetup.failed(answer.detail)
+            is AdbAnswer.Failed -> ReceiverSetup.failed(answer.detail)
+        }
+    }
+
+    private fun sentenceFor(event: InstallEvent, deviceName: String): String? = when (event) {
+        InstallEvent.InstallSucceeded -> ReceiverSetup.installed(deviceName)
+        InstallEvent.RemoveSucceeded -> ReceiverSetup.removed(deviceName)
+        InstallEvent.AuthorisationRequired -> ReceiverSetup.unauthorised(deviceName)
+        InstallEvent.NotAndroid -> ReceiverSetup.notAndroid(deviceName)
+        is InstallEvent.InstallFailed -> ReceiverSetup.failed(event.detail)
+        is InstallEvent.RemoveFailed -> ReceiverSetup.failed(event.detail)
+        is InstallEvent.Unreachable -> ReceiverSetup.failed(event.detail)
+        is InstallEvent.Identified, InstallEvent.InstallStarted -> null
+    }
+
+    /** Whether a mirror may carry sound. The strip says why not when it may not. */
+    fun onAudioPermission(granted: Boolean) {
+        output.audioPermitted = granted
     }
 
     /** Says what happened when notifications were refused, and carries on regardless. */
@@ -249,7 +481,15 @@ class MobileController(
     }
 
     fun stopOutput() {
-        launchWork { output.stop() }
+        launchWork {
+            request(SurfaceRequest.StopOutput)
+            output.stop()
+        }
+    }
+
+    /** The phone was turned. A live mirror follows it; a second screen, being a landscape canvas, does not. */
+    fun onDisplayChanged(width: Int, height: Int, densityDpi: Int) {
+        launchWork { output.reconfigureMirror(width, height, densityDpi) }
     }
 
     /** Ends the session with the television, leaving the stored pairing in place. */
@@ -260,9 +500,17 @@ class MobileController(
         }
     }
 
-    /** Unpairs every television, so a lent phone can be handed back. */
+    /**
+     * Unpairs every television, so a lent phone can be handed back.
+     *
+     * The ADB identity goes with the tokens. A television that accepted this phone's key keeps
+     * trusting that key until its owner revokes it on the television, which the phone cannot do;
+     * what the phone can do is stop presenting it, so the next person holding this phone is asked
+     * for on the television's own screen rather than waved through on somebody else's yes.
+     */
     fun forgetEveryPairing() {
         session.forgetEverything()
+        launchWork { withContext(Dispatchers.IO) { adbIdentity.forget() } }
         navigation.notice(SettingsCopy.FORGOTTEN)
     }
 
@@ -284,12 +532,11 @@ class MobileController(
         work.launch(block = block)
     }
 
-    private fun codecName(value: Int): String = when (value) {
-        1 -> "H.264"
-        2 -> "H.265"
-        3 -> "AAC-LC"
-        4 -> "Opus"
-        5 -> "AV1"
-        else -> "codec $value"
-    }
+    /** The four fast-changing answers, combined first because `combine` takes five flows at most. */
+    private data class Live(
+        val link: LinkState,
+        val output: LiveOutput?,
+        val setup: ReceiverSetupState,
+        val media: MediaState,
+    )
 }

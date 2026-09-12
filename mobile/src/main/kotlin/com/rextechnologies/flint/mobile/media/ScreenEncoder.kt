@@ -94,7 +94,7 @@ class ScreenEncoder(
 
     fun start() = synchronized(lifecycle) {
         check(codec == null) { "This encoder has already been started" }
-        val mime = mimeFor(config.codec)
+        val mime = VideoMime.of(config.codec)
         val format = MediaFormat.createVideoFormat(mime, config.width, config.height).apply {
             setInteger(
                 MediaFormat.KEY_COLOR_FORMAT,
@@ -347,12 +347,6 @@ class ScreenEncoder(
         inputSurface = null
     }
 
-    private fun mimeFor(codec: CodecId): String = when (codec) {
-        CodecId.H265 -> MediaFormat.MIMETYPE_VIDEO_HEVC
-        CodecId.H264 -> MediaFormat.MIMETYPE_VIDEO_AVC
-        else -> error("Unsupported mirror video codec: ${codec.value}")
-    }
-
     private companion object {
         /**
          * Ten hours. `KEY_I_FRAME_INTERVAL` has no "never" value, and a number this large is
@@ -372,5 +366,14 @@ class ScreenEncoder(
          * release the codec, so it is worth more than a couple of frames.
          */
         const val THREAD_JOIN_MILLIS = 2_000L
+    }
+}
+
+/** The platform MIME type for each video codec this app encodes, shared with the round-trip check. */
+internal object VideoMime {
+    fun of(codec: CodecId): String = when (codec) {
+        CodecId.H265 -> MediaFormat.MIMETYPE_VIDEO_HEVC
+        CodecId.H264 -> MediaFormat.MIMETYPE_VIDEO_AVC
+        else -> error("Unsupported mirror video codec: ${codec.value}")
     }
 }

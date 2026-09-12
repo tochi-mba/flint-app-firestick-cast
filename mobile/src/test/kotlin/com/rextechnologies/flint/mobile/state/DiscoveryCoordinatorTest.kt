@@ -144,4 +144,24 @@ class DiscoveryCoordinatorTest {
         )
         assertTrue(coordinator.state.value.receivers.isEmpty())
     }
+
+    @Test
+    fun `what adb learned replaces the device, keeps its path, and can add a television nobody found`() = runBlocking {
+        val coordinator = DiscoveryCoordinator(Finder(found = listOf(stick)))
+        coordinator.probe(host)
+        val measured = assertNotNull(coordinator.state.value.path)
+
+        coordinator.update(stick.copy(model = "AFTKA", adbPort = 5_557))
+        val state = coordinator.state.value
+        assertEquals("AFTKA", state.selected?.model)
+        assertEquals(5_557, state.selected?.adbPort)
+        assertEquals(measured, state.path)
+        assertEquals(1, state.receivers.size)
+
+        coordinator.update(cube)
+        val added = coordinator.state.value
+        assertEquals(cube, added.selected)
+        assertEquals(listOf(stick.address, cube.address), added.receivers.map { it.address })
+        assertNull(added.path)
+    }
 }

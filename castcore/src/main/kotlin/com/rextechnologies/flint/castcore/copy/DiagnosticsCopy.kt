@@ -11,6 +11,15 @@ object DiagnosticsCopy {
     const val SECTION_PHONE: String = "This phone"
     const val SECTION_RECEIVER: String = "Receiver"
     const val SECTION_PATH: String = "Network path"
+    const val SECTION_SESSION: String = "This session"
+
+    const val ROW_TARGET_BITRATE: String = "Target bitrate"
+    const val ROW_CEILING: String = "Ceiling"
+    const val ROW_RECEIVER_QUEUE: String = "Receiver queue"
+    const val ROW_PENDING: String = "Waiting to send"
+    const val ROW_DROPPED: String = "Dropped since last report"
+    const val ROW_LAST_DECISION: String = "Last decision"
+    const val ROW_THERMAL: String = "Phone temperature"
 
     /**
      * Why the round trip is the phone's own measurement.

@@ -52,6 +52,7 @@ fun MobileApp(
     controller: MobileController,
     activity: MobileActivity,
     onRequestMirror: () -> Unit,
+    onPickVideo: () -> Unit,
 ) {
     val state by controller.state.collectAsState()
 
@@ -73,7 +74,7 @@ fun MobileApp(
             },
         )
 
-        true -> MainScreen(state, controller, activity, onRequestMirror)
+        true -> MainScreen(state, controller, activity, onRequestMirror, onPickVideo)
     }
 }
 
@@ -83,6 +84,7 @@ private fun MainScreen(
     controller: MobileController,
     activity: MobileActivity,
     onRequestMirror: () -> Unit,
+    onPickVideo: () -> Unit,
 ) {
     // Back closes the sheet, then dismisses the notice, then returns to Cast, and only then leaves.
     // Without it back exited the app from any tab, which is not what a bottom bar teaches.
@@ -108,7 +110,7 @@ private fun MainScreen(
             when (state.tab) {
                 MobileTab.CAST -> CastScreen(state, controller)
                 MobileTab.SCREEN -> ScreenTab(state, controller, activity, onRequestMirror)
-                MobileTab.MEDIA -> MediaScreen(state)
+                MobileTab.MEDIA -> MediaScreen(state, controller, onPickVideo)
                 MobileTab.SETTINGS -> SettingsScreen(state, controller, activity)
             }
         }

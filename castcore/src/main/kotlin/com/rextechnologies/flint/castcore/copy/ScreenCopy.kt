@@ -74,6 +74,16 @@ object ScreenCopy {
             "the Stop control will not be reachable from a locked phone. The cast itself is " +
             "unaffected."
 
+    /** What the banner says when the socket stopped taking frames and the output was stopped for it. */
+    const val LINK_STOPPED: String =
+        "The television stopped accepting frames, so Flint has stopped sending them. Check that it " +
+            "is still awake and on this phone's hotspot, then start again."
+
+    /** Said once per session, on the strip, when the encoder has been restarted with a bounded GOP. */
+    fun keyFrameFallback(seconds: Int): String =
+        "This phone's encoder ignored a request for a key frame, so Flint has restarted it to send " +
+            "one every $seconds seconds for the rest of this session."
+
     /** What the live strip says when the encoder itself stopped, rather than the link. */
     fun encoderFailure(detail: String): String =
         if (detail.isBlank()) {

@@ -110,8 +110,9 @@ encode-and-send path against the simpler surface first.
 ./gradlew :protocol:test                 # the wire, and the golden corpus
 ./gradlew :castcore:check                # tests, ktlint, the source guards, the 95/85 coverage gate
 ./gradlew :design:check :design:lintDebug  # the token tests, ktlint, the source guards, lint
-./gradlew :mobile:check :mobile:lintDebug  # the pure-logic unit tests, ktlint, the source guards, lint
+./gradlew :mobile:check :mobile:lintDebug  # the coordinator, client and Compose tests under Robolectric, ktlint, the source guards, lint
 ./gradlew :mobile:assembleDebug
+./gradlew :mobile:connectedDebugAndroidTest  # the encoder round trip, on a device or emulator only
 ```
 
 `:castcore` and `:protocol` need no Android SDK, which is what makes them the two modules a
@@ -119,36 +120,39 @@ contributor can always run.
 
 ## What is not in this change
 
-Stated here rather than discovered later.
+Stated here rather than discovered later. `FINISHING-PLAN.md` says what each step proved and where,
+and `HARDWARE-EVIDENCE.md` is the only place a claim about a physical phone or television is made.
 
 - **`:design` is not yet extracted from `:receiver`.** The receiver still owns its own copy of the
-  tokens. Switching it over touches 36 UI files whose rendered text is pinned by 15 approved
-  Robolectric snapshots, and those snapshots cannot be regenerated without an Android SDK. It is its
-  own change, with its own slice.
-- **The receiver's copy is not yet peer-type aware.** `ReceiverIdleSurface.kt` still says "PC
-  CONNECTED", "Your Windows PC" and "ENTER ON YOUR PC"; `ReceiverMirrorSurface.kt` still falls back to
-  "Your PC" and "Unknown PC"; `PlaybackErrorMessage.kt` still says "the media on your PC". Every one
-  of those strings is rendered into an approved snapshot, so changing them is the same problem as
-  above and belongs in the same change.
+  tokens. Switching it over touches 36 UI files whose rendered text is pinned by approved Robolectric
+  snapshots, and it is its own change with its own slice. The snapshots themselves are no longer the
+  obstacle: the `Snapshots` workflow regenerates them on a machine with an SDK and, when asked,
+  commits them to the branch for review.
 - **The `MEDIA_COMMAND` MIME cap still diverges.** Kotlin caps `mimeType` at 255 bytes; C# and Rust
   cap it at 512. A MIME type between the two encodes on Windows and is refused by Kotlin. The phone
   caps at 255, which is safe in both directions, and reconciling the three implementations — with
   regenerated golden vectors — is outstanding work.
-- **No emulator or physical-device test has been run.** The tests that need real hardware are written
-  and named as such; none of them has executed. The encoder round trip in particular has not, and
-  until it has, nothing in this repository knows whether a phone's encoder produces pixels.
-- **The Android modules compile in CI and nowhere else so far.** No emulator or device has run the
-  result. The pairing, second-screen and mirror paths are wired end to end -- a code opens a socket,
-  a granted token is stored and reused, the second screen renders into the encoder's surface, the
-  mirror takes a projection after the foreground service is up, and STATS drives the bitrate -- and
-  every one of those sentences describes code that has passed a compiler and not a television.
-- **`:mobile`'s Compose screens have no Robolectric tests yet.** The unit tests there cover the
-  pure logic pulled out of the Android classes (the pixel read, the token envelope); the tab
-  semantics, the back handler and the notice lifecycle are asserted by nothing but reading.
-- **The media picker and the ADB install are not in this build.** The Media tab shows the verdict
-  and says so; the receiver-setup card shows the stage and keeps its install control disabled with
-  the reason on the card. A control wired to nothing is exactly the defect the capability verdicts
-  exist to prevent.
+- **Two checks have run on a physical phone, and nothing else has.** The second-screen check and
+  the encoder listing both passed on one phone (`HARDWARE-EVIDENCE.md`). The encoder check has since
+  been made a pixel round trip through the production encoder and a decoder, and that version has
+  not been run on hardware yet. No phone has paired with a television, mirrored to one, shown a
+  second screen on one, pushed a file to one, or installed the receiver on one. Every one of those
+  paths is wired end to end and has passed a compiler and a JVM test, and not a television.
+- **The second screen's now-playing scene is not shown.** `SecondScreenScene.NowPlaying` exists and
+  renders, and nothing selects it: the surface reducer forbids a live second screen while a pushed
+  file plays, because the television cannot show two surfaces, so there is no moment at which the
+  scene would be true. It stays until the receiver can report playback of its own accord.
+- **The thermal policy lowers the bitrate and not the frame rate.** `ThermalPolicy` computes a
+  frame-rate ceiling as well; the output path applies only the bitrate ceiling, and stops the session
+  at the emergency level, because a frame-rate change mid-session re-configures the encoder and that
+  has not been exercised on hardware.
+- **The Compose screens are asserted by a few tests, not by many.** The tab bar's semantics, the
+  progress track's seek and range, the digit grouping and the coordinators' decisions are tested
+  under Robolectric; the back handler, the notice lifecycle and the pairing sheet are asserted by
+  nothing but reading.
+- **ADB debugging on the television is the owner's setting.** The phone identifies, installs and
+  removes over ADB and says where the setting lives; it cannot turn it on, and the copy does not
+  pretend otherwise.
 
 ## Governance
 

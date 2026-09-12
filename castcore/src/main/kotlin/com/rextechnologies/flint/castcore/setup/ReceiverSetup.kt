@@ -72,12 +72,22 @@ data class BundledReceiver(
     val sizeLabel: String
         get() = "${Decimal.oneDecimal(sizeBytes.toDouble() / BYTES_PER_MEGABYTE)} MB"
 
-    private companion object {
+    companion object {
+        /** The receiver as released, and as a local or pull-request build names it. */
+        const val RELEASE_PACKAGE: String = "com.rextechnologies.flint.receiver"
+        const val DEBUG_PACKAGE: String = "$RELEASE_PACKAGE.debug"
+
+        /** Every package name a Flint receiver is known under, for asking a television which it has. */
+        val KNOWN_PACKAGES: Set<String> = setOf(RELEASE_PACKAGE, DEBUG_PACKAGE)
+
+        /** The activity to open once the package is installed, relative to its package. */
+        const val MAIN_ACTIVITY: String = ".ReceiverActivity"
+
         /**
          * Binary megabytes, because that is what the phone's own package manager reports and a
          * person comparing the two numbers should see them agree.
          */
-        const val BYTES_PER_MEGABYTE = 1024.0 * 1024.0
+        private const val BYTES_PER_MEGABYTE = 1024.0 * 1024.0
     }
 }
 
@@ -102,6 +112,8 @@ data class ReceiverSetupPlan(
     val installAction: String? = null,
     val removeAction: String? = null,
     val remedy: String? = null,
+    /** The read-only look at the television, offered wherever it would tell the card something new. */
+    val identifyAction: String? = null,
 ) {
     init {
         require(headline.isNotBlank() && body.isNotBlank())
@@ -119,6 +131,45 @@ object ReceiverSetup {
     const val INSTALL_ACTION: String = "Install on this TV"
     const val REMOVE_ACTION: String = "Remove from this TV"
     const val RETRY_ACTION: String = "Try again"
+    const val IDENTIFY_ACTION: String = "Identify this TV"
+    const val RECHECK_ACTION: String = "Check the TV again"
+    const val WORKING: String = "Talking to the TV…"
+    const val CONFIRM_REMOVE_ACTION: String = "Yes, remove it"
+    const val KEEP_ACTION: String = "Keep it"
+    const val NOTHING_SELECTED: String =
+        "No television is chosen. Find one on the Cast screen, or type its address there, and it " +
+            "will appear here."
+
+    /** The second press. It names the package and the television so nothing is removed by reflex. */
+    fun removeConfirmation(packageName: String, deviceName: String): String =
+        "Remove $packageName from $deviceName? The television will go back to whatever it showed " +
+            "before Flint, and this phone can install it again from this card."
+
+    /** What identifying found, for the banner. */
+    fun identified(deviceName: String, platformLabel: String, receiverInstalled: Boolean): String {
+        val receiver = if (receiverInstalled) "Flint is installed on it." else "Flint is not on it yet."
+        return "$deviceName answered over ADB. It runs $platformLabel. $receiver"
+    }
+
+    fun unauthorised(deviceName: String): String =
+        "$deviceName is showing a prompt asking whether to allow this phone. Accept it with the TV " +
+            "remote, then check the TV again."
+
+    fun notAndroid(deviceName: String): String =
+        "$deviceName runs Vega OS, which is not Android. Flint cannot be installed on it by any method."
+
+    fun installed(deviceName: String): String =
+        "Flint is installed on $deviceName and should now appear as a receiver on the Cast screen."
+
+    fun removed(deviceName: String): String = "Flint has been removed from $deviceName."
+
+    fun failed(detail: String): String {
+        val trimmed = detail.trim()
+        if (trimmed.isEmpty()) return "The television refused, and did not say why."
+        return if (trimmed.last() in SENTENCE_ENDINGS) trimmed else "$trimmed."
+    }
+
+    private val SENTENCE_ENDINGS = charArrayOf('.', '?', '…')
 
     fun plan(
         platform: ReceiverPlatform,
@@ -137,11 +188,31 @@ object ReceiverSetup {
 
         if (!platform.canInstallReceiver() && stage != ReceiverInstallStage.Installed) {
             return ReceiverSetupPlan(
-                stage = ReceiverInstallStage.Unknown,
+                stage = if (stage ==
+                    ReceiverInstallStage.AwaitingAuthorisation
+                ) {
+                    stage
+                } else {
+                    ReceiverInstallStage.Unknown
+                },
                 headline = "Flint has not identified this TV yet",
                 body = "It will not offer to install anything on a device it cannot name. Identifying " +
-                    "it is read-only: Flint asks the TV what it is and changes nothing.",
-                remedy = "Connect to the TV over ADB from the Cast screen, then come back here.",
+                    "it is read-only: Flint asks the TV what it is and changes nothing. The first " +
+                    "time, the TV shows a prompt asking whether to allow this phone.",
+                remedy = if (stage == ReceiverInstallStage.AwaitingAuthorisation) {
+                    "Pick up the TV remote and accept the prompt, then check the TV again. If none " +
+                        "appeared, the TV's ADB debugging may be off."
+                } else {
+                    "Choose the TV on the Cast screen, then identify it from this card. ADB debugging " +
+                        "has to be on: Settings, My Fire TV, Developer Options."
+                },
+                identifyAction = if (stage ==
+                    ReceiverInstallStage.AwaitingAuthorisation
+                ) {
+                    RECHECK_ACTION
+                } else {
+                    IDENTIFY_ACTION
+                },
             )
         }
 
@@ -152,8 +223,9 @@ object ReceiverSetup {
                 body = "$deviceName is showing a prompt asking whether to allow this phone to connect. " +
                     "That prompt is the TV owner's say in what runs on it, so Flint waits for it " +
                     "rather than working around it.",
-                remedy = "Pick up the TV remote and accept the prompt. If none appeared, disconnect " +
-                    "and connect again to make it show.",
+                remedy = "Pick up the TV remote and accept the prompt, then check the TV again. If " +
+                    "none appeared, check the TV again to make it show.",
+                identifyAction = RECHECK_ACTION,
             )
 
             ReceiverInstallStage.Installing -> ReceiverSetupPlan(
@@ -170,6 +242,7 @@ object ReceiverSetup {
                     ?: "The receiver is installed and answering.",
                 disclosure = bundled?.let { disclosureFor(it) }.orEmpty(),
                 removeAction = REMOVE_ACTION,
+                identifyAction = RECHECK_ACTION,
             )
 
             is ReceiverInstallStage.Failed -> ReceiverSetupPlan(
@@ -182,6 +255,7 @@ object ReceiverSetup {
                 installAction = bundled?.let { RETRY_ACTION },
                 removeAction = REMOVE_ACTION,
                 remedy = "Check that the TV is still awake and on this phone's hotspot, then try again.",
+                identifyAction = RECHECK_ACTION,
             )
 
             ReceiverInstallStage.Unknown,
@@ -207,6 +281,7 @@ object ReceiverSetup {
                     "still works.",
                 remedy = "Download Flint again from the GitHub release. Builds published there carry " +
                     "the matching receiver.",
+                identifyAction = RECHECK_ACTION,
             )
         }
 
@@ -219,6 +294,7 @@ object ReceiverSetup {
             disclosure = disclosureFor(bundled),
             installAction = INSTALL_ACTION,
             removeAction = REMOVE_ACTION,
+            identifyAction = RECHECK_ACTION,
         )
     }
 

@@ -92,7 +92,7 @@ private fun ReceiverHero(state: ReceiverUiState, modifier: Modifier = Modifier) 
         IdleExperience.STARTING -> "STARTING FLINT"
         IdleExperience.NO_NETWORK -> "SAME NETWORK REQUIRED"
         IdleExperience.READY -> "READY FOR FLINT"
-        IdleExperience.CONNECTED -> "PC CONNECTED"
+        IdleExperience.CONNECTED -> "FLINT CONNECTED"
         IdleExperience.ATTENTION -> "NEEDS ATTENTION"
     }
     val title = when (experience) {
@@ -103,9 +103,9 @@ private fun ReceiverHero(state: ReceiverUiState, modifier: Modifier = Modifier) 
         IdleExperience.ATTENTION -> "Let's get you\nback on screen."
     }
     val body = when (experience) {
-        IdleExperience.STARTING -> "One moment while Flint prepares this TV for your PC."
-        IdleExperience.NO_NETWORK -> "Connect this Fire TV and your Windows PC to the same Wi-Fi or hotspot."
-        IdleExperience.READY -> "Enter the code shown here in Flint on your Windows PC."
+        IdleExperience.STARTING -> "One moment while Flint prepares this TV."
+        IdleExperience.NO_NETWORK -> "Connect this Fire TV and your phone or PC to the same Wi-Fi or hotspot."
+        IdleExperience.READY -> "Enter the code shown here in Flint on your phone or PC."
         IdleExperience.CONNECTED -> "Flint will switch this screen automatically when your media or display is ready."
         IdleExperience.ATTENTION -> state.error ?: "The receiver couldn't start on this network."
     }
@@ -155,7 +155,7 @@ private fun ReceiverHero(state: ReceiverUiState, modifier: Modifier = Modifier) 
 @Composable
 private fun PairingSteps() {
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        InstructionStep("1", "Open Flint on your Windows PC")
+        InstructionStep("1", "Open Flint on your phone or PC")
         InstructionStep("2", "Choose this TV or enter its address")
         InstructionStep("3", "Type the six-digit code")
     }
@@ -212,7 +212,7 @@ private fun ReceiverPrimaryCard(
         IdleExperience.NO_NETWORK -> StatusCard(
             eyebrow = "NETWORK NEEDED",
             title = "Connect this Fire TV",
-            detail = "Open Settings and join the same Wi-Fi or hotspot as your Windows PC. Flint will continue automatically.",
+            detail = "Open Settings and join the same Wi-Fi or hotspot as your phone or PC. Flint will continue automatically.",
             modifier = modifier,
         )
         IdleExperience.ATTENTION -> StatusCard(
@@ -257,7 +257,7 @@ private fun PairingCard(
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = "ENTER ON YOUR PC",
+                text = "ENTER IN FLINT",
                 color = ReceiverColors.Muted,
                 fontSize = 11.sp,
                 lineHeight = 14.sp,
@@ -451,7 +451,7 @@ private fun ConnectedCard(
             letterSpacing = 1.8.sp,
         )
         Text(
-            text = state.peerName ?: "Windows PC",
+            text = state.peerName ?: "Your device",
             color = ReceiverColors.Text,
             fontSize = 25.sp,
             lineHeight = 31.sp,

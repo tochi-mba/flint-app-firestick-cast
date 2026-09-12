@@ -56,7 +56,7 @@ class SessionCoordinator(
     private val tokens: TokenStore,
     private val scope: CoroutineScope,
     private val connect: (CastConnection) -> Unit = CastConnection::connect,
-) {
+) : MediaLink {
     private val mutable = MutableStateFlow<LinkState>(LinkState.Idle)
     val state: StateFlow<LinkState> = mutable
 
@@ -66,9 +66,12 @@ class SessionCoordinator(
     /** Messages the television sends after the handshake, for whoever is driving the media path. */
     private val listeners = mutableListOf<(WireMessage) -> Unit>()
 
-    fun onMessage(listener: (WireMessage) -> Unit) {
+    override fun onMessage(listener: (WireMessage) -> Unit) {
         synchronized(listeners) { listeners += listener }
     }
+
+    override val isConnected: Boolean
+        get() = mutable.value is LinkState.Connected
 
     /**
      * Opens a session with a typed pairing code.
@@ -113,8 +116,18 @@ class SessionCoordinator(
         return withContext(Dispatchers.IO) { tokens.tokenFor(address) != null }
     }
 
-    /** Sends a control message, or `false` when there is no session to send it on. */
-    fun send(message: WireMessage): Boolean = connection?.send(message) == true
+    /**
+     * Sends a control message, or `false` when there is no session to send it on.
+     *
+     * On the IO dispatcher, whatever thread asks. Every caller of this is a coroutine on the main
+     * dispatcher, and a socket write there is a `NetworkOnMainThreadException` -- which `send`
+     * swallowed into a `false` nobody read, so the SURFACE message that tells the television to
+     * switch screens was never leaving the phone.
+     */
+    override suspend fun send(message: WireMessage): Boolean {
+        val current = connection ?: return false
+        return withContext(Dispatchers.IO) { current.send(message) }
+    }
 
     /** The live connection, for the media path. `null` whenever nothing is established. */
     fun active(): CastConnection? =

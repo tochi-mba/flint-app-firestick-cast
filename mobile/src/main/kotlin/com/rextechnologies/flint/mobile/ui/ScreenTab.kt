@@ -13,8 +13,14 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import com.rextechnologies.flint.castcore.capability.CastMode
 import com.rextechnologies.flint.castcore.capability.ModePresentation
+import com.rextechnologies.flint.castcore.copy.AudioCopy
+import com.rextechnologies.flint.castcore.copy.DiagnosticsCopy
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.ScreenCopy
+import com.rextechnologies.flint.castcore.media.AudioPolicy
+import com.rextechnologies.flint.castcore.media.CodecNames
+import com.rextechnologies.flint.castcore.media.SessionDiagnostics
+import com.rextechnologies.flint.castcore.screen.PlaybackClock
 import com.rextechnologies.flint.design.AdvisoryBlock
 import com.rextechnologies.flint.design.DiagnosticRow
 import com.rextechnologies.flint.design.EmptyState
@@ -148,6 +154,29 @@ private fun ModeStarter(
 }
 
 /**
+ * The numbers behind the link word: what was decided, and from what. No latency figure, because
+ * none has been measured on a phone and a number here would be read as one.
+ */
+@Composable
+private fun SessionRows(diagnostics: SessionDiagnostics) {
+    if (diagnostics.ceilingApplied) {
+        DiagnosticRow(
+            label = DiagnosticsCopy.ROW_CEILING,
+            value = SessionDiagnostics.megabits(diagnostics.bitrateCeiling),
+        )
+    }
+    DiagnosticRow(label = DiagnosticsCopy.ROW_RECEIVER_QUEUE, value = "${diagnostics.receiverQueueDepth}")
+    DiagnosticRow(label = DiagnosticsCopy.ROW_PENDING, value = SessionDiagnostics.bytes(diagnostics.pendingSendBytes))
+    DiagnosticRow(label = DiagnosticsCopy.ROW_DROPPED, value = "${diagnostics.droppedFramesDelta}")
+    DiagnosticRow(label = DiagnosticsCopy.ROW_LAST_DECISION, value = diagnostics.lastDecision)
+    DiagnosticRow(
+        label = DiagnosticsCopy.ROW_THERMAL,
+        value = SessionDiagnostics.thermalWord(diagnostics.thermalLevel),
+        isLast = true,
+    )
+}
+
+/**
  * The live strip.
  *
  * Elapsed time, the size actually being encoded, the link's own word for how it is coping, and one
@@ -179,7 +208,7 @@ private fun LiveStrip(output: LiveOutput, controller: MobileController) {
                 .semantics { liveRegion = LiveRegionMode.Polite },
             horizontalArrangement = Arrangement.spacedBy(FlintSpace.Large),
         ) {
-            Readout(value = elapsed(output.elapsedSeconds))
+            Readout(value = PlaybackClock.format(output.elapsedSeconds * 1_000))
             Readout(value = "${output.width}×${output.height}")
             Readout(
                 value = ScreenCopy.linkHealthWord(output.health),
@@ -189,13 +218,21 @@ private fun LiveStrip(output: LiveOutput, controller: MobileController) {
 
         output.degradedReason?.let { AdvisoryBlock(heading = "WHAT IS HAPPENING", body = it) }
 
+        // The cockpit: what the television is showing, when this phone is drawing it.
+        output.scene?.let { DiagnosticRow(label = "Showing", value = it.title) }
+        DiagnosticRow(label = "Codec", value = CodecNames.label(output.codec))
+        DiagnosticRow(label = AudioCopy.ROW, value = AudioPolicy.word(output.audio))
+        AudioPolicy.sentence(output.audio, secondScreen = output.mode == OutputMode.SECOND_SCREEN)?.let {
+            FlintText(text = it, style = FlintType.BodySmall.copy(color = FlintColors.Muted))
+        }
+        if (output.keyFrameFallback) DiagnosticRow(label = "Key frames", value = "Every few seconds")
         DiagnosticRow(
             label = "Bitrate",
             // One decimal place rather than integer division, which printed "0 Mbit/s" for every
             // bitrate the controller can back off to.
             value = "${Decimal.oneDecimal(output.bitrateBitsPerSecond / 1_000_000.0)} Mbit/s",
-            isLast = true,
         )
+        SessionRows(output.diagnostics)
 
         OutlineAction(
             text = when (output.mode) {
@@ -206,10 +243,4 @@ private fun LiveStrip(output: LiveOutput, controller: MobileController) {
             tone = Tone.Live,
         )
     }
-}
-
-private fun elapsed(seconds: Long): String {
-    val minutes = seconds / 60
-    val remainder = seconds % 60
-    return "$minutes:${remainder.toString().padStart(2, '0')}"
 }

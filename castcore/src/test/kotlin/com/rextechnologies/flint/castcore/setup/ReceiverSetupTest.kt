@@ -88,7 +88,7 @@ class ReceiverSetupTest {
     }
 
     @Test
-    fun `nothing is offered for a television that has not been identified`() {
+    fun `nothing is offered for a television that has not been identified, except identifying it`() {
         val plan = ReceiverSetup.plan(
             ReceiverPlatform.UNKNOWN,
             ReceiverInstallStage.NotInstalled,
@@ -97,8 +97,63 @@ class ReceiverSetupTest {
         )
         assertEquals(ReceiverInstallStage.Unknown, plan.stage)
         assertNull(plan.installAction)
+        assertNull(plan.removeAction)
+        assertEquals(ReceiverSetup.IDENTIFY_ACTION, plan.identifyAction)
         assertNotNull(plan.remedy)
         assertTrue(plan.body.contains("read-only"), plan.body)
+        assertTrue(plan.body.contains("prompt"), plan.body)
+    }
+
+    @Test
+    fun `a television waiting on its prompt is still waiting before it has been identified`() {
+        val plan = ReceiverSetup.plan(
+            ReceiverPlatform.UNKNOWN,
+            ReceiverInstallStage.AwaitingAuthorisation,
+            bundle(),
+            "Fire TV",
+        )
+        assertEquals(ReceiverInstallStage.AwaitingAuthorisation, plan.stage)
+        assertEquals(ReceiverSetup.RECHECK_ACTION, plan.identifyAction)
+        assertTrue(assertNotNull(plan.remedy).contains("TV remote"), plan.remedy)
+    }
+
+    @Test
+    fun `every plan that can change offers a fresh look at the television`() {
+        listOf(
+            ReceiverInstallStage.NotInstalled,
+            ReceiverInstallStage.AwaitingAuthorisation,
+            ReceiverInstallStage.Installed,
+            ReceiverInstallStage.Failed("x"),
+        ).forEach { stage ->
+            val plan = ReceiverSetup.plan(ReceiverPlatform.FIRE_OS_8, stage, bundle(), "Fire TV")
+            assertEquals(ReceiverSetup.RECHECK_ACTION, plan.identifyAction, stage.toString())
+        }
+        assertNull(
+            ReceiverSetup.plan(
+                ReceiverPlatform.FIRE_OS_8,
+                ReceiverInstallStage.Installing,
+                bundle(),
+                "Fire TV",
+            ).identifyAction,
+        )
+        assertNull(
+            ReceiverSetup.plan(ReceiverPlatform.VEGA, ReceiverInstallStage.Unknown, bundle(), "Fire TV").identifyAction,
+        )
+    }
+
+    @Test
+    fun `removing takes a second press that names the package and the television`() {
+        val sentence = ReceiverSetup.removeConfirmation("com.rextechnologies.flint.receiver", "Fire TV Stick")
+        assertTrue(sentence.startsWith("Remove com.rextechnologies.flint.receiver from Fire TV Stick?"), sentence)
+    }
+
+    @Test
+    fun `what identifying found is said as a result, and a refusal keeps the television's words`() {
+        assertTrue(ReceiverSetup.identified("Fire TV Stick", "Fire OS 8", true).endsWith("Flint is installed on it."))
+        assertTrue(ReceiverSetup.identified("Fire TV Stick", "Fire OS 8", false).endsWith("Flint is not on it yet."))
+        assertEquals("Failure [INSTALL_FAILED_OLDER_SDK].", ReceiverSetup.failed("Failure [INSTALL_FAILED_OLDER_SDK]"))
+        assertEquals("It refused.", ReceiverSetup.failed(" It refused. "))
+        assertTrue(ReceiverSetup.failed("").contains("did not say why"))
     }
 
     @Test
