@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -206,7 +207,10 @@ private fun TabButton(tab: MobileTab, selected: Boolean, onSelect: () -> Unit) {
             // The role is given to the clickable itself rather than added beside it, so there is one
             // role on this node instead of a button's and a tab's disagreeing.
             .flintClickable(onClick = onSelect, onClickLabel = tab.title, role = Role.Tab)
-            .semantics(mergeDescendants = true) { this.selected = selected }
+            .semantics(mergeDescendants = true) {
+                contentDescription = tab.title
+                this.selected = selected
+            }
             .padding(horizontal = FlintSpace.Compact, vertical = FlintSpace.Tiny),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(FlintSpace.Tiny),
@@ -228,6 +232,9 @@ private fun TabButton(tab: MobileTab, selected: Boolean, onSelect: () -> Unit) {
         FlintText(
             text = tab.title.uppercase(Locale.ROOT),
             style = FlintType.LabelSmall.copy(color = tint),
+            // The upper-cased label is the tab's name a second time. The description on the node
+            // is the copy that is read out.
+            modifier = Modifier.clearAndSetSemantics { },
         )
     }
 }
