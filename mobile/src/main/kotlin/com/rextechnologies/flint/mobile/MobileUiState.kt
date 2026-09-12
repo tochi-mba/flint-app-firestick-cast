@@ -6,6 +6,7 @@ import com.rextechnologies.flint.castcore.capability.NetworkPath
 import com.rextechnologies.flint.castcore.capability.ReceiverDevice
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.discovery.DiscoveryRung
+import com.rextechnologies.flint.castcore.media.SessionDiagnostics
 import com.rextechnologies.flint.castcore.screen.SecondScreenScene
 import com.rextechnologies.flint.castcore.session.SessionFailure
 import com.rextechnologies.flint.castcore.setup.BundledReceiver
@@ -38,6 +39,8 @@ data class LiveOutput(
     val scene: SecondScreenScene? = null,
     /** Whether this session has fallen back to a bounded key-frame interval. Never goes back. */
     val keyFrameFallback: Boolean = false,
+    /** The numbers behind the link word and the bitrate, for the strip's diagnostic rows. */
+    val diagnostics: SessionDiagnostics,
 )
 
 /**

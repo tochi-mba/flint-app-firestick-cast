@@ -14,6 +14,7 @@ import com.rextechnologies.flint.castcore.copy.SettingsCopy
 import com.rextechnologies.flint.castcore.media.CodecNames
 import com.rextechnologies.flint.mobile.net.DiscoveryRunner
 import com.rextechnologies.flint.mobile.platform.AndroidNetworkWatcher
+import com.rextechnologies.flint.mobile.platform.ThermalWatch
 import com.rextechnologies.flint.mobile.platform.TokenStore
 import com.rextechnologies.flint.mobile.state.CapabilityCoordinator
 import com.rextechnologies.flint.mobile.state.DiscoveryCoordinator
@@ -69,7 +70,8 @@ class MobileController(
         densityDpi = densityDpi.coerceAtLeast(1),
     )
     private val session = SessionCoordinator(TokenStore(applicationContext), scope)
-    private val output = OutputCoordinator(applicationContext, session, scope)
+    private val thermal = ThermalWatch(applicationContext)
+    private val output = OutputCoordinator(applicationContext, session, scope, thermal.level)
     private val setup = ReceiverSetupCoordinator(applicationContext, scope)
 
     /**
@@ -129,12 +131,14 @@ class MobileController(
 
     fun start() {
         watcher.start()
+        thermal.start()
         setup.load()
     }
 
     /** Ends this run. [start] may be called again afterwards, and works. */
     fun stop() {
         watcher.stop()
+        thermal.stop()
         scope.launch { output.stop() }
         session.close()
         work.coroutineContext.cancelChildren()

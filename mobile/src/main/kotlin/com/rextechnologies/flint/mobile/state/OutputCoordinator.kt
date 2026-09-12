@@ -19,6 +19,9 @@ import com.rextechnologies.flint.castcore.media.EncoderPolicy
 import com.rextechnologies.flint.castcore.media.KeyFrameStrategy
 import com.rextechnologies.flint.castcore.media.PresentationGeometry
 import com.rextechnologies.flint.castcore.media.SendFailureWatch
+import com.rextechnologies.flint.castcore.media.SessionDiagnostics
+import com.rextechnologies.flint.castcore.media.ThermalLevel
+import com.rextechnologies.flint.castcore.media.ThermalPolicy
 import com.rextechnologies.flint.castcore.screen.SecondScreenScene
 import com.rextechnologies.flint.mobile.LiveOutput
 import com.rextechnologies.flint.mobile.OutputMode
@@ -67,6 +70,7 @@ class OutputCoordinator(
     context: Context,
     private val session: SessionCoordinator,
     private val scope: CoroutineScope,
+    private val thermal: StateFlow<ThermalLevel> = MutableStateFlow(ThermalLevel.NONE),
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
     private val applicationContext = context.applicationContext
@@ -93,6 +97,12 @@ class OutputCoordinator(
     /** Applied at most once per session, and never undone: an encoder that ignored one request ignores the next. */
     private var fallbackApplied = false
 
+    /** What the heat has to say, kept apart from what the link has to say so the strip can name the reason. */
+    private var thermalReason: String? = null
+
+    /** The television's cumulative drop count at its last report, for the delta the diagnostics show. */
+    private var droppedAtLastReport: Long = 0
+
     @Volatile
     private var stopping = false
 
@@ -116,6 +126,9 @@ class OutputCoordinator(
                 wasForeground = foreground
             }
         }
+        // Heat, from the phone's own thermal service. Applied to whatever session is live at the
+        // time, and re-applied to each new one from the level then in force.
+        scope.launch { thermal.collect { level -> applyThermal(level) } }
         scope.launch { tickElapsed() }
     }
 
@@ -303,6 +316,8 @@ class OutputCoordinator(
             bitrate = null
             running = null
             fallbackApplied = false
+            thermalReason = null
+            droppedAtLastReport = 0
 
             session.send(SurfaceMessage(SurfaceMode.IDLE))
             CastService.stop(applicationContext)
@@ -440,7 +455,11 @@ class OutputCoordinator(
         mutable.update {
             it?.copy(
                 keyFrameFallback = swapped,
-                degradedReason = if (swapped) ScreenCopy.keyFrameFallback(strategy.seconds) else it.degradedReason,
+                degradedReason = if (swapped) {
+                    reasonFor(it.health, fallback = true, previous = ScreenCopy.keyFrameFallback(strategy.seconds))
+                } else {
+                    it.degradedReason
+                },
             )
         }
     }
@@ -461,6 +480,7 @@ class OutputCoordinator(
         scene: SecondScreenScene?,
     ) {
         val codec = running?.codec ?: return
+        val controller = bitrate ?: return
         startedAtMillis = clock()
         mutable.value = LiveOutput(
             mode = mode,
@@ -470,9 +490,63 @@ class OutputCoordinator(
             codec = codec,
             elapsedSeconds = 0,
             health = LinkHealth.Stable,
-            bitrateBitsPerSecond = bitrate?.currentBitrate ?: 0,
+            bitrateBitsPerSecond = controller.currentBitrate,
             scene = scene,
+            diagnostics = SessionDiagnostics.initial(
+                targetBitrate = controller.currentBitrate,
+                bitrateCeiling = controller.ceiling,
+                sessionMaximumBitrate = controller.maximumBitrate,
+                thermalLevel = thermal.value,
+            ),
         )
+        // A session that starts on a phone that is already warm starts stepped down.
+        scope.launch { applyThermal(thermal.value) }
+    }
+
+    /**
+     * Steps the session down as the phone heats up, and says so.
+     *
+     * The ceiling is a fraction of the session's own maximum and bounds the controller's climb as
+     * well as cutting the current rate, so four stable samples later it does not climb straight back
+     * into the heat. The frame-rate ceiling the policy also returns is not applied: a running codec
+     * cannot change its frame rate without a restart, and a restart mid-session costs a decoder
+     * reset on the television for a gain the bitrate ceiling already delivers. At the levels where
+     * Android is shedding load on its own, the session stops and the policy's sentence says why.
+     */
+    private suspend fun applyThermal(level: ThermalLevel) {
+        if (mutable.value == null) return
+        val controller = bitrate ?: return
+        val decision = ThermalPolicy.decide(level, controller.maximumBitrate, EncoderPolicy.FRAME_RATE)
+        if (decision.shouldStop) {
+            stopBecause(decision.sentence ?: ScreenCopy.encoderFailure("the phone is too hot to keep casting"))
+            return
+        }
+        val rate = controller.applyCeiling(decision.bitrateCeiling)
+        encoder?.setBitrate(rate)
+        thermalReason = decision.sentence
+        mutable.update {
+            it?.copy(
+                bitrateBitsPerSecond = rate,
+                degradedReason = reasonFor(it.health, it.keyFrameFallback, it.degradedReason),
+                diagnostics = it.diagnostics.copy(
+                    targetBitrate = rate,
+                    bitrateCeiling = controller.ceiling,
+                    thermalLevel = level,
+                ),
+            )
+        }
+    }
+
+    /**
+     * The one line under WHAT IS HAPPENING, chosen in a fixed order: heat first, because it is the
+     * reason the person can do something about; then congestion; then the key-frame fallback, which
+     * is permanent for the session and would otherwise be shouted over by every passing sample.
+     */
+    private fun reasonFor(health: LinkHealth, fallback: Boolean, previous: String?): String? = when {
+        thermalReason != null -> thermalReason
+        health == LinkHealth.Congested -> ScreenCopy.CONGESTED_EXPLANATION
+        fallback -> previous
+        else -> null
     }
 
     /**
@@ -500,16 +574,22 @@ class OutputCoordinator(
         active.setBitrate(decision.bitrateBitsPerSecond)
         if (decision.requestKeyFrame) active.requestKeyFrame()
 
+        val dropped = (message.droppedVideoFrames - droppedAtLastReport).coerceAtLeast(0)
+        droppedAtLastReport = message.droppedVideoFrames
         val linkWord = ScreenCopy.linkHealthWord(decision.health)
         mutable.update { live ->
             live?.copy(
                 health = decision.health,
                 bitrateBitsPerSecond = decision.bitrateBitsPerSecond,
-                degradedReason = when {
-                    decision.health == LinkHealth.Congested -> ScreenCopy.CONGESTED_EXPLANATION
-                    live.keyFrameFallback -> live.degradedReason
-                    else -> null
-                },
+                degradedReason = reasonFor(decision.health, live.keyFrameFallback, live.degradedReason),
+                diagnostics = live.diagnostics.copy(
+                    targetBitrate = decision.bitrateBitsPerSecond,
+                    bitrateCeiling = controller.ceiling,
+                    receiverQueueDepth = message.receiverQueueDepth,
+                    pendingSendBytes = (connection?.pendingSendBytes() ?: 0).coerceAtLeast(0),
+                    droppedFramesDelta = dropped,
+                    lastDecision = SessionDiagnostics.decisionLine(decision.health, decision.bitrateBitsPerSecond),
+                ),
             )
         }
         // The dashboard carries the link's word too, so the television says the same thing the phone does.

@@ -56,13 +56,36 @@ class BitrateController(
     var currentBitrate: Int = initialBitrate
         private set
 
+    /**
+     * The most the controller may climb to while something outside the link holds it down.
+     *
+     * Heat is the case. A thermal step-down is a fraction of the session's own maximum, and it must
+     * bound the probe upward as well as cut the current rate, or four stable samples later the
+     * controller climbs straight back into the heat it was stepped down from. Never above
+     * [maximumBitrate]: a ceiling can only ever lower.
+     */
+    var ceiling: Int = maximumBitrate
+        private set
+
     private var lastDroppedFrames: Long = 0
     private var stableSamples: Int = 0
 
     fun reset(bitrate: Int = currentBitrate) {
-        currentBitrate = bitrate.coerceIn(minimumBitrate, maximumBitrate)
+        currentBitrate = bitrate.coerceIn(minimumBitrate, ceiling)
         lastDroppedFrames = 0
         stableSamples = 0
+    }
+
+    /** Holds the rate at or below [bitsPerSecond] until [clearCeiling]. Returns the rate now in force. */
+    fun applyCeiling(bitsPerSecond: Int): Int {
+        ceiling = bitsPerSecond.coerceIn(minimumBitrate, maximumBitrate)
+        if (currentBitrate > ceiling) currentBitrate = ceiling
+        return currentBitrate
+    }
+
+    /** Lets the controller climb to the session maximum again. The current rate is left where it is. */
+    fun clearCeiling() {
+        ceiling = maximumBitrate
     }
 
     fun onSample(sample: LinkSample): BitrateDecision {
@@ -82,7 +105,7 @@ class BitrateController(
             LinkHealth.Headroom -> {
                 stableSamples++
                 if (stableSamples >= SAMPLES_BEFORE_PROBE) {
-                    currentBitrate = (currentBitrate + PROBE_STEP).coerceAtMost(maximumBitrate)
+                    currentBitrate = (currentBitrate + PROBE_STEP).coerceAtMost(ceiling)
                     stableSamples = 0
                 }
             }
