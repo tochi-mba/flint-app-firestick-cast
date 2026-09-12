@@ -15,7 +15,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.rextechnologies.flint.castcore.capability.PhoneCapabilities
 import com.rextechnologies.flint.castcore.copy.ScreenCopy
-import com.rextechnologies.flint.castcore.media.AudioPolicy
 import com.rextechnologies.flint.castcore.media.AudioState
 import com.rextechnologies.flint.castcore.media.CodecChoice
 import com.rextechnologies.flint.castcore.media.EncoderPolicy
@@ -264,7 +263,10 @@ class OutputCoordinator(
      * the video frames are stamped by, so the two line up on the far side.
      */
     private fun startAudio(projection: MediaProjection, connection: CastConnection) {
-        if (Build.VERSION.SDK_INT < AudioPolicy.MINIMUM_API) {
+        // The literal rather than AudioPolicy.MINIMUM_API, which equals it and has a test saying so:
+        // lint's API check reads this guard, and a constant from another module is not one it
+        // can be relied on to fold.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             publishAudio(AudioState.PlatformTooOld)
             return
         }
