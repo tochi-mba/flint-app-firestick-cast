@@ -101,7 +101,12 @@ jobs:
         if: ${{ inputs.push == 'true' }}
         run: |
           set -euo pipefail
-          git add -A -- receiver/src/test/snapshots/approved design/src/test/snapshots/approved mobile/src/test/snapshots/approved 2>/dev/null || true
+          # One directory at a time: `git add` refuses the whole command when any pathspec matches
+          # nothing, and a module without a snapshot suite yet is the ordinary case.
+          for module in receiver design mobile; do
+            directory="$module/src/test/snapshots/approved"
+            [ -d "$directory" ] && git add -A -- "$directory"
+          done
           if git diff --cached --quiet; then
             echo "No approved image changed; nothing to commit."
             exit 0
