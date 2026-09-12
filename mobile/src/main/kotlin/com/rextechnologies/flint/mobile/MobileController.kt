@@ -4,9 +4,11 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import com.rextechnologies.flint.castcore.capability.AssessmentInput
+import com.rextechnologies.flint.castcore.capability.DiscoverySource
 import com.rextechnologies.flint.castcore.capability.MobileCapabilityAssessor
 import com.rextechnologies.flint.castcore.capability.ProbeOutcome
 import com.rextechnologies.flint.castcore.capability.ReceiverDevice
+import com.rextechnologies.flint.castcore.capability.ReceiverPlatform
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.PairingCopy
 import com.rextechnologies.flint.castcore.copy.ScreenCopy
@@ -18,13 +20,20 @@ import com.rextechnologies.flint.castcore.screen.SurfaceEffect
 import com.rextechnologies.flint.castcore.screen.SurfaceReducer
 import com.rextechnologies.flint.castcore.screen.SurfaceRequest
 import com.rextechnologies.flint.castcore.screen.SurfaceTransition
+import com.rextechnologies.flint.castcore.setup.InstallEvent
+import com.rextechnologies.flint.castcore.setup.ReceiverInstallStage
+import com.rextechnologies.flint.castcore.setup.ReceiverSetup
 import com.rextechnologies.flint.mobile.media.ContentMediaSource
+import com.rextechnologies.flint.mobile.net.AdbAnswer
+import com.rextechnologies.flint.mobile.net.AdbClient
 import com.rextechnologies.flint.mobile.net.DiscoveryRunner
+import com.rextechnologies.flint.mobile.platform.AdbIdentityStore
 import com.rextechnologies.flint.mobile.platform.AndroidNetworkWatcher
 import com.rextechnologies.flint.mobile.platform.ThermalWatch
 import com.rextechnologies.flint.mobile.platform.TokenStore
 import com.rextechnologies.flint.mobile.state.CapabilityCoordinator
 import com.rextechnologies.flint.mobile.state.DiscoveryCoordinator
+import com.rextechnologies.flint.mobile.state.Identification
 import com.rextechnologies.flint.mobile.state.LinkState
 import com.rextechnologies.flint.mobile.state.LookupState
 import com.rextechnologies.flint.mobile.state.MediaCoordinator
@@ -82,7 +91,8 @@ class MobileController(
     private val thermal = ThermalWatch(applicationContext)
     private val output = OutputCoordinator(applicationContext, session, scope, thermal.level)
     private val media = MediaCoordinator(session, ContentMediaSource(applicationContext), scope)
-    private val setup = ReceiverSetupCoordinator(applicationContext, scope)
+    private val adbIdentity = AdbIdentityStore(applicationContext)
+    private val setup = ReceiverSetupCoordinator(applicationContext, scope, AdbClient(identity = adbIdentity::identity))
 
     /**
      * What this phone has asked the television to show. One value, every transition through the
@@ -160,7 +170,13 @@ class MobileController(
             output = sending,
             media = playing,
             bundledReceiver = receiverSetup.bundled,
-            installStage = receiverSetup.stage,
+            // The stage is about one television. Shown beside another, it would be a claim about
+            // a device nothing has asked.
+            installStage = receiverSetup.stage.takeIf { receiverSetup.address == discovered.selected?.address }
+                ?: ReceiverInstallStage.Unknown,
+            installedReceiverPackage = receiverSetup.installedPackage
+                .takeIf { receiverSetup.address == discovered.selected?.address },
+            setupBusy = receiverSetup.busy,
             notice = nav.notice,
         )
     }.stateIn(scope, SharingStarted.Eagerly, MobileUiState())
@@ -213,17 +229,37 @@ class MobileController(
         }
     }
 
-    /** Confirms one typed-in address. Discovery is never the only route to a television. */
+    /**
+     * Confirms one typed-in address. Discovery is never the only route to a television.
+     *
+     * A television with no receiver on it answers nothing on the receiver's port, and would
+     * otherwise be unreachable from this app until somebody installed Flint on it by other means.
+     * So when nothing answers there, the same address is asked over ADB, read-only, and a
+     * television that answers that way joins the list with what it said about itself.
+     */
     fun probeManualAddress(address: String) {
         launchWork {
-            val found = discovery.probeManual(watcher.localNetwork.value, address)
-            if (found == null) {
-                navigation.notice(
-                    "Nothing answered at ${address.trim()}. Check the address on the TV under " +
-                        "Settings, My Fire TV, About, Network.",
-                )
-            } else {
+            val trimmed = address.trim()
+            val found = discovery.probeManual(watcher.localNetwork.value, trimmed)
+            if (found != null) {
                 reconnectIfRemembered()
+                return@launchWork
+            }
+            val silent = "Nothing answered at $trimmed on the receiver's port. Check the address on the " +
+                "TV under Settings, My Fire TV, About, Network."
+            val bare = runCatching { ReceiverDevice(address = trimmed, source = DiscoverySource.MANUAL) }.getOrNull()
+            if (bare == null) {
+                navigation.notice(silent)
+                return@launchWork
+            }
+            val look = setup.identify(watcher.localNetwork.value, bare)
+            when (look.answer) {
+                is AdbAnswer.Identified, is AdbAnswer.Unauthorised -> {
+                    discovery.update(look.device)
+                    navigation.notice(sentenceFor(look))
+                }
+
+                else -> navigation.notice("$silent ${sentenceFor(look)}")
             }
         }
     }
@@ -356,6 +392,81 @@ class MobileController(
         }
         surface = transition.next
         return transition
+    }
+
+    /** Asks the selected television what it is and whether Flint is on it. Read-only. */
+    fun identifyReceiver() {
+        launchWork {
+            val device = discovery.state.value.selected
+            if (device == null) {
+                navigation.notice(ReceiverSetup.NOTHING_SELECTED)
+                return@launchWork
+            }
+            val look = setup.identify(watcher.localNetwork.value, device)
+            discovery.update(look.device)
+            navigation.notice(sentenceFor(look))
+        }
+    }
+
+    /** Installs the bundled receiver on the selected television, after the card has said what it is. */
+    fun installReceiver() {
+        launchWork {
+            val device = discovery.state.value.selected
+            if (device == null) {
+                navigation.notice(ReceiverSetup.NOTHING_SELECTED)
+                return@launchWork
+            }
+            val event = setup.install(watcher.localNetwork.value, device)
+            navigation.notice(sentenceFor(event, device.displayName))
+            // The receiver was opened as part of installing, so the probe that matters -- does it
+            // answer on its own port -- is worth making now rather than leaving to the next sweep.
+            if (event == InstallEvent.InstallSucceeded) {
+                discovery.probeManual(watcher.localNetwork.value, device.address)
+            }
+        }
+    }
+
+    /** Removes Flint from the selected television. The card has already asked twice. */
+    fun removeReceiver() {
+        launchWork {
+            val device = discovery.state.value.selected
+            if (device == null) {
+                navigation.notice(ReceiverSetup.NOTHING_SELECTED)
+                return@launchWork
+            }
+            val event = setup.remove(watcher.localNetwork.value, device)
+            navigation.notice(sentenceFor(event, device.displayName))
+            // Whatever answered on the receiver's port before is gone. The verdicts say so.
+            if (event == InstallEvent.RemoveSucceeded) discovery.update(device.copy(receiverAnswered = false))
+        }
+    }
+
+    private fun sentenceFor(look: Identification): String {
+        val name = look.device.displayName
+        return when (val answer = look.answer) {
+            is AdbAnswer.Identified ->
+                if (answer.platform == ReceiverPlatform.VEGA) {
+                    ReceiverSetup.notAndroid(name)
+                } else {
+                    ReceiverSetup.identified(name, answer.platform.displayLabel, answer.receiverInstalled)
+                }
+
+            is AdbAnswer.Unauthorised -> ReceiverSetup.unauthorised(name)
+            is AdbAnswer.Refused -> ReceiverSetup.failed(answer.detail)
+            is AdbAnswer.Silent -> ReceiverSetup.failed(answer.detail)
+            is AdbAnswer.Failed -> ReceiverSetup.failed(answer.detail)
+        }
+    }
+
+    private fun sentenceFor(event: InstallEvent, deviceName: String): String? = when (event) {
+        InstallEvent.InstallSucceeded -> ReceiverSetup.installed(deviceName)
+        InstallEvent.RemoveSucceeded -> ReceiverSetup.removed(deviceName)
+        InstallEvent.AuthorisationRequired -> ReceiverSetup.unauthorised(deviceName)
+        InstallEvent.NotAndroid -> ReceiverSetup.notAndroid(deviceName)
+        is InstallEvent.InstallFailed -> ReceiverSetup.failed(event.detail)
+        is InstallEvent.RemoveFailed -> ReceiverSetup.failed(event.detail)
+        is InstallEvent.Unreachable -> ReceiverSetup.failed(event.detail)
+        is InstallEvent.Identified, InstallEvent.InstallStarted -> null
     }
 
     /** Whether a mirror may carry sound. The strip says why not when it may not. */

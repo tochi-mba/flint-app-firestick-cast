@@ -116,6 +116,25 @@ class DiscoveryCoordinator(private val runner: ReceiverFinder) {
         }
     }
 
+    /**
+     * Replaces what is known about one television, by address, and selects it.
+     *
+     * This is how what ADB learned -- the platform, the model, the port that answered -- reaches
+     * the list and the verdicts. A television that was not in the list yet, because nothing answered
+     * on the receiver's port and only ADB did, is added by the same call.
+     */
+    fun update(device: ReceiverDevice) {
+        mutable.update {
+            val known = it.receivers.any { existing -> existing.address == device.address }
+            it.copy(
+                receivers = merge(it.receivers, listOf(device)),
+                selected = device,
+                // A path measured to this address is still the path to it.
+                path = it.path.takeIf { _ -> known && it.selected?.address == device.address },
+            )
+        }
+    }
+
     /** Forgets everything found, for the setting that hands a phone back to somebody else. */
     fun clear() {
         mutable.value = Discovered()

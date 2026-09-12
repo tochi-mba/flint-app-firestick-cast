@@ -47,6 +47,7 @@ private fun readyDevice() = ReceiverDevice(
     friendlyName = "Fire TV Stick",
     platform = ReceiverPlatform.FIRE_OS_8,
     adbState = AdbConnectionState.CONNECTED,
+    receiverAnswered = true,
 )
 
 class CapabilityReportTest {
@@ -173,7 +174,22 @@ class MobileCapabilityAssessorTest {
             ReceiverDevice("192.168.43.31", platform = ReceiverPlatform.FIRE_OS_7, adbState = state),
         )[CastMode.MIRROR]
 
-        assertEquals(ModeStatus.AVAILABLE, statusFor(AdbConnectionState.CONNECTED).status)
+        // Authorised over ADB is not the same as having a receiver: the television answered the
+        // phone's questions, and nothing answered on the receiver's port.
+        val connected = statusFor(AdbConnectionState.CONNECTED)
+        assertEquals(ModeStatus.BLOCKED, connected.status)
+        assertTrue(assertNotNull(connected.remedy).contains("Install the receiver"), connected.remedy)
+        val answering = assess(
+            hostNetwork,
+            phone(),
+            ReceiverDevice(
+                "192.168.43.31",
+                platform = ReceiverPlatform.FIRE_OS_7,
+                adbState = AdbConnectionState.CONNECTED,
+                receiverAnswered = true,
+            ),
+        )[CastMode.MIRROR]
+        assertEquals(ModeStatus.AVAILABLE, answering.status)
 
         val unauthorised = statusFor(AdbConnectionState.UNAUTHORIZED)
         assertEquals(ModeStatus.BLOCKED, unauthorised.status)

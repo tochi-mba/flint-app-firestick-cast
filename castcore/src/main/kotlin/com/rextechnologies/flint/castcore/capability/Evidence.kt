@@ -143,11 +143,14 @@ data class ReceiverDevice(
      * willing to talk, which is the only thing the capability verdicts actually need to know.
      */
     val receiverAnswered: Boolean = false,
+    /** The port ADB last answered on, or 0 when none has. Tried first next time, before the range. */
+    val adbPort: Int = 0,
 ) {
     init {
         require(address.isNotBlank()) { "A device without an address is not a device" }
         require(port in 1..65_535)
         require(androidApiLevel >= 0)
+        require(adbPort in 0..65_535)
     }
 
     /** An unauthorised device counts as reachable: something is there and it answered. */

@@ -218,7 +218,14 @@ object MobileCapabilityAssessor {
 
         if (device.platform.canInstallReceiver()) {
             return when (device.adbState) {
-                AdbConnectionState.CONNECTED -> null
+                // Identified over ADB, and nothing answered on the receiver's port. Whether the
+                // receiver is missing or merely not running, the phone cannot cast until it answers.
+                AdbConnectionState.CONNECTED -> VerdictTemplate(
+                    ModeStatus.BLOCKED,
+                    "The television answered over ADB, but no Flint receiver is answering on it.",
+                    "Install the receiver from Settings, or open Flint on the television if it is " +
+                        "already there, then probe again.",
+                )
 
                 AdbConnectionState.UNAUTHORIZED -> VerdictTemplate(
                     ModeStatus.BLOCKED,

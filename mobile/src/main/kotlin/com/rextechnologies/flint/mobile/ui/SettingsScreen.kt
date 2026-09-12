@@ -5,6 +5,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.rextechnologies.flint.castcore.capability.ReceiverPlatform
 import com.rextechnologies.flint.castcore.copy.DiagnosticsCopy
@@ -38,7 +42,7 @@ fun SettingsScreen(state: MobileUiState, controller: MobileController, activity:
 
     Spacer(Modifier.height(FlintSpace.Small))
     SectionLabel(SettingsCopy.SECTION_RECEIVER)
-    ReceiverSetupCard(state)
+    ReceiverSetupCard(state, controller)
 
     Spacer(Modifier.height(FlintSpace.Small))
     SectionLabel(SettingsCopy.SECTION_CHECKS)
@@ -104,13 +108,20 @@ fun SettingsScreen(state: MobileUiState, controller: MobileController, activity:
 }
 
 @Composable
-private fun ReceiverSetupCard(state: MobileUiState) {
+private fun ReceiverSetupCard(state: MobileUiState, controller: MobileController) {
+    val selected = state.selected
+    val deviceName = selected?.displayName ?: "the TV"
     val plan = ReceiverSetup.plan(
-        platform = state.selected?.platform ?: ReceiverPlatform.UNKNOWN,
+        platform = selected?.platform ?: ReceiverPlatform.UNKNOWN,
         stage = state.installStage,
         bundled = state.bundledReceiver,
-        deviceName = state.selected?.displayName ?: "the TV",
+        deviceName = deviceName,
     )
+    val busy = state.setupBusy
+    val hasTelevision = selected != null
+    // The second press lives here rather than in the state: it is a question to the person holding
+    // the phone, and it is withdrawn the moment the television it was about changes.
+    var confirmingRemoval by remember(selected?.address) { mutableStateOf(false) }
 
     InfoCard(borderTone = if (plan.installAction != null) Tone.Signal else Tone.Line) {
         FlintText(text = plan.headline, style = FlintType.TitleMedium)
@@ -124,15 +135,55 @@ private fun ReceiverSetupCard(state: MobileUiState) {
         }
 
         plan.remedy?.let { AdvisoryBlock(heading = "WHAT TO DO", body = it) }
+        if (!hasTelevision) FlintText(text = ReceiverSetup.NOTHING_SELECTED, style = FlintType.BodySmall)
 
-        // Removal is offered wherever installation is, on the same screen, and both are disabled
-        // rather than hidden: installing over ADB is the next slice's work.
-        Row(horizontalArrangement = Arrangement.spacedBy(FlintSpace.Small)) {
-            plan.installAction?.let {
-                OutlineAction(text = it, onClick = { }, enabled = false, tone = Tone.Signal)
+        if (confirmingRemoval) {
+            AdvisoryBlock(
+                heading = "BEFORE REMOVING",
+                body = ReceiverSetup.removeConfirmation(
+                    packageName = state.installedReceiverPackage ?: state.bundledReceiver?.packageName ?: "Flint",
+                    deviceName = deviceName,
+                ),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(FlintSpace.Small)) {
+                OutlineAction(
+                    text = ReceiverSetup.CONFIRM_REMOVE_ACTION,
+                    onClick = {
+                        confirmingRemoval = false
+                        controller.removeReceiver()
+                    },
+                    enabled = !busy,
+                    tone = Tone.Live,
+                )
+                OutlineAction(text = ReceiverSetup.KEEP_ACTION, onClick = { confirmingRemoval = false })
             }
-            plan.removeAction?.let {
-                OutlineAction(text = it, onClick = { }, enabled = false, tone = Tone.Live)
+        } else {
+            // Removal is offered wherever installation is, on the same screen. Both wait while the
+            // phone is talking to the television rather than starting a second conversation.
+            Row(horizontalArrangement = Arrangement.spacedBy(FlintSpace.Small)) {
+                plan.installAction?.let {
+                    OutlineAction(
+                        text = if (busy) ReceiverSetup.WORKING else it,
+                        onClick = controller::installReceiver,
+                        enabled = !busy && hasTelevision,
+                        tone = Tone.Signal,
+                    )
+                }
+                plan.removeAction?.let {
+                    OutlineAction(
+                        text = it,
+                        onClick = { confirmingRemoval = true },
+                        enabled = !busy && hasTelevision,
+                        tone = Tone.Live,
+                    )
+                }
+            }
+            plan.identifyAction?.let {
+                OutlineAction(
+                    text = if (busy) ReceiverSetup.WORKING else it,
+                    onClick = controller::identifyReceiver,
+                    enabled = !busy && hasTelevision,
+                )
             }
         }
     }

@@ -112,6 +112,18 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
     add("MediaCopy.sendingFraction", MediaCopy.sendingFraction(0.42))
     add("MediaCopy.sizeLabel", MediaCopy.sizeLabel(3L * 1024 * 1024).orEmpty())
     add("NotificationCopy.text", NotificationCopy.text("Fire TV Stick"))
+    add(
+        "ReceiverSetup.removeConfirmation",
+        ReceiverSetup.removeConfirmation("com.rextechnologies.flint.receiver.debug", "Fire TV Stick"),
+    )
+    add("ReceiverSetup.identified(installed)", ReceiverSetup.identified("Fire TV Stick", "Fire OS 8", true))
+    add("ReceiverSetup.identified(missing)", ReceiverSetup.identified("Fire TV Stick", "Fire OS 8", false))
+    add("ReceiverSetup.unauthorised", ReceiverSetup.unauthorised("Fire TV Stick"))
+    add("ReceiverSetup.notAndroid", ReceiverSetup.notAndroid("Fire TV Stick"))
+    add("ReceiverSetup.installed", ReceiverSetup.installed("Fire TV Stick"))
+    add("ReceiverSetup.removed", ReceiverSetup.removed("Fire TV Stick"))
+    add("ReceiverSetup.failed(none)", ReceiverSetup.failed(""))
+    add("ReceiverSetup.failed(detail)", ReceiverSetup.failed("Failure [INSTALL_FAILED_OLDER_SDK]"))
 }
 
 class CopyVoiceTest {

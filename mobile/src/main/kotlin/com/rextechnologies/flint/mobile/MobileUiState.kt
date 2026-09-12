@@ -76,6 +76,10 @@ data class MobileUiState(
     val media: MediaState = MediaState.Idle,
     val bundledReceiver: BundledReceiver? = null,
     val installStage: ReceiverInstallStage = ReceiverInstallStage.Unknown,
+    /** The receiver package the selected television listed when last asked over ADB, or `null`. */
+    val installedReceiverPackage: String? = null,
+    /** The phone is identifying, installing or removing right now. The card's buttons wait. */
+    val setupBusy: Boolean = false,
     val notice: String? = null,
 ) {
     val isProbing: Boolean

@@ -3,6 +3,7 @@ package com.rextechnologies.flint.protocol.adb
 import com.rextechnologies.flint.protocol.BinaryData
 import java.io.ByteArrayOutputStream
 import java.io.Closeable
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
@@ -88,11 +89,18 @@ class AdbConnection(
         }
     }
 
+    /**
+     * Waits for the device's answer to the offered key.
+     *
+     * A device holding its prompt says nothing until somebody answers it, and one whose owner
+     * declined drops the link, so a transport that times out or ends here means the same thing as
+     * a device that repeats AUTH: the television is waiting for a person, not for this client.
+     */
     private fun awaitAuthorization(): AdbBanner {
         while (true) {
             val message = try {
                 receive()
-            } catch (exception: AdbFormatException) {
+            } catch (exception: IOException) {
                 throw AdbAuthorizationRequiredException(AUTHORIZE_ON_TV, exception)
             }
             when (message.command) {
