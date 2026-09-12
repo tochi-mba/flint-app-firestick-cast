@@ -197,7 +197,7 @@ class ReceiverSetupCoordinatorTest {
     }
 
     @Test
-    fun `nothing is installed from a build that bundles nothing, or whose package cannot be read`() = runBlocking<Unit> {
+    fun `nothing is installed from a build that bundles nothing or cannot read its package`() = runBlocking<Unit> {
         val installer = Installer()
         assertIs<InstallEvent.InstallFailed>(coordinator(installer, bundled = null).install(host, stick))
         val unreadable = coordinator(installer, staged = null)
