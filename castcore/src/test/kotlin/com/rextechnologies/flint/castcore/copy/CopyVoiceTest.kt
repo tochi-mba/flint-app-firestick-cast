@@ -41,6 +41,7 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
     fun add(label: String, value: String) = add(label to value)
 
     val surfaces = listOf(
+        AudioCopy,
         CastCopy,
         PairingCopy,
         ScreenCopy,
@@ -83,6 +84,8 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
     add("ScreenCopy.encoderFailure", ScreenCopy.encoderFailure(""))
     add("ScreenCopy.encoderFailure(detail)", ScreenCopy.encoderFailure("no surface"))
     add("ScreenCopy.keyFrameFallback", ScreenCopy.keyFrameFallback(2))
+    add("AudioCopy.failedSentence(detail)", AudioCopy.failedSentence("no AAC encoder"))
+    add("AudioCopy.failedSentence(none)", AudioCopy.failedSentence(""))
     add("CastCopy.probeFailedBody(none)", CastCopy.probeFailedBody(emptyList()))
     add(
         "CastCopy.probeFailedBody(all)",

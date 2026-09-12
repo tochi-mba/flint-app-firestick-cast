@@ -54,6 +54,21 @@ class MobileActivity : ComponentActivity() {
     }
 
     /**
+     * The record permission, which is what Android puts playback capture behind.
+     *
+     * Asked for on the way to the capture dialog rather than at launch, because it is only sound on
+     * a mirror that needs it, and a permission asked for before the person has seen why is the one
+     * they refuse. Refusing it is fine: the mirror carries the picture and the strip says why not
+     * the sound.
+     */
+    private val audioPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        controller.onAudioPermission(granted)
+        launchMirrorConsent()
+    }
+
+    /**
      * The system's own file picker, which is the only way this app ever sees a file.
      *
      * Flint never browses storage. The picker hands back a content URI and a read grant, and the
@@ -126,6 +141,20 @@ class MobileActivity : ComponentActivity() {
      * itself is the one a person is less annoyed by the fourth time.
      */
     private fun requestMirrorConsent() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val recording = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            if (recording != PackageManager.PERMISSION_GRANTED) {
+                audioPermission.launch(Manifest.permission.RECORD_AUDIO)
+                return
+            }
+            controller.onAudioPermission(true)
+        } else {
+            controller.onAudioPermission(false)
+        }
+        launchMirrorConsent()
+    }
+
+    private fun launchMirrorConsent() {
         val manager = getSystemService(MediaProjectionManager::class.java)
         if (manager == null) {
             controller.onProjectionConsent(RESULT_CANCELED, null)

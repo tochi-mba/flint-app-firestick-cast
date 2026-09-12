@@ -7,6 +7,7 @@ import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.Surface
@@ -14,6 +15,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.rextechnologies.flint.castcore.capability.PhoneCapabilities
 import com.rextechnologies.flint.castcore.copy.ScreenCopy
+import com.rextechnologies.flint.castcore.media.AudioPolicy
+import com.rextechnologies.flint.castcore.media.AudioState
 import com.rextechnologies.flint.castcore.media.CodecChoice
 import com.rextechnologies.flint.castcore.media.EncoderPolicy
 import com.rextechnologies.flint.castcore.media.KeyFrameStrategy
@@ -25,6 +28,8 @@ import com.rextechnologies.flint.castcore.media.ThermalPolicy
 import com.rextechnologies.flint.castcore.screen.SecondScreenScene
 import com.rextechnologies.flint.mobile.LiveOutput
 import com.rextechnologies.flint.mobile.OutputMode
+import com.rextechnologies.flint.mobile.media.AudioCapture
+import com.rextechnologies.flint.mobile.media.EncodedAudioSink
 import com.rextechnologies.flint.mobile.media.EncodedVideoSink
 import com.rextechnologies.flint.mobile.media.ScreenEncoder
 import com.rextechnologies.flint.mobile.media.SecondScreenHost
@@ -34,6 +39,7 @@ import com.rextechnologies.flint.mobile.ui.SecondScreenContent
 import com.rextechnologies.flint.protocol.media.BitrateController
 import com.rextechnologies.flint.protocol.media.LinkHealth
 import com.rextechnologies.flint.protocol.media.LinkSample
+import com.rextechnologies.flint.protocol.wire.AudioConfigMessage
 import com.rextechnologies.flint.protocol.wire.CodecId
 import com.rextechnologies.flint.protocol.wire.StatsMessage
 import com.rextechnologies.flint.protocol.wire.SurfaceMessage
@@ -85,7 +91,12 @@ class OutputCoordinator(
     private val scene = MutableStateFlow<SecondScreenScene>(SecondScreenScene.Dashboard("", "", STABLE_WORD))
 
     private var encoder: ScreenEncoder? = null
+    private var audio: AudioCapture? = null
     private var secondScreen: SecondScreenHost? = null
+
+    /** Whether the record permission, which playback capture sits behind, has been granted. */
+    @Volatile
+    var audioPermitted: Boolean = false
     private var projection: MediaProjection? = null
     private var mirrorDisplay: VirtualDisplay? = null
     private var bitrate: BitrateController? = null
@@ -241,7 +252,34 @@ class OutputCoordinator(
 
         session.send(SurfaceMessage(SurfaceMode.MIRROR, caption = phone.deviceName))
         publish(OutputMode.MIRROR, deviceName, width, height, scene = null)
+        startAudio(granted, connection)
         return null
+    }
+
+    /**
+     * Sound, after the picture is already going.
+     *
+     * Additive: a mirror is a mirror without it, and every reason it may be missing is reported on
+     * the strip rather than shipped as silence. The origin is read from the same monotonic clock
+     * the video frames are stamped by, so the two line up on the far side.
+     */
+    private fun startAudio(projection: MediaProjection, connection: CastConnection) {
+        if (Build.VERSION.SDK_INT < AudioPolicy.MINIMUM_API) {
+            publishAudio(AudioState.PlatformTooOld)
+            return
+        }
+        if (!audioPermitted) {
+            publishAudio(AudioState.PermissionDenied)
+            return
+        }
+        val capture = AudioCapture(projection, AudioSink(connection), System.nanoTime() / NANOS_PER_MICRO)
+        if (withStarted(capture)) audio = capture
+    }
+
+    private fun withStarted(capture: AudioCapture): Boolean = runCatching { capture.start() }.getOrDefault(false)
+
+    private fun publishAudio(state: AudioState) {
+        mutable.update { it?.copy(audio = state) }
     }
 
     /**
@@ -307,6 +345,10 @@ class OutputCoordinator(
                 runCatching { secondScreen?.close() }
                 secondScreen = null
             }
+            // Sound before the projection it captures from, and off the main thread: stop joins
+            // the capture thread.
+            withContext(Dispatchers.Default) { runCatching { audio?.stop() } }
+            audio = null
             runCatching { mirrorDisplay?.release() }
             mirrorDisplay = null
             runCatching { projection?.stop() }
@@ -632,8 +674,24 @@ class OutputCoordinator(
         }
     }
 
+    /** AAC frames, written to the same socket as the video, with the truth about them alongside. */
+    private inner class AudioSink(private val connection: CastConnection) : EncodedAudioSink {
+        override fun onAudioConfig(message: AudioConfigMessage) {
+            connection.send(message)
+        }
+
+        override fun onAudioPacket(presentationTimeUs: Long, data: ByteArray, offset: Int, length: Int) {
+            connection.sendAudioPacket(presentationTimeUs, data, offset, length)
+        }
+
+        override fun onAudioState(state: AudioState) {
+            scope.launch { publishAudio(state) }
+        }
+    }
+
     private companion object {
         const val MIRROR_DISPLAY_NAME = "flint-mirror"
+        const val NANOS_PER_MICRO = 1_000L
         const val ELAPSED_TICK_MILLIS = 1_000L
         const val NOTICE_BUFFER = 4
         val STABLE_WORD = ScreenCopy.linkHealthWord(LinkHealth.Stable)

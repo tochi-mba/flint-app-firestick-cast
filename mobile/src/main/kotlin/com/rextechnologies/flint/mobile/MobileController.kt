@@ -358,6 +358,11 @@ class MobileController(
         return transition
     }
 
+    /** Whether a mirror may carry sound. The strip says why not when it may not. */
+    fun onAudioPermission(granted: Boolean) {
+        output.audioPermitted = granted
+    }
+
     /** Says what happened when notifications were refused, and carries on regardless. */
     fun onNotificationPermission(granted: Boolean) {
         if (!granted) navigation.notice(ScreenCopy.NOTIFICATIONS_DECLINED)

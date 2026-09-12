@@ -21,6 +21,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <!-- Runtime from API 33. The ongoing notification is the only Stop control a locked phone has. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!--
+      Sound on a mirror. Android puts playback capture -- hearing what other apps play -- behind the
+      microphone permission, so this is what it takes to send a game's audio with its picture. Flint
+      never opens the microphone; the copy on the live strip says so where the permission is refused.
+    -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!--
       No ACCESS_FINE_LOCATION and no ACCESS_COARSE_LOCATION. Flint never scans for Wi-Fi networks: it

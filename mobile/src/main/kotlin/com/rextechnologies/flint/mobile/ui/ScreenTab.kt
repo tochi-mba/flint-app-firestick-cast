@@ -13,9 +13,11 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import com.rextechnologies.flint.castcore.capability.CastMode
 import com.rextechnologies.flint.castcore.capability.ModePresentation
+import com.rextechnologies.flint.castcore.copy.AudioCopy
 import com.rextechnologies.flint.castcore.copy.DiagnosticsCopy
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.ScreenCopy
+import com.rextechnologies.flint.castcore.media.AudioPolicy
 import com.rextechnologies.flint.castcore.media.CodecNames
 import com.rextechnologies.flint.castcore.media.SessionDiagnostics
 import com.rextechnologies.flint.castcore.screen.PlaybackClock
@@ -219,6 +221,10 @@ private fun LiveStrip(output: LiveOutput, controller: MobileController) {
         // The cockpit: what the television is showing, when this phone is drawing it.
         output.scene?.let { DiagnosticRow(label = "Showing", value = it.title) }
         DiagnosticRow(label = "Codec", value = CodecNames.label(output.codec))
+        DiagnosticRow(label = AudioCopy.ROW, value = AudioPolicy.word(output.audio))
+        AudioPolicy.sentence(output.audio, secondScreen = output.mode == OutputMode.SECOND_SCREEN)?.let {
+            FlintText(text = it, style = FlintType.BodySmall.copy(color = FlintColors.Muted))
+        }
         if (output.keyFrameFallback) DiagnosticRow(label = "Key frames", value = "Every few seconds")
         DiagnosticRow(
             label = "Bitrate",
