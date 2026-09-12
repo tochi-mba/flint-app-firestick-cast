@@ -6,6 +6,7 @@ import com.rextechnologies.flint.castcore.capability.NetworkPath
 import com.rextechnologies.flint.castcore.capability.ReceiverDevice
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.discovery.DiscoveryRung
+import com.rextechnologies.flint.castcore.media.MediaState
 import com.rextechnologies.flint.castcore.media.SessionDiagnostics
 import com.rextechnologies.flint.castcore.screen.SecondScreenScene
 import com.rextechnologies.flint.castcore.session.SessionFailure
@@ -69,6 +70,7 @@ data class MobileUiState(
     val encoderProbeRunning: Boolean = false,
     val secondScreenProbeRunning: Boolean = false,
     val output: LiveOutput? = null,
+    val media: MediaState = MediaState.Idle,
     val bundledReceiver: BundledReceiver? = null,
     val installStage: ReceiverInstallStage = ReceiverInstallStage.Unknown,
     val notice: String? = null,

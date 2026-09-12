@@ -40,6 +40,7 @@ import com.rextechnologies.flint.protocol.wire.VideoConfigMessage
 import com.rextechnologies.flint.protocol.wire.VideoPacket
 import com.rextechnologies.flint.protocol.wire.VolumeControl
 import com.rextechnologies.flint.receiver.media.MirrorAudioDecoder
+import com.rextechnologies.flint.receiver.media.PushedMediaSink
 import com.rextechnologies.flint.receiver.media.MirrorVideoDecoder
 import com.rextechnologies.flint.receiver.browser.BrowserCoordinator
 import com.rextechnologies.flint.receiver.browser.BrowserCommandEffect
@@ -186,10 +187,10 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
     // Some Fire OS builds silently drop an outbound connection this app initiates to a private LAN
     // address, even though the exact same address works perfectly for the connection the host
     // opened to us. When a MediaCommandMessage arrives with no URL, it means the host pushed the
-    // file's bytes over that already-working connection instead — buffered here as they arrive.
-    private var pushedFileStream: java.io.FileOutputStream? = null
-    private var pushedFile: java.io.File? = null
-    private var pendingPushedFile: java.io.File? = null
+    // file's bytes over that already-working connection instead — reassembled by the sink, which
+    // also owns the rules: one transfer at a time, a bound on free space, no partial file left
+    // behind a failure.
+    private val pushedMedia by lazy { PushedMediaSink(cacheDir) }
 
     override fun onCreate() {
         super.onCreate()
@@ -533,35 +534,20 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
         // order, corrupting the reassembled file in a way that only surfaced as ExoPlayer being
         // unable to recognise the container. Blocking file I/O here is fine: onMediaData already
         // runs on the receiver server's own background dispatcher, never the main thread.
-        try {
-            val stream = pushedFileStream ?: run {
-                val file = java.io.File(cacheDir, "pushed-media-${System.currentTimeMillis()}.tmp")
-                java.io.FileOutputStream(file).also {
-                    pushedFile = file
-                    pushedFileStream = it
-                }
+        when (val outcome = pushedMedia.accept(chunk.data.toByteArray(), chunk.isFinal)) {
+            is PushedMediaSink.Outcome.Refused -> {
+                Log.e(TAG, "Refused a pushed media chunk: ${outcome.reason}")
+                reportFailure(outcome.reason)
             }
-            stream.write(chunk.data.toByteArray())
-            if (chunk.isFinal) {
-                stream.flush()
-                stream.close()
-                pendingPushedFile = pushedFile
-                pushedFileStream = null
-                pushedFile = null
-                Log.i(TAG, "Finished receiving pushed media file")
-            }
-        } catch (error: Exception) {
-            Log.e(TAG, "Failed to buffer a pushed media chunk", error)
-            runCatching { pushedFileStream?.close() }
-            pushedFileStream = null
-            pushedFile = null
-            reportFailure("could not save the pushed file on this TV")
+
+            is PushedMediaSink.Outcome.Completed -> Log.i(TAG, "Finished receiving pushed media file")
+            PushedMediaSink.Outcome.Accepted -> Unit
         }
     }
 
     private fun load(command: MediaCommandMessage) {
         val uri = if (command.url.isBlank()) {
-            val file = pendingPushedFile
+            val file = pushedMedia.pending
                 ?: return reportFailure("no media was pushed to this TV to play")
             android.net.Uri.fromFile(file)
         } else {
@@ -720,12 +706,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
 
     override fun onSessionEnded() {
         scope.launch {
-            withContext(Dispatchers.IO) { runCatching { pushedFileStream?.close() } }
-            withContext(Dispatchers.IO) { pushedFile?.delete() }
-            withContext(Dispatchers.IO) { pendingPushedFile?.delete() }
-            pushedFileStream = null
-            pushedFile = null
-            pendingPushedFile = null
+            withContext(Dispatchers.IO) { pushedMedia.discard() }
             player.stop()
             player.clearMediaItems()
             _uiState.update {
@@ -811,6 +792,9 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
         browserController.releaseForCastSwitch("clear session surface")
         player.stop()
         player.clearMediaItems()
+        // A clear is also how the phone abandons a transfer it cancelled, so the partial file goes
+        // with the played one.
+        scope.launch(Dispatchers.IO) { pushedMedia.discard() }
         _uiState.update {
             it.copy(
                 surfaceMode = SurfaceMode.IDLE,

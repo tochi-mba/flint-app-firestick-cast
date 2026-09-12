@@ -105,6 +105,9 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
         SettingsCopy.encoderCheckResult(listOf("H.264"), null, ProbeOutcome.NOT_PROBED, ""),
     )
     add("MediaCopy.pushing", MediaCopy.pushing(3, 10))
+    add("MediaCopy.sendingBytes", MediaCopy.sendingBytes(3L * 1024 * 1024))
+    add("MediaCopy.sendingFraction", MediaCopy.sendingFraction(0.42))
+    add("MediaCopy.sizeLabel", MediaCopy.sizeLabel(3L * 1024 * 1024).orEmpty())
     add("NotificationCopy.text", NotificationCopy.text("Fire TV Stick"))
 }
 

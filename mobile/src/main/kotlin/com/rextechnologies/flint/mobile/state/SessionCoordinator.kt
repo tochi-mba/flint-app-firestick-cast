@@ -56,7 +56,7 @@ class SessionCoordinator(
     private val tokens: TokenStore,
     private val scope: CoroutineScope,
     private val connect: (CastConnection) -> Unit = CastConnection::connect,
-) {
+) : MediaLink {
     private val mutable = MutableStateFlow<LinkState>(LinkState.Idle)
     val state: StateFlow<LinkState> = mutable
 
@@ -66,9 +66,12 @@ class SessionCoordinator(
     /** Messages the television sends after the handshake, for whoever is driving the media path. */
     private val listeners = mutableListOf<(WireMessage) -> Unit>()
 
-    fun onMessage(listener: (WireMessage) -> Unit) {
+    override fun onMessage(listener: (WireMessage) -> Unit) {
         synchronized(listeners) { listeners += listener }
     }
+
+    override val isConnected: Boolean
+        get() = mutable.value is LinkState.Connected
 
     /**
      * Opens a session with a typed pairing code.
@@ -121,7 +124,7 @@ class SessionCoordinator(
      * swallowed into a `false` nobody read, so the SURFACE message that tells the television to
      * switch screens was never leaving the phone.
      */
-    suspend fun send(message: WireMessage): Boolean {
+    override suspend fun send(message: WireMessage): Boolean {
         val current = connection ?: return false
         return withContext(Dispatchers.IO) { current.send(message) }
     }

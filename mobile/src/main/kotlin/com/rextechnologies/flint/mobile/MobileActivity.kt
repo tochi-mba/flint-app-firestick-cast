@@ -53,6 +53,18 @@ class MobileActivity : ComponentActivity() {
         controller.onNotificationPermission(granted)
     }
 
+    /**
+     * The system's own file picker, which is the only way this app ever sees a file.
+     *
+     * Flint never browses storage. The picker hands back a content URI and a read grant, and the
+     * bytes are streamed through the resolver straight to the socket; no path is ever resolved.
+     */
+    private val videoPicker = registerForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        uri?.let { controller.chooseVideo(it.toString()) }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -74,6 +86,7 @@ class MobileActivity : ComponentActivity() {
                     controller = controller,
                     activity = this,
                     onRequestMirror = ::requestMirrorConsent,
+                    onPickVideo = { videoPicker.launch(arrayOf(VIDEO_MIME)) },
                 )
             }
         }
@@ -119,6 +132,10 @@ class MobileActivity : ComponentActivity() {
             return
         }
         projectionConsent.launch(manager.createScreenCaptureIntent())
+    }
+
+    private companion object {
+        const val VIDEO_MIME = "video/*"
     }
 
     private fun requestNotificationPermissionOnce() {

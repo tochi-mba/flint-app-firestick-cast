@@ -33,6 +33,15 @@ class BinaryData private constructor(private val value: ByteArray) {
 
         fun of(bytes: ByteArray): BinaryData =
             if (bytes.isEmpty()) EMPTY else BinaryData(bytes.copyOf())
+
+        /**
+         * A copy of one region of [bytes], for a caller that fills a reused buffer and needs only
+         * the part it filled -- one copy rather than a `copyOfRange` followed by [of]'s own.
+         */
+        fun of(bytes: ByteArray, offset: Int, length: Int): BinaryData {
+            require(offset >= 0 && length >= 0 && offset + length <= bytes.size) { "Region is outside the array" }
+            return if (length == 0) EMPTY else BinaryData(bytes.copyOfRange(offset, offset + length))
+        }
     }
 }
 
