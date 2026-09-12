@@ -1,219 +1,132 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flint — REX Technologies</title>
-<meta name="description" content="Flint is a Windows host that casts a PC screen to a Fire TV on the same network. A REX Technologies product.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flint — cast to your Fire TV from your phone or PC — REX Technologies</title>
+<meta name="description" content="Flint casts a phone or a Windows PC to a Fire TV on the same network, and tells you plainly what your hardware can do before you spend time on it. No account, no cloud, no analytics.">
+<meta name="theme-color" content="#080A09">
+<meta name="color-scheme" content="dark">
+<link rel="canonical" href="https://tochi-mba.github.io/flint-app-firestick-cast/">
 <link rel="icon" href="flint-icon.png" type="image/png">
-<meta property="og:title" content="Flint — REX Technologies">
-<meta property="og:description" content="Cast a Windows PC to a Fire TV. Flint tells you what your hardware can actually do, before you spend time on it.">
+<link rel="apple-touch-icon" href="flint-icon.png">
+<meta property="og:title" content="Flint — cast to your Fire TV from your phone or PC">
+<meta property="og:description" content="A phone or a Windows PC as the host, a Fire TV as the screen, and a plain answer about what your hardware can do. A REX Technologies product.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://tochi-mba.github.io/flint-app-firestick-cast/">
+<meta property="og:image" content="https://tochi-mba.github.io/flint-app-firestick-cast/flint-icon.png">
+<meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-<style>
-/*
-  The REX Technologies ink/signal palette, lifted verbatim from FlintColors.axaml so the site and
-  the application are visibly one product. Do not re-pick these values.
-*/
-:root {
-  --ink: #080A09;
-  --panel: #111512;
-  --raised: #181E19;
-  --line: #29302A;
-  --text: #F2F5EE;
-  --muted: #858D83;
-  --signal: #D7FF3F;
-  --live: #FF774D;
-
-  --radius-s: 8px;
-  --radius-m: 12px;
-  --radius-l: 18px;
-  --page: min(1100px, 92vw);
-}
-
-*, *::before, *::after { box-sizing: border-box; }
-
-html { scroll-behavior: smooth; }
-
-body {
-  margin: 0;
-  background: var(--ink);
-  color: var(--text);
-  font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
-  font-size: 15px;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
-
-a { color: var(--signal); text-decoration: none; }
-a:hover { text-decoration: underline; }
-
-/* The signature of the system: 9px, bold, heavily tracked, always upper-case. */
-.eyebrow {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin: 0;
-}
-.eyebrow.signal { color: var(--signal); }
-.eyebrow.live { color: var(--live); }
-
-h1, h2, h3 { line-height: 1.15; margin: 0; font-weight: 700; }
-h1 { font-size: clamp(38px, 6vw, 62px); letter-spacing: -0.02em; }
-h2 { font-size: clamp(26px, 3.4vw, 34px); letter-spacing: -0.01em; }
-h3 { font-size: 17px; }
-
-p { margin: 0; }
-.muted { color: var(--muted); }
-
-.wrap { width: var(--page); margin-inline: auto; }
-
-/* ---- Rail ---- */
-header.bar {
-  position: sticky; top: 0; z-index: 20;
-  background: rgba(8, 10, 9, 0.88);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line);
-}
-.bar-inner { display: flex; align-items: center; gap: 12px; padding: 14px 0; }
-.mark {
-  width: 40px; height: 40px; flex: none;
-  border: 1px solid var(--line); border-radius: var(--radius-s);
-  display: grid; place-items: center;
-  font-size: 10px; font-weight: 900; color: var(--signal);
-}
-.lockup { display: flex; flex-direction: column; gap: 2px; }
-.lockup .name { font-size: 17px; font-weight: 700; }
-.bar nav { margin-left: auto; display: flex; gap: 22px; align-items: center; }
-.bar nav a { color: var(--muted); font-size: 13px; }
-.bar nav a:hover { color: var(--text); text-decoration: none; }
-
-/* ---- Buttons ---- */
-.btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  height: 48px; padding: 0 22px; border-radius: var(--radius-s);
-  font-size: 9px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
-  border: 1px solid transparent; cursor: pointer; white-space: nowrap;
-}
-.btn.signal { background: var(--signal); color: var(--ink); }
-.btn.signal:hover { opacity: 0.88; text-decoration: none; }
-.btn.outline { border-color: var(--line); color: var(--text); }
-.btn.outline:hover { border-color: var(--muted); text-decoration: none; }
-
-/* ---- Cards ---- */
-.card {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-m);
-  padding: 22px;
-}
-.card.signal { border-color: var(--signal); }
-.card.live { border-color: var(--live); }
-
-.pill {
-  display: inline-block;
-  border: 1px solid var(--muted); color: var(--muted);
-  border-radius: 20px; padding: 5px 10px;
-  font-size: 9px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
-}
-.pill.signal { border-color: var(--signal); color: var(--signal); }
-.pill.live { border-color: var(--live); color: var(--live); }
-
-section { padding: 76px 0; border-top: 1px solid var(--line); }
-section:first-of-type { border-top: 0; }
-.head { display: flex; flex-direction: column; gap: 6px; margin-bottom: 26px; }
-
-.grid { display: grid; gap: 14px; }
-@media (min-width: 760px) { .cols-2 { grid-template-columns: 1fr 1fr; } .cols-3 { grid-template-columns: repeat(3, 1fr); } }
-
-/* ---- Hero ---- */
-.hero { padding: 84px 0 76px; }
-.hero .lede { max-width: 660px; margin-top: 20px; font-size: 17px; color: var(--muted); }
-.hero .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; align-items: center; }
-.hero .note { font-size: 12px; color: var(--muted); margin-top: 14px; max-width: 620px; }
-.hero-icon { width: 76px; height: 76px; border-radius: var(--radius-l); display: block; margin-bottom: 26px; }
-
-/* ---- Tables ---- */
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th, td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
-tbody tr:last-child td { border-bottom: 0; }
-.scroll { overflow-x: auto; }
-
-/* ---- Steps ---- */
-ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
-ol.steps li {
-  counter-increment: step;
-  display: grid; grid-template-columns: 30px 1fr; gap: 14px; align-items: start;
-}
-ol.steps li::before {
-  content: counter(step);
-  width: 30px; height: 30px; border-radius: 50%;
-  border: 1px solid var(--line); color: var(--signal);
-  display: grid; place-items: center;
-  font-size: 11px; font-weight: 700;
-}
-
-ul.dots { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
-ul.dots li { display: grid; grid-template-columns: 9px 1fr; gap: 11px; align-items: start; }
-ul.dots li::before {
-  content: ""; width: 9px; height: 9px; border-radius: 50%;
-  background: var(--muted); margin-top: 7px;
-}
-ul.dots.signal li::before { background: var(--signal); }
-
-code, pre { font-family: "Cascadia Mono", Consolas, ui-monospace, monospace; }
-code { background: var(--raised); padding: 2px 6px; border-radius: 5px; font-size: 13px; color: var(--text); }
-pre {
-  background: var(--raised); border: 1px solid var(--line); border-radius: var(--radius-s);
-  padding: 16px; overflow-x: auto; font-size: 13px; line-height: 1.65; margin: 0;
-}
-pre code { background: none; padding: 0; }
-
-footer { border-top: 1px solid var(--line); padding: 40px 0 56px; color: var(--muted); font-size: 13px; }
-footer .row { display: flex; flex-wrap: wrap; gap: 10px 26px; align-items: center; }
-footer .row + .row { margin-top: 12px; }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<script>document.documentElement.classList.replace("no-js", "js");</script>
 </head>
 <body>
 
+<a class="skip" href="#main">Skip to content</a>
+
 <header class="bar">
   <div class="wrap bar-inner">
-    <div class="mark">REX</div>
-    <div class="lockup">
-      <p class="eyebrow signal">REX Technologies</p>
-      <span class="name">Flint</span>
-    </div>
-    <nav>
+    <a class="brand" href="#top" aria-label="Flint, by REX Technologies">
+      <img src="flint-icon.png" alt="" width="36" height="36">
+      <span class="lockup">
+        <span class="eyebrow signal">REX Technologies</span>
+        <span class="name">Flint</span>
+      </span>
+    </a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+      <span class="burger" aria-hidden="true"></span>
+      <span class="label">Menu</span>
+    </button>
+    <nav class="nav" id="site-nav" aria-label="Page">
       <a href="#check">Check your TV</a>
-      <a href="#download">Download</a>
+      <a href="#how">How it works</a>
       <a href="#install">Install</a>
       <a href="#status">Status</a>
+      <a href="#privacy">Privacy</a>
+      <a class="cta" href="#download">Download</a>
     </nav>
   </div>
 </header>
 
-<main>
+<main id="main">
 
-<section class="hero wrap">
-  <img class="hero-icon" src="flint-icon.png" alt="The Flint mark: a struck spark inside a square frame">
-  <p class="eyebrow signal">Windows → Fire TV</p>
-  <h1>Cast your PC to your TV</h1>
-  <p class="lede">
-    Flint finds a Fire TV on your network, works out what your hardware can actually do together,
-    and tells you plainly. No account, no cloud, no analytics — everything stays on your network.
-  </p>
-  <div class="actions">
-    <a class="btn signal" href="#download">Download for Windows</a>
-    <a class="btn outline" href="#check">Will it work for me?</a>
+<section class="hero wrap" id="top">
+  <div class="head">
+    <p class="eyebrow signal">Phone or PC → Fire TV</p>
+    <h1>Cast to your Fire TV from the device in your hand</h1>
+    <p class="lede">
+      Flint turns a Fire TV into a screen for your Android phone or your Windows PC, over your own
+      network. It checks what your hardware can actually do together and says so plainly, before you
+      spend any time on it. No account, no cloud, no analytics.
+    </p>
   </div>
-  <p class="note">
-    Windows 10 or 11, 64-bit. Flint reports what your hardware can actually do, and offers only the
-    modes your particular PC and television can manage together — never a button that does nothing.
+
+  <div class="download" id="download" aria-labelledby="download-title">
+    <div class="download-top">
+      <p class="detected" aria-live="polite">Pick the device you are installing on.</p>
+      <div class="chips" role="group" aria-label="Choose a device">
+        <button class="chip" type="button" data-platform="android" aria-pressed="false">Android</button>
+        <button class="chip" type="button" data-platform="windows" aria-pressed="false">Windows</button>
+        <button class="chip" type="button" data-platform="firetv" aria-pressed="false">Fire TV</button>
+        <button class="chip" type="button" data-platform="other" aria-pressed="false">Something else</button>
+      </div>
+    </div>
+
+    <div class="primary">
+      <div>
+        <p class="eyebrow signal" data-slot="eyebrow">Download</p>
+        <h2 id="download-title" data-slot="title">Flint for Android or Windows</h2>
+        <p class="req" data-slot="requirement">
+          Android 8.0 or newer for the phone app. Windows 10 or 11, 64-bit, for the PC app. The
+          Fire TV receiver is installed from either, never from here.
+        </p>
+        <p class="meta" data-slot="meta" hidden></p>
+      </div>
+      <div class="actions">
+        <a class="btn signal big" data-slot="primary" href="https://github.com/tochi-mba/flint-app-firestick-cast/releases">See every release</a>
+        <p class="fine" data-slot="fine">
+          Every build is published by CI from this repository. Pick a device above to see the one
+          for it.
+        </p>
+      </div>
+    </div>
+
+    <div class="others">
+      <div class="other" data-platform="android">
+        <span class="pill signal">Rolling build</span>
+        <h3>Flint for Android</h3>
+        <p data-slot="other-note">Android 8.0 or newer. The phone is the host.</p>
+        <div class="row">
+          <a class="btn signal" data-slot="other-primary" href="https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest">Download APK</a>
+          <a class="btn outline" href="#install-android">How to install</a>
+        </div>
+      </div>
+      <div class="other" data-platform="windows">
+        <span class="pill">No release yet</span>
+        <h3>Flint for Windows</h3>
+        <p data-slot="other-note">Windows 10 or 11, 64-bit. Build it from source in about two minutes.</p>
+        <div class="row">
+          <a class="btn outline" data-slot="other-primary" href="#install-windows">Build from source</a>
+          <a class="btn outline" href="https://github.com/tochi-mba/flint-app-firestick-cast/releases">Watch releases</a>
+        </div>
+      </div>
+      <div class="other" data-platform="firetv">
+        <span class="pill">Installed from the phone or PC</span>
+        <h3>The receiver, on the TV</h3>
+        <p data-slot="other-note">Nothing to download on the television. The phone app installs it over ADB and shows what it installs first.</p>
+        <div class="row">
+          <a class="btn outline" data-slot="other-primary" href="#install-firetv">How it gets there</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="small muted" style="margin-top:14px; max-width:720px">
+    Flint offers only the modes your particular phone or PC and television can manage together, and
+    never a button that does nothing. What is proven on real hardware and what is not is listed under
+    <a href="#status">Status</a>.
   </p>
 </section>
 
@@ -221,240 +134,405 @@ footer .row + .row { margin-top: 12px; }
   <div class="head">
     <p class="eyebrow live">Read this first</p>
     <h2>Your Fire TV model decides everything</h2>
-  </div>
-
-  <div class="card live">
-    <p>
+    <p class="lede">
       Check the television before you download anything. It takes ten seconds and it decides whether
       the rest of this page is worth your time.
     </p>
-    <p style="margin-top:14px">
-      On the TV: <strong>Settings → My Fire TV → About</strong>.
-    </p>
-    <div class="scroll" style="margin-top:18px">
-      <table>
-        <thead>
-          <tr><th>What it says</th><th>What that means</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><span class="pill signal">Fire OS 7 or 8</span></td>
-            <td>Good. Flint can work with this device.</td>
-          </tr>
-          <tr>
-            <td><span class="pill live">Vega OS, or no version</span></td>
-            <td>Stop. Flint cannot work on this device, and no future version will change that.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="muted" style="margin-top:18px">
-      Vega OS is a Linux system Amazon built in-house. It is not Android, it cannot install apps
-      from outside Amazon's store by any method, and Flint's approach depends on installing a
+  </div>
+
+  <div class="card live">
+    <p class="tv-path">On the TV: <span class="path">Settings → My Fire TV → About</span></p>
+    <table class="stack">
+      <thead>
+        <tr><th scope="col">What it says</th><th scope="col">What that means</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="What it says"><span class="pill signal">Fire OS 6, 7 or 8</span></td>
+          <td data-label="What that means">Good. It is Android underneath, so Flint can put its receiver on it. Mirroring and media handoff from Windows are proven end to end on a Fire TV Stick running Fire OS 6.</td>
+        </tr>
+        <tr>
+          <td data-label="What it says"><span class="pill">Fire OS 14 or 16</span></td>
+          <td data-label="What that means">Also Android underneath. The receiver should install; no device of this generation has been tested, and Flint says so rather than assuming.</td>
+        </tr>
+        <tr>
+          <td data-label="What it says"><span class="pill live">Vega OS, or no version</span></td>
+          <td data-label="What that means">Stop. Flint cannot work on this device, and no future version will change that.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="muted">
+      Vega OS is a Linux system Amazon built in-house. It is not Android, it cannot install apps from
+      outside Amazon's store by any method, and Flint's whole approach depends on installing a
       receiver. Devices known to ship with it are the <strong>Fire TV Stick 4K Select</strong>
       (October 2025) and the <strong>Fire TV Stick HD</strong> (2026).
     </p>
   </div>
 </section>
 
-<section id="download" class="wrap">
+<section id="how" class="wrap">
   <div class="head">
-    <p class="eyebrow signal">Download</p>
-    <h2>Windows, 64-bit</h2>
+    <p class="eyebrow signal">How it works</p>
+    <h2>Three pieces, two ways to cast</h2>
+    <p class="lede">
+      One receiver on the television. Either a phone or a PC as the host. The host finds the TV,
+      pairs with a six-digit code shown on the screen, and sends it a picture over the local network.
+    </p>
   </div>
 
-  <div class="grid cols-2">
+  <div class="grid cols-3">
     <div class="card signal">
-      <p class="eyebrow signal">Ready to run</p>
-      <h3 style="margin-top:8px">Flint for Windows</h3>
-      <p class="muted" style="margin-top:10px">
-        A portable folder. Everything it needs is included — there is no .NET runtime to install
-        first, and no installer to run.
-      </p>
-      <p style="margin-top:20px">
-        <a class="btn signal" href="https://github.com/rex-technologies/flint/releases/latest">Get the latest release</a>
-      </p>
-      <p class="muted" style="margin-top:16px; font-size:12px">
-        Releases are published by CI from a tag. If that link shows nothing yet, no release has been
-        tagged — build from source below, which takes about two minutes.
+      <p class="eyebrow signal">Flint for Android</p>
+      <h3>The phone is the host</h3>
+      <p class="muted">
+        Turn on the phone's hotspot, join the TV to it, and cast over that link. Mirror the phone's
+        screen with its sound, hand the TV a video file to play at original quality, or give it a
+        second screen the phone drives while staying free for other things. No router needed, and
+        the setting that silently breaks casting on shared Wi-Fi, client isolation, does not apply.
       </p>
     </div>
-
     <div class="card">
-      <p class="eyebrow">Build it yourself</p>
-      <h3 style="margin-top:8px">From source</h3>
-      <p class="muted" style="margin-top:10px">
-        The same program, compiled by you, with no unrecognised-publisher warning.
-      </p>
-      <pre style="margin-top:16px"><code>git clone https://github.com/rex-technologies/flint.git
-cd flint
-./scripts/build.ps1
-./scripts/package.ps1</code></pre>
-      <p class="muted" style="margin-top:14px; font-size:12px">
-        Needs the .NET 10 SDK, Rust with the MSVC toolchain, and Visual Studio Build Tools with the
-        “Desktop development with C++” workload.
+      <p class="eyebrow">Flint for Windows</p>
+      <h3>The PC is the host</h3>
+      <p class="muted">
+        Mirrors the desktop with hardware H.264 encoding, or hands the TV a local media file at
+        original quality. Capture, colour conversion and encoding run on the GPU, in Rust, with
+        nothing allocated on the frame path. Proven end to end on a Fire TV Stick.
       </p>
     </div>
+    <div class="card">
+      <p class="eyebrow">The receiver</p>
+      <h3>Flint on the TV</h3>
+      <p class="muted">
+        A small app the host installs over ADB, after the television's own authorisation prompt
+        is accepted with the remote. It decodes what the host sends, shows the pairing code, and is
+        fully operable from the remote. Whatever installs it also offers to remove it.
+      </p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <p class="eyebrow">Honest by construction</p>
+    <p class="muted">
+      Before offering any mode, Flint probes the host and the television and measures the path
+      between them. A mode is offered only when every piece it needs has been checked; otherwise the
+      app says which check failed and what to do about it. The phone app goes further and checks its
+      own encoder by drawing a test pattern through it and decoding the result, because a list of
+      codec names has already passed once for an encoder that produced nothing.
+    </p>
   </div>
 </section>
 
 <section id="install" class="wrap">
   <div class="head">
-    <p class="eyebrow signal">Installation</p>
-    <h2>Four steps</h2>
+    <p class="eyebrow signal">Install</p>
+    <h2>Step by step, for your device</h2>
   </div>
 
-  <div class="card">
-    <ol class="steps">
-      <li>
-        <div>
-          <h3>Extract the zip</h3>
-          <p class="muted">
-            Right-click, <strong>Extract All</strong>, and pick somewhere you can find again.
-            <code>C:\Program Files</code> is neither required nor recommended — Flint does not need it.
-          </p>
-        </div>
-      </li>
-      <li>
-        <div>
-          <h3>Run <code>Flint.App.exe</code></h3>
-          <p class="muted">
-            There is no installer. Flint writes nothing outside its own folder except one marker
-            file under <code>%LOCALAPPDATA%\REX Technologies\Flint</code> recording that you have
-            seen the introduction. To uninstall, delete the folder.
-          </p>
-        </div>
-      </li>
-      <li>
-        <div>
-          <h3>Get past the Windows warning</h3>
-          <p class="muted">
-            Windows will say <em>“Windows protected your PC”</em>. Click <strong>More info</strong>,
-            then <strong>Run anyway</strong>. This happens because the build is not code-signed, and
-            the warning is Windows telling you the truth: it does not recognise this publisher.
-            Building from source avoids it entirely.
-          </p>
-        </div>
-      </li>
-      <li>
-        <div>
-          <h3>Turn on ADB debugging</h3>
-          <p class="muted">
-            On the TV: <strong>Settings → My Fire TV → Developer Options → ADB debugging</strong>.
-            If Developer Options is missing, open <strong>About</strong> and press Select seven
-            times on the device name. Accept the prompt the TV shows — Flint identifies itself as
-            <code>flint-rex-technologies</code>.
-          </p>
-        </div>
-      </li>
-    </ol>
+  <div class="tabs" role="tablist" aria-label="Device">
+    <button class="tab" role="tab" type="button" id="tab-android" data-panel="android" aria-selected="true" aria-controls="install-android" tabindex="0">Android phone</button>
+    <button class="tab" role="tab" type="button" id="tab-windows" data-panel="windows" aria-selected="false" aria-controls="install-windows" tabindex="-1">Windows PC</button>
+    <button class="tab" role="tab" type="button" id="tab-firetv" data-panel="firetv" aria-selected="false" aria-controls="install-firetv" tabindex="-1">Fire TV</button>
+  </div>
+
+  <div class="panel" id="install-android" role="tabpanel" aria-labelledby="tab-android">
+    <div class="card" data-heading="Android phone">
+      <ol class="steps">
+        <li>
+          <div>
+            <h4>Download the APK on the phone</h4>
+            <p class="muted">
+              Use the button at the top of this page, or open the
+              <a href="https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest">latest release</a>
+              and pick the <code>Flint-Mobile-*.apk</code> file. It needs Android 8.0 or newer.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>Open it and allow the install</h4>
+            <p class="muted">
+              Android will ask whether to allow installing apps from your browser. Allow it, and turn
+              that permission off again afterwards if you would rather. It will then warn about an
+              unknown developer. That warning is accurate rather than a formality: the app is not in
+              a store, and is signed by a key no store has vouched for. Building from source avoids
+              the warning and is the same code.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>Turn on the phone's hotspot and join the TV to it</h4>
+            <p class="muted">
+              On the TV: <span class="path">Settings → Network</span>, then choose the phone's
+              hotspot. Joining both to the same Wi-Fi also works; Flint will say so, and will warn you
+              if that network keeps its devices from seeing each other.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>Open Flint and let it look</h4>
+            <p class="muted">
+              The Cast screen says which end of the network the phone is on, finds the television,
+              and reports what the two can do together. If the TV has no receiver yet, Settings offers
+              to install one over ADB, showing the package name, version and size before it does.
+              That needs ADB debugging on the TV and the prompt it shows accepted with the remote.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>Pair with the code on the TV</h4>
+            <p class="muted">
+              Open Flint on the television and type the six-digit code it shows into the phone. The
+              pairing is remembered, and the Settings screen has one button that forgets every
+              television, for a phone that is being lent or handed on.
+            </p>
+          </div>
+        </li>
+      </ol>
+      <p class="muted small">
+        Flint never asks for location permission, because it never scans for Wi-Fi networks. It
+        reads its own network interfaces, which needs no permission at all.
+      </p>
+    </div>
+  </div>
+
+  <div class="panel" id="install-windows" role="tabpanel" aria-labelledby="tab-windows" hidden>
+    <div class="card" data-heading="Windows PC">
+      <p class="muted">
+        No packaged Windows release has been tagged yet. Releases are cut by CI from a
+        <code>v*</code> tag, and until one exists the way to get Flint for Windows is to build it,
+        which produces the same program and avoids the unrecognised-publisher warning entirely.
+      </p>
+      <ol class="steps">
+        <li>
+          <div>
+            <h4>Install the tools</h4>
+            <p class="muted">
+              The .NET 10 SDK, Rust with the MSVC toolchain, and Visual Studio Build Tools with the
+              “Desktop development with C++” workload. Windows 10 or 11, 64-bit.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>Build and package</h4>
+<pre><code>git clone https://github.com/tochi-mba/flint-app-firestick-cast.git
+cd flint-app-firestick-cast
+./scripts/build.ps1
+./scripts/package.ps1</code></pre>
+            <p class="muted">
+              The result is <code>dist\Flint-&lt;version&gt;-win-x64.zip</code>, a portable folder with
+              everything it needs. There is no .NET runtime to install first and no installer to run.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>Extract it and run <code>Flint.App.exe</code></h4>
+            <p class="muted">
+              Flint writes nothing outside its own folder except one marker file under
+              <code>%LOCALAPPDATA%\REX Technologies\Flint</code> recording that you have seen the
+              introduction. To uninstall, delete the folder.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>If you run a downloaded build instead</h4>
+            <p class="muted">
+              Windows will say <em>“Windows protected your PC”</em>. Click <kbd>More info</kbd>, then
+              <kbd>Run anyway</kbd>. The build is not code-signed, and the warning is Windows telling
+              you the truth: it does not recognise this publisher.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>Turn on ADB debugging on the TV</h4>
+            <p class="muted">
+              <span class="path">Settings → My Fire TV → Developer Options → ADB debugging</span>. If
+              Developer Options is missing, open <span class="path">About</span> and press Select
+              seven times on the device name. Accept the prompt the TV shows.
+            </p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="panel" id="install-firetv" role="tabpanel" aria-labelledby="tab-firetv" hidden>
+    <div class="card" data-heading="Fire TV">
+      <p class="muted">
+        There is nothing to download on the television itself. The receiver reaches it in one of two
+        ways, and both show you what they are about to install before they install it.
+      </p>
+      <ol class="steps">
+        <li>
+          <div>
+            <h4>Check the model</h4>
+            <p class="muted">
+              <span class="path">Settings → My Fire TV → About</span>. Fire OS 6, 7 or 8 is fine. Vega
+              OS is not, and nothing below will help on a Vega device.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>Turn on ADB debugging</h4>
+            <p class="muted">
+              <span class="path">Settings → My Fire TV → Developer Options → ADB debugging</span>. If
+              Developer Options is missing, open <span class="path">About</span> and press Select
+              seven times on the device name. This is the television owner's setting; Flint cannot
+              turn it on and does not try to.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>From a phone</h4>
+            <p class="muted">
+              Install Flint for Android, choose the TV on the Cast screen, and open Settings. The
+              card there identifies the TV, offers to install the receiver, and offers to remove it
+              from the same place. Accept the authorisation prompt on the TV with the remote when it
+              appears; Flint waits for it rather than working around it.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h4>From a Windows PC</h4>
+            <p class="muted">
+              The Windows package carries <code>Flint.Receiver.apk</code>. Sideload it once by your
+              usual method; after the television authorises Flint over ADB, the app brings the
+              receiver to the foreground itself.
+            </p>
+          </div>
+        </li>
+      </ol>
+    </div>
   </div>
 
   <div class="card" style="margin-top:14px">
     <p class="eyebrow">If nothing is found</p>
-    <p class="muted" style="margin-top:10px">
+    <p class="muted">
       Some networks stop devices seeing each other. Guest networks, most corporate networks, and
-      access points with client isolation all block the broadcast Flint listens for.
+      access points with client isolation all block the discovery Flint relies on. The phone's own
+      hotspot never does.
     </p>
-    <ul class="dots" style="margin-top:16px">
-      <li>Check that the PC and the TV are on the same Wi-Fi network, and that it is not a guest network.</li>
-      <li>Get the TV's address from <strong>Settings → My Fire TV → About → Network</strong> and type it into the direct address field on the Cast page.</li>
-      <li>Run <code>flint.exe --services</code> from the Flint folder. If it lists nothing at all, the network is the cause rather than the television.</li>
+    <ul class="dots">
+      <li>Check that the host and the TV are on the same network, and that it is not a guest network.</li>
+      <li>Get the TV's address from <span class="path">Settings → My Fire TV → About → Network</span> and type it into the address field on the Cast screen. If the TV has no receiver yet, the phone will still identify it over ADB and offer to install one.</li>
+      <li>On Windows, run <code>flint.exe --services</code> from the Flint folder. If it lists nothing at all, the network is the cause rather than the television.</li>
     </ul>
   </div>
 </section>
 
 <section id="status" class="wrap">
   <div class="head">
-    <p class="eyebrow signal">Current status</p>
-    <h2>What works today</h2>
+    <p class="eyebrow signal">Status</p>
+    <h2>What works today, and where it was proved</h2>
+    <p class="lede">
+      Flint is under construction and says so. A mode that is not finished is labelled in the app
+      rather than offered as a control that does nothing, and nothing here claims a device it has
+      not touched.
+    </p>
   </div>
 
-  <p class="muted" style="max-width:680px; margin-bottom:22px">
-    Flint is under construction, and says so. Unfinished modes are labelled in the app rather than
-    offered as controls that do nothing.
-  </p>
-
-  <div class="scroll card">
-    <table>
+  <div class="card">
+    <table class="stack">
       <thead>
-        <tr><th>Capability</th><th>Status</th><th>Notes</th></tr>
+        <tr><th scope="col">Capability</th><th scope="col">Status</th><th scope="col">Evidence</th></tr>
       </thead>
       <tbody>
         <tr>
-          <td>Capability reporting</td>
-          <td><span class="pill signal">Working</span></td>
-          <td>Finds your TV, identifies its OS, probes host encoders and adapters, measures the path.</td>
+          <td data-label="Capability">Windows: capability report</td>
+          <td data-label="Status"><span class="pill signal">Working</span></td>
+          <td data-label="Evidence">Finds the TV, identifies its OS over ADB, probes encoders and adapters, measures the path.</td>
         </tr>
         <tr>
-          <td>Wire protocol</td>
-          <td><span class="pill signal">Working</span></td>
-          <td>Implemented in Rust and C#, held byte-identical by a committed cross-language vector corpus.</td>
+          <td data-label="Capability">Windows: screen mirroring</td>
+          <td data-label="Status"><span class="pill signal">Working</span></td>
+          <td data-label="Evidence">Desktop Duplication capture, GPU colour conversion, hardware H.264 encode. Proven end to end on a Fire TV Stick (Fire OS 6).</td>
         </tr>
         <tr>
-          <td>Screen mirroring</td>
-          <td><span class="pill signal">Working</span></td>
-          <td>Desktop Duplication capture, H.264 encode and transport, proven end to end on a Fire TV Stick.</td>
+          <td data-label="Capability">Windows: media handoff</td>
+          <td data-label="Status"><span class="pill signal">Working</span></td>
+          <td data-label="Evidence">A local file pushed to the receiver and played at original quality. Proven on the same Stick.</td>
         </tr>
         <tr>
-          <td>Media handoff</td>
-          <td><span class="pill signal">Working</span></td>
-          <td>Original-quality direct play, pushed to the receiver over the control channel.</td>
+          <td data-label="Capability">Windows: second screen</td>
+          <td data-label="Status"><span class="pill">Unavailable</span></td>
+          <td data-label="Evidence">An extra desktop rather than a copy of this one needs a display driver Windows will install only once it is signed by a trusted certificate. Flint will not ask anyone to disable driver signing.</td>
         </tr>
         <tr>
-          <td>Second screen</td>
-          <td><span class="pill">Unavailable</span></td>
-          <td>An extra desktop rather than a copy of this one. Needs a display driver Flint has to ship and sign before it can be installed safely.</td>
+          <td data-label="Capability">Android: hardware checks</td>
+          <td data-label="Status"><span class="pill signal">Passed on a phone</span></td>
+          <td data-label="Evidence">The private-display check and the encoder listing both passed on one phone. The newer encoder check, which decodes a real frame, has not yet been run on hardware.</td>
+        </tr>
+        <tr>
+          <td data-label="Capability">Android: pairing, second screen, mirror with sound, media handoff</td>
+          <td data-label="Status"><span class="pill">Built, untested on a TV</span></td>
+          <td data-label="Evidence">Every path is wired end to end and gated by tests that run on every change. None has been run against a television yet, and the app's own copy says so.</td>
+        </tr>
+        <tr>
+          <td data-label="Capability">Android: installing the receiver over ADB</td>
+          <td data-label="Status"><span class="pill">Built, untested on a TV</span></td>
+          <td data-label="Evidence">Tested against a scripted device that speaks the real ADB framing. The television's authorisation prompt has not yet been shown to a phone.</td>
+        </tr>
+        <tr>
+          <td data-label="Capability">Wire protocol</td>
+          <td data-label="Status"><span class="pill signal">Working</span></td>
+          <td data-label="Evidence">Implemented in Rust, C# and Kotlin, held byte-identical by a committed cross-language vector corpus.</td>
+        </tr>
+        <tr>
+          <td data-label="Capability">Latency</td>
+          <td data-label="Status"><span class="pill">Not measured</span></td>
+          <td data-label="Evidence">No glass-to-glass figure has been measured with a camera, so none is quoted. A TV's own picture processing commonly adds more delay than the whole pipeline; Game Mode matters more than any host-side tuning.</td>
         </tr>
       </tbody>
     </table>
   </div>
 </section>
 
-<section class="wrap">
+<section class="wrap" id="built">
   <div class="head">
     <p class="eyebrow signal">How it is built</p>
-    <h2>Two halves, opposite requirements</h2>
+    <h2>Opposite requirements, kept apart</h2>
   </div>
 
   <div class="grid cols-3">
     <div class="card">
       <p class="eyebrow signal">Rust</p>
-      <h3 style="margin-top:8px">The frame path</h3>
-      <p class="muted" style="margin-top:10px">
+      <h3>The frame path on Windows</h3>
+      <p class="muted">
         Capture, colour convert, encode, packetize, send. A garbage-collector pause landing inside a
         16.6 ms frame budget is a stutter you can see, and this side has no collector to pause.
       </p>
     </div>
     <div class="card">
       <p class="eyebrow signal">C# and Avalonia</p>
-      <h3 style="margin-top:8px">The shell</h3>
-      <p class="muted" style="margin-top:10px">
+      <h3>The Windows shell</h3>
+      <p class="muted">
         Discovery, pairing, installation, diagnostics and the interface. Never in the frame path, so
         it lives where the tooling and the tests are better.
       </p>
     </div>
     <div class="card">
       <p class="eyebrow signal">Kotlin</p>
-      <h3 style="margin-top:8px">The receiver</h3>
-      <p class="muted" style="margin-top:10px">
-        Low-latency decode on the television, installed over ADB with the RSA prompt honoured.
-        Not written yet.
+      <h3>The phone app and the receiver</h3>
+      <p class="muted">
+        The Android host and the Fire TV receiver share one wire protocol module and one visual
+        system with the desktop. The phone encodes with the platform's hardware codecs; the receiver
+        decodes with the television's.
       </p>
     </div>
   </div>
-
-  <div class="card" style="margin-top:14px">
-    <p class="eyebrow">The television is usually the bottleneck</p>
-    <p class="muted" style="margin-top:10px">
-      A TV's own picture processing commonly adds more delay than an entire casting pipeline.
-      Turning on Game Mode has a larger effect on what you feel than any host-side tuning. Flint
-      measures glass to glass and will not publish a figure that quietly excludes the panel.
-    </p>
-  </div>
 </section>
 
-<section class="wrap">
+<section class="wrap" id="privacy">
   <div class="head">
     <p class="eyebrow signal">Privacy</p>
     <h2>Nothing leaves your network</h2>
@@ -462,9 +540,10 @@ cd flint
 
   <div class="card">
     <ul class="dots signal">
-      <li>No account, no cloud relay, no analytics, no crash reporting.</li>
+      <li>No account, no cloud relay, no analytics, no crash reporting. This page makes one request, to GitHub, to find the newest download.</li>
       <li>Network activity is local discovery and local session traffic only.</li>
-      <li>Flint reads from your TV to identify it, and never installs or changes anything without telling you first.</li>
+      <li>Flint reads from your TV to identify it, and never installs, replaces or removes anything without showing you what and why first.</li>
+      <li>The phone app never asks for location. It never scans for Wi-Fi networks, so it never needs to.</li>
       <li>
         Session tokens authorise a receiver; they do not encrypt anything. Nothing here describes
         local traffic as private or encrypted, because it is not yet.
@@ -478,30 +557,34 @@ cd flint
 <footer>
   <div class="wrap">
     <div class="row">
-      <div class="mark">REX</div>
-      <div class="lockup">
-        <p class="eyebrow signal">REX Technologies</p>
-        <span class="name">Flint</span>
-      </div>
+      <a class="brand" href="#top" aria-label="Back to top">
+        <img src="flint-icon.png" alt="" width="36" height="36">
+        <span class="lockup">
+          <span class="eyebrow signal">REX Technologies</span>
+          <span class="name">Flint</span>
+        </span>
+      </a>
     </div>
-    <div class="row" style="margin-top:22px">
-      <a href="https://github.com/rex-technologies/flint">Source</a>
-      <a href="https://github.com/rex-technologies/flint/releases/latest">Releases</a>
-      <a href="https://github.com/rex-technologies/flint/blob/main/docs/INSTALL.md">Install guide</a>
-      <a href="https://github.com/rex-technologies/flint/blob/main/docs/LATENCY_BUDGET.md">Latency budget</a>
-      <a href="https://github.com/rex-technologies/flint/blob/main/docs/PROTOCOL.md">Protocol</a>
+    <div class="row">
+      <a href="https://github.com/tochi-mba/flint-app-firestick-cast">Source</a>
+      <a href="https://github.com/tochi-mba/flint-app-firestick-cast/releases">Releases</a>
+      <a href="https://github.com/tochi-mba/flint-app-firestick-cast/blob/master/docs/INSTALL.md">Install guide</a>
+      <a href="https://github.com/tochi-mba/flint-app-firestick-cast/blob/master/docs/flint-mobile-implementation/HARDWARE-EVIDENCE.md">Hardware evidence</a>
+      <a href="https://github.com/tochi-mba/flint-app-firestick-cast/blob/master/docs/LATENCY_BUDGET.md">Latency budget</a>
+      <a href="https://github.com/tochi-mba/flint-app-firestick-cast/blob/master/docs/PROTOCOL.md">Protocol</a>
     </div>
-    <div class="row" style="margin-top:22px">
+    <div class="row">
       <span>MIT licensed. Copyright © 2026 REX Technologies.</span>
     </div>
     <div class="row">
       <span>
-        Independent software, not affiliated with Amazon, NVIDIA, Microsoft, or any device
+        Independent software, not affiliated with Amazon, NVIDIA, Microsoft, Google, or any device
         manufacturer.
       </span>
     </div>
   </div>
 </footer>
 
+<script src="site.js" defer></script>
 </body>
 </html>
