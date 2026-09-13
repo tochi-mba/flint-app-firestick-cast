@@ -258,9 +258,12 @@ class ReceiverServer(
         // consume past the line feed, and the budget is what stops an unauthenticated peer making
         // the television allocate.
         val line = ReceiverProbe.readLine(input, ReceiverProbe.MAX_REQUEST_BYTES).orEmpty()
-        if (line != DISCOVERY_REQUEST) return
-        val safeName = profile().deviceName.replace('\t', ' ').replace('\r', ' ').replace('\n', ' ')
-        output.write("$DISCOVERY_RESPONSE\t$safeName\t$port\n".toByteArray(Charsets.UTF_8))
+        if (!ReceiverProbe.isRequest(line)) return
+        // Assembled by ReceiverProbe rather than here. Replacing the three splitting characters
+        // by hand, as this did, left out the one thing only ReceiverProbe knows: the byte budget
+        // a model name has to fit in. A television whose model name overran it answered every
+        // probe with a line the phone discards, and stayed undiscoverable while looking fine.
+        output.write(ReceiverProbe.responseBytes(profile().deviceName, port))
         output.flush()
     }
 
@@ -305,9 +308,11 @@ class ReceiverServer(
     }
 
     companion object {
-        const val DEFAULT_PORT = 47_855
-        const val DISCOVERY_REQUEST = "REXCAST DISCOVER/1"
-        const val DISCOVERY_RESPONSE = "REXCAST RECEIVER/1"
+        // One definition of the probe's wire format, in the module both ends share, rather than a
+        // second copy here that can drift from it silently.
+        const val DEFAULT_PORT = ReceiverProbe.PORT
+        const val DISCOVERY_REQUEST = ReceiverProbe.REQUEST_LINE
+        const val DISCOVERY_RESPONSE = ReceiverProbe.RESPONSE_PREFIX
         private const val BACKLOG = 8
 
         /** How long an unknown peer may hold a thread before saying anything at all. */

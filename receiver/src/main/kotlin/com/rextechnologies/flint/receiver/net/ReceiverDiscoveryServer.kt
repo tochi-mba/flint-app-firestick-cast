@@ -61,10 +61,12 @@ class ReceiverDiscoveryServer(
                 BufferedInputStream(socket.getInputStream()),
                 ReceiverProbe.MAX_REQUEST_BYTES,
             ).orEmpty()
-            if (request != DISCOVERY_REQUEST) return
-            val safeName = Build.MODEL.replace('\t', ' ').replace('\n', ' ')
-            socket.getOutputStream().bufferedWriter().apply {
-                write("$DISCOVERY_RESPONSE\t$safeName\t$port\n")
+            if (!ReceiverProbe.isRequest(request)) return
+            // Through ReceiverProbe, which is the only place that knows the byte budget and that
+            // a carriage return splits the record too -- this replaced tabs and line feeds and
+            // let carriage returns through, and capped nothing at all.
+            socket.getOutputStream().apply {
+                write(ReceiverProbe.responseBytes(Build.MODEL.orEmpty(), port))
                 flush()
             }
         }
@@ -77,9 +79,10 @@ class ReceiverDiscoveryServer(
     }
 
     companion object {
-        const val DEFAULT_PORT = 47_855
-        const val DISCOVERY_REQUEST = "REXCAST DISCOVER/1"
-        const val DISCOVERY_RESPONSE = "REXCAST RECEIVER/1"
+        // One definition of the probe's wire format, in the module both ends share.
+        const val DEFAULT_PORT = ReceiverProbe.PORT
+        const val DISCOVERY_REQUEST = ReceiverProbe.REQUEST_LINE
+        const val DISCOVERY_RESPONSE = ReceiverProbe.RESPONSE_PREFIX
         private const val CLIENT_TIMEOUT_MILLIS = 2_000
 
         fun findLocalAddress(): Inet4Address? {

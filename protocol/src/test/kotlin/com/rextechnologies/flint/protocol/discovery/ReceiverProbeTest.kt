@@ -198,4 +198,35 @@ class ReceiverProbeRoundTripTest {
     fun `a budget must leave room for a byte`() {
         assertFailsWith<IllegalArgumentException> { ReceiverProbe.readLine("x".byteInputStream(), 0) }
     }
+
+    @Test
+    fun `a model name too long for the budget still announces a usable receiver`() {
+        // The receivers used to assemble this line by hand, which meant no budget at all: a
+        // television whose model name overran 512 bytes answered every probe with a line the
+        // phone discards, and so stayed undiscoverable while appearing to work.
+        val bytes = ReceiverProbe.responseBytes("A very long television".repeat(200), 47_855)
+
+        assertTrue(bytes.size <= ReceiverProbe.MAX_RESPONSE_BYTES, "announced ${bytes.size} bytes")
+        val line = assertNotNull(ReceiverProbe.readLine(bytes.inputStream(), ReceiverProbe.MAX_RESPONSE_BYTES))
+        val parsed = assertNotNull(ReceiverProbe.parseResponse(line))
+        assertEquals(47_855, parsed.port)
+        assertTrue(parsed.modelName.isNotBlank())
+    }
+
+    @Test
+    fun `a carriage return in a model name cannot split the record`() {
+        val bytes = ReceiverProbe.responseBytes("Fire\rTV\tStick\n4K", 47_855)
+        val line = assertNotNull(ReceiverProbe.readLine(bytes.inputStream(), ReceiverProbe.MAX_RESPONSE_BYTES))
+
+        val parsed = assertNotNull(ReceiverProbe.parseResponse(line))
+        assertEquals("Fire TV Stick 4K", parsed.modelName)
+    }
+
+    @Test
+    fun `a blank model name still announces the receiver`() {
+        val bytes = ReceiverProbe.responseBytes("   ", 47_855)
+        val line = assertNotNull(ReceiverProbe.readLine(bytes.inputStream(), ReceiverProbe.MAX_RESPONSE_BYTES))
+
+        assertEquals(ReceiverProbe.FALLBACK_MODEL_NAME, assertNotNull(ReceiverProbe.parseResponse(line)).modelName)
+    }
 }
