@@ -90,29 +90,48 @@
     },
   };
 
+  // Amazon's television models all carry an AFT code; its tablets carry a KF code. Both ship the
+  // Silk browser, so Silk alone says "an Amazon device" and never "a television".
+  var FIRE_TV_MODEL = /\bAFT[A-Z0-9]*\b/;
+  var FIRE_TABLET_MODEL = /\bKF[A-Z0-9]{2,}\b/;
+
+  /*
+    Most specific signal first, broad platform hint last.
+
+    The order is the substance of this function. Every device below is Android or claims to be
+    something else that overlaps: a Fire TV is Android, a Fire tablet is Android AND runs the same
+    browser as the Fire TV, and an iPad has reported itself as a Macintosh since iPadOS 13. So each
+    branch is reached only once everything that could be mistaken for it has been ruled out.
+  */
   function detect() {
     var ua = navigator.userAgent || "";
     var data = navigator.userAgentData;
     var platform = data && data.platform ? String(data.platform) : "";
-    var label = "";
 
-    // Fire TV's Silk browser names the device model and the browser; check it before Android,
-    // which it also is.
-    if (/\bSilk\b/i.test(ua) || /\bAFT[A-Z0-9]+\b/.test(ua) || /Fire ?TV/i.test(ua)) {
+    // A television, by its model code or by saying so. Checked before Android, which it also is.
+    // Silk is deliberately NOT enough on its own: a Fire tablet runs Silk too, and it is a host
+    // that can run Flint rather than a screen to cast to, so calling it a television told its
+    // owner the app was not for them.
+    if (FIRE_TV_MODEL.test(ua) || /Fire ?TV/i.test(ua)) {
       return { key: "firetv", label: "a Fire TV" };
     }
+    // An iPad reports itself as a Macintosh, so it has to be told from a real Mac by touch.
+    if (/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) {
+      return { key: "other", label: "an iPad" };
+    }
+    if (/iPhone|iPod/.test(ua)) return { key: "other", label: "an iPhone" };
+    // ChromeOS before the broad hints: it is neither Android nor a PC, whatever else it reports.
+    if (/CrOS/.test(ua) || /Chrome ?OS/i.test(platform)) return { key: "other", label: "a Chromebook" };
+
     if (/Android/i.test(platform) || /Android/i.test(ua)) {
-      var mobile = (data && data.mobile === true) || /\bMobile\b/.test(ua);
-      label = mobile ? "an Android phone" : "an Android tablet";
-      return { key: "android", label: label };
+      // A Fire tablet is an Android tablet whatever its model code says about Amazon.
+      var tablet = FIRE_TABLET_MODEL.test(ua) || !((data && data.mobile === true) || /\bMobile\b/.test(ua));
+      return { key: "android", label: tablet ? "an Android tablet" : "an Android phone" };
     }
     if (/Windows/i.test(platform) || /Windows NT/i.test(ua)) {
       return { key: "windows", label: "a Windows PC" };
     }
-    if (/iPhone|iPod/.test(ua)) return { key: "other", label: "an iPhone" };
-    if (/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return { key: "other", label: "an iPad" };
     if (/Mac OS X|macOS/i.test(ua) || /macOS/i.test(platform)) return { key: "other", label: "a Mac" };
-    if (/CrOS/.test(ua)) return { key: "other", label: "a Chromebook" };
     if (/Linux/i.test(platform) || /Linux/i.test(ua)) return { key: "other", label: "a Linux computer" };
     return { key: "other", label: "" };
   }

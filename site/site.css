@@ -22,6 +22,8 @@
   --radius-m: 12px;
   --radius-l: 18px;
 
+  /* The sticky header's own height, so anchor targets can clear it. */
+  --bar: 65px;
   --gutter: clamp(16px, 4vw, 32px);
   --page: 1120px;
   --section: clamp(48px, 8vw, 88px);
@@ -97,6 +99,17 @@ strong { font-weight: 700; color: var(--text); }
 .eyebrow.live { color: var(--live); }
 
 .wrap { width: min(var(--page), 100% - 2 * var(--gutter)); margin-inline: auto; }
+
+/*
+  Anchor targets clear the sticky header.
+
+  A section has enough top padding of its own that its heading lands below the header already, so
+  adding a margin there would only waste a strip of screen. These three do not: the download panel
+  is flush, the hero's padding collapses on a phone, and an install panel is mid-section. Without
+  this, the nav's Download button scrolled the panel's "pick a device" row to exactly underneath
+  the header, where nobody could see it.
+*/
+.download, .hero, .panel { scroll-margin-top: calc(var(--bar) + 12px); }
 
 /* ---------- Header ---------- */
 
