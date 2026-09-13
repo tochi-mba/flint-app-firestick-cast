@@ -3,6 +3,7 @@ package com.rextechnologies.flint.receiver.net
 import android.os.Build
 import android.util.Log
 import com.rextechnologies.flint.protocol.discovery.PairingCode
+import com.rextechnologies.flint.protocol.discovery.ReceiverProbe
 import com.rextechnologies.flint.protocol.http.SessionToken
 import com.rextechnologies.flint.protocol.session.CastSessionParameters
 import com.rextechnologies.flint.protocol.session.DeviceProfile
@@ -240,7 +241,10 @@ class ReceiverServer(
     }
 
     private fun serveDiscovery(input: PushbackInputStream, output: BufferedOutputStream) {
-        val line = input.bufferedReader(Charsets.US_ASCII).readLine().orEmpty()
+        // Bounded, and reading the stream rather than wrapping it in a reader: a reader would
+        // consume past the line feed, and the budget is what stops an unauthenticated peer making
+        // the television allocate.
+        val line = ReceiverProbe.readLine(input, ReceiverProbe.MAX_REQUEST_BYTES).orEmpty()
         if (line != DISCOVERY_REQUEST) return
         val safeName = profile().deviceName.replace('\t', ' ').replace('\r', ' ').replace('\n', ' ')
         output.write("$DISCOVERY_RESPONSE\t$safeName\t$port\n".toByteArray(Charsets.UTF_8))

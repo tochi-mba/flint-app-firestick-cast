@@ -1,6 +1,8 @@
 package com.rextechnologies.flint.protocol.discovery
 
 import com.rextechnologies.flint.protocol.text.SafeText
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.nio.charset.StandardCharsets
 
 /**
@@ -51,8 +53,18 @@ object ReceiverProbe {
      */
     const val MAX_RESPONSE_BYTES: Int = 512
 
+    /**
+     * The longest request worth reading.
+     *
+     * [REQUEST_LINE] and its line feed are nineteen bytes. This leaves room for a longer request
+     * from some future version without leaving room for a stranger to send a megabyte.
+     */
+    const val MAX_REQUEST_BYTES: Int = 256
+
     /** What the receiver calls itself when the platform gives no model name at all. */
     const val FALLBACK_MODEL_NAME: String = "Fire TV"
+
+    private const val LINE_FEED: Int = '\n'.code
 
     /**
      * The longest model name that still leaves room for the rest of the response.
@@ -61,6 +73,36 @@ object ReceiverProbe {
      * 1 -- so 26 bytes are spoken for before the name gets any.
      */
     const val MAX_MODEL_NAME_BYTES: Int = MAX_RESPONSE_BYTES - 26
+
+    /**
+     * Reads one line from a stranger, allocating no more than [maximumBytes] for it.
+     *
+     * `BufferedReader.readLine` is the obvious way to do this and the wrong one: its buffer-size
+     * argument bounds the buffer, not the line, so it accumulates without limit until a line feed
+     * arrives. Both ends of this exchange read a line from something they have not authenticated —
+     * a phone sweeping a subnet talks to whatever has the port open, and a television answers
+     * anyone who connects — so the side doing the allocating has to be the side that stops. That is
+     * what [MAX_RESPONSE_BYTES] has always claimed and what nothing was doing.
+     *
+     * A line over the limit returns `null`, which every caller already treats as "not a Flint
+     * receiver". A byte at a time on purpose: callers pass a buffered stream, so the syscalls are
+     * already amortised, and stopping exactly on the line feed leaves the rest of the socket for
+     * whoever reads it next.
+     */
+    fun readLine(input: InputStream, maximumBytes: Int): String? {
+        require(maximumBytes > 0) { "A line budget must leave room for at least one byte" }
+        val line = ByteArrayOutputStream()
+        while (true) {
+            val byte = input.read()
+            if (byte < 0) return if (line.size() == 0) null else decodeLine(line)
+            if (byte == LINE_FEED) return decodeLine(line)
+            if (line.size() >= maximumBytes) return null
+            line.write(byte)
+        }
+    }
+
+    private fun decodeLine(line: ByteArrayOutputStream): String =
+        String(line.toByteArray(), StandardCharsets.UTF_8).removeSuffix("\r")
 
     /** The request bytes, ready to write to a socket. ASCII, because the line is pure ASCII. */
     fun requestBytes(): ByteArray = "$REQUEST_LINE\n".toByteArray(StandardCharsets.US_ASCII)

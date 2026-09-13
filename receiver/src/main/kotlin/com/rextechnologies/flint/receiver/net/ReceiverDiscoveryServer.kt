@@ -1,6 +1,8 @@
 package com.rextechnologies.flint.receiver.net
 
 import android.os.Build
+import com.rextechnologies.flint.protocol.discovery.ReceiverProbe
+import java.io.BufferedInputStream
 import java.io.Closeable
 import java.net.Inet4Address
 import java.net.InetSocketAddress
@@ -43,7 +45,12 @@ class ReceiverDiscoveryServer(
                 launch {
                     client.use { socket ->
                         socket.soTimeout = CLIENT_TIMEOUT_MILLIS
-                        val request = socket.getInputStream().bufferedReader().readLine().orEmpty()
+                        // Bounded: this answers anyone who connects, so the allocation is theirs
+                        // to trigger and ours to refuse.
+                        val request = ReceiverProbe.readLine(
+                            BufferedInputStream(socket.getInputStream()),
+                            ReceiverProbe.MAX_REQUEST_BYTES,
+                        ).orEmpty()
                         if (request == DISCOVERY_REQUEST) {
                             val safeName = Build.MODEL.replace('\t', ' ').replace('\n', ' ')
                             socket.getOutputStream().bufferedWriter().apply {
