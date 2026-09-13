@@ -159,6 +159,17 @@ object ReceiverSetup {
     fun notAndroid(deviceName: String): String =
         "$deviceName runs Vega OS, which is not Android. Flint cannot be installed on it by any method."
 
+    /**
+     * Android, and older than the receiver's own manifest allows.
+     *
+     * Its own sentence because [identified] would otherwise report this television the way it
+     * reports a working one -- "it runs Fire OS 5, Flint is not on it yet" -- which reads as an
+     * invitation to install and is the opposite of true.
+     */
+    fun tooOld(deviceName: String, platformLabel: String): String =
+        "$deviceName runs $platformLabel, which is Android but older than the Flint receiver can be " +
+            "installed on. The TV refuses the app outright, and there is no setting that changes it."
+
     fun installed(deviceName: String): String =
         "Flint is installed on $deviceName and should now appear as a receiver on the Cast screen."
 

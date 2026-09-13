@@ -9,6 +9,7 @@ import com.rextechnologies.flint.castcore.capability.MobileCapabilityAssessor
 import com.rextechnologies.flint.castcore.capability.ProbeOutcome
 import com.rextechnologies.flint.castcore.capability.ReceiverDevice
 import com.rextechnologies.flint.castcore.capability.ReceiverPlatform
+import com.rextechnologies.flint.castcore.capability.isTooOldForReceiver
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.PairingCopy
 import com.rextechnologies.flint.castcore.copy.ScreenCopy
@@ -445,12 +446,15 @@ class MobileController(
     private fun sentenceFor(look: Identification): String {
         val name = look.device.displayName
         return when (val answer = look.answer) {
-            is AdbAnswer.Identified ->
-                if (answer.platform == ReceiverPlatform.VEGA) {
-                    ReceiverSetup.notAndroid(name)
-                } else {
-                    ReceiverSetup.identified(name, answer.platform.displayLabel, answer.receiverInstalled)
-                }
+            is AdbAnswer.Identified -> when {
+                answer.platform == ReceiverPlatform.VEGA -> ReceiverSetup.notAndroid(name)
+                // Android and too old. Reported as its own refusal rather than as a television
+                // that merely has no receiver on it yet.
+                answer.platform.isTooOldForReceiver() && !answer.receiverInstalled ->
+                    ReceiverSetup.tooOld(name, answer.platform.displayLabel)
+
+                else -> ReceiverSetup.identified(name, answer.platform.displayLabel, answer.receiverInstalled)
+            }
 
             is AdbAnswer.Unauthorised -> ReceiverSetup.unauthorised(name)
             is AdbAnswer.Refused -> ReceiverSetup.failed(answer.detail)

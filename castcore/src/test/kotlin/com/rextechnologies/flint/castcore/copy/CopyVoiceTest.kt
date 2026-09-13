@@ -120,6 +120,7 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
     add("ReceiverSetup.identified(missing)", ReceiverSetup.identified("Fire TV Stick", "Fire OS 8", false))
     add("ReceiverSetup.unauthorised", ReceiverSetup.unauthorised("Fire TV Stick"))
     add("ReceiverSetup.notAndroid", ReceiverSetup.notAndroid("Fire TV Stick"))
+    add("ReceiverSetup.tooOld", ReceiverSetup.tooOld("Fire TV Stick", "Fire OS 5"))
     add("ReceiverSetup.installed", ReceiverSetup.installed("Fire TV Stick"))
     add("ReceiverSetup.removed", ReceiverSetup.removed("Fire TV Stick"))
     add("ReceiverSetup.failed(none)", ReceiverSetup.failed(""))
