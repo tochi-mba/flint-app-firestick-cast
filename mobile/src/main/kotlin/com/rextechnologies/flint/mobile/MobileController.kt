@@ -10,6 +10,7 @@ import com.rextechnologies.flint.castcore.capability.ProbeOutcome
 import com.rextechnologies.flint.castcore.capability.ReceiverDevice
 import com.rextechnologies.flint.castcore.capability.ReceiverPlatform
 import com.rextechnologies.flint.castcore.capability.isTooOldForReceiver
+import com.rextechnologies.flint.castcore.copy.FailureCopy
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.PairingCopy
 import com.rextechnologies.flint.castcore.copy.ScreenCopy
@@ -30,6 +31,7 @@ import com.rextechnologies.flint.mobile.net.AdbClient
 import com.rextechnologies.flint.mobile.net.DiscoveryRunner
 import com.rextechnologies.flint.mobile.platform.AdbIdentityStore
 import com.rextechnologies.flint.mobile.platform.AndroidNetworkWatcher
+import com.rextechnologies.flint.mobile.platform.CrashLog
 import com.rextechnologies.flint.mobile.platform.ThermalWatch
 import com.rextechnologies.flint.mobile.platform.TokenStore
 import com.rextechnologies.flint.mobile.state.CapabilityCoordinator
@@ -43,6 +45,7 @@ import com.rextechnologies.flint.mobile.state.OutputCoordinator
 import com.rextechnologies.flint.mobile.state.ReceiverSetupCoordinator
 import com.rextechnologies.flint.mobile.state.ReceiverSetupState
 import com.rextechnologies.flint.mobile.state.SessionCoordinator
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -111,22 +114,40 @@ class MobileController(
      */
     private val work = CoroutineScope(scope.coroutineContext + SupervisorJob(scope.coroutineContext[Job]))
 
+    /**
+     * Every user action runs through here, and every one of them used to be able to close the app.
+     *
+     * A coroutine launched under a `SupervisorJob` with no handler is a root coroutine for the
+     * purpose of failure: nothing above it catches, so an exception reaches the thread's default
+     * uncaught handler, which on Android ends the process. That is what turned one unguarded throw
+     * inside the encoder check into the whole app disappearing, and it applied equally to pairing,
+     * probing, starting a mirror and every other button.
+     *
+     * A failure here is now a banner and a recorded stack rather than a death. It is still a
+     * defect — the recorded trace is how it gets fixed — but the person holding the phone keeps
+     * their session.
+     */
+    private val crashGuard = CoroutineExceptionHandler { _, failure ->
+        CrashLog.record(applicationContext, failure, "a Flint action")
+        navigation.notice(FailureCopy.unexpectedFailure(failure.javaClass.simpleName))
+    }
+
     init {
         // What the output and media paths have to say when they stop on their own -- a dead socket,
         // an encoder that gave up, a cancelled send -- reaches the banner through here, because the
         // coordinators own no navigation.
-        scope.launch { output.notices.collect { navigation.notice(it) } }
-        scope.launch { media.notices.collect { navigation.notice(it) } }
+        scope.launch(crashGuard) { output.notices.collect { navigation.notice(it) } }
+        scope.launch(crashGuard) { media.notices.collect { navigation.notice(it) } }
         // An output that ended on its own -- the notification's Stop, a dead link -- is no longer
         // the surface, whatever this phone last asked for.
-        scope.launch {
+        scope.launch(crashGuard) {
             output.state.collect { live ->
                 if (live == null && (surface == ActiveSurface.Presentation || surface == ActiveSurface.Mirror)) {
                     surface = ActiveSurface.Idle
                 }
             }
         }
-        scope.launch {
+        scope.launch(crashGuard) {
             session.state.collect { link ->
                 if (link !is LinkState.Connected && surface != ActiveSurface.Idle) {
                     media.reset()
@@ -533,7 +554,7 @@ class MobileController(
     }
 
     private fun launchWork(block: suspend CoroutineScope.() -> Unit) {
-        work.launch(block = block)
+        work.launch(context = crashGuard, block = block)
     }
 
     /** The four fast-changing answers, combined first because `combine` takes five flows at most. */

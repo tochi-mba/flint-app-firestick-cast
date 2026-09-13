@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import com.rextechnologies.flint.design.FlintTheme
+import com.rextechnologies.flint.mobile.platform.CrashLog
 import com.rextechnologies.flint.mobile.ui.MobileApp
 
 /**
@@ -82,6 +83,9 @@ class MobileActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Before anything else that could fail. This app runs on phones its authors cannot reach,
+        // so a crash that leaves no record behind is a crash nobody can fix.
+        CrashLog.install(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val metrics = resources.displayMetrics

@@ -67,14 +67,24 @@ object EncoderRoundTrip {
     suspend fun run(activity: Activity, codec: CodecId, apiLevel: Int): Outcome {
         val label = CodecNames.label(codec)
         val sink = RecordingSink()
-        val config = EncoderPolicy.forSession(
-            codec = codec,
-            sourceWidth = WIDTH,
-            sourceHeight = HEIGHT,
-            bitrateBitsPerSecond = BITRATE,
-            apiLevel = apiLevel,
-        )
-        val encoder = ScreenEncoder(config, sink)
+        // Building the policy and the encoder was the one part of this check with nothing around
+        // it. Neither is expected to fail, which is exactly why it was unguarded -- and an
+        // unguarded throw here did not fail the check, it closed the app.
+        val encoder = runCatching {
+            val config = EncoderPolicy.forSession(
+                codec = codec,
+                sourceWidth = WIDTH,
+                sourceHeight = HEIGHT,
+                bitrateBitsPerSecond = BITRATE,
+                apiLevel = apiLevel,
+            )
+            ScreenEncoder(config, sink)
+        }.getOrElse { failure ->
+            return Outcome(
+                ProbeOutcome.UNSUPPORTED,
+                "Flint could not set up a $label encoder to check with: ${reason(failure)}.",
+            )
+        }
 
         val startFailure = withContext(Dispatchers.Default) {
             runCatching { encoder.start() }.exceptionOrNull()
@@ -99,7 +109,9 @@ object EncoderRoundTrip {
             // Stopped before decoding rather than after: the tail of the stream reaches the sink on
             // stop, and a phone with one hardware codec instance to spare cannot open the decoder
             // while the encoder still holds it.
-            withContext(Dispatchers.Default) { encoder.stop() }
+            // Guarded like the one in `finally`. A codec that objects to being stopped is not a
+            // reason to take the app down with it.
+            withContext(Dispatchers.Default) { runCatching { encoder.stop() } }
 
             return withContext(Dispatchers.Default) { decode(codec, videoConfig, recorded.packets) }
         } finally {
@@ -167,25 +179,45 @@ object EncoderRoundTrip {
         val verdict = CompletableDeferred<Outcome>()
         val lastDetail = AtomicReference("the decoder produced no frame to look at")
 
-        val reader = ImageReader.newInstance(config.width, config.height, ImageFormat.YUV_420_888, READER_IMAGES)
+        // Outside every try until now. A phone that refuses this size or format threw from here
+        // straight out of the check and into the caller, which had no handler for it.
+        val reader = runCatching {
+            ImageReader.newInstance(config.width, config.height, ImageFormat.YUV_420_888, READER_IMAGES)
+        }.getOrElse { failure ->
+            thread.quitSafely()
+            return Outcome(
+                ProbeOutcome.NOT_PROBED,
+                "This phone would not open a ${config.width}×${config.height} image reader to check " +
+                    "the $label encoder's output with: ${reason(failure)}.",
+            )
+        }
         reader.setOnImageAvailableListener(
             { source ->
-                val image = source.acquireLatestImage() ?: return@setOnImageAvailableListener
-                try {
-                    val result = PatternCheck.verdict(sample(image))
-                    if (result.passed) {
-                        val size = "${config.width}×${config.height}"
-                        verdict.complete(
-                            Outcome(
-                                ProbeOutcome.SUPPORTED,
-                                "${result.detail.removeSuffix(".")}, through $label at $size.",
-                            ),
-                        )
-                    } else {
-                        lastDetail.set(result.detail)
+                // Everything in here runs on the HandlerThread below, which the coroutine that
+                // started this decode does not own and cannot catch for. An exception escaping a
+                // listener reaches the default uncaught handler, and on Android that ends the
+                // process -- so a decoder handing back a frame shaped differently from the one
+                // this code expects would close the whole app rather than fail a check.
+                runCatching {
+                    val image = source.acquireLatestImage() ?: return@runCatching
+                    try {
+                        val result = PatternCheck.verdict(sample(image))
+                        if (result.passed) {
+                            val size = "${config.width}×${config.height}"
+                            verdict.complete(
+                                Outcome(
+                                    ProbeOutcome.SUPPORTED,
+                                    "${result.detail.removeSuffix(".")}, through $label at $size.",
+                                ),
+                            )
+                        } else {
+                            lastDetail.set(result.detail)
+                        }
+                    } finally {
+                        image.close()
                     }
-                } finally {
-                    image.close()
+                }.onFailure { failure ->
+                    lastDetail.set("the decoded frame could not be read: ${reason(failure)}")
                 }
             },
             Handler(thread.looper),
