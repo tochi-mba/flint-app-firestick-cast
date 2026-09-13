@@ -208,6 +208,10 @@ class MobileController(
         watcher.start()
         thermal.start()
         setup.load()
+        // What this phone answered on an earlier run, if it is still the same phone on the same
+        // system. Without this the encoder check had to be run by hand on every single launch,
+        // because the flag saying the introduction had been read was kept and its answers were not.
+        launchWork { capability.restore() }
     }
 
     /** Ends this run. [start] may be called again afterwards, and works. */
