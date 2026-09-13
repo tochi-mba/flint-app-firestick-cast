@@ -23,10 +23,20 @@ has, and `docs/LATENCY_BUDGET.md` keeps the two apart.
 
 ## Fire TV device families
 
-Fire OS 5, 6, 7, 8, 14 and 16 are Android-based. They expose ADB, permit sideloading, and can run a
-custom receiver. The prober reads the Android release and API level, then assigns a Fire OS
-generation only where Amazon publishes that API mapping. It does not mislabel Android's
-`ro.build.version.release` property as the Fire OS software-version number.
+Fire OS 5, 6, 7, 8, 14 and 16 are Android-based. They expose ADB and permit sideloading. The prober
+reads the Android release and API level, then assigns a Fire OS generation only where Amazon
+publishes that API mapping. It does not mislabel Android's `ro.build.version.release` property as the
+Fire OS software-version number.
+
+Being Android is not the same as being able to run Flint's receiver, and the two were conflated until
+a device class fell through the gap. Fire OS 5 is Android 5.1, API 22; the receiver is built with
+`receiver-min-sdk = 25`, so a Fire OS 5 television refuses the package outright with
+`INSTALL_FAILED_OLDER_SDK` however the install is attempted. It is therefore reported as impossible
+rather than installable, with its own verdict: Vega is not Android and never will be, while a Fire OS
+5 device is Android and simply too old, and neither carries a remedy because no setting on the
+television and no future version of Flint can lower a package manager's floor. The floor is a single
+constant in `:castcore` pinned by a test to the catalogue value, so raising `receiver-min-sdk` fails
+the build until the copy and the verdicts move with it.
 
 Vega OS is a Linux system Amazon built in-house. It is not Android, it does not run APKs, and no
 sideloading path exists — not ADB, not Downloader, not a sideload helper app. Devices known to ship
