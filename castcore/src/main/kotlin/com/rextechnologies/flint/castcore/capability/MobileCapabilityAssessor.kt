@@ -211,6 +211,19 @@ object MobileCapabilityAssessor {
             )
         }
 
+        // Android, and too old for the receiver's own manifest. Told apart from Vega because it is a
+        // different fact, and told apart from an unidentified device because this one has been
+        // identified: offering it the ADB remedy would send somebody into Developer Options to fix
+        // something no setting there can fix.
+        if (device.platform.isTooOldForReceiver() && !device.receiverAnswered) {
+            return VerdictTemplate(
+                ModeStatus.IMPOSSIBLE,
+                "This device runs ${device.platform.displayLabel}, which is Android but older than " +
+                    "the Flint receiver can be installed on. Its package manager refuses the app " +
+                    "outright, and Amazon has never offered these devices a newer version.",
+            )
+        }
+
         // A Flint receiver answering its own port is stronger evidence than anything ADB can report:
         // it proves the receiver is installed, running and willing to talk. Keep blocking only while
         // that has not been shown.

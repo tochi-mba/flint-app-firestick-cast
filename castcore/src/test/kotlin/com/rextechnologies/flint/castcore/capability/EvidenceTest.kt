@@ -31,7 +31,15 @@ class ReceiverPlatformTest {
             ReceiverPlatform.FIRE_OS_16,
         )
         fireOs.forEach { assertTrue(it.isAndroidBased(), "${it.displayLabel} is Android") }
-        fireOs.forEach { assertTrue(it.canInstallReceiver()) }
+
+        // Being Android is not the same question as being able to take the receiver, and this test
+        // used to conflate them. Fire OS 5 is Android 5.1, below the receiver's own minSdk, so its
+        // package manager refuses the APK outright -- and the old assertion here is precisely why
+        // the app went on offering those devices an Install button that could only ever fail.
+        fireOs.filter { it != ReceiverPlatform.FIRE_OS_5 }
+            .forEach { assertTrue(it.canInstallReceiver(), "${it.displayLabel} can take the receiver") }
+        assertFalse(ReceiverPlatform.FIRE_OS_5.canInstallReceiver())
+        assertTrue(ReceiverPlatform.FIRE_OS_5.isTooOldForReceiver())
     }
 
     @Test

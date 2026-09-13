@@ -2,6 +2,7 @@ package com.rextechnologies.flint.castcore.setup
 
 import com.rextechnologies.flint.castcore.capability.ReceiverPlatform
 import com.rextechnologies.flint.castcore.capability.canInstallReceiver
+import com.rextechnologies.flint.castcore.capability.isTooOldForReceiver
 import com.rextechnologies.flint.protocol.text.Decimal
 
 /**
@@ -183,6 +184,19 @@ object ReceiverSetup {
                 headline = "This TV cannot run Flint",
                 body = "It runs Vega OS, which is not Android. An APK cannot be installed on it by " +
                     "any method, and no future version of Flint will change that.",
+            )
+        }
+
+        // Android, and older than the receiver's manifest allows. Its own branch because the
+        // "not identified yet" card below offers a remedy, and there is none for this: no setting on
+        // the television and no future version of Flint can lower a package manager's floor.
+        if (platform.isTooOldForReceiver() && stage != ReceiverInstallStage.Installed) {
+            return ReceiverSetupPlan(
+                stage = ReceiverInstallStage.Impossible,
+                headline = "This TV is too old for Flint",
+                body = "It runs ${platform.displayLabel}, which is Android but older than the Flint " +
+                    "receiver can be installed on. The television's package manager refuses the app " +
+                    "outright, and Amazon has never offered these devices a newer version.",
             )
         }
 
