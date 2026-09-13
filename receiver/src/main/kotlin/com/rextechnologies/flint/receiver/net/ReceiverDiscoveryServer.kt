@@ -78,7 +78,8 @@ class ReceiverDiscoveryServer(
             return interfaces.asSequence()
                 .filter {
                     try {
-                        it.isUp && !it.isLoopback && !it.isVirtual
+                        // Point-to-point is a VPN tunnel, which no phone in the room is on.
+                        it.isUp && !it.isLoopback && !it.isVirtual && !it.isPointToPoint
                     } catch (_: SocketException) {
                         false
                     }

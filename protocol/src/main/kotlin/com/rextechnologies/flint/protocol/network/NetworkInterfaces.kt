@@ -19,7 +19,19 @@ data class NetworkInterfaceSnapshot(
     val isUp: Boolean,
     val isLoopback: Boolean,
     val addresses: List<InterfaceAddressSnapshot>,
+    val isPointToPoint: Boolean = false,
 )
+
+/**
+ * Whether this interface can carry cast traffic between two devices on one local network.
+ *
+ * Point-to-point is the shape a VPN tunnel takes, and a tunnel is never the path to a television
+ * in the same room. Excluding it here matters more than it looks: a WireGuard tunnel's address is
+ * site-local and usually a /32, so it wins both the hotspot priority list and the narrowest-subnet
+ * comparison that picks a client interface. Without this filter, a phone with any VPN switched on
+ * sweeps the tunnel instead of the Wi-Fi it is actually on, and finds nothing.
+ */
+fun NetworkInterfaceSnapshot.carriesLocalTraffic(): Boolean = isUp && !isLoopback && !isPointToPoint
 
 fun interface NetworkInterfaceSource {
     fun snapshots(): List<NetworkInterfaceSnapshot>
@@ -49,6 +61,7 @@ class JvmNetworkInterfaceSource : NetworkInterfaceSource {
                 isUp = safely(false) { networkInterface.isUp },
                 isLoopback = safely(false) { networkInterface.isLoopback },
                 addresses = addresses,
+                isPointToPoint = safely(false) { networkInterface.isPointToPoint },
             )
         }
         return result
@@ -76,7 +89,7 @@ class HotspotInterfaceSelector {
     fun select(interfaces: Iterable<NetworkInterfaceSnapshot>): SelectedHotspotInterface? {
         return interfaces.withIndex()
             .asSequence()
-            .filter { it.value.isUp && !it.value.isLoopback }
+            .filter { it.value.carriesLocalTraffic() }
             .mapNotNull { indexed ->
                 val priority = candidatePriority(indexed.value.name) ?: return@mapNotNull null
                 val address = indexed.value.addresses.firstOrNull {

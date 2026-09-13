@@ -298,21 +298,30 @@ class ReceiverServer(
         private const val TAG = "FlintReceiver"
 
         /**
-         * The address other hotspot clients can reach.
+         * Every address on this TV that a phone on the same network could reach it at.
          *
-         * The TV is a hotspot client rather than its host, so this picks the
-         * ordinary site-local Wi-Fi address instead of a tether interface.
+         * The TV is a hotspot client rather than its host, so these are ordinary site-local Wi-Fi
+         * or Ethernet addresses rather than a tether interface. Point-to-point interfaces are left
+         * out, because that is the shape of a VPN tunnel — including this receiver's own browser
+         * tunnel. Binding the cast listener inside a tunnel puts it somewhere the phone in the same
+         * room cannot reach, and [BrowserVpnRoutePolicy] already draws the same line.
          */
-        fun findLocalAddress(): Inet4Address? = runCatching {
+        fun localAddresses(): List<Inet4Address> = runCatching {
             java.net.NetworkInterface.getNetworkInterfaces()
                 .asSequence()
                 .filter {
-                    runCatching { it.isUp && !it.isLoopback && !it.isVirtual }.getOrDefault(false)
+                    runCatching {
+                        it.isUp && !it.isLoopback && !it.isVirtual && !it.isPointToPoint
+                    }.getOrDefault(false)
                 }
                 .flatMap { it.inetAddresses.asSequence() }
                 .filterIsInstance<Inet4Address>()
-                .firstOrNull { it.isSiteLocalAddress && !it.isLoopbackAddress }
-        }.getOrNull()
+                .filter { it.isSiteLocalAddress && !it.isLoopbackAddress }
+                .toList()
+        }.getOrDefault(emptyList())
+
+        /** The address to bind when nothing is bound yet. */
+        fun findLocalAddress(): Inet4Address? = localAddresses().firstOrNull()
 
         /** Peer name for a HELLO that arrived before authentication. */
         fun peerName(hello: HelloMessage): String = hello.deviceName

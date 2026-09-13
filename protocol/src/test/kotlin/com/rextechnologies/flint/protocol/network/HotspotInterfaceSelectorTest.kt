@@ -1,5 +1,6 @@
 package com.rextechnologies.flint.protocol.network
 
+import java.net.NetworkInterface
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -57,6 +58,29 @@ class HotspotInterfaceSelectorTest {
         assertTrue(snapshots.all { item -> item.addresses.all { it.prefixLength in 0..32 } })
         val source = NetworkInterfaceSource { listOf(snapshot("ap0", 1)) }
         assertEquals("ap0", source.snapshots().single().name)
+    }
+
+    @Test
+    fun `a tunnel wearing a hotspot name is not a hotspot`() {
+        // WireGuard and OpenVPN both let the user name the interface, so a tunnel can arrive
+        // called ap0. The point-to-point flag is the part the user cannot rename.
+        val tunnel = snapshot("ap0", 1, address = "192.168.49.1").copy(isPointToPoint = true)
+        val real = snapshot("wlan1", 2, address = "192.168.43.1")
+
+        assertNull(selector.select(listOf(tunnel)))
+        assertEquals("wlan1", selector.select(listOf(tunnel, real))?.interfaceName)
+    }
+
+    @Test
+    fun `the jvm source reports the point-to-point flag`() {
+        // Nothing here asserts a tunnel exists on the build machine — only that the field is
+        // populated from the interface rather than left at its permissive default.
+        val snapshots = JvmNetworkInterfaceSource().snapshots()
+        val expected = NetworkInterface.getNetworkInterfaces().toList()
+            .filter { it.isPointToPoint }
+            .map { it.name }
+            .toSet()
+        assertEquals(expected, snapshots.filter { it.isPointToPoint }.map { it.name }.toSet())
     }
 
     private fun snapshot(

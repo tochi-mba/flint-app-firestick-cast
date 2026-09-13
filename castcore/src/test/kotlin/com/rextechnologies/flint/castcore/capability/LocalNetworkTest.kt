@@ -10,6 +10,7 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
@@ -241,6 +242,28 @@ class LocalNetworkTest {
         assertNotNull(verdict as? LocalNetwork.PhoneIsClient, "expected a client verdict but got $verdict")
 
     private fun binding(address: String, prefix: Int) = InterfaceAddressSnapshot(Ipv4.parse(address), prefix)
+
+    @Test
+    fun `a vpn tunnel never wins the client interface`() {
+        // The bug this pins: a WireGuard tunnel is site-local and usually a /32, so the
+        // narrowest-subnet rule below picked it over the Wi-Fi the television is actually on,
+        // and the sweep then searched a tunnel with one host in it.
+        val tunnel = snapshot("tun0", 9, address = "10.8.0.2", prefix = 32).copy(isPointToPoint = true)
+        val wifi = snapshot("wlan0", 2, address = "192.168.1.34", prefix = 24)
+
+        val assessed = assessor.assess(listOf(tunnel, wifi))
+
+        val client = assertIs<LocalNetwork.PhoneIsClient>(assessed)
+        assertEquals("wlan0", client.interfaceName)
+        assertEquals(24, client.prefixLength)
+    }
+
+    @Test
+    fun `a tunnel alone is not a local network`() {
+        val tunnel = snapshot("tun0", 9, address = "10.8.0.2", prefix = 32).copy(isPointToPoint = true)
+
+        assertIs<LocalNetwork.NoLocalNetwork>(assessor.assess(listOf(tunnel)))
+    }
 
     private fun snapshot(
         name: String,

@@ -5,6 +5,7 @@ import com.rextechnologies.flint.protocol.network.InterfaceAddressSnapshot
 import com.rextechnologies.flint.protocol.network.Ipv4Subnet
 import com.rextechnologies.flint.protocol.network.NetworkInterfaceSnapshot
 import com.rextechnologies.flint.protocol.network.SelectedHotspotInterface
+import com.rextechnologies.flint.protocol.network.carriesLocalTraffic
 import java.net.Inet4Address
 
 /**
@@ -78,15 +79,17 @@ class LocalNetworkAssessor(
      * Chosen by shape rather than by name. Naming the Wi-Fi client interface would be a guess about
      * one vendor's kernel, and the addresses tell the truth anyway: a phone's Wi-Fi link is a small
      * site-local subnet, while a carrier's is either a public address or a /10 that is not
-     * site-local at all, so neither reaches this branch. Where more than one candidate survives, the
-     * narrowest subnet wins — that is the one with a television on it rather than a corporate /8 —
+     * site-local at all, so neither reaches this branch. A VPN tunnel is excluded by shape too, and
+     * has to be: its address is site-local and usually a /32, so it would win the comparison below
+     * outright and send the sweep down a tunnel with no television on it. Where more than one
+     * candidate survives, the narrowest subnet wins — that is the one with a television on it rather than a corporate /8 —
      * and enumeration order settles the rest so the answer is stable between samples.
      */
     private fun clientCandidate(interfaces: List<NetworkInterfaceSnapshot>): LocalNetwork.PhoneIsClient? {
         var bestSnapshot: NetworkInterfaceSnapshot? = null
         var bestBinding: InterfaceAddressSnapshot? = null
         for (snapshot in interfaces) {
-            if (!snapshot.isUp || snapshot.isLoopback) continue
+            if (!snapshot.carriesLocalTraffic()) continue
             val binding = snapshot.addresses.firstOrNull {
                 it.address.isSiteLocalAddress && !it.address.isLoopbackAddress
             } ?: continue
