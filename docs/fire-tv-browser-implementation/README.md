@@ -93,7 +93,7 @@ Android, or the Kotlin protocol must additionally run the relevant Gradle tasks.
 post-Slice-01 Android command should be:
 
 ~~~powershell
-.\gradlew.bat --no-daemon :protocol:test :receiver:testDebugUnitTest :receiver:lintDebug --console plain
+.\gradlew.bat --no-daemon :protocol:check :receiver:testDebugUnitTest :receiver:lintDebug --console plain
 ~~~
 
 Validate task names against the checked-in Gradle build before making this a CI requirement. If a

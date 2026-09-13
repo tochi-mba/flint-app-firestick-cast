@@ -1,11 +1,14 @@
 package com.rextechnologies.flint.receiver.net
 
 import android.os.Build
+import com.rextechnologies.flint.protocol.discovery.ReceiverProbe
+import java.io.BufferedInputStream
 import java.io.Closeable
 import java.net.Inet4Address
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
+import java.net.Socket
 import java.net.SocketException
 import java.util.Collections
 import kotlinx.coroutines.CoroutineScope
@@ -40,19 +43,31 @@ class ReceiverDiscoveryServer(
                 } catch (_: SocketException) {
                     break
                 }
-                launch {
-                    client.use { socket ->
-                        socket.soTimeout = CLIENT_TIMEOUT_MILLIS
-                        val request = socket.getInputStream().bufferedReader().readLine().orEmpty()
-                        if (request == DISCOVERY_REQUEST) {
-                            val safeName = Build.MODEL.replace('\t', ' ').replace('\n', ' ')
-                            socket.getOutputStream().bufferedWriter().apply {
-                                write("$DISCOVERY_RESPONSE\t$safeName\t$port\n")
-                                flush()
-                            }
-                        }
-                    }
-                }
+                // A client that connects and then says nothing times out, and one that vanishes
+                // throws. Neither is this server's failure, but this launch is a child of the
+                // accept loop, so either used to cancel it -- and one stalled connection took
+                // discovery down for the rest of the session.
+                launch { runCatching { answer(client) } }
+            }
+        }
+    }
+
+    private fun answer(client: Socket) {
+        client.use { socket ->
+            socket.soTimeout = CLIENT_TIMEOUT_MILLIS
+            // Bounded: this answers anyone who connects, so the allocation is theirs to trigger
+            // and ours to refuse.
+            val request = ReceiverProbe.readLine(
+                BufferedInputStream(socket.getInputStream()),
+                ReceiverProbe.MAX_REQUEST_BYTES,
+            ).orEmpty()
+            if (!ReceiverProbe.isRequest(request)) return
+            // Through ReceiverProbe, which is the only place that knows the byte budget and that
+            // a carriage return splits the record too -- this replaced tabs and line feeds and
+            // let carriage returns through, and capped nothing at all.
+            socket.getOutputStream().apply {
+                write(ReceiverProbe.responseBytes(Build.MODEL.orEmpty(), port))
+                flush()
             }
         }
     }
@@ -64,9 +79,10 @@ class ReceiverDiscoveryServer(
     }
 
     companion object {
-        const val DEFAULT_PORT = 47_855
-        const val DISCOVERY_REQUEST = "REXCAST DISCOVER/1"
-        const val DISCOVERY_RESPONSE = "REXCAST RECEIVER/1"
+        // One definition of the probe's wire format, in the module both ends share.
+        const val DEFAULT_PORT = ReceiverProbe.PORT
+        const val DISCOVERY_REQUEST = ReceiverProbe.REQUEST_LINE
+        const val DISCOVERY_RESPONSE = ReceiverProbe.RESPONSE_PREFIX
         private const val CLIENT_TIMEOUT_MILLIS = 2_000
 
         fun findLocalAddress(): Inet4Address? {
@@ -78,7 +94,8 @@ class ReceiverDiscoveryServer(
             return interfaces.asSequence()
                 .filter {
                     try {
-                        it.isUp && !it.isLoopback && !it.isVirtual
+                        // Point-to-point is a VPN tunnel, which no phone in the room is on.
+                        it.isUp && !it.isLoopback && !it.isVirtual && !it.isPointToPoint
                     } catch (_: SocketException) {
                         false
                     }

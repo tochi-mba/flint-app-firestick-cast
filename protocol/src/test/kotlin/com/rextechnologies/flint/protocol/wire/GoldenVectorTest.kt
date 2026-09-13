@@ -196,6 +196,11 @@ internal object GoldenVectors {
             "media-data-final" to WireFrame(1, MediaDataMessage(BinaryData.EMPTY, true)),
             "surface-idle" to WireFrame(1, SurfaceMessage(SurfaceMode.IDLE)),
             "surface-player" to WireFrame(1, SurfaceMessage(SurfaceMode.PLAYER, "Playing")),
+            // The two surfaces only a phone host asks for. Both were unpinned until the phone
+            // started sending them, which meant the first message of a second screen and the first
+            // message of a mirror were the two this corpus did not hold the languages to.
+            "surface-mirror" to WireFrame(1, SurfaceMessage(SurfaceMode.MIRROR, "Pixel 8")),
+            "surface-presentation" to WireFrame(1, SurfaceMessage(SurfaceMode.PRESENTATION, "Pixel 8")),
             "playback-state-playing" to WireFrame(
                 1,
                 PlaybackStateMessage(PlaybackState.PLAYING, 1_000, 12_345),

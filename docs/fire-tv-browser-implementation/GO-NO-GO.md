@@ -7,7 +7,7 @@ evidence rows are green.
 ## Software suite
 
 - [ ] `.\scripts\build.ps1` (Rust + .NET) green on a clean checkout
-- [ ] `.\gradlew.bat --no-daemon :protocol:test :receiver:testDebugUnitTest :receiver:lintDebug` green
+- [ ] `.\gradlew.bat --no-daemon :protocol:check :receiver:testDebugUnitTest :receiver:lintDebug` green
 - [ ] Golden corpus completeness: Rust, C#, Kotlin agree on every `testdata/golden/*.bin`
 - [ ] Browser frames rejected on ordinary CastSession / ReceiverServer
 - [ ] No file over 1,000 lines introduced by this feature without an explicit split
@@ -47,7 +47,7 @@ Until the primary CI image always has JDK 17, run this locally or on an Android-
 
 ~~~powershell
 $env:JAVA_HOME = "<jdk17>"
-.\gradlew.bat --no-daemon :protocol:test :receiver:testDebugUnitTest :receiver:lintDebug --console plain
+.\gradlew.bat --no-daemon :protocol:check :receiver:testDebugUnitTest :receiver:lintDebug --console plain
 ~~~
 
 Treat a red Gradle suite as a release blocker even when `.\scripts\build.ps1` is green.

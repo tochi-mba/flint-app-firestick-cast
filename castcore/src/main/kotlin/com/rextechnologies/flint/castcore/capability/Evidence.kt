@@ -57,6 +57,24 @@ enum class ReceiverPlatform {
         }
 }
 
+/**
+ * The API level a platform is at, or `null` when nothing pins it to one.
+ *
+ * The mapping is [com.rextechnologies.flint.castcore.setup.FireOsPlatformResolver]'s, read the other
+ * way round, and the lowest level of a generation is the one that matters: a floor has to hold for
+ * every device in the generation, not for its newest member.
+ */
+val ReceiverPlatform.lowestApiLevel: Int?
+    get() = when (this) {
+        ReceiverPlatform.FIRE_OS_5 -> 22
+        ReceiverPlatform.FIRE_OS_6 -> 25
+        ReceiverPlatform.FIRE_OS_7 -> 28
+        ReceiverPlatform.FIRE_OS_8 -> 29
+        ReceiverPlatform.FIRE_OS_14 -> 31
+        ReceiverPlatform.FIRE_OS_16 -> 35
+        ReceiverPlatform.UNKNOWN, ReceiverPlatform.VEGA -> null
+    }
+
 /** Whether this platform is Android underneath, which is the same question as whether an APK installs. */
 fun ReceiverPlatform.isAndroidBased(): Boolean = when (this) {
     ReceiverPlatform.FIRE_OS_5,
@@ -71,12 +89,39 @@ fun ReceiverPlatform.isAndroidBased(): Boolean = when (this) {
 }
 
 /**
+ * The oldest Android the Flint receiver can be installed on.
+ *
+ * One source: `receiver-min-sdk` in the version catalog, which is what the receiver's manifest is
+ * built with. A package manager refuses an APK below its own `minSdkVersion` outright, so this is a
+ * hard floor rather than a recommendation, and a verdict that ignores it promises an install that
+ * cannot succeed.
+ */
+const val RECEIVER_MINIMUM_API_LEVEL: Int = 25
+
+/**
  * Whether a receiver package can be installed on this platform at all.
  *
- * [ReceiverPlatform.UNKNOWN] returning false is deliberate. An undetermined platform is not a
- * capability, and reporting one would be a guess.
+ * Being Android is necessary and not sufficient. Fire OS 5 is Android 5.1, which is below the
+ * receiver's own minimum, so its package manager refuses the APK with `INSTALL_FAILED_OLDER_SDK`
+ * however the install is attempted. Reporting it as installable meant offering a person an Install
+ * button whose only possible outcome was a failure, on the one screen whose entire purpose is not
+ * to do that.
+ *
+ * [ReceiverPlatform.UNKNOWN] returning false is deliberate for a different reason. An undetermined
+ * platform is not a capability, and reporting one would be a guess.
  */
-fun ReceiverPlatform.canInstallReceiver(): Boolean = isAndroidBased()
+fun ReceiverPlatform.canInstallReceiver(): Boolean =
+    isAndroidBased() && (lowestApiLevel ?: 0) >= RECEIVER_MINIMUM_API_LEVEL
+
+/**
+ * Whether this platform is Android but older than the receiver needs.
+ *
+ * Told apart from [ReceiverPlatform.VEGA] because the two are not the same fact, even though both
+ * end in "no". Vega is not Android and never will be; a Fire OS 5 device is Android and simply too
+ * old, and Amazon has never offered an upgrade for one, so neither carries a remedy.
+ */
+fun ReceiverPlatform.isTooOldForReceiver(): Boolean =
+    isAndroidBased() && (lowestApiLevel ?: 0) < RECEIVER_MINIMUM_API_LEVEL
 
 /** What happened the last time anything tried to reach the television's ADB port. */
 enum class AdbConnectionState {

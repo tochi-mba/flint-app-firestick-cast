@@ -26,7 +26,7 @@ What remains is **measurement**: that run proved the feature works, not how fast
 |---|---|
 | Rust (`cargo test --all-targets`) | 210 passed, 29 ignored (hardware) |
 | Rust golden + `browser_wire` | 11 + 5 passed |
-| Kotlin `:protocol:test` | green |
+| Kotlin `:protocol:check` | green |
 | Kotlin `:receiver:testDebugUnitTest` | 382 passed |
 | Kotlin `:receiver:lintDebug` | clean |
 | .NET (`dotnet test Flint.slnx`) | 1,034 passed across 8 assemblies |
@@ -86,7 +86,7 @@ across five cockpit view models. No file exceeds 1,000 lines.
 ~~~powershell
 .\scripts\build.ps1                    # Rust + .NET, the canonical gate
 $env:JAVA_HOME = "<jdk17>"
-.\gradlew.bat --no-daemon :protocol:test :receiver:testDebugUnitTest :receiver:lintDebug --console plain
+.\gradlew.bat --no-daemon :protocol:check :receiver:testDebugUnitTest :receiver:lintDebug --console plain
 
 # Deliberate, reviewed regeneration only:
 cd flint-engine; cargo test --test golden -- --ignored regenerate

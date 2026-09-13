@@ -107,7 +107,7 @@ encode-and-send path against the simpler surface first.
 ## Test commands
 
 ```bash
-./gradlew :protocol:test                 # the wire, and the golden corpus
+./gradlew :protocol:check                # the wire, the golden corpus and the coverage rule
 ./gradlew :castcore:check                # tests, ktlint, the source guards, the 95/85 coverage gate
 ./gradlew :design:check :design:lintDebug  # the token tests, ktlint, the source guards, lint
 ./gradlew :mobile:check :mobile:lintDebug  # the coordinator, client and Compose tests under Robolectric, ktlint, the source guards, lint

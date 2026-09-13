@@ -3,6 +3,7 @@ package com.rextechnologies.flint.receiver.net
 import android.os.Build
 import android.util.Log
 import com.rextechnologies.flint.protocol.discovery.PairingCode
+import com.rextechnologies.flint.protocol.discovery.ReceiverProbe
 import com.rextechnologies.flint.protocol.http.SessionToken
 import com.rextechnologies.flint.protocol.session.CastSessionParameters
 import com.rextechnologies.flint.protocol.session.DeviceProfile
@@ -123,7 +124,11 @@ class ReceiverServer(
                 } catch (_: IOException) {
                     break
                 }
-                launch { serve(client) }
+                // A failure serving one phone is that phone's session ending, not this
+                // television's listener ending. This launch is a child of the accept loop, so
+                // anything thrown here used to cancel the loop and leave the TV unreachable
+                // until the service restarted.
+                launch { runCatching { serve(client) } }
             }
         }
         Unit
@@ -144,15 +149,24 @@ class ReceiverServer(
         client.use { socket ->
             socket.tcpNoDelay = true
             socket.keepAlive = true
+            // Until the first byte arrives this is an unknown peer holding a thread, and anyone
+            // on the network can open sockets and say nothing. An established cast session is the
+            // opposite case and must never time out -- a still screen sends no frames for as long
+            // as it stays still -- so the limit covers the wait for that first byte and is lifted
+            // the moment it lands.
+            socket.soTimeout = FIRST_BYTE_TIMEOUT_MILLIS
             val input = PushbackInputStream(BufferedInputStream(socket.getInputStream(), BUFFER_BYTES), 1)
             val output = BufferedOutputStream(socket.getOutputStream(), BUFFER_BYTES)
             val first = input.read()
             if (first < 0) return
             input.unread(first)
             if (first == 'R'.code) {
+                // The probe keeps the limit: it is one line, and a peer that stops halfway
+                // through it is not owed a thread.
                 serveDiscovery(input, output)
                 return
             }
+            socket.soTimeout = 0
             val frames = FrameSender(output)
             val handshake = ReceiverHandshake(
                 profile(),
@@ -240,10 +254,16 @@ class ReceiverServer(
     }
 
     private fun serveDiscovery(input: PushbackInputStream, output: BufferedOutputStream) {
-        val line = input.bufferedReader(Charsets.US_ASCII).readLine().orEmpty()
-        if (line != DISCOVERY_REQUEST) return
-        val safeName = profile().deviceName.replace('\t', ' ').replace('\r', ' ').replace('\n', ' ')
-        output.write("$DISCOVERY_RESPONSE\t$safeName\t$port\n".toByteArray(Charsets.UTF_8))
+        // Bounded, and reading the stream rather than wrapping it in a reader: a reader would
+        // consume past the line feed, and the budget is what stops an unauthenticated peer making
+        // the television allocate.
+        val line = ReceiverProbe.readLine(input, ReceiverProbe.MAX_REQUEST_BYTES).orEmpty()
+        if (!ReceiverProbe.isRequest(line)) return
+        // Assembled by ReceiverProbe rather than here. Replacing the three splitting characters
+        // by hand, as this did, left out the one thing only ReceiverProbe knows: the byte budget
+        // a model name has to fit in. A television whose model name overran it answered every
+        // probe with a line the phone discards, and stayed undiscoverable while looking fine.
+        output.write(ReceiverProbe.responseBytes(profile().deviceName, port))
         output.flush()
     }
 
@@ -288,31 +308,45 @@ class ReceiverServer(
     }
 
     companion object {
-        const val DEFAULT_PORT = 47_855
-        const val DISCOVERY_REQUEST = "REXCAST DISCOVER/1"
-        const val DISCOVERY_RESPONSE = "REXCAST RECEIVER/1"
+        // One definition of the probe's wire format, in the module both ends share, rather than a
+        // second copy here that can drift from it silently.
+        const val DEFAULT_PORT = ReceiverProbe.PORT
+        const val DISCOVERY_REQUEST = ReceiverProbe.REQUEST_LINE
+        const val DISCOVERY_RESPONSE = ReceiverProbe.RESPONSE_PREFIX
         private const val BACKLOG = 8
+
+        /** How long an unknown peer may hold a thread before saying anything at all. */
+        private const val FIRST_BYTE_TIMEOUT_MILLIS = 5_000
         private const val BUFFER_BYTES = 64 * 1024
         private const val IN_USE = "This TV is already casting from another phone"
         private const val BROWSER_ROUTE_REQUIRED = "Browser traffic requires the secure browser session"
         private const val TAG = "FlintReceiver"
 
         /**
-         * The address other hotspot clients can reach.
+         * Every address on this TV that a phone on the same network could reach it at.
          *
-         * The TV is a hotspot client rather than its host, so this picks the
-         * ordinary site-local Wi-Fi address instead of a tether interface.
+         * The TV is a hotspot client rather than its host, so these are ordinary site-local Wi-Fi
+         * or Ethernet addresses rather than a tether interface. Point-to-point interfaces are left
+         * out, because that is the shape of a VPN tunnel — including this receiver's own browser
+         * tunnel. Binding the cast listener inside a tunnel puts it somewhere the phone in the same
+         * room cannot reach, and [BrowserVpnRoutePolicy] already draws the same line.
          */
-        fun findLocalAddress(): Inet4Address? = runCatching {
+        fun localAddresses(): List<Inet4Address> = runCatching {
             java.net.NetworkInterface.getNetworkInterfaces()
                 .asSequence()
                 .filter {
-                    runCatching { it.isUp && !it.isLoopback && !it.isVirtual }.getOrDefault(false)
+                    runCatching {
+                        it.isUp && !it.isLoopback && !it.isVirtual && !it.isPointToPoint
+                    }.getOrDefault(false)
                 }
                 .flatMap { it.inetAddresses.asSequence() }
                 .filterIsInstance<Inet4Address>()
-                .firstOrNull { it.isSiteLocalAddress && !it.isLoopbackAddress }
-        }.getOrNull()
+                .filter { it.isSiteLocalAddress && !it.isLoopbackAddress }
+                .toList()
+        }.getOrDefault(emptyList())
+
+        /** The address to bind when nothing is bound yet. */
+        fun findLocalAddress(): Inet4Address? = localAddresses().firstOrNull()
 
         /** Peer name for a HELLO that arrived before authentication. */
         fun peerName(hello: HelloMessage): String = hello.deviceName

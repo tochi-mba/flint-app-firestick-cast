@@ -19,8 +19,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import java.io.BufferedInputStream
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.Inet4Address
@@ -138,10 +137,12 @@ class DiscoveryRunner(context: Context) : ReceiverFinder {
                 write(ReceiverProbe.requestBytes())
                 flush()
             }
-            val line = BufferedReader(
-                InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8),
+            // Bounded, because a sweep opens a socket to whatever has the port open and a
+            // BufferedReader would happily accumulate a megabyte waiting for a line feed.
+            val line = ReceiverProbe.readLine(
+                BufferedInputStream(socket.getInputStream()),
                 ReceiverProbe.MAX_RESPONSE_BYTES,
-            ).readLine()
+            )
             line?.let(ReceiverProbe::parseResponse)?.let { announcement ->
                 ReceiverDevice(
                     address = host.hostAddress.orEmpty(),

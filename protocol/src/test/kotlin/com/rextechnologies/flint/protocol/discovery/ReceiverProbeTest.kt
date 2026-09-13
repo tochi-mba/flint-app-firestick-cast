@@ -1,5 +1,6 @@
 package com.rextechnologies.flint.protocol.discovery
 
+import java.io.InputStream
 import java.nio.charset.StandardCharsets
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -136,5 +137,96 @@ class ReceiverProbeRoundTripTest {
             assertTrue(parsed.modelName.isNotBlank())
             assertTrue(line.toByteArray(StandardCharsets.UTF_8).size <= ReceiverProbe.MAX_RESPONSE_BYTES)
         }
+    }
+
+    @Test
+    fun `a line reads up to the feed and leaves the rest of the stream alone`() {
+        val stream = "REXCAST DISCOVER/1\nleftover".byteInputStream()
+
+        assertEquals(ReceiverProbe.REQUEST_LINE, ReceiverProbe.readLine(stream, 256))
+        assertEquals("leftover", stream.readBytes().decodeToString())
+    }
+
+    @Test
+    fun `a carriage return before the feed is not part of the line`() {
+        val stream = "REXCAST DISCOVER/1\r\n".byteInputStream()
+
+        assertTrue(ReceiverProbe.isRequest(assertNotNull(ReceiverProbe.readLine(stream, 256))))
+    }
+
+    @Test
+    fun `a stream that never sends a line feed is refused at the budget`() {
+        // The case the budget exists for. A phone sweeping a subnet connects to whatever has the
+        // port open; before this, a host answering with an endless stream and no line feed made
+        // the phone accumulate it all.
+        // Ends after a while rather than truly never, so that a future change removing the
+        // budget fails this assertion instead of hanging the suite.
+        val endless = object : InputStream() {
+            var served = 0
+                private set
+
+            override fun read(): Int {
+                if (served >= 10_000) return -1
+                served++
+                return 'x'.code
+            }
+        }
+
+        assertNull(ReceiverProbe.readLine(endless, 64))
+        // Read the budget, looked at one more byte, and stopped. Not the whole stream.
+        assertTrue(endless.served <= 65, "read ${endless.served} bytes for a 64-byte budget")
+    }
+
+    @Test
+    fun `a line ending at the stream rather than a feed is still returned`() {
+        assertEquals("half a line", ReceiverProbe.readLine("half a line".byteInputStream(), 256))
+        assertNull(ReceiverProbe.readLine("".byteInputStream(), 256))
+    }
+
+    @Test
+    fun `a response at the byte budget parses and one past it does not`() {
+        val longest = ReceiverProbe.responseBytes("m".repeat(ReceiverProbe.MAX_MODEL_NAME_BYTES), 47_855)
+        val parsed = ReceiverProbe.readLine(longest.inputStream(), ReceiverProbe.MAX_RESPONSE_BYTES)
+        assertNotNull(ReceiverProbe.parseResponse(assertNotNull(parsed)))
+
+        val oversized = ("${ReceiverProbe.RESPONSE_PREFIX}\t" + "m".repeat(4_096) + "\t47855\n")
+            .toByteArray(StandardCharsets.UTF_8)
+        assertNull(ReceiverProbe.readLine(oversized.inputStream(), ReceiverProbe.MAX_RESPONSE_BYTES))
+    }
+
+    @Test
+    fun `a budget must leave room for a byte`() {
+        assertFailsWith<IllegalArgumentException> { ReceiverProbe.readLine("x".byteInputStream(), 0) }
+    }
+
+    @Test
+    fun `a model name too long for the budget still announces a usable receiver`() {
+        // The receivers used to assemble this line by hand, which meant no budget at all: a
+        // television whose model name overran 512 bytes answered every probe with a line the
+        // phone discards, and so stayed undiscoverable while appearing to work.
+        val bytes = ReceiverProbe.responseBytes("A very long television".repeat(200), 47_855)
+
+        assertTrue(bytes.size <= ReceiverProbe.MAX_RESPONSE_BYTES, "announced ${bytes.size} bytes")
+        val line = assertNotNull(ReceiverProbe.readLine(bytes.inputStream(), ReceiverProbe.MAX_RESPONSE_BYTES))
+        val parsed = assertNotNull(ReceiverProbe.parseResponse(line))
+        assertEquals(47_855, parsed.port)
+        assertTrue(parsed.modelName.isNotBlank())
+    }
+
+    @Test
+    fun `a carriage return in a model name cannot split the record`() {
+        val bytes = ReceiverProbe.responseBytes("Fire\rTV\tStick\n4K", 47_855)
+        val line = assertNotNull(ReceiverProbe.readLine(bytes.inputStream(), ReceiverProbe.MAX_RESPONSE_BYTES))
+
+        val parsed = assertNotNull(ReceiverProbe.parseResponse(line))
+        assertEquals("Fire TV Stick 4K", parsed.modelName)
+    }
+
+    @Test
+    fun `a blank model name still announces the receiver`() {
+        val bytes = ReceiverProbe.responseBytes("   ", 47_855)
+        val line = assertNotNull(ReceiverProbe.readLine(bytes.inputStream(), ReceiverProbe.MAX_RESPONSE_BYTES))
+
+        assertEquals(ReceiverProbe.FALLBACK_MODEL_NAME, assertNotNull(ReceiverProbe.parseResponse(line)).modelName)
     }
 }

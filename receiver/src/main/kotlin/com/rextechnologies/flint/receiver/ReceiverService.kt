@@ -236,8 +236,15 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
 
         scope.launch {
             while (isActive) {
-                val address = ReceiverServer.findLocalAddress()
-                if (address != currentAddress) restartServer(address)
+                // Rebind only when the address actually went away. A TV with both Wi-Fi and
+                // Ethernet up, or one whose interface list reorders between samples, would
+                // otherwise tear down a cast mid-frame for an address that was never lost.
+                val addresses = ReceiverServer.localAddresses()
+                val bound = currentAddress
+                if (bound == null || bound !in addresses) {
+                    val next = addresses.firstOrNull()
+                    if (next != bound) restartServer(next)
+                }
                 delay(NETWORK_POLL_MILLIS)
             }
         }
