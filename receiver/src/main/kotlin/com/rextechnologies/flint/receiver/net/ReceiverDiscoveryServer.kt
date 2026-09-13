@@ -8,6 +8,7 @@ import java.net.Inet4Address
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
+import java.net.Socket
 import java.net.SocketException
 import java.util.Collections
 import kotlinx.coroutines.CoroutineScope
@@ -42,24 +43,29 @@ class ReceiverDiscoveryServer(
                 } catch (_: SocketException) {
                     break
                 }
-                launch {
-                    client.use { socket ->
-                        socket.soTimeout = CLIENT_TIMEOUT_MILLIS
-                        // Bounded: this answers anyone who connects, so the allocation is theirs
-                        // to trigger and ours to refuse.
-                        val request = ReceiverProbe.readLine(
-                            BufferedInputStream(socket.getInputStream()),
-                            ReceiverProbe.MAX_REQUEST_BYTES,
-                        ).orEmpty()
-                        if (request == DISCOVERY_REQUEST) {
-                            val safeName = Build.MODEL.replace('\t', ' ').replace('\n', ' ')
-                            socket.getOutputStream().bufferedWriter().apply {
-                                write("$DISCOVERY_RESPONSE\t$safeName\t$port\n")
-                                flush()
-                            }
-                        }
-                    }
-                }
+                // A client that connects and then says nothing times out, and one that vanishes
+                // throws. Neither is this server's failure, but this launch is a child of the
+                // accept loop, so either used to cancel it -- and one stalled connection took
+                // discovery down for the rest of the session.
+                launch { runCatching { answer(client) } }
+            }
+        }
+    }
+
+    private fun answer(client: Socket) {
+        client.use { socket ->
+            socket.soTimeout = CLIENT_TIMEOUT_MILLIS
+            // Bounded: this answers anyone who connects, so the allocation is theirs to trigger
+            // and ours to refuse.
+            val request = ReceiverProbe.readLine(
+                BufferedInputStream(socket.getInputStream()),
+                ReceiverProbe.MAX_REQUEST_BYTES,
+            ).orEmpty()
+            if (request != DISCOVERY_REQUEST) return
+            val safeName = Build.MODEL.replace('\t', ' ').replace('\n', ' ')
+            socket.getOutputStream().bufferedWriter().apply {
+                write("$DISCOVERY_RESPONSE\t$safeName\t$port\n")
+                flush()
             }
         }
     }

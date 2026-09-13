@@ -124,7 +124,11 @@ class ReceiverServer(
                 } catch (_: IOException) {
                     break
                 }
-                launch { serve(client) }
+                // A failure serving one phone is that phone's session ending, not this
+                // television's listener ending. This launch is a child of the accept loop, so
+                // anything thrown here used to cancel the loop and leave the TV unreachable
+                // until the service restarted.
+                launch { runCatching { serve(client) } }
             }
         }
         Unit
@@ -145,15 +149,24 @@ class ReceiverServer(
         client.use { socket ->
             socket.tcpNoDelay = true
             socket.keepAlive = true
+            // Until the first byte arrives this is an unknown peer holding a thread, and anyone
+            // on the network can open sockets and say nothing. An established cast session is the
+            // opposite case and must never time out -- a still screen sends no frames for as long
+            // as it stays still -- so the limit covers the wait for that first byte and is lifted
+            // the moment it lands.
+            socket.soTimeout = FIRST_BYTE_TIMEOUT_MILLIS
             val input = PushbackInputStream(BufferedInputStream(socket.getInputStream(), BUFFER_BYTES), 1)
             val output = BufferedOutputStream(socket.getOutputStream(), BUFFER_BYTES)
             val first = input.read()
             if (first < 0) return
             input.unread(first)
             if (first == 'R'.code) {
+                // The probe keeps the limit: it is one line, and a peer that stops halfway
+                // through it is not owed a thread.
                 serveDiscovery(input, output)
                 return
             }
+            socket.soTimeout = 0
             val frames = FrameSender(output)
             val handshake = ReceiverHandshake(
                 profile(),
@@ -296,6 +309,9 @@ class ReceiverServer(
         const val DISCOVERY_REQUEST = "REXCAST DISCOVER/1"
         const val DISCOVERY_RESPONSE = "REXCAST RECEIVER/1"
         private const val BACKLOG = 8
+
+        /** How long an unknown peer may hold a thread before saying anything at all. */
+        private const val FIRST_BYTE_TIMEOUT_MILLIS = 5_000
         private const val BUFFER_BYTES = 64 * 1024
         private const val IN_USE = "This TV is already casting from another phone"
         private const val BROWSER_ROUTE_REQUIRED = "Browser traffic requires the secure browser session"
