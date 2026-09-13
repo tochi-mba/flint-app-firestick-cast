@@ -7,7 +7,7 @@ import com.rextechnologies.flint.castcore.copy.PairingCopy
 import com.rextechnologies.flint.castcore.session.SessionFailure
 import com.rextechnologies.flint.mobile.net.CastConnection
 import com.rextechnologies.flint.mobile.net.CastConnectionListener
-import com.rextechnologies.flint.mobile.platform.TokenStore
+import com.rextechnologies.flint.mobile.platform.SessionTokens
 import com.rextechnologies.flint.protocol.BinaryData
 import com.rextechnologies.flint.protocol.http.SessionToken
 import com.rextechnologies.flint.protocol.session.CastSessionParameters
@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.net.Inet4Address
+import java.util.concurrent.atomic.AtomicInteger
 
 /** Where the link to one television has got to. */
 sealed interface LinkState {
@@ -53,7 +54,7 @@ sealed interface LinkState {
  * through [send].
  */
 class SessionCoordinator(
-    private val tokens: TokenStore,
+    private val tokens: SessionTokens,
     private val scope: CoroutineScope,
     private val connect: (CastConnection) -> Unit = CastConnection::connect,
 ) : MediaLink {
@@ -62,6 +63,23 @@ class SessionCoordinator(
 
     @Volatile
     private var connection: CastConnection? = null
+
+    /**
+     * Which attempt a callback belongs to.
+     *
+     * Closing a connection does not call back on the closing thread: `CastConnection.close` puts
+     * the goodbye and the teardown on its own dispatcher, so the old connection's `onClosed`
+     * lands some time after [open] has already built its replacement. Without this it would then
+     * null the new connection and move the state to Closed — killing the attempt the user had
+     * just started. Retyping a mistyped pairing code is exactly that sequence, which made it the
+     * most reachable way to break pairing in this class.
+     */
+    private val attempts = AtomicInteger()
+
+    /** The callbacks installed for the current attempt, so a test can deliver a stale one. */
+    @Volatile
+    internal var installedListener: CastConnectionListener? = null
+        private set
 
     /** Messages the television sends after the handshake, for whoever is driving the media path. */
     private val listeners = mutableListOf<(WireMessage) -> Unit>()
@@ -135,6 +153,10 @@ class SessionCoordinator(
 
     /** Ends the session. Safe to call when there is none. */
     fun close() {
+        // Retires the current attempt first, so this deliberate close is the one that names the
+        // state rather than the connection's own callback arriving later to name it again.
+        attempts.incrementAndGet()
+        installedListener = null
         val current = connection ?: return
         connection = null
         current.close()
@@ -155,10 +177,14 @@ class SessionCoordinator(
         credential: String,
     ) {
         // One at a time. The receiver admits one phone and refuses the second after a successful
-        // handshake, so two connections from the same phone would have it refuse itself.
+        // handshake, so two connections from the same phone would have it refuse itself. The
+        // attempt number goes up before the old one is closed, so its late callbacks find
+        // themselves retired rather than tearing down the connection replacing them.
+        val attempt = attempts.incrementAndGet()
         connection?.close()
         mutable.value = LinkState.Connecting(device.displayName)
 
+        val callbacks = Listener(device, attempt)
         val opened = CastConnection(
             localAddress = bound,
             remoteAddress = device.address,
@@ -166,8 +192,9 @@ class SessionCoordinator(
             profile = profileFor(phone),
             authMethod = method,
             credential = BinaryData.of(credential.toByteArray(Charsets.US_ASCII)),
-            listener = Listener(device),
+            listener = callbacks,
         )
+        installedListener = callbacks
         connection = opened
         connect(opened)
     }
@@ -182,8 +209,16 @@ class SessionCoordinator(
         densityDpi = phone.densityDpi,
     )
 
-    private inner class Listener(private val device: ReceiverDevice) : CastConnectionListener {
+    private inner class Listener(
+        private val device: ReceiverDevice,
+        private val attempt: Int,
+    ) : CastConnectionListener {
+        /** Whether this is still the attempt in progress, or one that has already been replaced. */
+        private val current: Boolean
+            get() = attempts.get() == attempt
+
         override fun onEstablished(parameters: CastSessionParameters, token: SessionToken?) {
+            if (!current) return
             // Written off the main thread, because it is a keystore round trip and an
             // AES-GCM encrypt. This callback arrives on the connection's own IO dispatcher, but
             // saying so here rather than relying on it is what keeps that true after an edit.
@@ -196,11 +231,13 @@ class SessionCoordinator(
         }
 
         override fun onMessage(message: WireMessage) {
+            if (!current) return
             val snapshot = synchronized(listeners) { listeners.toList() }
             snapshot.forEach { it(message) }
         }
 
         override fun onClosed(failure: SessionFailure?) {
+            if (!current) return
             connection = null
             mutable.value = LinkState.Closed(failure)
         }
