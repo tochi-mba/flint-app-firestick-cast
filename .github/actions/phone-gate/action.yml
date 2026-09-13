@@ -33,10 +33,11 @@ runs:
     # change that breaks a golden vector has to fail here rather than on a television.
     - name: Check the shared protocol
       shell: bash
-      run: ./gradlew :protocol:test --console plain
+      run: ./gradlew :protocol:check --console plain
 
     # :castcore is Android-free on purpose, which is what lets it carry the same 95% line / 85%
-    # branch gate as :protocol without Robolectric anywhere near it. `check` is tests, the coverage
+    # branch gate as :protocol without Robolectric anywhere near it. `check` on both, because
+    # `test` alone skips the coverage rule :protocol declares. `check` is tests, the coverage
     # verification, the source guards and ktlint.
     - name: Check the phone's pure logic
       shell: bash

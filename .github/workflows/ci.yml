@@ -85,11 +85,15 @@ jobs:
 
       # The same gate as the local one. Protocol tests and lint were missing, so a wire
       # change that broke Kotlin, or a lint regression, could pass CI and fail on a television.
+      #
+      # :protocol:check rather than :protocol:test, because the module declares a 95% line and
+      # 85% branch coverage rule that nothing here was running. It had been failing quietly at
+      # 81% ever since the browser codecs landed untested.
       - name: Test Fire TV receiver
         shell: pwsh
         run: >
           ./gradlew.bat --no-daemon
-          :protocol:test :receiver:testDebugUnitTest :receiver:lintDebug
+          :protocol:check :receiver:testDebugUnitTest :receiver:lintDebug
           --console plain
 
       # Reports are the only way to see which case failed once the runner is gone.
