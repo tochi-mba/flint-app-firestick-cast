@@ -44,7 +44,7 @@ class PreferenceCapabilityStore(context: Context) : CapabilityStore {
     override fun load(): StoredCapabilities? {
         if (preferences.getString(KEY_STAMP, null) != stamp()) return null
         val encoders = preferences.getStringSet(KEY_ENCODERS, emptySet()).orEmpty()
-            .mapNotNull { name -> CodecId.entries.firstOrNull { it.name == name } }
+            .mapNotNull(::codec)
             .toSet()
         return StoredCapabilities(
             encoders = encoders,
@@ -52,21 +52,34 @@ class PreferenceCapabilityStore(context: Context) : CapabilityStore {
             virtualDisplayProbe = outcome(KEY_DISPLAY_PROBE),
             encoderRoundTrip = outcome(KEY_ROUND_TRIP),
             roundTripDetail = preferences.getString(KEY_ROUND_TRIP_DETAIL, "").orEmpty(),
-            roundTripCodec = preferences.getString(KEY_ROUND_TRIP_CODEC, null)
-                ?.let { name -> CodecId.entries.firstOrNull { it.name == name } },
+            roundTripCodec = codec(preferences.getString(KEY_ROUND_TRIP_CODEC, null)),
         )
     }
 
     override fun save(value: StoredCapabilities) {
         preferences.edit()
             .putString(KEY_STAMP, stamp())
-            .putStringSet(KEY_ENCODERS, value.encoders.map { it.name }.toSet())
+            .putStringSet(KEY_ENCODERS, value.encoders.map { it.value.toString() }.toSet())
             .putString(KEY_ENCODER_PROBE, value.encoderProbe.name)
             .putString(KEY_DISPLAY_PROBE, value.virtualDisplayProbe.name)
             .putString(KEY_ROUND_TRIP, value.encoderRoundTrip.name)
             .putString(KEY_ROUND_TRIP_DETAIL, value.roundTripDetail)
-            .putString(KEY_ROUND_TRIP_CODEC, value.roundTripCodec?.name)
+            .putString(KEY_ROUND_TRIP_CODEC, value.roundTripCodec?.value?.toString())
             .apply()
+    }
+
+    /**
+     * A codec is a wire number rather than a name.
+     *
+     * [CodecId] is a value class over the number that goes on the wire, not an enum, and it rejects
+     * anything outside an unsigned 16-bit non-zero range in its own constructor. Reading one back
+     * therefore has to be able to fail: a preference file edited by hand, or written by a build
+     * that numbered things differently, must come back as "nothing stored" rather than throw while
+     * the app is starting.
+     */
+    private fun codec(stored: String?): CodecId? {
+        val id = stored?.toIntOrNull() ?: return null
+        return runCatching { CodecId(id) }.getOrNull()
     }
 
     private fun outcome(key: String): ProbeOutcome {
