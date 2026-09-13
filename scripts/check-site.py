@@ -28,11 +28,17 @@ REQUIRED_CONTENT = {
     "that Vega is permanent": "no future version will change that",
     "the unsigned-build warning": "Windows protected your PC",
     "the platform requirement": "Windows 10 or 11",
+    "the phone requirement": "Android 8.0 or newer",
     "the availability statement": "Unavailable",
+    "that the phone app is untested on a television": "untested on a TV",
+    "that no latency figure is quoted": "Not measured",
     "the privacy position": "no analytics",
     "that tokens are not encryption": "they do not encrypt anything",
     "the maker": "REX Technologies",
 }
+
+# The one repository every link on the page must point at. A second slug is a stale copy.
+REPOSITORY = "tochi-mba/flint-app-firestick-cast"
 
 # Text that means a draft escaped.
 FORBIDDEN_PATTERNS = [
@@ -73,12 +79,18 @@ class PageParser(HTMLParser):
             source = values.get("src", "")
             if source:
                 self.assets.append(source)
-            # An image with no alt text is invisible to a screen reader.
-            if not values.get("alt", "").strip():
+            # An image with no alt attribute is read out by its file name. An explicitly empty alt
+            # is the standard way to mark an image decorative, and is allowed.
+            if "alt" not in values:
                 self.images_without_alt.append(source or "(no src)")
 
         if tag == "link" and "href" in values:
             self.assets.append(values["href"])
+
+        # A script that is not there leaves the page working without it, silently: the download
+        # panel would never lead with the reader's device and nobody would see an error.
+        if tag == "script" and values.get("src"):
+            self.assets.append(values["src"])
 
     def handle_endtag(self, tag: str) -> None:
         if tag == "title":
@@ -139,6 +151,24 @@ def check() -> list[str]:
     }
     if len(slugs) > 1:
         problems.append(f"The page points at more than one repository: {sorted(slugs)}.")
+    if slugs and slugs != {REPOSITORY}:
+        problems.append(f"The page points at {sorted(slugs)} rather than {REPOSITORY}.")
+
+    # The script resolves downloads from the same repository the links name.
+    script = SITE / "site.js"
+    if script.exists():
+        source = script.read_text(encoding="utf-8")
+        if f'"{REPOSITORY}"' not in source:
+            problems.append(f"site.js does not name {REPOSITORY} as the release repository.")
+        for pattern in FORBIDDEN_PATTERNS:
+            match = re.search(pattern, source, re.IGNORECASE)
+            if match:
+                problems.append(f"Draft text left in site.js: '{match.group(0)}'.")
+
+    # Every tab panel the script can open exists, and every id the script reaches for is present.
+    for needed in ("download", "install-android", "install-windows", "install-firetv", "site-nav"):
+        if needed not in parser.ids:
+            problems.append(f"The page has no element with id '{needed}', which the script relies on.")
 
     if not (SITE / ".nojekyll").exists():
         problems.append(
