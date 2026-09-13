@@ -287,6 +287,23 @@ pub fn corpus() -> Vec<Vector> {
                 caption: "Playing".into(),
             }),
         },
+        // The two surfaces a phone host asks for. Unpinned until the phone began sending them,
+        // which left the first message of a mirror and the first message of a second screen as the
+        // only two this corpus did not hold the three languages to.
+        Vector {
+            name: "surface-mirror",
+            frame: Frame::new(Message::Surface {
+                mode: SurfaceMode::Mirror,
+                caption: "Pixel 8".into(),
+            }),
+        },
+        Vector {
+            name: "surface-presentation",
+            frame: Frame::new(Message::Surface {
+                mode: SurfaceMode::Presentation,
+                caption: "Pixel 8".into(),
+            }),
+        },
         Vector {
             name: "playback-state-playing",
             frame: Frame::new(Message::PlaybackState {

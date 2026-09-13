@@ -179,6 +179,13 @@ internal static class GoldenVectors
 
         ["surface-player"] = new WireFrame(new SurfaceMessage(SurfaceMode.Player, "Playing")),
 
+        // The two surfaces a phone host asks for. Unpinned until the phone began sending them,
+        // which left the first message of a mirror and the first message of a second screen as the
+        // only two this corpus did not hold the three languages to.
+        ["surface-mirror"] = new WireFrame(new SurfaceMessage(SurfaceMode.Mirror, "Pixel 8")),
+
+        ["surface-presentation"] = new WireFrame(new SurfaceMessage(SurfaceMode.Presentation, "Pixel 8")),
+
         ["playback-state-playing"] = new WireFrame(new PlaybackStateMessage(
             PlaybackState.Playing,
             PositionMs: 1_000,
