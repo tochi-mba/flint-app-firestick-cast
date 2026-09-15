@@ -51,6 +51,7 @@ object BrowserSecurityProfile {
         settings.domStorageEnabled = true
         settings.allowFileAccess = false
         settings.allowContentAccess = false
+        disableLegacyFileUrlAccess(settings)
         disableSavedFormData(settings)
         settings.mediaPlaybackRequiresUserGesture = true
         settings.setSupportMultipleWindows(false)
@@ -102,15 +103,26 @@ object BrowserSecurityProfile {
     }
 
     /**
+     * Explicitly closes both legacy file-URL escape hatches.
+     *
+     * Android documents these as false by default on modern API levels, but a hardened profile must
+     * not depend on the WebView implementation preserving that default. Robolectric exposed exactly
+     * that assumption: one flag remained enabled and the production assertion correctly rejected the
+     * profile. Keep the assignments next to the other file-access switches so the invariant is
+     * established by Flint rather than inherited from a platform default.
+     */
+    @Suppress("DEPRECATION")
+    private fun disableLegacyFileUrlAccess(settings: WebSettings) {
+        settings.allowFileAccessFromFileURLs = false
+        settings.allowUniversalAccessFromFileURLs = false
+    }
+
+    /**
      * Stops the WebView on Fire OS 6 remembering what is typed into forms.
      *
-     * Saved form data is on by default below API 26. Android 8 handed the job to the autofill
-     * framework and made this setting do nothing, which is why it is deprecated; Fire OS 6 reports
-     * API 25 and has no replacement to call, so the old setting is used there and only there.
-     *
-     * The other switches deprecated with it need no call: Web SQL storage is off by default, and file
-     * URLs reaching other files or origins has been off by default since API 16. [assertHardened]
-     * holds the file URL pair to that.
+     * Android 8 handed the job to the autofill framework and made this setting do nothing, which is
+     * why it is deprecated; Fire OS 6 reports API 25 and has no replacement to call, so the old
+     * setting is used there and only there.
      */
     private fun disableSavedFormData(settings: WebSettings) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
