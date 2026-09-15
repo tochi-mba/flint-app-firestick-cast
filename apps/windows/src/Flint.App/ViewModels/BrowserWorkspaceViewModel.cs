@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -19,6 +20,10 @@ namespace Flint.App.ViewModels;
 /// previously focused page while focus is in flight.
 /// </para>
 /// </remarks>
+[SuppressMessage(
+    "Design",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "The pending-request watchdog is disposed whenever that request resolves, times out or the connection resets; the view model lives as long as the window.")]
 public sealed partial class BrowserWorkspaceViewModel : ObservableObject
 {
     /// <summary>Enough for a page-sized paste without allowing an accidental unbounded command.</summary>

@@ -143,10 +143,7 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
     /// <summary>Validates one native frame result before managed code trusts its lengths.</summary>
     internal static MirrorTick ToMirrorTick(FlintStatus status, NativeMirrorFrame frame, int capacity)
     {
-        if (capacity <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(capacity));
-        }
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(capacity);
 
         if (status is FlintStatus.BufferTooSmall)
         {

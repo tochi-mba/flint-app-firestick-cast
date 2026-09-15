@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text.Json;
 
@@ -101,6 +102,10 @@ public sealed class BrowserTrustStoreCorruptException : BrowserTrustException
 /// content is a receiver identity and full public-key pin. Pairing codes, TLS session material,
 /// URLs, browser text, cookies, and certificate bytes never enter this type.
 /// </remarks>
+[SuppressMessage(
+    "Design",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "SemaphoreSlim needs disposing only once its AvailableWaitHandle is read, which this store never does.")]
 public sealed class ProtectedFileBrowserTrustStore : IBrowserTrustStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

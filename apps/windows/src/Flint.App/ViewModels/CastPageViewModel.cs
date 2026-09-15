@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -21,6 +22,10 @@ namespace Flint.App.ViewModels;
 /// refuses to answer it before the probe has run.
 /// </remarks>
 /// <param name="prober">Runs the probe. Injected so the page is testable without hardware.</param>
+[SuppressMessage(
+    "Design",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "The mirror cancellation source is disposed when the mirror stops and never carries a timer; the page lives as long as the window.")]
 public sealed partial class CastPageViewModel : ObservableObject
 {
     /// <summary>
@@ -414,7 +419,7 @@ public sealed partial class CastPageViewModel : ObservableObject
         {
             try
             {
-                browserEvidence = await new FireTvDeviceProbe()
+                browserEvidence = await FireTvDeviceProbe
                         .TryDiscoverBrowserEvidenceAsync(device.Address, cancellationToken)
                         .ConfigureAwait(true)
                     ?? browserEvidence;

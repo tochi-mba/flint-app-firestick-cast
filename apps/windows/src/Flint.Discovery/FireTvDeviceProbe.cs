@@ -67,7 +67,7 @@ public sealed class FireTvDeviceProbe(AdbProbeClient? adb = null) : IAddressable
     /// Listens briefly for a multicast advertisement from <paramref name="address"/> and returns
     /// its browser endpoint evidence when present.
     /// </summary>
-    public async Task<BrowserReceiverEvidence?> TryDiscoverBrowserEvidenceAsync(
+    public static async Task<BrowserReceiverEvidence?> TryDiscoverBrowserEvidenceAsync(
         System.Net.IPAddress address,
         CancellationToken cancellationToken = default)
     {

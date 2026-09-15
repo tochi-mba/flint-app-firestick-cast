@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;

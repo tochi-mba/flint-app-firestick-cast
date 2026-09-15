@@ -1,4 +1,4 @@
-﻿using Flint.App.Services;
+using Flint.App.Services;
 using Flint.App.ViewModels;
 using Flint.Protocol;
 using Flint.Session.Browser;

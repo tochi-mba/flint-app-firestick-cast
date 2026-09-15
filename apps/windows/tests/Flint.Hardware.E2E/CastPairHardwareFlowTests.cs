@@ -50,8 +50,12 @@ public sealed class CastPairHardwareFlowTests
             var artifacts = Path.Combine(root, "artifacts", "cross-device", DateTime.UtcNow.ToString("yyyyMMdd-HHmmss"));
             Directory.CreateDirectory(artifacts);
             try { windows.CaptureFailure(Path.Combine(artifacts, "windows.png")); } catch { /* Keep original failure. */ }
-            try { await File.WriteAllTextAsync(Path.Combine(artifacts, "tv.xml"),
-                await AdbTvSurfaceReader.ReadHierarchyAsync(serial, CancellationToken.None)); } catch { /* Keep original failure. */ }
+            try
+            {
+                await File.WriteAllTextAsync(Path.Combine(artifacts, "tv.xml"),
+                await AdbTvSurfaceReader.ReadHierarchyAsync(serial, CancellationToken.None));
+            }
+            catch { /* Keep original failure. */ }
             throw;
         }
     }

@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Flint.Core;
 
 namespace Flint.App.ViewModels;

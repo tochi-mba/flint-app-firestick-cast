@@ -7,6 +7,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- The recommended rule set rather than the handful the SDK enables by default. The rules this
+         codebase turns off are listed in .editorconfig, each with its reason. -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
@@ -17,10 +20,6 @@
     <Copyright>Copyright (c) 2026 REX Technologies</Copyright>
     <VersionPrefix>0.1.0</VersionPrefix>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
 </Project>

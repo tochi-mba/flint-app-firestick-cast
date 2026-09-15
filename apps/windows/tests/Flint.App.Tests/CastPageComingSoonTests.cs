@@ -187,9 +187,6 @@ public sealed class CastPageComingSoonTests
     {
         public Task<IReadOnlyList<FireTvDevice>> DiscoverAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<FireTvDevice>>(device is null ? [] : [device]);
-
-        public Task<FireTvDevice> IdentifyAsync(FireTvDevice device, CancellationToken cancellationToken = default) =>
-            Task.FromResult(device);
     }
 
     private sealed class FakeNetworkProbe(NetworkPath? path) : INetworkProbe

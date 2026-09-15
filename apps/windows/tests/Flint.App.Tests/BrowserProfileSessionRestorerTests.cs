@@ -10,7 +10,7 @@ public sealed class BrowserProfileSessionRestorerTests
     public void RestoreWaitsForMatchingProfileEpochAndFreshSnapshots()
     {
         var remote = new RecordingCockpitRemote();
-        using var restore = new BrowserProfileSessionRestorer(remote, _ => {}, _ => {});
+        using var restore = new BrowserProfileSessionRestorer(remote, _ => { }, _ => { });
         var saved = new BrowserSavedSession([new("https://saved.test/")], 0, [], 0);
         restore.Observe(Tabs(6));
         restore.Observe(Workspace(6));
@@ -27,7 +27,7 @@ public sealed class BrowserProfileSessionRestorerTests
     public void Retry_IsNoOpUntilARestoreHasFailed()
     {
         var remote = new RecordingCockpitRemote();
-        using var restore = new BrowserProfileSessionRestorer(remote, _ => {}, _ => {});
+        using var restore = new BrowserProfileSessionRestorer(remote, _ => { }, _ => { });
         restore.Retry();
         remote.WorkspaceCommands.ShouldBeEmpty();
         restore.Select(Profile(7, BrowserProfileStorageLocation.WindowsDevice),
@@ -40,7 +40,7 @@ public sealed class BrowserProfileSessionRestorerTests
     public async Task ProfileChangeCancelsRestoreBeforeAnyFurtherCommands()
     {
         var remote = new RecordingCockpitRemote();
-        using var restore = new BrowserProfileSessionRestorer(remote, _ => {}, _ => {});
+        using var restore = new BrowserProfileSessionRestorer(remote, _ => { }, _ => { });
         restore.Select(Profile(7, BrowserProfileStorageLocation.WindowsDevice),
             new BrowserSavedSession([new("https://saved.test/")], 0, [], 0));
         restore.Observe(Tabs(7)); restore.Observe(Workspace(7));

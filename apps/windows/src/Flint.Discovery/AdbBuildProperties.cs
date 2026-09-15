@@ -14,8 +14,7 @@ internal sealed record AdbBuildProperties(
         {
             var line = rawLine.TrimEnd('\r');
             const string separator = "]: [";
-            if (!line.StartsWith("[", StringComparison.Ordinal)
-                || !line.EndsWith("]", StringComparison.Ordinal))
+            if (!line.StartsWith('[') || !line.EndsWith(']'))
             {
                 continue;
             }

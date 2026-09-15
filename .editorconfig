@@ -49,3 +49,16 @@ indent_size = 2
 csharp_style_namespace_declarations = file_scoped:error
 csharp_style_var_when_type_is_apparent = true:suggestion
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:error
+
+# Rules from the recommended analysis level that this codebase turns off, each for a stated reason.
+#
+# CA1859 and CA1826 trade an interface for a concrete type to save a virtual call. Stores and view
+# models are written against interfaces so tests can substitute them, and for the lists this code
+# passes, LINQ already takes the indexed path.
+dotnet_diagnostic.CA1859.severity = none
+dotnet_diagnostic.CA1826.severity = none
+# CA1720 reads domain words as type names: a one-pane layout is Single, and a DNS PTR record is Ptr.
+dotnet_diagnostic.CA1720.severity = none
+# CA1716 protects callers in other .NET languages. Flint publishes no library, so a member named
+# Next collides with nothing anyone will write.
+dotnet_diagnostic.CA1716.severity = none

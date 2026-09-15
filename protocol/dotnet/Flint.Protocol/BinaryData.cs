@@ -53,8 +53,7 @@ public readonly struct BinaryData : IEquatable<BinaryData>, IReadOnlyList<byte>
     public bool IsEmpty => Count == 0;
 
     /// <summary>The byte at <paramref name="index"/>.</summary>
-    public byte this[int index] =>
-        _bytes is null ? throw new IndexOutOfRangeException() : _bytes[index];
+    public byte this[int index] => (_bytes ?? [])[index];
 
     /// <summary>A read-only view, without copying.</summary>
     public ReadOnlySpan<byte> Span => _bytes ?? [];

@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Flint.App.ViewModels;
 
 /// <summary>Which TV surface the Windows shell is about to own exclusively.</summary>
@@ -24,6 +26,10 @@ public enum TvSurfaceKind
 /// mirroring leaves both transports live and the television fighting over what to show. Call
 /// <see cref="PrepareForAsync"/> immediately before claiming a surface.
 /// </remarks>
+[SuppressMessage(
+    "Design",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "SemaphoreSlim needs disposing only once its AvailableWaitHandle is read, which this coordinator never does.")]
 public sealed class ModeSessionCoordinator
 {
     private readonly SemaphoreSlim gate = new(1, 1);

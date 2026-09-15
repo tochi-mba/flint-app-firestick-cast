@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Flint.Protocol;
 
@@ -12,6 +13,10 @@ namespace Flint.Protocol;
 /// <see cref="BinaryData"/>, and exists for the same reason.
 /// </remarks>
 /// <typeparam name="T">The element type.</typeparam>
+[SuppressMessage(
+    "Design",
+    "CA1000:Do not declare static members on generic types",
+    Justification = "Empty and From construct the list, in the shape ImmutableArray<T> uses; a separate non-generic type would split one concept across two names.")]
 public readonly struct ValueList<T> : IEquatable<ValueList<T>>, IReadOnlyList<T>
     where T : IEquatable<T>
 {
@@ -47,8 +52,7 @@ public readonly struct ValueList<T> : IEquatable<ValueList<T>>, IReadOnlyList<T>
     public bool IsEmpty => Count == 0;
 
     /// <inheritdoc />
-    public T this[int index] =>
-        _items is null ? throw new IndexOutOfRangeException() : _items[index];
+    public T this[int index] => (_items ?? [])[index];
 
     /// <inheritdoc />
     public bool Equals(ValueList<T> other)

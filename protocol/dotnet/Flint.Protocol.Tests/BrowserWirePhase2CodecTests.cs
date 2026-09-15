@@ -206,12 +206,12 @@ public sealed class BrowserWirePhase2CodecTests
                         "Failed"),
                 ]));
         var viewActiveNoResults = ValidViewState() with
-            {
-                Fullscreen = true,
-                MediaPlaying = true,
-                EditingFocused = true,
-                FindActive = true,
-            };
+        {
+            Fullscreen = true,
+            MediaPlaying = true,
+            EditingFocused = true,
+            FindActive = true,
+        };
         var libraryEmpty = new BrowserLibraryStateMessage(
                 1,
                 1,

@@ -570,7 +570,13 @@ public sealed class BrowserSession : IAsyncDisposable
                     return true;
                 }
 
-                var accepted = trustPrompter.ConfirmFirstUseAsync(identity, cancellationToken).GetAwaiter().GetResult();
+                // Certificate validation is a synchronous callback, so the first-use prompt is waited on
+                // here. Through a Task: a ValueTask may be backed by a source that does not support a
+                // blocking wait before it completes, and would throw instead of waiting.
+                var accepted = trustPrompter.ConfirmFirstUseAsync(identity, cancellationToken)
+                    .AsTask()
+                    .GetAwaiter()
+                    .GetResult();
                 if (!accepted)
                 {
                     throw new BrowserTrustException("Browser identity verification was declined.");

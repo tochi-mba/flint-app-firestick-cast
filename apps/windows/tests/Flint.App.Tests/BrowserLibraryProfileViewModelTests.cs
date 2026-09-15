@@ -27,8 +27,8 @@ public sealed class BrowserLibraryProfileViewModelTests
         viewModel.CanDeleteActiveTvProfile.ShouldBeTrue();
         viewModel.StorageHeading.ShouldBe("SAVED IN FAMILY ON THE TV");
         viewModel.StorageDetail.ShouldContain("available without a connected device");
-        viewModel.ProfilePrivacyNote.ShouldContain("do not separate cookies");
-        viewModel.ProfilePrivacyNote.ShouldContain("sign-ins");
+        BrowserLibraryViewModel.ProfilePrivacyNote.ShouldContain("do not separate cookies");
+        BrowserLibraryViewModel.ProfilePrivacyNote.ShouldContain("sign-ins");
     }
 
     [Fact]

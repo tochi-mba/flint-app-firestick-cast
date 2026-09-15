@@ -33,7 +33,8 @@ public sealed class WorkspaceResizeOverlay : Canvas
         var handle = new Border
         {
             Background = new SolidColorBrush(Color.Parse("#B3E9BB57")),
-            CornerRadius = new CornerRadius(4), Focusable = true,
+            CornerRadius = new CornerRadius(4),
+            Focusable = true,
             Cursor = new Cursor(column ? StandardCursorType.SizeWestEast : StandardCursorType.SizeNorthSouth),
         };
         Avalonia.Automation.AutomationProperties.SetName(handle, column ? "Resize columns" : "Resize rows");
@@ -91,12 +92,12 @@ public sealed class WorkspaceResizeOverlay : Canvas
 
     private void Cancel() { var current = pointer; pointer = null; current?.Capture(null); }
 
-    protected override Size ArrangeOverride(Size size)
+    protected override Size ArrangeOverride(Size finalSize)
     {
         columnHandle.IsVisible = workspace?.CanResize == true && workspace.MosaicColumnCount > 1;
         rowHandle.IsVisible = workspace?.CanResize == true && workspace.MosaicRowCount > 1;
-        columnHandle.Arrange(new Rect(Math.Max(0, size.Width * (workspace?.ColumnSplit ?? 5000) / 10000d - 6), 0, 12, size.Height));
-        rowHandle.Arrange(new Rect(0, Math.Max(0, size.Height * (workspace?.RowSplit ?? 5000) / 10000d - 6), size.Width, 12));
-        return size;
+        columnHandle.Arrange(new Rect(Math.Max(0, finalSize.Width * (workspace?.ColumnSplit ?? 5000) / 10000d - 6), 0, 12, finalSize.Height));
+        rowHandle.Arrange(new Rect(0, Math.Max(0, finalSize.Height * (workspace?.RowSplit ?? 5000) / 10000d - 6), finalSize.Width, 12));
+        return finalSize;
     }
 }

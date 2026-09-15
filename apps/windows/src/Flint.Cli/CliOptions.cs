@@ -1,4 +1,4 @@
-﻿using Flint.Core;
+using Flint.Core;
 
 namespace Flint.Cli;
 

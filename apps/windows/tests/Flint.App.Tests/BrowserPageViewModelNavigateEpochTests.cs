@@ -1,4 +1,4 @@
-﻿using Flint.App.ViewModels;
+using Flint.App.ViewModels;
 using Flint.Protocol;
 using Shouldly;
 

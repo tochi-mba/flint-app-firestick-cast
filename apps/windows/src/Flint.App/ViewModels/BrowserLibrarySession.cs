@@ -27,7 +27,10 @@ public sealed partial class BrowserLibraryViewModel
         {
             Panes = panes.Select(p => new BrowserSavedPage(p.Url, p.Title, p.Media.Mute == BrowserWorkspaceMuteState.Muted)).ToArray(),
             ActivePane = Math.Max(0, Array.FindIndex(panes, p => p.PaneId == snapshot.FocusedPaneId)),
-            Layout = snapshot.Layout.ToString(), Column = snapshot.ColumnSplit, Row = snapshot.RowSplit, WorkspaceMode = snapshot.IsWorkspaceMode,
+            Layout = snapshot.Layout.ToString(),
+            Column = snapshot.ColumnSplit,
+            Row = snapshot.RowSplit,
+            WorkspaceMode = snapshot.IsWorkspaceMode,
         });
     }
 

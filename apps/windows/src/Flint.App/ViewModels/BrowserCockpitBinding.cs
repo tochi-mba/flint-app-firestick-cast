@@ -1,9 +1,14 @@
+using System.Diagnostics.CodeAnalysis;
 using Flint.App.Services;
 using Flint.Core;
 
 namespace Flint.App.ViewModels;
 
 /// <summary>Applies authenticated snapshots on the UI thread for their original connection only.</summary>
+[SuppressMessage(
+    "Design",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "Detach disposes the restorer and is this binding's end of life; IDisposable would add a second way to end it.")]
 internal sealed class BrowserCockpitBinding(
     IBrowserUiDispatcher dispatcher,
     BrowserTabsViewModel tabs,

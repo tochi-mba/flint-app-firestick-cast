@@ -5,7 +5,9 @@ namespace Flint.Protocol.Tests;
 public sealed class BrowserWorkspaceResizeTests
 {
     [Theory]
-    [InlineData(0)] [InlineData(1)] [InlineData(2)]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
     public void ModeAndGeometryAgreeWithStrictVersionFourRoundtrip(byte mode)
     {
         WireMessage[] messages = [new BrowserWorkspaceResizeMessage(4, 150, 140, 7000, 3000, mode),
@@ -20,7 +22,9 @@ public sealed class BrowserWorkspaceResizeTests
     }
 
     [Theory]
-    [InlineData(1499, 5000, 0)] [InlineData(5000, 8501, 0)] [InlineData(5000, 5000, 3)]
+    [InlineData(1499, 5000, 0)]
+    [InlineData(5000, 8501, 0)]
+    [InlineData(5000, 5000, 3)]
     public void InvalidGeometryOrModeIsRejected(int column, int row, byte mode)
     {
         Should.Throw<WireFormatException>(() => WireCodec.Encode(new WireFrame(4,

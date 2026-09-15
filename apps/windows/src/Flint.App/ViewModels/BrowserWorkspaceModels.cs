@@ -1,4 +1,4 @@
-﻿namespace Flint.App.ViewModels;
+namespace Flint.App.ViewModels;
 
 /// <summary>
 /// A receiver-owned browser workspace projected into the Windows cockpit.

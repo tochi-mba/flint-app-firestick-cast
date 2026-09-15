@@ -54,7 +54,8 @@ public sealed partial class BrowserHelpViewModel : ObservableObject
     /// <summary>Advances or explicitly completes help.</summary>
     [RelayCommand] private void Next() { if (Index < Topics.Length - 1) Index++; else Dismiss(); }
     /// <summary>Remembers an explicit dismissal; help remains replayable.</summary>
-    [RelayCommand] private void Dismiss()
+    [RelayCommand]
+    private void Dismiss()
     {
         if (!Dismissed) remember();
         Dismissed = true;

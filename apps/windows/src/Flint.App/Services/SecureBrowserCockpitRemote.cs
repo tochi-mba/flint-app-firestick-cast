@@ -399,8 +399,14 @@ public sealed class SecureBrowserCockpitRemote : IBrowserCockpitRemote, IDisposa
     {
         if (latestWorkspace is not { } current || message.Epoch != current.Epoch || message.Revision != current.Revision) return;
         geometryAdvertised = true;
-        latestWorkspace = current with { CanResize = !exclusivePresentation && message.Mode != 1,
-            ColumnSplit = message.Column, RowSplit = message.Row, IsWorkspaceMode = message.Mode != 1, SupportsCustomization = true };
+        latestWorkspace = current with
+        {
+            CanResize = !exclusivePresentation && message.Mode != 1,
+            ColumnSplit = message.Column,
+            RowSplit = message.Row,
+            IsWorkspaceMode = message.Mode != 1,
+            SupportsCustomization = true
+        };
         WorkspaceReceived?.Invoke(latestWorkspace);
     }
 

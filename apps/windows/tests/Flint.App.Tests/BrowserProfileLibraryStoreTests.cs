@@ -235,7 +235,7 @@ public sealed class BrowserProfileLibraryStoreTests : IDisposable
         title.ShouldNotContain('\n');
         title.ShouldNotContain('\0');
         Encoding.UTF8.GetByteCount(title).ShouldBeLessThanOrEqualTo(BrowserProfileLibraryLimits.MaxTitleBytes);
-        title.EndsWith("\uFFFD", StringComparison.Ordinal).ShouldBeFalse();
+        title.EndsWith('\uFFFD').ShouldBeFalse();
     }
 
     [Fact]

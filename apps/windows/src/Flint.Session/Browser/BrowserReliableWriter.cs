@@ -132,13 +132,8 @@ internal sealed class BrowserReliableWriter : IAsyncDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (Volatile.Read(ref disposed) != 0)
-        {
-            throw new ObjectDisposedException(nameof(BrowserReliableWriter));
-        }
-    }
+    private void ThrowIfDisposed() =>
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref disposed) != 0, this);
 
     private sealed class PendingMessage(WireMessage message)
     {

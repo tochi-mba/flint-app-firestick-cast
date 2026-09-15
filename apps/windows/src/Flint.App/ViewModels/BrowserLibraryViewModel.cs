@@ -138,7 +138,7 @@ public sealed partial class BrowserLibraryViewModel : ObservableObject
         : $"Bookmarks and history are stored on this television in the {ActiveProfileName} profile and are available without a connected device.";
 
     /// <summary>Profiles do not over-promise WebView data isolation that Fire OS cannot provide.</summary>
-    public string ProfilePrivacyNote =>
+    public static string ProfilePrivacyNote =>
         "Profile choices change where bookmarks and history are stored and do not separate cookies, site storage, or sign-ins on the TV.";
 
     /// <summary>How many named libraries already live on the television.</summary>

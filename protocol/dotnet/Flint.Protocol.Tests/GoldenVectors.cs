@@ -50,7 +50,7 @@ internal static class GoldenVectors
     {
         var vectors = new Dictionary<string, WireFrame>(StringComparer.Ordinal)
         {
-        ["hello-minimal"] = new WireFrame(new HelloMessage(
+            ["hello-minimal"] = new WireFrame(new HelloMessage(
             MinimumVersion: 1,
             MaximumVersion: 1,
             DeviceName: "TV",
@@ -59,7 +59,7 @@ internal static class GoldenVectors
             ScreenHeight: 720,
             DensityDpi: 160)),
 
-        ["hello-full"] = new WireFrame(
+            ["hello-full"] = new WireFrame(
             ProtocolVersion: 1,
             Message: new HelloMessage(
                 MinimumVersion: 1,
@@ -74,16 +74,16 @@ internal static class GoldenVectors
                 DensityDpi: 320),
             Flags: 0xabcd),
 
-        ["auth-pairing-code"] = new WireFrame(new AuthMessage(
+            ["auth-pairing-code"] = new WireFrame(new AuthMessage(
             AuthMethod.PairingCode,
             BinaryData.From("012345"u8))),
 
-        ["auth-with-fingerprint"] = new WireFrame(new AuthMessage(
+            ["auth-with-fingerprint"] = new WireFrame(new AuthMessage(
             AuthMethod.SessionToken,
             BinaryData.From([0x00, 0xff, 0x7f, 0x80]),
             "sha256:01:02:ab")),
 
-        ["video-config"] = new WireFrame(new VideoConfigMessage(
+            ["video-config"] = new WireFrame(new VideoConfigMessage(
             CodecId.H264,
             1920,
             1080,
@@ -93,72 +93,72 @@ internal static class GoldenVectors
                 BinaryData.From([0, 0, 0, 1, 0x68]),
             ]))),
 
-        ["video-config-no-csd"] = new WireFrame(new VideoConfigMessage(
+            ["video-config-no-csd"] = new WireFrame(new VideoConfigMessage(
             CodecId.Av1,
             1,
             1,
             ValueList<BinaryData>.Empty)),
 
-        ["video-keyframe"] = new WireFrame(new VideoPacket(
+            ["video-keyframe"] = new WireFrame(new VideoPacket(
             9_876_543,
             KeyFrame: true,
             BinaryData.From([0, 0, 1, 0x65]))),
 
-        ["video-delta"] = new WireFrame(new VideoPacket(
+            ["video-delta"] = new WireFrame(new VideoPacket(
             0,
             KeyFrame: false,
             BinaryData.From([0x41]))),
 
-        ["audio-config"] = new WireFrame(new AudioConfigMessage(
+            ["audio-config"] = new WireFrame(new AudioConfigMessage(
             CodecId.Opus,
             48_000,
             2,
             BinaryData.Empty)),
 
-        ["audio-packet"] = new WireFrame(new AudioPacket(
+            ["audio-packet"] = new WireFrame(new AudioPacket(
             1,
             BinaryData.From([9, 8, 7]))),
 
-        ["control-transport-play"] = new WireFrame(new ControlMessage(
+            ["control-transport-play"] = new WireFrame(new ControlMessage(
             1,
             new TransportControl(TransportAction.Play))),
 
-        ["control-transport-seek"] = new WireFrame(new ControlMessage(
+            ["control-transport-seek"] = new WireFrame(new ControlMessage(
             long.MaxValue,
             new TransportControl(TransportAction.SeekTo, 123_456))),
 
-        ["control-pointer"] = new WireFrame(new ControlMessage(
+            ["control-pointer"] = new WireFrame(new ControlMessage(
             3,
             new PointerControl(PointerAction.Move, 0.25f, 0.75f, 1))),
 
-        ["control-key"] = new WireFrame(new ControlMessage(
+            ["control-key"] = new WireFrame(new ControlMessage(
             4,
             new KeyControl(KeyAction.Down, 23))),
 
-        ["control-text"] = new WireFrame(new ControlMessage(
+            ["control-text"] = new WireFrame(new ControlMessage(
             5,
             new TextControl("Hello, TV 👋"))),
 
-        ["control-volume"] = new WireFrame(new ControlMessage(
+            ["control-volume"] = new WireFrame(new ControlMessage(
             6,
             new VolumeControl(0.5f))),
 
-        ["stats"] = new WireFrame(new StatsMessage(3, 17_000, 8_000, 12)),
+            ["stats"] = new WireFrame(new StatsMessage(3, 17_000, 8_000, 12)),
 
-        ["stats-zero"] = new WireFrame(new StatsMessage(0, 0, 0, 0)),
+            ["stats-zero"] = new WireFrame(new StatsMessage(0, 0, 0, 0)),
 
-        ["bye-normal"] = new WireFrame(new ByeMessage(ByeReason.Normal)),
+            ["bye-normal"] = new WireFrame(new ByeMessage(ByeReason.Normal)),
 
-        ["bye-protocol-error"] = new WireFrame(new ByeMessage(
+            ["bye-protocol-error"] = new WireFrame(new ByeMessage(
             ByeReason.ProtocolError,
             "malformed packet")),
 
-        ["unknown-future-message"] = new WireFrame(
+            ["unknown-future-message"] = new WireFrame(
             ProtocolVersion: 1,
             Message: new UnknownMessage(0xfefe, BinaryData.From([1, 2, 3, 4])),
             Flags: 0x0001),
 
-        ["media-command-load"] = new WireFrame(new MediaCommandMessage(
+            ["media-command-load"] = new WireFrame(new MediaCommandMessage(
             MediaAction.Load,
             Url: "",
             Title: "Demo Clip",
@@ -167,35 +167,35 @@ internal static class GoldenVectors
             StartPositionMs: 0,
             SubtitleUrl: "https://example.test/subs.vtt")),
 
-        ["media-command-clear"] = new WireFrame(new MediaCommandMessage(MediaAction.Clear)),
+            ["media-command-clear"] = new WireFrame(new MediaCommandMessage(MediaAction.Clear)),
 
-        ["media-data-chunk"] = new WireFrame(new MediaDataMessage(
+            ["media-data-chunk"] = new WireFrame(new MediaDataMessage(
             BinaryData.From([0x00, 0x01, 0xfe, 0xff]),
             IsFinal: false)),
 
-        ["media-data-final"] = new WireFrame(new MediaDataMessage(BinaryData.Empty, IsFinal: true)),
+            ["media-data-final"] = new WireFrame(new MediaDataMessage(BinaryData.Empty, IsFinal: true)),
 
-        ["surface-idle"] = new WireFrame(new SurfaceMessage(SurfaceMode.Idle)),
+            ["surface-idle"] = new WireFrame(new SurfaceMessage(SurfaceMode.Idle)),
 
-        ["surface-player"] = new WireFrame(new SurfaceMessage(SurfaceMode.Player, "Playing")),
+            ["surface-player"] = new WireFrame(new SurfaceMessage(SurfaceMode.Player, "Playing")),
 
-        // The two surfaces a phone host asks for. Unpinned until the phone began sending them,
-        // which left the first message of a mirror and the first message of a second screen as the
-        // only two this corpus did not hold the three languages to.
-        ["surface-mirror"] = new WireFrame(new SurfaceMessage(SurfaceMode.Mirror, "Pixel 8")),
+            // The two surfaces a phone host asks for. Unpinned until the phone began sending them,
+            // which left the first message of a mirror and the first message of a second screen as the
+            // only two this corpus did not hold the three languages to.
+            ["surface-mirror"] = new WireFrame(new SurfaceMessage(SurfaceMode.Mirror, "Pixel 8")),
 
-        ["surface-presentation"] = new WireFrame(new SurfaceMessage(SurfaceMode.Presentation, "Pixel 8")),
+            ["surface-presentation"] = new WireFrame(new SurfaceMessage(SurfaceMode.Presentation, "Pixel 8")),
 
-        ["playback-state-playing"] = new WireFrame(new PlaybackStateMessage(
+            ["playback-state-playing"] = new WireFrame(new PlaybackStateMessage(
             PlaybackState.Playing,
             PositionMs: 1_000,
             DurationMs: 12_345)),
 
-        ["playback-state-error"] = new WireFrame(new PlaybackStateMessage(
+            ["playback-state-error"] = new WireFrame(new PlaybackStateMessage(
             PlaybackState.Error,
             Detail: "decode failed")),
 
-        ["browser-capability-available"] = new WireFrame(new BrowserCapabilityMessage(
+            ["browser-capability-available"] = new WireFrame(new BrowserCapabilityMessage(
             BrowserCapabilityStatus.Available,
             SecureEndpointPort: 8443,
             ApiLevel: 25,
@@ -208,39 +208,39 @@ internal static class GoldenVectors
             PreviewMaxBytes: 768 * 1024,
             Detail: "ready")),
 
-        ["browser-command-open"] = new WireFrame(new BrowserCommandMessage(
+            ["browser-command-open"] = new WireFrame(new BrowserCommandMessage(
             1,
             2,
             BrowserCommandAction.Open,
             "https://example.test/start")),
 
-        ["browser-command-preview"] = new WireFrame(new BrowserCommandMessage(
+            ["browser-command-preview"] = new WireFrame(new BrowserCommandMessage(
             1,
             3,
             BrowserCommandAction.SetPreviewEnabled,
             PreviewEnabled: true)),
 
-        ["browser-input-pointer"] = new WireFrame(new BrowserInputMessage(
+            ["browser-input-pointer"] = new WireFrame(new BrowserInputMessage(
             1,
             1,
             new BrowserPointerInput(BrowserPointerAction.Down, 3, 4, 32_767, 65_535, 1))),
 
-        ["browser-input-scroll"] = new WireFrame(new BrowserInputMessage(
+            ["browser-input-scroll"] = new WireFrame(new BrowserInputMessage(
             1,
             2,
             new BrowserScrollInput(3, 4, 1, 2, 0, -120))),
 
-        ["browser-input-key"] = new WireFrame(new BrowserInputMessage(
+            ["browser-input-key"] = new WireFrame(new BrowserInputMessage(
             1,
             3,
             new BrowserSemanticKeyInput(BrowserSemanticKey.Select))),
 
-        ["browser-input-text"] = new WireFrame(new BrowserInputMessage(
+            ["browser-input-text"] = new WireFrame(new BrowserInputMessage(
             1,
             4,
             new BrowserTextInput("A browser input value"))),
 
-        ["browser-state-loaded"] = new WireFrame(new BrowserStateMessage(
+            ["browser-state-loaded"] = new WireFrame(new BrowserStateMessage(
             1,
             7,
             3,
@@ -256,7 +256,7 @@ internal static class GoldenVectors
             1080,
             BrowserPreviewState.Disabled)),
 
-        ["browser-preview-jpeg"] = new WireFrame(new BrowserPreviewMessage(
+            ["browser-preview-jpeg"] = new WireFrame(new BrowserPreviewMessage(
             1,
             3,
             9,
@@ -264,7 +264,7 @@ internal static class GoldenVectors
             2,
             BinaryData.From([0xff, 0xd8, 0xff, 0xd9]))),
 
-        ["browser-dialog-confirm"] = new WireFrame(new BrowserDialogMessage(
+            ["browser-dialog-confirm"] = new WireFrame(new BrowserDialogMessage(
             1,
             11,
             BrowserDialogType.Confirm,
@@ -273,49 +273,49 @@ internal static class GoldenVectors
             "",
             10_000)),
 
-        ["browser-dialog-reply-accept"] = new WireFrame(new BrowserDialogReplyMessage(
+            ["browser-dialog-reply-accept"] = new WireFrame(new BrowserDialogReplyMessage(
             1,
             11,
             Accepted: true)),
 
-        ["browser-tab-command-new"] = new WireFrame(new BrowserTabCommandMessage(
+            ["browser-tab-command-new"] = new WireFrame(new BrowserTabCommandMessage(
             2,
             21,
             BrowserTabAction.New,
             TabId: 0,
             Url: "https://example.test/new")),
 
-        ["browser-tab-command-close"] = new WireFrame(new BrowserTabCommandMessage(
+            ["browser-tab-command-close"] = new WireFrame(new BrowserTabCommandMessage(
             2,
             22,
             BrowserTabAction.Close,
             TabId: 7)),
 
-        ["browser-tab-command-select"] = new WireFrame(new BrowserTabCommandMessage(
+            ["browser-tab-command-select"] = new WireFrame(new BrowserTabCommandMessage(
             2,
             23,
             BrowserTabAction.Select,
             TabId: 8)),
 
-        ["browser-tab-command-move"] = new WireFrame(new BrowserTabCommandMessage(
+            ["browser-tab-command-move"] = new WireFrame(new BrowserTabCommandMessage(
             2,
             24,
             BrowserTabAction.Move,
             TabId: 9)),
 
-        ["browser-tab-command-duplicate"] = new WireFrame(new BrowserTabCommandMessage(
+            ["browser-tab-command-duplicate"] = new WireFrame(new BrowserTabCommandMessage(
             2,
             25,
             BrowserTabAction.Duplicate,
             TabId: 10)),
 
-        ["browser-tab-state-empty"] = new WireFrame(new BrowserTabStateMessage(
+            ["browser-tab-state-empty"] = new WireFrame(new BrowserTabStateMessage(
             2,
             30,
             ActiveTabId: 0,
             ValueList<BrowserTabStateEntry>.Empty)),
 
-        ["browser-tab-state-populated"] = new WireFrame(new BrowserTabStateMessage(
+            ["browser-tab-state-populated"] = new WireFrame(new BrowserTabStateMessage(
             2,
             31,
             ActiveTabId: 7,
@@ -343,65 +343,65 @@ internal static class GoldenVectors
                     "Beta"),
             ]))),
 
-        ["browser-view-command-zoom"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-zoom"] = new WireFrame(new BrowserViewCommandMessage(
             2, 40, BrowserViewAction.SetZoom, Value: 125)),
 
-        ["browser-view-command-ua-tv"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-ua-tv"] = new WireFrame(new BrowserViewCommandMessage(
             2, 41, BrowserViewAction.SetUa, Value: (int)BrowserUserAgentMode.Tv)),
 
-        ["browser-view-command-ua-desktop"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-ua-desktop"] = new WireFrame(new BrowserViewCommandMessage(
             2, 42, BrowserViewAction.SetUa, Value: (int)BrowserUserAgentMode.Desktop)),
 
-        ["browser-view-command-ua-mobile"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-ua-mobile"] = new WireFrame(new BrowserViewCommandMessage(
             2, 43, BrowserViewAction.SetUa, Value: (int)BrowserUserAgentMode.Mobile)),
 
-        ["browser-view-command-dark-follow-system"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-dark-follow-system"] = new WireFrame(new BrowserViewCommandMessage(
             2, 44, BrowserViewAction.SetDark, Value: (int)BrowserDarkMode.FollowSystem)),
 
-        ["browser-view-command-dark-light"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-dark-light"] = new WireFrame(new BrowserViewCommandMessage(
             2, 45, BrowserViewAction.SetDark, Value: (int)BrowserDarkMode.Light)),
 
-        ["browser-view-command-dark-dark"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-dark-dark"] = new WireFrame(new BrowserViewCommandMessage(
             2, 46, BrowserViewAction.SetDark, Value: (int)BrowserDarkMode.Dark)),
 
-        ["browser-view-command-input-cursor"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-input-cursor"] = new WireFrame(new BrowserViewCommandMessage(
             2, 47, BrowserViewAction.SetInputMode, Value: (int)BrowserInteractionMode.Cursor)),
 
-        ["browser-view-command-input-focus"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-input-focus"] = new WireFrame(new BrowserViewCommandMessage(
             2, 48, BrowserViewAction.SetInputMode, Value: (int)BrowserInteractionMode.Focus)),
 
-        ["browser-view-command-fullscreen"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-fullscreen"] = new WireFrame(new BrowserViewCommandMessage(
             2, 49, BrowserViewAction.SetFullscreen, Value: 1)),
 
-        ["browser-view-command-find-start"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-find-start"] = new WireFrame(new BrowserViewCommandMessage(
             2, 50, BrowserViewAction.FindStart, Text: "needle")),
 
-        ["browser-view-command-find-next"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-find-next"] = new WireFrame(new BrowserViewCommandMessage(
             2, 51, BrowserViewAction.FindNext)),
 
-        ["browser-view-command-find-prev"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-find-prev"] = new WireFrame(new BrowserViewCommandMessage(
             2, 52, BrowserViewAction.FindPrev)),
 
-        ["browser-view-command-find-clear"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-find-clear"] = new WireFrame(new BrowserViewCommandMessage(
             2, 53, BrowserViewAction.FindClear)),
 
-        ["browser-view-command-search-duckduckgo"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-search-duckduckgo"] = new WireFrame(new BrowserViewCommandMessage(
             2, 54, BrowserViewAction.SetSearchEngine, Value: (int)BrowserSearchEngine.DuckDuckGo)),
 
-        ["browser-view-command-search-google"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-search-google"] = new WireFrame(new BrowserViewCommandMessage(
             2, 55, BrowserViewAction.SetSearchEngine, Value: (int)BrowserSearchEngine.Google)),
 
-        ["browser-view-command-search-bing"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-search-bing"] = new WireFrame(new BrowserViewCommandMessage(
             2, 56, BrowserViewAction.SetSearchEngine, Value: (int)BrowserSearchEngine.Bing)),
 
-        ["browser-view-command-search-custom"] = new WireFrame(new BrowserViewCommandMessage(
+            ["browser-view-command-search-custom"] = new WireFrame(new BrowserViewCommandMessage(
             2,
             57,
             BrowserViewAction.SetSearchEngine,
             Value: (int)BrowserSearchEngine.Custom,
             Text: "https://search.example/?q={q}")),
 
-        ["browser-view-state-active"] = new WireFrame(new BrowserViewStateMessage(
+            ["browser-view-state-active"] = new WireFrame(new BrowserViewStateMessage(
             2,
             60,
             125,
@@ -416,36 +416,36 @@ internal static class GoldenVectors
             FindTotal: 5,
             BrowserSearchEngine.Bing)),
 
-        ["browser-favicon-png"] = new WireFrame(new BrowserFaviconMessage(
+            ["browser-favicon-png"] = new WireFrame(new BrowserFaviconMessage(
             2,
             61,
             2,
             2,
             BinaryData.From([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))),
 
-        ["browser-library-command-add"] = new WireFrame(new BrowserLibraryCommandMessage(
+            ["browser-library-command-add"] = new WireFrame(new BrowserLibraryCommandMessage(
             2,
             70,
             BrowserLibraryAction.AddBookmark,
             "https://example.test/bookmark",
             "Example")),
 
-        ["browser-library-command-remove"] = new WireFrame(new BrowserLibraryCommandMessage(
+            ["browser-library-command-remove"] = new WireFrame(new BrowserLibraryCommandMessage(
             2,
             71,
             BrowserLibraryAction.RemoveBookmark,
             "https://example.test/bookmark")),
 
-        ["browser-library-command-clear-history"] = new WireFrame(new BrowserLibraryCommandMessage(
+            ["browser-library-command-clear-history"] = new WireFrame(new BrowserLibraryCommandMessage(
             2, 72, BrowserLibraryAction.ClearHistory)),
 
-        ["browser-library-command-clear-bookmarks"] = new WireFrame(new BrowserLibraryCommandMessage(
+            ["browser-library-command-clear-bookmarks"] = new WireFrame(new BrowserLibraryCommandMessage(
             2, 73, BrowserLibraryAction.ClearBookmarks)),
 
-        ["browser-library-command-request-snapshot"] = new WireFrame(new BrowserLibraryCommandMessage(
+            ["browser-library-command-request-snapshot"] = new WireFrame(new BrowserLibraryCommandMessage(
             2, 74, BrowserLibraryAction.RequestSnapshot)),
 
-        ["browser-library-state-populated"] = new WireFrame(new BrowserLibraryStateMessage(
+            ["browser-library-state-populated"] = new WireFrame(new BrowserLibraryStateMessage(
             2,
             80,
             ValueList<BrowserLibraryEntry>.From(
@@ -467,48 +467,48 @@ internal static class GoldenVectors
                     "Recent"),
             ]))),
 
-        ["browser-library-state-empty"] = new WireFrame(new BrowserLibraryStateMessage(
+            ["browser-library-state-empty"] = new WireFrame(new BrowserLibraryStateMessage(
             2,
             81,
             ValueList<BrowserLibraryEntry>.Empty,
             ValueList<BrowserLibraryEntry>.Empty)),
 
-        ["browser-profile-command-select-tv"] = new WireFrame(new BrowserProfileCommandMessage(
+            ["browser-profile-command-select-tv"] = new WireFrame(new BrowserProfileCommandMessage(
             3,
             90,
             BrowserProfileAction.SelectTvProfile,
             "family")),
 
-        ["browser-profile-command-create-tv"] = new WireFrame(new BrowserProfileCommandMessage(
+            ["browser-profile-command-create-tv"] = new WireFrame(new BrowserProfileCommandMessage(
             3,
             91,
             BrowserProfileAction.CreateTvProfile,
             Name: "Kids 🚀")),
 
-        ["browser-profile-command-rename-tv"] = new WireFrame(new BrowserProfileCommandMessage(
+            ["browser-profile-command-rename-tv"] = new WireFrame(new BrowserProfileCommandMessage(
             3,
             92,
             BrowserProfileAction.RenameTvProfile,
             "kids_2",
             "Children")),
 
-        ["browser-profile-command-delete-tv"] = new WireFrame(new BrowserProfileCommandMessage(
+            ["browser-profile-command-delete-tv"] = new WireFrame(new BrowserProfileCommandMessage(
             3,
             93,
             BrowserProfileAction.DeleteTvProfile,
             "kids_2")),
 
-        ["browser-profile-command-select-device"] = new WireFrame(new BrowserProfileCommandMessage(
+            ["browser-profile-command-select-device"] = new WireFrame(new BrowserProfileCommandMessage(
             3,
             94,
             BrowserProfileAction.SelectDevice)),
 
-        ["browser-profile-command-request-snapshot"] = new WireFrame(new BrowserProfileCommandMessage(
+            ["browser-profile-command-request-snapshot"] = new WireFrame(new BrowserProfileCommandMessage(
             3,
             95,
             BrowserProfileAction.RequestSnapshot)),
 
-        ["browser-profile-state-tv"] = new WireFrame(new BrowserProfileStateMessage(
+            ["browser-profile-state-tv"] = new WireFrame(new BrowserProfileStateMessage(
             3,
             100,
             BrowserProfileSource.Tv,
@@ -520,7 +520,7 @@ internal static class GoldenVectors
                 new BrowserProfileEntry("kids_2", "Kids 🚀"),
             ]))),
 
-        ["browser-profile-state-device"] = new WireFrame(new BrowserProfileStateMessage(
+            ["browser-profile-state-device"] = new WireFrame(new BrowserProfileStateMessage(
             3,
             101,
             BrowserProfileSource.Device,
@@ -531,7 +531,7 @@ internal static class GoldenVectors
                 new BrowserProfileEntry("family", "Family"),
             ]))),
 
-        ["browser-network-command-set"] = new WireFrame(new BrowserNetworkCommandMessage(
+            ["browser-network-command-set"] = new WireFrame(new BrowserNetworkCommandMessage(
             3,
             110,
             BrowserNetworkAction.Set,
@@ -542,18 +542,18 @@ internal static class GoldenVectors
             RequireVpnBeforeBrowse: false,
             "[Interface]\nPrivateKey = AAA=\n\n[Peer]\nPublicKey = BBB=\n")),
 
-        ["browser-network-command-clear"] = new WireFrame(new BrowserNetworkCommandMessage(
+            ["browser-network-command-clear"] = new WireFrame(new BrowserNetworkCommandMessage(
             3,
             111,
             BrowserNetworkAction.Clear,
             "family")),
 
-        ["browser-network-command-request-snapshot"] = new WireFrame(new BrowserNetworkCommandMessage(
+            ["browser-network-command-request-snapshot"] = new WireFrame(new BrowserNetworkCommandMessage(
             3,
             112,
             BrowserNetworkAction.RequestSnapshot)),
 
-        ["browser-network-state-connected"] = new WireFrame(new BrowserNetworkStateMessage(
+            ["browser-network-state-connected"] = new WireFrame(new BrowserNetworkStateMessage(
             3,
             120,
             "family",
@@ -566,7 +566,7 @@ internal static class GoldenVectors
             "VpnService available",
             BrowserVpnSessionState.Connected)),
 
-        ["browser-network-state-idle"] = new WireFrame(new BrowserNetworkStateMessage(
+            ["browser-network-state-idle"] = new WireFrame(new BrowserNetworkStateMessage(
             3,
             121,
             "family",
@@ -579,23 +579,23 @@ internal static class GoldenVectors
             "VPN probe not configured",
             BrowserVpnSessionState.Idle)),
 
-        ["browser-workspace-resize"] = new WireFrame(4, new BrowserWorkspaceResizeMessage(4, 150, 140, 7000, 3000)),
-        ["browser-workspace-geometry"] = new WireFrame(4, new BrowserWorkspaceGeometryMessage(4, 141, 7000, 3000)),
-        ["browser-workspace-command-focus"] = new WireFrame(new BrowserWorkspaceCommandMessage(
+            ["browser-workspace-resize"] = new WireFrame(4, new BrowserWorkspaceResizeMessage(4, 150, 140, 7000, 3000)),
+            ["browser-workspace-geometry"] = new WireFrame(4, new BrowserWorkspaceGeometryMessage(4, 141, 7000, 3000)),
+            ["browser-workspace-command-focus"] = new WireFrame(new BrowserWorkspaceCommandMessage(
             4,
             130,
             140,
             BrowserWorkspaceCommandAction.Focus,
             PaneId: 42)),
 
-        ["browser-workspace-command-open-pane"] = new WireFrame(new BrowserWorkspaceCommandMessage(
+            ["browser-workspace-command-open-pane"] = new WireFrame(new BrowserWorkspaceCommandMessage(
             4,
             128,
             139,
             BrowserWorkspaceCommandAction.OpenPane,
             Url: "https://example.test/new")),
 
-        ["browser-workspace-command-move-pane"] = new WireFrame(new BrowserWorkspaceCommandMessage(
+            ["browser-workspace-command-move-pane"] = new WireFrame(new BrowserWorkspaceCommandMessage(
             4,
             143,
             140,
@@ -603,7 +603,7 @@ internal static class GoldenVectors
             PaneId: 42,
             Value: 1)),
 
-        ["browser-workspace-state-single"] = new WireFrame(new BrowserWorkspaceStateMessage(
+            ["browser-workspace-state-single"] = new WireFrame(new BrowserWorkspaceStateMessage(
             4,
             140,
             BrowserWorkspaceWireLayout.Single,
@@ -630,7 +630,7 @@ internal static class GoldenVectors
                     BrowserWorkspaceWireObservedPlayback.Unknown),
             ]))),
 
-        ["browser-workspace-input-text"] = new WireFrame(new BrowserWorkspaceInputMessage(
+            ["browser-workspace-input-text"] = new WireFrame(new BrowserWorkspaceInputMessage(
             4,
             131,
             140,
@@ -638,7 +638,7 @@ internal static class GoldenVectors
             BrowserWorkspaceInputKind.Text,
             Text: "hello")),
 
-        ["surface-browser"] = new WireFrame(new SurfaceMessage(SurfaceMode.Browser, "Browser")),
+            ["surface-browser"] = new WireFrame(new SurfaceMessage(SurfaceMode.Browser, "Browser")),
         };
 
         // Existing feature vectors deliberately remain v1. Current builds default newly-created

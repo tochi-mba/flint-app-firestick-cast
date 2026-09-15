@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Flint.Core;
 
 /// <summary>
@@ -59,6 +61,10 @@ public static class CapabilityAssessor
     /// not exist in this build. Sharing one flag between them meant proving the mirror worked
     /// silently promised a second screen that would never appear.
     /// </remarks>
+    [SuppressMessage(
+        "Performance",
+        "CA1805:Do not initialize unnecessarily",
+        Justification = "The flag states what this build can do; writing false puts that where a reader looks for it.")]
     public static readonly bool SecondScreenImplemented = false;
 
     /// <summary>Produces a verdict for every mode.</summary>

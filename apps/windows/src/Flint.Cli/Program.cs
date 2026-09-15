@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Flint.App.Services;
 using Flint.Core;
 using Flint.Discovery;

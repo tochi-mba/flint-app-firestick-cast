@@ -22,21 +22,21 @@ internal static class BrowserWorkspaceCopy
         bool layoutRequestPending,
         int paneCount,
         BrowserWorkspaceLayout layout) => (isAvailable, focusRequestPending, arrangementPending) switch
-    {
-        (false, _, _) => "WORKSPACE UNAVAILABLE",
-        (_, true, _) => "FOCUS REQUEST SENT · INPUT BLOCKED",
-        (_, _, true) => paneCount == 0
-            ? "OPENING MOSAIC · LEAVING TABS"
-            : "OPENING PAGES FOR SPLIT · WAITING FOR TV",
-        _ when layoutRequestPending => "LAYOUT REQUEST SENT · WAITING FOR TV",
-        _ => paneCount switch
         {
-            0 => "NO PAGES YET · PRESS SPLIT VIEW",
-            1 => "1 PAGE · SPLIT VIEW ADDS A SECOND BESIDE IT",
-            2 when layout == BrowserWorkspaceLayout.Single => "2 PAGES · PRESS SPLIT VIEW OR STACK",
-            _ => $"{paneCount} PAGES · {layout.DisplayName().ToUpperInvariant()}",
-        },
-    };
+            (false, _, _) => "WORKSPACE UNAVAILABLE",
+            (_, true, _) => "FOCUS REQUEST SENT · INPUT BLOCKED",
+            (_, _, true) => paneCount == 0
+                ? "OPENING MOSAIC · LEAVING TABS"
+                : "OPENING PAGES FOR SPLIT · WAITING FOR TV",
+            _ when layoutRequestPending => "LAYOUT REQUEST SENT · WAITING FOR TV",
+            _ => paneCount switch
+            {
+                0 => "NO PAGES YET · PRESS SPLIT VIEW",
+                1 => "1 PAGE · SPLIT VIEW ADDS A SECOND BESIDE IT",
+                2 when layout == BrowserWorkspaceLayout.Single => "2 PAGES · PRESS SPLIT VIEW OR STACK",
+                _ => $"{paneCount} PAGES · {layout.DisplayName().ToUpperInvariant()}",
+            },
+        };
 
     /// <summary>
     /// Longer coach copy — the difference between tabs and the mosaic.
@@ -70,15 +70,15 @@ internal static class BrowserWorkspaceCopy
         bool canSendInput,
         string? confirmedFocusPaneName,
         bool channelConnected) => (isAvailable, pendingFocusPaneName, canSendInput) switch
-    {
-        (false, _, _) => "INPUT UNAVAILABLE UNTIL THE TV ADVERTISES A WORKSPACE",
-        (_, { } pending, _) => $"WAITING FOR TV TO CONFIRM FOCUS ON {pending} · INPUT BLOCKED",
-        (_, _, false) => "THIS TV DID NOT ADVERTISE WORKSPACE TEXT INPUT",
-        _ when confirmedFocusPaneName is not { } focused => "SELECT A PANE BEFORE SENDING INPUT",
-        _ => channelConnected
-            ? $"INPUT TARGET: {confirmedFocusPaneName} · CONFIRMED BY TV"
-            : "TV WORKSPACE CHANNEL IS NOT CONNECTED",
-    };
+        {
+            (false, _, _) => "INPUT UNAVAILABLE UNTIL THE TV ADVERTISES A WORKSPACE",
+            (_, { } pending, _) => $"WAITING FOR TV TO CONFIRM FOCUS ON {pending} · INPUT BLOCKED",
+            (_, _, false) => "THIS TV DID NOT ADVERTISE WORKSPACE TEXT INPUT",
+            _ when confirmedFocusPaneName is not { } focused => "SELECT A PANE BEFORE SENDING INPUT",
+            _ => channelConnected
+                ? $"INPUT TARGET: {confirmedFocusPaneName} · CONFIRMED BY TV"
+                : "TV WORKSPACE CHANNEL IS NOT CONNECTED",
+        };
 
     /// <summary>Why one layout button is offered, current, or refused.</summary>
     internal static string LayoutAvailability(

@@ -18,11 +18,11 @@ public sealed class WorkspaceMosaicPanel : Panel
             double.IsFinite(availableSize.Height) ? availableSize.Height : 0);
     }
 
-    protected override Size ArrangeOverride(Size size)
+    protected override Size ArrangeOverride(Size finalSize)
     {
         for (var i = 0; i < Children.Count; i++)
-            Children[i].Arrange(Frame(i, size, Columns, Rows, ColumnSplit, RowSplit));
-        return size;
+            Children[i].Arrange(Frame(i, finalSize, Columns, Rows, ColumnSplit, RowSplit));
+        return finalSize;
     }
 
     internal static Rect Frame(int index, Size size, int columns, int rows, int column, int row)

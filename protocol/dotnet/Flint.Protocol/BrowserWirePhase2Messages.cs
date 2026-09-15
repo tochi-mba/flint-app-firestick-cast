@@ -1,4 +1,4 @@
-﻿namespace Flint.Protocol;
+namespace Flint.Protocol;
 
 // The cockpit message families — tabs, view settings, favicons, library, profiles, network
 // and workspace. Split from the v1 browser messages because they are a separate compatibility

@@ -1,4 +1,4 @@
-﻿namespace Flint.Protocol;
+namespace Flint.Protocol;
 
 /// <summary>Hard limits for v2 browser values before any receiver UI is involved.</summary>
 /// <remarks>
