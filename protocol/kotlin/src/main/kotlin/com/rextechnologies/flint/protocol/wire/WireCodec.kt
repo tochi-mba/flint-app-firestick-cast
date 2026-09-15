@@ -142,7 +142,9 @@ object WireMessageCodec {
         if (message is UnknownMessage) return message.payload.toByteArray()
         requireSupported(protocolVersion)
         if (!BrowserWireRules.isAllowedAtVersion(protocolVersion, message)) {
-            throw WireFormatException("Browser protocol values require version 2; frame declared version $protocolVersion")
+            throw WireFormatException(
+                "Browser protocol values require version 2; frame declared version $protocolVersion",
+            )
         }
         if (BrowserWireRules.isBrowserMessage(message)) {
             return when {
@@ -279,7 +281,11 @@ object WireMessageCodec {
             if (protocolVersion < 2) {
                 throw WireFormatException("Browser message types require protocol version 2")
             }
-            if (typeId >= 35 && protocolVersion < 4) throw WireFormatException("Workspace resizing requires protocol version 4")
+            if (typeId >= 35 &&
+                protocolVersion < 4
+            ) {
+                throw WireFormatException("Workspace resizing requires protocol version 4")
+            }
             return when {
                 typeId >= WireMessageType.BROWSER_WORKSPACE_COMMAND.id ->
                     BrowserWirePhase3Codec.decode(type, payload)
@@ -641,4 +647,3 @@ internal class PayloadReader(payload: ByteArray) {
         throw WireFormatException("Truncated $description", exception)
     }
 }
-

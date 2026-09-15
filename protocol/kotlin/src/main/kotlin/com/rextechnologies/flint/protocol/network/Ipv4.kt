@@ -44,7 +44,9 @@ data class Ipv4Subnet(
     }
 
     private val localValue = Ipv4.toUnsignedLong(localAddress)
-    private val mask: Long = if (prefixLength == 0) 0L else {
+    private val mask: Long = if (prefixLength == 0) {
+        0L
+    } else {
         (0xffff_ffffL shl (32 - prefixLength)) and 0xffff_ffffL
     }
 
@@ -110,5 +112,3 @@ data class Ipv4Subnet(
         }
     }
 }
-
-

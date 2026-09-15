@@ -160,4 +160,3 @@ class BitrateControllerTest {
         assertFailsWith<IllegalArgumentException> { LinkSample(0, 0, 0, 0, pendingSendBytes = -1) }
     }
 }
-

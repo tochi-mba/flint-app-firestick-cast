@@ -92,7 +92,9 @@ class BrowserWirePhase2CodecTest {
                 WireCodec.encode(WireFrame(1, message))
             }
 
-            val payload = WireCodec.encode(WireFrame(2, message)).copyOfRange(12, WireCodec.encode(WireFrame(2, message)).size)
+            val payload = WireCodec.encode(
+                WireFrame(2, message),
+            ).copyOfRange(12, WireCodec.encode(WireFrame(2, message)).size)
             assertFailsWith<WireFormatException>(message.toString()) {
                 WireMessageCodec.decode(1, message.typeId, payload)
             }
@@ -105,9 +107,10 @@ class BrowserWirePhase2CodecTest {
     @Test
     fun `invalid phase-two enum tags are rejected`() {
         val invalidPayloads = listOf(
-            WireMessageType.BROWSER_TAB_COMMAND to payload(BrowserTabCommandMessage(2, 21, BrowserTabAction.CLOSE, 7)).also {
-                it[16] = 0
-            },
+            WireMessageType.BROWSER_TAB_COMMAND to
+                payload(BrowserTabCommandMessage(2, 21, BrowserTabAction.CLOSE, 7)).also {
+                    it[16] = 0
+                },
             WireMessageType.BROWSER_TAB_STATE to payload(tabState()).also { it[33] = 0 },
             WireMessageType.BROWSER_VIEW_COMMAND to payload(viewCommand(40, BrowserViewAction.SET_ZOOM, 125)).also {
                 it[16] = 0
@@ -117,7 +120,13 @@ class BrowserWirePhase2CodecTest {
             WireMessageType.BROWSER_VIEW_STATE to payload(viewState()).also { it[22] = 0 },
             WireMessageType.BROWSER_VIEW_STATE to payload(viewState()).also { it[35] = 0 },
             WireMessageType.BROWSER_LIBRARY_COMMAND to payload(
-                BrowserLibraryCommandMessage(2, 70, BrowserLibraryAction.ADD_BOOKMARK, "https://example.test", "Example"),
+                BrowserLibraryCommandMessage(
+                    2,
+                    70,
+                    BrowserLibraryAction.ADD_BOOKMARK,
+                    "https://example.test",
+                    "Example",
+                ),
             ).also { it[16] = 0 },
             WireMessageType.BROWSER_LIBRARY_STATE to payload(libraryState()).also { it[18] = 0 },
         )
@@ -136,9 +145,14 @@ class BrowserWirePhase2CodecTest {
             BrowserTabCommandMessage(2, 1, BrowserTabAction.NEW, 1),
             BrowserTabCommandMessage(2, 1, BrowserTabAction.CLOSE, 1, "https://example.test"),
             BrowserTabStateMessage(2, 1, 1, tooManyTabs),
-            BrowserTabStateMessage(2, 1, 2, listOf(
-                BrowserTabStateEntry(1, BrowserLoadState.LOADED, 101, false, false, false, 0, "https://example.test", ""),
-            )),
+            BrowserTabStateMessage(
+                2,
+                1,
+                2,
+                listOf(
+                    BrowserTabStateEntry(1, BrowserLoadState.LOADED, 101, false, false, false, 0, "https://example.test", ""),
+                ),
+            ),
             viewCommand(1, BrowserViewAction.SET_ZOOM, BrowserWireLimits.MIN_ZOOM_PERCENT - 1),
             viewCommand(1, BrowserViewAction.SET_UA, 99),
             viewCommand(1, BrowserViewAction.FIND_START),

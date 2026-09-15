@@ -44,4 +44,3 @@ class BinaryData private constructor(private val value: ByteArray) {
         }
     }
 }
-

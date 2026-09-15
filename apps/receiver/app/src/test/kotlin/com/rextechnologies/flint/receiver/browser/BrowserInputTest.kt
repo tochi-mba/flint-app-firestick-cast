@@ -16,7 +16,10 @@ class BrowserInputTest {
             assertIs<BrowserNativeInput.KeyStroke>(mapped.input)
         }
 
-        val shiftTab = assertIs<BrowserInputMapping.Accepted>(mapper.map(BrowserInput.Semantic(7, 1, BrowserSemanticKey.SHIFT_TAB)))
+        val shiftTab =
+            assertIs<BrowserInputMapping.Accepted>(
+                mapper.map(BrowserInput.Semantic(7, 1, BrowserSemanticKey.SHIFT_TAB)),
+            )
         assertTrue(assertIs<BrowserNativeInput.KeyStroke>(shiftTab.input).shift)
     }
 
@@ -46,7 +49,13 @@ class BrowserInputTest {
 
     @Test
     fun `input reducer rejects wrong epoch duplicate sequence disabled remote and non browser surface`() {
-        val state = BrowserInputState(epoch = 4, lastSequence = 2, remoteInputEnabled = true, surface = BrowserSurfaceOwner.BROWSER)
+        val state =
+            BrowserInputState(
+                epoch = 4,
+                lastSequence = 2,
+                remoteInputEnabled = true,
+                surface = BrowserSurfaceOwner.BROWSER,
+            )
         val accepted = reducer.reduce(state, BrowserInput.Semantic(4, 3, BrowserSemanticKey.SELECT))
         assertIs<BrowserInputMapping.Accepted>(accepted.mapping)
         assertEquals(3, accepted.state.lastSequence)
@@ -59,10 +68,16 @@ class BrowserInputTest {
             assertIs<BrowserInputMapping.Rejected>(reducer.reduce(accepted.state, input).mapping)
         }
         assertIs<BrowserInputMapping.Rejected>(
-            reducer.reduce(state.copy(remoteInputEnabled = false), BrowserInput.Semantic(4, 3, BrowserSemanticKey.SELECT)).mapping,
+            reducer.reduce(
+                state.copy(remoteInputEnabled = false),
+                BrowserInput.Semantic(4, 3, BrowserSemanticKey.SELECT),
+            ).mapping,
         )
         assertIs<BrowserInputMapping.Rejected>(
-            reducer.reduce(state.copy(surface = BrowserSurfaceOwner.MIRROR), BrowserInput.Semantic(4, 3, BrowserSemanticKey.SELECT)).mapping,
+            reducer.reduce(
+                state.copy(surface = BrowserSurfaceOwner.MIRROR),
+                BrowserInput.Semantic(4, 3, BrowserSemanticKey.SELECT),
+            ).mapping,
         )
     }
 }

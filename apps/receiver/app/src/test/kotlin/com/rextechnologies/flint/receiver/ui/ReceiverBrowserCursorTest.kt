@@ -10,8 +10,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.tv.material3.Text
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.tv.material3.Text
 import com.rextechnologies.flint.receiver.browser.CursorState
 import org.junit.Rule
 import org.junit.Test

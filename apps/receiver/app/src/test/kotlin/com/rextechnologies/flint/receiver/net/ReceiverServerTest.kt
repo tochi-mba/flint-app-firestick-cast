@@ -28,6 +28,9 @@ import com.rextechnologies.flint.protocol.wire.VideoConfigMessage
 import com.rextechnologies.flint.protocol.wire.VideoPacket
 import com.rextechnologies.flint.protocol.wire.WireCodec
 import com.rextechnologies.flint.protocol.wire.WireFrame
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.net.Inet4Address
 import java.net.InetSocketAddress
 import java.net.Socket
@@ -39,9 +42,6 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -239,7 +239,9 @@ class ReceiverServerTest {
         val messages = CountDownLatch(expectedMessages)
         val ended = CountDownLatch(1)
         val media = Collections.synchronizedList(mutableListOf<MediaCommandMessage>())
-        val mediaData = Collections.synchronizedList(mutableListOf<com.rextechnologies.flint.protocol.wire.MediaDataMessage>())
+        val mediaData = Collections.synchronizedList(
+            mutableListOf<com.rextechnologies.flint.protocol.wire.MediaDataMessage>(),
+        )
         val surfaces = Collections.synchronizedList(mutableListOf<SurfaceMessage>())
         val controls = Collections.synchronizedList(mutableListOf<ControlMessage>())
         val videoConfigs = Collections.synchronizedList(mutableListOf<VideoConfigMessage>())
@@ -247,18 +249,40 @@ class ReceiverServerTest {
         val audioConfigs = Collections.synchronizedList(mutableListOf<AudioConfigMessage>())
         val audioPackets = Collections.synchronizedList(mutableListOf<AudioPacket>())
 
-        override fun onMedia(command: MediaCommandMessage) { media += command; messages.countDown() }
+        override fun onMedia(command: MediaCommandMessage) {
+            media += command
+            messages.countDown()
+        }
         override fun onMediaData(chunk: com.rextechnologies.flint.protocol.wire.MediaDataMessage) {
             mediaData += chunk
             messages.countDown()
         }
-        override fun onSurface(surface: SurfaceMessage) { surfaces += surface; messages.countDown() }
-        override fun onControl(control: ControlMessage) { controls += control; messages.countDown() }
-        override fun onVideoConfig(config: VideoConfigMessage) { videoConfigs += config; messages.countDown() }
-        override fun onVideoPacket(packet: VideoPacket) { videoPackets += packet; messages.countDown() }
-        override fun onAudioConfig(config: AudioConfigMessage) { audioConfigs += config; messages.countDown() }
-        override fun onAudioPacket(packet: AudioPacket) { audioPackets += packet; messages.countDown() }
-        override fun onSessionEnded() { ended.countDown() }
+        override fun onSurface(surface: SurfaceMessage) {
+            surfaces += surface
+            messages.countDown()
+        }
+        override fun onControl(control: ControlMessage) {
+            controls += control
+            messages.countDown()
+        }
+        override fun onVideoConfig(config: VideoConfigMessage) {
+            videoConfigs += config
+            messages.countDown()
+        }
+        override fun onVideoPacket(packet: VideoPacket) {
+            videoPackets += packet
+            messages.countDown()
+        }
+        override fun onAudioConfig(config: AudioConfigMessage) {
+            audioConfigs += config
+            messages.countDown()
+        }
+        override fun onAudioPacket(packet: AudioPacket) {
+            audioPackets += packet
+            messages.countDown()
+        }
+        override fun onSessionEnded() {
+            ended.countDown()
+        }
     }
 }
-

@@ -2,17 +2,17 @@ package com.rextechnologies.flint.receiver.browser
 
 import android.util.Log
 import com.rextechnologies.flint.protocol.wire.BrowserDarkMode
-import com.rextechnologies.flint.protocol.wire.BrowserInteractionMode as WireInteractionMode
 import com.rextechnologies.flint.protocol.wire.BrowserNetworkAction
 import com.rextechnologies.flint.protocol.wire.BrowserNetworkCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserProfileAction
 import com.rextechnologies.flint.protocol.wire.BrowserProfileCommandMessage
-import com.rextechnologies.flint.protocol.wire.BrowserSearchEngine as WireSearchEngine
 import com.rextechnologies.flint.protocol.wire.BrowserTabAction
 import com.rextechnologies.flint.protocol.wire.BrowserTabCommandMessage
-import com.rextechnologies.flint.protocol.wire.BrowserUserAgentMode as WireUserAgentMode
 import com.rextechnologies.flint.protocol.wire.BrowserViewAction
 import com.rextechnologies.flint.protocol.wire.BrowserViewCommandMessage
+import com.rextechnologies.flint.protocol.wire.BrowserInteractionMode as WireInteractionMode
+import com.rextechnologies.flint.protocol.wire.BrowserSearchEngine as WireSearchEngine
+import com.rextechnologies.flint.protocol.wire.BrowserUserAgentMode as WireUserAgentMode
 import com.rextechnologies.flint.protocol.wire.BrowserVpnProvider as WireVpnProvider
 
 /** Executes authenticated cockpit commands after accepting them on the shared command stream. */
@@ -95,8 +95,11 @@ class BrowserRemoteCommandHandler(
                 false,
             )
             BrowserViewAction.SET_FULLSCREEN -> {
-                if (command.value == 0) exitFullscreen()
-                else showNotice("Use the page's video control to enter fullscreen.")
+                if (command.value == 0) {
+                    exitFullscreen()
+                } else {
+                    showNotice("Use the page's video control to enter fullscreen.")
+                }
                 publishView()
             }
             BrowserViewAction.FIND_START -> startFind(command.text)

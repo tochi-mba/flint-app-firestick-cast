@@ -6,12 +6,12 @@ import java.nio.charset.StandardCharsets
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.test.assertFailsWith
 
 class BrowserLibraryStoreTest {
     private val directory = File(
@@ -131,7 +131,12 @@ class BrowserLibraryStoreTest {
         assertEquals(BrowserLibraryStore.MAX_HISTORY, history.size)
         assertEquals(1, history.count { it.url == "https://example.com/100" })
         assertEquals("Newest", history.first().title)
-        assertTrue(history.all { it.title.toByteArray(StandardCharsets.UTF_8).size <= BrowserLibraryStore.MAX_TITLE_UTF8_BYTES })
+        assertTrue(
+            history.all {
+                it.title.toByteArray(StandardCharsets.UTF_8).size <=
+                    BrowserLibraryStore.MAX_TITLE_UTF8_BYTES
+            },
+        )
         assertTrue(history.all { entry -> entry.title.none(Char::isISOControl) })
         assertTrue(history.all { it.faviconId >= 0 && it.lastVisitedMs >= 0 })
     }
@@ -162,7 +167,10 @@ class BrowserLibraryStoreTest {
         val recovered = store().profilesSnapshot()
 
         assertEquals(BrowserLibraryStore.DEFAULT_PROFILE_ID, recovered.activeProfileId)
-        assertEquals(listOf(BrowserLibraryProfile(BrowserLibraryStore.DEFAULT_PROFILE_ID, "Default")), recovered.profiles)
+        assertEquals(
+            listOf(BrowserLibraryProfile(BrowserLibraryStore.DEFAULT_PROFILE_ID, "Default")),
+            recovered.profiles,
+        )
     }
 
     @Test
@@ -211,7 +219,10 @@ class BrowserLibraryStoreTest {
         assertTrue(
             first.saveBrowsingSession(
                 BrowserTvBrowsingSession(
-                    listOf(BrowserSavedTab("https://example.com/home", "Home"), BrowserSavedTab("https://example.com/news", "News")),
+                    listOf(
+                        BrowserSavedTab("https://example.com/home", "Home"),
+                        BrowserSavedTab("https://example.com/news", "News"),
+                    ),
                     activeTab = 1,
                     workspaceMode = true,
                 ),

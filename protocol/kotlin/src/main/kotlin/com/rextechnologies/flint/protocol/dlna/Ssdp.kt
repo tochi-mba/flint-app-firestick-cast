@@ -75,4 +75,3 @@ object Ssdp {
         return SsdpDevice(location, usn, target, headers["SERVER"])
     }
 }
-

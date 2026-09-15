@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -37,10 +38,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.tv.material3.Text
 import com.rextechnologies.flint.receiver.ReceiverUiState
 
@@ -355,20 +355,20 @@ private fun PairingCard(
         }
         Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(ReceiverSpace.Small)) {
-                TvActionButton(
-                    label = "BROWSE ON THIS TV",
-                    enabled = state.ready,
-                    onClick = onBrowse,
-                    modifier = Modifier
-                        .testTag(ReceiverTags.BROWSER_ENTRY)
-                        .focusRequester(focusRequester),
-                )
-                TvActionButton(
-                    label = "NEW CODE",
-                    enabled = state.ready,
-                    onClick = onRefreshCode,
-                    modifier = Modifier.testTag(ReceiverTags.PRIMARY_ACTION),
-                )
+            TvActionButton(
+                label = "BROWSE ON THIS TV",
+                enabled = state.ready,
+                onClick = onBrowse,
+                modifier = Modifier
+                    .testTag(ReceiverTags.BROWSER_ENTRY)
+                    .focusRequester(focusRequester),
+            )
+            TvActionButton(
+                label = "NEW CODE",
+                enabled = state.ready,
+                onClick = onRefreshCode,
+                modifier = Modifier.testTag(ReceiverTags.PRIMARY_ACTION),
+            )
         }
         Spacer(Modifier.height(14.dp))
         Text(

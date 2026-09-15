@@ -25,7 +25,11 @@ value class BrowserWorkspaceSplitFraction private constructor(val tenThousandths
     val ratio: Float get() = tenThousandths / SCALE.toFloat()
 
     /** Moves the divider by [delta] ten-thousandths, staying inside the allowed range. */
-    fun nudged(delta: Int): BrowserWorkspaceSplitFraction = of((tenThousandths.toLong() + delta).coerceIn(MINIMUM.toLong(), MAXIMUM.toLong()).toInt())
+    fun nudged(
+        delta: Int,
+    ): BrowserWorkspaceSplitFraction = of(
+        (tenThousandths.toLong() + delta).coerceIn(MINIMUM.toLong(), MAXIMUM.toLong()).toInt(),
+    )
 
     companion object {
         const val SCALE: Int = 10_000

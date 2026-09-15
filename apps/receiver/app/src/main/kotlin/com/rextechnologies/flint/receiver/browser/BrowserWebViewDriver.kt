@@ -1,14 +1,9 @@
 package com.rextechnologies.flint.receiver.browser
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import android.net.http.SslError
 import android.os.Build
-import android.view.View
-import android.webkit.RenderProcessGoneDetail
-import android.webkit.SslErrorHandler
-import android.webkit.WebResourceResponse
-import androidx.annotation.RequiresApi
-import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -16,14 +11,19 @@ import android.view.InputDevice
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.View
+import android.webkit.RenderProcessGoneDetail
+import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import com.rextechnologies.flint.protocol.wire.BrowserPointerAction
+import androidx.annotation.RequiresApi
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import com.rextechnologies.flint.protocol.wire.BrowserPointerAction
 
 /** Result of a requested per-WebView audio mute change. It is never a global stream mute. */
 enum class BrowserPaneAudioMuteResult {
@@ -60,6 +60,7 @@ class BrowserWebViewDriver(
     private val findController = BrowserFindController(WebViewFindTarget(webView), onFindChanged)
     private var activeEpoch: Long = 0
     private var activeNavigationId: Long = 0
+
     /** Down-time for the in-flight touch gesture; required for double-tap recognition. */
     private var gestureDownTime: Long = 0
 

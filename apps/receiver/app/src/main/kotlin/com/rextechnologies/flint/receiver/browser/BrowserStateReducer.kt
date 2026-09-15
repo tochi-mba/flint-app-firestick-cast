@@ -35,7 +35,15 @@ data class BrowserPageTitle(val value: String) {
                 return null
             }
             val normalized = raw
-                .map { character -> if (character.isWhitespace() || Character.isISOControl(character)) ' ' else character }
+                .map { character ->
+                    if (character.isWhitespace() ||
+                        Character.isISOControl(character)
+                    ) {
+                        ' '
+                    } else {
+                        character
+                    }
+                }
                 .joinToString(separator = "")
                 .trim()
                 .replace(Regex(" {2,}"), " ")
@@ -178,7 +186,11 @@ class BrowserStateReducer {
 
     private fun navigationAccepted(state: BrowserState, event: BrowserStateEvent.NavigationAccepted): BrowserState {
         if (!isCurrent(state, event.epoch) || event.commandId <= state.lastAcceptedCommandId) return state
-        if (state.phase !in setOf(BrowserPhase.OPENING, BrowserPhase.LOADING, BrowserPhase.READY, BrowserPhase.ERROR)) return state
+        if (state.phase !in
+            setOf(BrowserPhase.OPENING, BrowserPhase.LOADING, BrowserPhase.READY, BrowserPhase.ERROR)
+        ) {
+            return state
+        }
         return state.advance(
             phase = BrowserPhase.LOADING,
             navigationId = event.commandId,

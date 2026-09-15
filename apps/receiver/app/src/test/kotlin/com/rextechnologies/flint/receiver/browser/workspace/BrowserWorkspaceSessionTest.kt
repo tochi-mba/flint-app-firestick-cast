@@ -1,12 +1,12 @@
 package com.rextechnologies.flint.receiver.browser.workspace
 
-import com.rextechnologies.flint.receiver.browser.*
 import com.rextechnologies.flint.protocol.wire.BrowserPointerAction
+import com.rextechnologies.flint.receiver.browser.*
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import kotlin.test.assertSame
 import kotlin.test.*
+import kotlin.test.assertSame
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [28])
@@ -18,13 +18,27 @@ class BrowserWorkspaceSessionTest {
         val tokens = mutableMapOf<Long, Long>()
         val inputs = mutableListOf<Pair<Long, BrowserNativeInput>>()
         var destroyed = 0
-        override fun create(id: Long, generation: Long, url: String?) { tokens[id] = generation }
-        override fun restore(id: Long, generation: Long): Boolean { tokens[id] = generation; return false }
+        override fun create(id: Long, generation: Long, url: String?) {
+            tokens[id] = generation
+        }
+        override fun restore(id: Long, generation: Long): Boolean {
+            tokens[id] = generation
+            return false
+        }
         override fun driverFor(id: Long): BrowserWebViewDriver? = null
-        override fun dispatchNativeInput(id: Long, input: BrowserNativeInput) { inputs.add(id to input) }
-        override fun freeze(id: Long) { tokens.remove(id) }
-        override fun destroy(id: Long) { tokens.remove(id) }
-        override fun destroyAll() { destroyed++; tokens.clear() }
+        override fun dispatchNativeInput(id: Long, input: BrowserNativeInput) {
+            inputs.add(id to input)
+        }
+        override fun freeze(id: Long) {
+            tokens.remove(id)
+        }
+        override fun destroy(id: Long) {
+            tokens.remove(id)
+        }
+        override fun destroyAll() {
+            destroyed++
+            tokens.clear()
+        }
         override fun exitFullscreen(id: Long) = true
         override fun setPageFocusEnabled(enabled: Boolean) = Unit
         override fun render(state: BrowserWorkspaceState) = Unit
@@ -48,8 +62,10 @@ class BrowserWorkspaceSessionTest {
         session.dispatchNativeInput(pane, BrowserNativeInput.Pointer(BrowserPointerAction.DOWN, 10, 20, 1))
         session.dispatch(BrowserWorkspaceAction.SetSplit(BrowserWorkspaceSplit.of(7000, 3000)))
         session.dispatchNativeInput(pane, BrowserNativeInput.Pointer(BrowserPointerAction.UP, 10, 20, 0))
-        assertEquals(listOf(BrowserPointerAction.DOWN, BrowserPointerAction.CANCEL),
-            host.inputs.map { (it.second as BrowserNativeInput.Pointer).action })
+        assertEquals(
+            listOf(BrowserPointerAction.DOWN, BrowserPointerAction.CANCEL),
+            host.inputs.map { (it.second as BrowserNativeInput.Pointer).action },
+        )
         assertEquals(listOf(pane, pane), host.inputs.map { it.first })
     }
 
@@ -75,8 +91,10 @@ class BrowserWorkspaceSessionTest {
         session.dispatch(BrowserWorkspaceAction.SetInteractionMode(BrowserWorkspaceInteractionMode.PAGE))
         session.dispatchNativeInput(second, BrowserNativeInput.Pointer(BrowserPointerAction.UP, 10, 20, 0))
         assertEquals(listOf(first, first), host.inputs.map { it.first })
-        assertEquals(listOf(BrowserPointerAction.DOWN, BrowserPointerAction.CANCEL),
-            host.inputs.map { (it.second as BrowserNativeInput.Pointer).action })
+        assertEquals(
+            listOf(BrowserPointerAction.DOWN, BrowserPointerAction.CANCEL),
+            host.inputs.map { (it.second as BrowserNativeInput.Pointer).action },
+        )
     }
 
     @Test fun `preview click on another pane selects it and delivers the local click`() {
@@ -115,7 +133,10 @@ class BrowserWorkspaceSessionTest {
         val session = BrowserWorkspaceSession()
         open(session, host)
         session.dispatch(BrowserWorkspaceAction.SetInteractionMode(BrowserWorkspaceInteractionMode.PAGE))
-        session.dispatchNativeInput(session.state.focusedPaneId, BrowserNativeInput.Pointer(BrowserPointerAction.DOWN, 10, 20, 1))
+        session.dispatchNativeInput(
+            session.state.focusedPaneId,
+            BrowserNativeInput.Pointer(BrowserPointerAction.DOWN, 10, 20, 1),
+        )
         session.detachHost(host)
         assertEquals(BrowserPointerAction.CANCEL, (host.inputs.last().second as BrowserNativeInput.Pointer).action)
         assertEquals(1, host.destroyed)
@@ -176,8 +197,11 @@ class BrowserWorkspaceSessionTest {
         val session = BrowserWorkspaceSession()
         val token = open(session, Host())
         val answers = mutableListOf<BrowserDialogAnswer>()
-        session.onDialog(session.state.focusedPaneId, token,
-            PendingJsDialog(BrowserDialogKind.CONFIRM, "https://example.com", "Continue?", null, answers::add))
+        session.onDialog(
+            session.state.focusedPaneId,
+            token,
+            PendingJsDialog(BrowserDialogKind.CONFIRM, "https://example.com", "Continue?", null, answers::add),
+        )
         val request = assertNotNull(session.pendingDialog.value)
         session.closeWorkspace()
         session.answerDialog(request.id, BrowserDialogAnswer.Confirm)
@@ -189,8 +213,11 @@ class BrowserWorkspaceSessionTest {
         val oldToken = open(session, Host())
         session.attachHost(Host())
         val answers = mutableListOf<BrowserDialogAnswer>()
-        session.onDialog(session.state.focusedPaneId, oldToken,
-            PendingJsDialog(BrowserDialogKind.ALERT, "https://example.com", "Old", null, answers::add))
+        session.onDialog(
+            session.state.focusedPaneId,
+            oldToken,
+            PendingJsDialog(BrowserDialogKind.ALERT, "https://example.com", "Old", null, answers::add),
+        )
         assertNull(session.pendingDialog.value)
         assertEquals(listOf<BrowserDialogAnswer>(BrowserDialogAnswer.Cancel), answers)
     }

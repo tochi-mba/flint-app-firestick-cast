@@ -188,7 +188,7 @@ class AdbConnection(
     fun installApk(apk: ByteArray, reinstall: Boolean = true): AdbInstallResult {
         require(apk.isNotEmpty()) { "APK payload must not be empty" }
         val flags = if (reinstall) "-r " else ""
-        val output = request("exec:cmd package install ${flags}-S ${apk.size}", apk)
+        val output = request("exec:cmd package install $flags-S ${apk.size}", apk)
             .toString(StandardCharsets.UTF_8)
             .trim()
         return AdbInstallResult(succeeded = output.startsWith("Success"), output = output)
@@ -282,4 +282,3 @@ data class TvActivity(val component: String, val packageName: String) {
             .replace('_', ' ')
             .replaceFirstChar { it.uppercase() }
 }
-

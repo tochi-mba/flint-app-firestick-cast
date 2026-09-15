@@ -102,7 +102,10 @@ class BrowserViewSettingsTest {
 
         settings.startFind(query)
 
-        assertEquals(BrowserFindState.MAX_QUERY_CODE_POINTS, settings.state.find.query.codePointCount(0, settings.state.find.query.length))
+        assertEquals(
+            BrowserFindState.MAX_QUERY_CODE_POINTS,
+            settings.state.find.query.codePointCount(0, settings.state.find.query.length),
+        )
     }
 
     @Test

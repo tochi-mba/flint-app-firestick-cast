@@ -282,4 +282,3 @@ class CastHandshakeTest {
         assertEquals(320, hello.densityDpi)
     }
 }
-

@@ -8,7 +8,11 @@ import kotlin.test.assertTrue
 
 class BrowserStateReducerTest {
     private val reducer = BrowserStateReducer()
-    private val url = (BrowserUrlPolicy().evaluate("https://example.com/private?secret=yes") as BrowserUrlResult.Accepted).url
+    private val url = (
+        BrowserUrlPolicy().evaluate(
+            "https://example.com/private?secret=yes",
+        ) as BrowserUrlResult.Accepted
+        ).url
 
     @Test
     fun `accepted navigation produces monotonic safe browser state`() {
@@ -97,7 +101,11 @@ class BrowserStateReducerTest {
             orphan,
             BrowserStateEvent.PageFinished(4, 1, canGoBack = false, canGoForward = false),
         )
-        val search = (BrowserUrlPolicy().evaluate("https://www.google.com/search?q=weather") as BrowserUrlResult.Accepted).url
+        val search = (
+            BrowserUrlPolicy().evaluate(
+                "https://www.google.com/search?q=weather",
+            ) as BrowserUrlResult.Accepted
+            ).url
 
         val reclaimed = reducer.reduce(ready, BrowserStateEvent.OpenAccepted(5, 1, search))
 

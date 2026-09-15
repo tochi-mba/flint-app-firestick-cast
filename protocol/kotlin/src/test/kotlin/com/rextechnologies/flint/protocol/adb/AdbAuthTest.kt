@@ -42,7 +42,10 @@ class AdbAuthTest {
         val binary = Base64.getDecoder().decode(encoded)
         assertEquals(4 + 4 + 256 + 256 + 4, binary.size)
         assertEquals(64, readUint32Le(binary, 0))
-        assertEquals((identity.publicKey as RSAPublicKey).publicExponent.toLong(), readUint32Le(binary, binary.size - 4))
+        assertEquals(
+            (identity.publicKey as RSAPublicKey).publicExponent.toLong(),
+            readUint32Le(binary, binary.size - 4),
+        )
 
         val token = ByteArray(20)
         val signature = AdbAuth.signatureMessage(identity, token)
@@ -75,4 +78,3 @@ class AdbAuthTest {
             ((bytes[offset + 2].toLong() and 0xff) shl 16) or
             ((bytes[offset + 3].toLong() and 0xff) shl 24)
 }
-

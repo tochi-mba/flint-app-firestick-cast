@@ -3,18 +3,13 @@ package com.rextechnologies.flint.receiver.browser
 import com.rextechnologies.flint.protocol.BinaryData
 import com.rextechnologies.flint.protocol.wire.BrowserDarkMode
 import com.rextechnologies.flint.protocol.wire.BrowserFaviconMessage
-import com.rextechnologies.flint.protocol.wire.BrowserInteractionMode as WireInteractionMode
 import com.rextechnologies.flint.protocol.wire.BrowserLoadState
 import com.rextechnologies.flint.protocol.wire.BrowserNetworkStateMessage
 import com.rextechnologies.flint.protocol.wire.BrowserProfileEntry
-import com.rextechnologies.flint.protocol.wire.BrowserProfileSource as WireProfileSource
 import com.rextechnologies.flint.protocol.wire.BrowserProfileStateMessage
-import com.rextechnologies.flint.protocol.wire.BrowserSearchEngine as WireSearchEngine
 import com.rextechnologies.flint.protocol.wire.BrowserTabStateEntry
 import com.rextechnologies.flint.protocol.wire.BrowserTabStateMessage
-import com.rextechnologies.flint.protocol.wire.BrowserUserAgentMode as WireUserAgentMode
 import com.rextechnologies.flint.protocol.wire.BrowserViewStateMessage
-import com.rextechnologies.flint.protocol.wire.BrowserVpnProvider as WireVpnProvider
 import com.rextechnologies.flint.protocol.wire.BrowserVpnSessionState
 import com.rextechnologies.flint.protocol.wire.BrowserWireLimits
 import com.rextechnologies.flint.protocol.wire.BrowserWorkspacePaneStateEntry
@@ -36,6 +31,11 @@ import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspacePlay
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceRendererResidency
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceState
 import java.nio.charset.StandardCharsets
+import com.rextechnologies.flint.protocol.wire.BrowserInteractionMode as WireInteractionMode
+import com.rextechnologies.flint.protocol.wire.BrowserProfileSource as WireProfileSource
+import com.rextechnologies.flint.protocol.wire.BrowserSearchEngine as WireSearchEngine
+import com.rextechnologies.flint.protocol.wire.BrowserUserAgentMode as WireUserAgentMode
+import com.rextechnologies.flint.protocol.wire.BrowserVpnProvider as WireVpnProvider
 
 /** Builds monotonic full-replacement cockpit snapshots and hands them to the TLS-only writer. */
 class BrowserCockpitPublisher(
@@ -246,9 +246,15 @@ class BrowserCockpitPublisher(
     fun publishGeometry(page: BrowserState, state: BrowserWorkspaceState, visible: Boolean): Boolean {
         val epoch = page.epoch ?: return false
         if (epoch <= 0 || workspaceRevision <= 0) return false
-        return send(com.rextechnologies.flint.protocol.wire.BrowserWorkspaceGeometryMessage(
-            epoch, workspaceRevision, state.split.column.tenThousandths, state.split.row.tenThousandths, if (visible) 2 else 1,
-        ))
+        return send(
+            com.rextechnologies.flint.protocol.wire.BrowserWorkspaceGeometryMessage(
+                epoch,
+                workspaceRevision,
+                state.split.column.tenThousandths,
+                state.split.row.tenThousandths,
+                if (visible) 2 else 1,
+            ),
+        )
     }
 
     fun publishFavicon(page: BrowserState, favicon: CachedBrowserFavicon): Boolean {

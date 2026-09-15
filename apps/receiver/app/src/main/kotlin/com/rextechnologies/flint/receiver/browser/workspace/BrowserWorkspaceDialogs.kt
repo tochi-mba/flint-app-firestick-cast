@@ -16,10 +16,15 @@ internal class BrowserWorkspaceDialogs {
     fun show(paneId: Long, rendererToken: Long, dialog: PendingJsDialog): Long {
         val id = ++nextId
         val previous = mutablePending.value
-        mutablePending.value = Request(id, paneId, rendererToken, dialog.copy(
-            message = BrowserDialogText.fromPage(dialog.message).value,
-            defaultValue = dialog.defaultValue?.let { BrowserDialogText.fromPage(it).value },
-        ))
+        mutablePending.value = Request(
+            id,
+            paneId,
+            rendererToken,
+            dialog.copy(
+                message = BrowserDialogText.fromPage(dialog.message).value,
+                defaultValue = dialog.defaultValue?.let { BrowserDialogText.fromPage(it).value },
+            ),
+        )
         // Publish the replacement first. Cancelling page code may synchronously open another
         // dialog; that newer request must cancel this one rather than being overwritten/leaked.
         previous?.dialog?.resolve(BrowserDialogAnswer.Cancel)

@@ -86,36 +86,79 @@ class WireModelValidationTest {
     @Test
     fun `payload decoder rejects every invalid discriminant and bound`() {
         assertFailsWith<WireFormatException> {
-            WireMessageCodec.decode(1, WireMessageType.HELLO.id, buffer(2 + 2 + 2 + 2 + 12) {
-                putShort(1); putShort(1); putShort(0); putShort(257)
-                putInt(1); putInt(1); putInt(1)
-            })
+            WireMessageCodec.decode(
+                1,
+                WireMessageType.HELLO.id,
+                buffer(2 + 2 + 2 + 2 + 12) {
+                    putShort(1)
+                    putShort(1)
+                    putShort(0)
+                    putShort(257)
+                    putInt(1)
+                    putInt(1)
+                    putInt(1)
+                },
+            )
         }
         assertFailsWith<WireFormatException> {
-            WireMessageCodec.decode(1, WireMessageType.VIDEO_CONFIG.id, buffer(11) {
-                putShort(1); putInt(1); putInt(1); put(17)
-            })
+            WireMessageCodec.decode(
+                1,
+                WireMessageType.VIDEO_CONFIG.id,
+                buffer(11) {
+                    putShort(1)
+                    putInt(1)
+                    putInt(1)
+                    put(17)
+                },
+            )
         }
         assertFailsWith<WireFormatException> {
             WireMessageCodec.decode(1, WireMessageType.AUTH.id, byteArrayOf(99))
         }
-        val invalidPresence = buffer(7) { put(1); putInt(1); put(1); put(2) }
+        val invalidPresence = buffer(7) {
+            put(1)
+            putInt(1)
+            put(1)
+            put(2)
+        }
         assertFailsWith<WireFormatException> { WireMessageCodec.decode(1, WireMessageType.AUTH.id, invalidPresence) }
-        val invalidBoolean = buffer(13) { putLong(0); put(2); putInt(0) }
+        val invalidBoolean = buffer(13) {
+            putLong(0)
+            put(2)
+            putInt(0)
+        }
         assertFailsWith<WireFormatException> { WireMessageCodec.decode(1, WireMessageType.VIDEO.id, invalidBoolean) }
-        val negativeBinary = buffer(12) { putLong(0); putInt(-1) }
+        val negativeBinary = buffer(12) {
+            putLong(0)
+            putInt(-1)
+        }
         assertFailsWith<WireFormatException> { WireMessageCodec.decode(1, WireMessageType.AUDIO.id, negativeBinary) }
-        val truncatedBinary = buffer(13) { putLong(0); putInt(2); put(1) }
+        val truncatedBinary = buffer(13) {
+            putLong(0)
+            putInt(2)
+            put(1)
+        }
         assertFailsWith<WireFormatException> { WireMessageCodec.decode(1, WireMessageType.AUDIO.id, truncatedBinary) }
 
         listOf(
             control(1, 99, byteArrayOf()),
             control(2, 99, ByteArray(12)),
             control(3, 99, ByteArray(4)),
-        ).forEach { assertFailsWith<WireFormatException> { WireMessageCodec.decode(1, WireMessageType.CONTROL.id, it) } }
-        val invalidText = buffer(8 + 1 + 4 + 1) { putLong(0); put(4); putInt(1); put(0xc3.toByte()) }
+        ).forEach {
+            assertFailsWith<WireFormatException> { WireMessageCodec.decode(1, WireMessageType.CONTROL.id, it) }
+        }
+        val invalidText = buffer(8 + 1 + 4 + 1) {
+            putLong(0)
+            put(4)
+            putInt(1)
+            put(0xc3.toByte())
+        }
         assertFailsWith<WireFormatException> { WireMessageCodec.decode(1, WireMessageType.CONTROL.id, invalidText) }
-        val invalidVolume = buffer(8 + 1 + 4) { putLong(0); put(5); putFloat(Float.NaN) }
+        val invalidVolume = buffer(8 + 1 + 4) {
+            putLong(0)
+            put(5)
+            putFloat(Float.NaN)
+        }
         assertFailsWith<WireFormatException> { WireMessageCodec.decode(1, WireMessageType.CONTROL.id, invalidVolume) }
     }
 
@@ -128,7 +171,9 @@ class WireModelValidationTest {
             WireCodec.encode(WireFrame(1, AuthMessage(AuthMethod.PUBLIC_KEY_PROOF, data, "x".repeat(513))))
         }
         assertFailsWith<WireFormatException> {
-            WireCodec.encode(WireFrame(1, VideoConfigMessage(CodecId.H264, 1, 1, listOf(BinaryData.of(ByteArray(1_048_577))))))
+            WireCodec.encode(
+                WireFrame(1, VideoConfigMessage(CodecId.H264, 1, 1, listOf(BinaryData.of(ByteArray(1_048_577))))),
+            )
         }
         assertFailsWith<WireFormatException> {
             WireCodec.encode(WireFrame(1, ControlMessage(1, TextControl("x".repeat(16_385)))))
@@ -146,7 +191,10 @@ class WireModelValidationTest {
 
     private fun control(eventId: Int, action: Int, remainder: ByteArray): ByteArray =
         buffer(8 + 1 + 1 + remainder.size) {
-            putLong(0); put(eventId.toByte()); put(action.toByte()); put(remainder)
+            putLong(0)
+            put(eventId.toByte())
+            put(action.toByte())
+            put(remainder)
         }
 
     private fun buffer(size: Int, write: ByteBuffer.() -> Unit): ByteArray =
@@ -165,4 +213,3 @@ class WireModelValidationTest {
         }
     }
 }
-

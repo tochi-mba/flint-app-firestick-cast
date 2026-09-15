@@ -56,7 +56,9 @@ class MirrorVideoDecoder(
     private val dropped = AtomicLong()
 
     @Volatile private var queueDepth = 0
+
     @Volatile private var lastLatencyUs = 0L
+
     @Volatile private var closed = false
     private var codec: MediaCodec? = null
     private var configuration: VideoConfigMessage? = null
@@ -254,8 +256,11 @@ class MirrorAudioDecoder(
     private val handler = Handler(thread.looper)
     private val pending = ArrayDeque<QueuedAudio>()
     private val dropped = AtomicLong()
+
     @Volatile private var queueDepth = 0
+
     @Volatile private var lastLatencyUs = 0L
+
     @Volatile private var closed = false
     private var codec: MediaCodec? = null
     private var track: AudioTrack? = null
@@ -360,7 +365,10 @@ class MirrorAudioDecoder(
     }
 
     private fun replaceTrack(format: MediaFormat) {
-        track?.let { runCatching { it.stop() }; it.release() }
+        track?.let {
+            runCatching { it.stop() }
+            it.release()
+        }
         val sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE)
         val channels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
         val mask = if (channels == 1) AudioFormat.CHANNEL_OUT_MONO else AudioFormat.CHANNEL_OUT_STEREO
@@ -398,9 +406,15 @@ class MirrorAudioDecoder(
     }
 
     private fun releaseCodec() {
-        codec?.let { runCatching { it.stop() }; runCatching { it.release() } }
+        codec?.let {
+            runCatching { it.stop() }
+            runCatching { it.release() }
+        }
         codec = null
-        track?.let { runCatching { it.stop() }; runCatching { it.release() } }
+        track?.let {
+            runCatching { it.stop() }
+            runCatching { it.release() }
+        }
         track = null
         drainScheduled = false
         handler.removeCallbacks(drain)
@@ -421,4 +435,3 @@ class MirrorAudioDecoder(
         const val DRAIN_RETRY_MILLIS = 3L
     }
 }
-

@@ -1,10 +1,11 @@
 package com.rextechnologies.flint.receiver.ui
 
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -16,13 +17,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.tv.material3.Button
 import androidx.tv.material3.Text
 import com.rextechnologies.flint.receiver.browser.BrowserHelpTopics
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.Before
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
-import android.view.KeyEvent
 
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w960dp-h540dp-television-xhdpi")

@@ -33,10 +33,13 @@ class BrowserPreviewLoop(
     companion object {
         /** Advertised and enforced capture width ceiling. */
         const val MAX_WIDTH = 960
+
         /** Advertised and enforced capture height ceiling. */
         const val MAX_HEIGHT = 540
+
         /** ~200 ms interactive tick → 5 fps. */
         const val INTERACTIVE_FPS = 5
+
         /** ~1000 ms idle tick → 1 fps. */
         const val IDLE_FPS = 1
     }

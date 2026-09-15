@@ -24,8 +24,17 @@ class BrowserWorkspacePointerRouterTest {
         router.dispatch(1, pointer(BrowserPointerAction.UP))
         router.dispatch(2, pointer(BrowserPointerAction.UP))
         assertEquals(listOf(1L, 1L, 2L, 2L), sent.map { it.first })
-        assertEquals(listOf(BrowserPointerAction.DOWN, BrowserPointerAction.CANCEL,
-            BrowserPointerAction.DOWN, BrowserPointerAction.UP), sent.map { (it.second as BrowserNativeInput.Pointer).action })
+        assertEquals(
+            listOf(
+                BrowserPointerAction.DOWN,
+                BrowserPointerAction.CANCEL,
+                BrowserPointerAction.DOWN,
+                BrowserPointerAction.UP,
+            ),
+            sent.map {
+                (it.second as BrowserNativeInput.Pointer).action
+            },
+        )
     }
 
     @Test fun `cancel is idempotent and uses last gesture coordinates`() {

@@ -1,5 +1,16 @@
 package com.rextechnologies.flint.receiver.ui
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.tv.material3.Text
+import com.rextechnologies.flint.receiver.ReceiverService
+import com.rextechnologies.flint.receiver.ReceiverUiState
+import com.rextechnologies.flint.receiver.browser.BrowserKeyboard
+import com.rextechnologies.flint.receiver.browser.BrowserOverlay
 import com.rextechnologies.flint.receiver.browserNetworkSettings
 import com.rextechnologies.flint.receiver.browserVpnCapability
 import com.rextechnologies.flint.receiver.browserVpnState
@@ -18,17 +29,6 @@ import com.rextechnologies.flint.receiver.toggleBrowserVpnAutoConnect
 import com.rextechnologies.flint.receiver.toggleBrowserVpnEnabled
 import com.rextechnologies.flint.receiver.zoomBrowserIn
 import com.rextechnologies.flint.receiver.zoomBrowserOut
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.tv.material3.Text
-import com.rextechnologies.flint.receiver.ReceiverService
-import com.rextechnologies.flint.receiver.ReceiverUiState
-import com.rextechnologies.flint.receiver.browser.BrowserKeyboard
-import com.rextechnologies.flint.receiver.browser.BrowserOverlay
 
 /** Exhaustive renderer for every modal state owned by the browser surface controller. */
 @Composable

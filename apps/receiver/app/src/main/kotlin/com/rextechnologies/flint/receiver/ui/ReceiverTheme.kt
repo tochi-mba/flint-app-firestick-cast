@@ -1,7 +1,7 @@
 package com.rextechnologies.flint.receiver.ui
 
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
@@ -61,5 +61,3 @@ fun ReceiverTheme(content: @Composable () -> Unit) {
         )
     }
 }
-
-

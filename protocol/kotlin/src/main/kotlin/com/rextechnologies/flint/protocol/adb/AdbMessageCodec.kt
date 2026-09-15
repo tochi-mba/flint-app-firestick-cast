@@ -109,5 +109,3 @@ object AdbMessageCodec {
         }
     }
 }
-
-

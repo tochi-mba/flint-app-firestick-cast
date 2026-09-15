@@ -1,10 +1,10 @@
 package com.rextechnologies.flint.receiver.browser
 
-import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSplit
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceLayout
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspacePage
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSavedPane
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSnapshot
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSplit
 import com.rextechnologies.flint.receiver.browser.workspace.layoutSupportsPaneCount
 import java.io.File
 import java.io.FileOutputStream
@@ -212,8 +212,10 @@ class BrowserWorkspaceStore(
                 appendString(profileId)
                 append(':')
                 append('{')
-                append("\"ownerProfileId\":"); appendString(snapshot.ownerProfileId)
-                append(",\"layout\":"); appendString(snapshot.layout.name)
+                append("\"ownerProfileId\":")
+                appendString(snapshot.ownerProfileId)
+                append(",\"layout\":")
+                appendString(snapshot.layout.name)
                 append(",\"columnSplit\":").append(snapshot.split.column.tenThousandths)
                 append(",\"rowSplit\":").append(snapshot.split.row.tenThousandths)
                 append(",\"focusedPaneId\":").append(snapshot.focusedPaneId)
@@ -223,8 +225,10 @@ class BrowserWorkspaceStore(
                     if (paneIndex != 0) append(',')
                     append("{\"id\":").append(pane.id)
                     append(",\"slot\":").append(pane.slot)
-                    append(",\"url\":"); appendString(pane.page.url)
-                    append(",\"title\":"); appendString(pane.page.title)
+                    append(",\"url\":")
+                    appendString(pane.page.url)
+                    append(",\"title\":")
+                    appendString(pane.page.title)
                     append(",\"desiredMuted\":").append(pane.desiredMuted)
                     append('}')
                 }

@@ -58,4 +58,3 @@ object MimeTypes {
         return BY_EXTENSION[extension] ?: DEFAULT
     }
 }
-

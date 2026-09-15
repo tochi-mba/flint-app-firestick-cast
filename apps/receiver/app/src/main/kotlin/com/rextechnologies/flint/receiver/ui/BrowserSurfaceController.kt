@@ -156,10 +156,11 @@ internal class BrowserSurfaceController(
         }
         if (isSelectKey(keyCode)) longPressConsumed = false
         val outcome = keys.onKeyDown(snapshot(), keyCode)
-        if ((overlay == BrowserOverlay.OMNIBOX ||
-                overlay == BrowserOverlay.FIND ||
-                overlay == BrowserOverlay.PROFILE_NAME
-            ) &&
+        if ((
+                overlay == BrowserOverlay.OMNIBOX ||
+                    overlay == BrowserOverlay.FIND ||
+                    overlay == BrowserOverlay.PROFILE_NAME
+                ) &&
             outcome is TvKeyOutcome.PassThrough
         ) {
             return onOmniboxKey(keyCode)
@@ -394,7 +395,15 @@ internal class BrowserSurfaceController(
         }
 
         is TvKeyOutcome.SendKey -> {
-            outcome.key.toNativeKey()?.let { actions.dispatch(BrowserNativeInput.KeyStroke(it, shift = outcome.key == BrowserSemanticKey.SHIFT_TAB)) }
+            outcome.key.toNativeKey()?.let {
+                actions.dispatch(
+                    BrowserNativeInput.KeyStroke(
+                        it,
+                        shift =
+                        outcome.key == BrowserSemanticKey.SHIFT_TAB,
+                    ),
+                )
+            }
             true
         }
 
@@ -423,19 +432,53 @@ internal class BrowserSurfaceController(
             true
         }
 
-        TvKeyOutcome.ShowChrome -> { showChrome(); true }
-        TvKeyOutcome.HideChrome -> { hideChrome(); true }
-        is TvKeyOutcome.OpenOverlay -> { openOverlay(outcome.overlay); true }
-        TvKeyOutcome.CloseOverlay -> { closeOverlay(); true }
-        TvKeyOutcome.ExitFullscreen -> { actions.exitFullscreen(); true }
-        TvKeyOutcome.DismissNotice -> { actions.dismissNotice(); true }
-        TvKeyOutcome.CancelDialog -> { actions.cancelDialog(); true }
-        TvKeyOutcome.GoBack -> { actions.goBack(); true }
+        TvKeyOutcome.ShowChrome -> {
+            showChrome()
+            true
+        }
+        TvKeyOutcome.HideChrome -> {
+            hideChrome()
+            true
+        }
+        is TvKeyOutcome.OpenOverlay -> {
+            openOverlay(outcome.overlay)
+            true
+        }
+        TvKeyOutcome.CloseOverlay -> {
+            closeOverlay()
+            true
+        }
+        TvKeyOutcome.ExitFullscreen -> {
+            actions.exitFullscreen()
+            true
+        }
+        TvKeyOutcome.DismissNotice -> {
+            actions.dismissNotice()
+            true
+        }
+        TvKeyOutcome.CancelDialog -> {
+            actions.cancelDialog()
+            true
+        }
+        TvKeyOutcome.GoBack -> {
+            actions.goBack()
+            true
+        }
 
-        TvKeyOutcome.CloseTab -> { actions.closeActiveTab(); true }
+        TvKeyOutcome.CloseTab -> {
+            actions.closeActiveTab()
+            true
+        }
 
-        TvKeyOutcome.ConfirmLeave -> { leaveConfirmVisible = true; true }
-        TvKeyOutcome.CloseBrowser -> { leaveConfirmVisible = false; actions.closeBrowser(); true }
+        TvKeyOutcome.ConfirmLeave -> {
+            leaveConfirmVisible = true
+            true
+        }
+        TvKeyOutcome.CloseBrowser -> {
+            leaveConfirmVisible = false
+            actions.closeBrowser()
+            true
+        }
         TvKeyOutcome.PassThrough -> false
     }
 

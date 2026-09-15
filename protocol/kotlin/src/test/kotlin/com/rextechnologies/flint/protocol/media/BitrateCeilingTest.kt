@@ -5,7 +5,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class BitrateCeilingTest {
-    private fun headroom() = LinkSample(receiverQueueDepth = 0, decodeLatencyUs = 0, roundTripTimeUs = 0, droppedVideoFrames = 0)
+    private fun headroom() = LinkSample(
+        receiverQueueDepth = 0,
+        decodeLatencyUs = 0,
+        roundTripTimeUs = 0,
+        droppedVideoFrames = 0,
+    )
 
     @Test
     fun `a ceiling below the current rate cuts it, and one above leaves it alone`() {
@@ -30,7 +35,8 @@ class BitrateCeilingTest {
 
     @Test
     fun `a ceiling can never raise the rate above the maximum or below the minimum`() {
-        val controller = BitrateController(minimumBitrate = 1_000_000, maximumBitrate = 10_000_000, initialBitrate = 5_000_000)
+        val controller =
+            BitrateController(minimumBitrate = 1_000_000, maximumBitrate = 10_000_000, initialBitrate = 5_000_000)
         controller.applyCeiling(50_000_000)
         assertEquals(10_000_000, controller.ceiling)
         assertEquals(5_000_000, controller.currentBitrate)

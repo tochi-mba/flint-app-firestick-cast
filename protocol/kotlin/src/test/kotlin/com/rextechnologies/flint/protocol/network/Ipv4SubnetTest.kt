@@ -70,5 +70,3 @@ class Ipv4SubnetTest {
         assertEquals("255.255.255.255", slash0.broadcastAddress.hostAddress)
     }
 }
-
-

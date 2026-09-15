@@ -116,5 +116,3 @@ data class DnsPacket(
     val records: List<DnsRecord>
         get() = answers + authorities + additionals
 }
-
-

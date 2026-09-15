@@ -1,8 +1,5 @@
 package com.rextechnologies.flint.receiver.ui
 
-import com.rextechnologies.flint.receiver.showBrowserRefusal
-import com.rextechnologies.flint.receiver.setBrowserFullscreen
-import com.rextechnologies.flint.receiver.showBrowserNotice
 import android.content.Context
 import android.view.View
 import android.webkit.WebView
@@ -13,6 +10,9 @@ import com.rextechnologies.flint.receiver.browser.BrowserTabHost
 import com.rextechnologies.flint.receiver.browser.BrowserTabSurfacePort
 import com.rextechnologies.flint.receiver.browser.BrowserWebViewDriver
 import com.rextechnologies.flint.receiver.browser.TabEffect
+import com.rextechnologies.flint.receiver.setBrowserFullscreen
+import com.rextechnologies.flint.receiver.showBrowserNotice
+import com.rextechnologies.flint.receiver.showBrowserRefusal
 
 /**
  * Owns the Activity-side WebViews for the browser's service-side tab model.

@@ -9,11 +9,11 @@ import com.wireguard.android.backend.GoBackend
 import com.wireguard.android.backend.Tunnel
 import com.wireguard.config.BadConfigException
 import com.wireguard.config.Config
-import java.io.ByteArrayInputStream
-import java.nio.charset.StandardCharsets
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.io.ByteArrayInputStream
+import java.nio.charset.StandardCharsets
 
 /** Soft-fail VPN session states for a UI banner. Never throw across this boundary. */
 sealed class BrowserVpnState {
@@ -127,6 +127,7 @@ class BrowserVpnTunnelImpl(
 
     companion object {
         private const val TAG = "FlintVpnTunnel"
+
         /** Tunnel.NAME_MAX_LENGTH is 15; keep short and alphanumeric. */
         private const val TUNNEL_NAME = "flint"
     }
@@ -150,6 +151,7 @@ class BrowserVpnCoordinator(
     @Volatile
     private var activeProfileId: String? = null
     private var activeSettings: ProfileNetworkSettings? = null
+
     @Volatile
     private var connectionAttemptId = 0L
 
@@ -165,7 +167,9 @@ class BrowserVpnCoordinator(
                 BrowserVpnState.TunnelUpUnverified,
                 BrowserVpnState.Connected,
             )
-        ) return
+        ) {
+            return
+        }
         onBrowserSessionEnd()
         try {
             if (!settings.isConfiguredForAutoConnect) {
@@ -223,7 +227,7 @@ class BrowserVpnCoordinator(
             if (activeProfileId == profileId) {
                 connectionAttemptId += 1
                 verifier.cancel()
-        verifier.stopWatching()
+                verifier.stopWatching()
                 tunnel.disconnect()
                 activeProfileId = null
                 activeSettings = null
@@ -325,7 +329,7 @@ class BrowserVpnCoordinator(
                 verifier.watch { onTunnelLost(attemptId, profileId) }
             } else {
                 runCatching { tunnel.disconnect() }
-                .onFailure { Log.w(TAG, "Unverified VPN disconnect failed") }
+                    .onFailure { Log.w(TAG, "Unverified VPN disconnect failed") }
                 activeProfileId = null
                 activeSettings = null
                 _state.value = BrowserVpnState.Failed("VPN route could not be verified")

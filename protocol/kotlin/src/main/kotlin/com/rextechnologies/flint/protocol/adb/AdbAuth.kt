@@ -122,4 +122,3 @@ object AdbAuth {
         output.write((value ushr 24).toInt())
     }
 }
-

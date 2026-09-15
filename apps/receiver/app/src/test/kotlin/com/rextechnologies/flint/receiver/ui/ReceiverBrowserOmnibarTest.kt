@@ -10,12 +10,11 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.rextechnologies.flint.receiver.BrowserSurfaceUi
-import kotlin.test.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
-
+import kotlin.test.assertEquals
 
 /**
  * The chrome has to be operable the moment it appears.

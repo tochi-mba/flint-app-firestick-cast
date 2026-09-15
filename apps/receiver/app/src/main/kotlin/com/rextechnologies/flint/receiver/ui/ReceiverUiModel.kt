@@ -1,7 +1,7 @@
 package com.rextechnologies.flint.receiver.ui
 
-import com.rextechnologies.flint.receiver.ReceiverUiState
 import com.rextechnologies.flint.receiver.ReceiverNetworkState
+import com.rextechnologies.flint.receiver.ReceiverUiState
 import java.util.Locale
 
 internal enum class IdleExperience {

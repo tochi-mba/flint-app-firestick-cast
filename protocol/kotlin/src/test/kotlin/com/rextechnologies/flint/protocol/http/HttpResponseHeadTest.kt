@@ -98,4 +98,3 @@ class HttpResponseHeadTest {
         assertEquals(500, HttpStatus.INTERNAL_ERROR.code)
     }
 }
-

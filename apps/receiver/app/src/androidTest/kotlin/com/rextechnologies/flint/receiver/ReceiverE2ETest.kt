@@ -81,7 +81,10 @@ class ReceiverE2ETest {
         )
         nodes.forEach(::assertInsideSafeArea)
         val codeBounds = nodes[2].visibleBounds
-        assertTrue("Pairing code must remain a single horizontal row: $codeBounds", codeBounds.width() > codeBounds.height())
+        assertTrue(
+            "Pairing code must remain a single horizontal row: $codeBounds",
+            codeBounds.width() > codeBounds.height(),
+        )
     }
 
     @Test
@@ -198,7 +201,10 @@ class ReceiverE2ETest {
         val frame = requireObject(By.desc("Preview frame 2560 by 1600")).visibleBounds
         val ratio = frame.width().toFloat() / frame.height()
         assertTrue("Expected a fitted 16:10 frame, got $frame", ratio in 1.58f..1.62f)
-        assertTrue("Expected centered pillar bars, got $frame", kotlin.math.abs(frame.centerX() - device.displayWidth / 2) <= 2)
+        assertTrue(
+            "Expected centered pillar bars, got $frame",
+            kotlin.math.abs(frame.centerX() - device.displayWidth / 2) <= 2,
+        )
         assertTrue("Expected visible pillar bars, got $frame", frame.left > 0 && frame.right < device.displayWidth)
 
         launchPreview(ReceiverPreviewActivity.PREVIEW_MIRROR_ERROR)

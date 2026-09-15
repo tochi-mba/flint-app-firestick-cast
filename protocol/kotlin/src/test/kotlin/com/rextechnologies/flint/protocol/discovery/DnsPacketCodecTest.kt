@@ -55,7 +55,10 @@ class DnsPacketCodecTest {
         assertFailsWith<DnsFormatException> { DnsPacketCodec.decode(ByteArray(11)) }
         assertFailsWith<DnsFormatException> { DnsPacketCodec.decode(ByteArray(DnsPacketCodec.MAX_PACKET_BYTES + 1)) }
 
-        val tooMany = ByteArray(12).also { it[4] = 2; it[5] = 1 }
+        val tooMany = ByteArray(12).also {
+            it[4] = 2
+            it[5] = 1
+        }
         assertFailsWith<DnsFormatException> { DnsPacketCodec.decode(tooMany) }
 
         val valid = DnsPacketCodec.encode(DnsPacket(questions = listOf(DnsQuestion("a.local", DnsType.A))))
@@ -65,7 +68,9 @@ class DnsPacketCodecTest {
         assertFailsWith<DnsFormatException> { DnsPacketCodec.decode(questionWithName(byteArrayOf(0xc0.toByte()))) }
         assertFailsWith<DnsFormatException> { DnsPacketCodec.decode(questionWithName(byteArrayOf(0xc0.toByte(), 12))) }
         assertFailsWith<DnsFormatException> { DnsPacketCodec.decode(questionWithName(byteArrayOf(0x40))) }
-        assertFailsWith<DnsFormatException> { DnsPacketCodec.decode(questionWithName(byteArrayOf(2, 0xc3.toByte(), 0x28, 0))) }
+        assertFailsWith<DnsFormatException> {
+            DnsPacketCodec.decode(questionWithName(byteArrayOf(2, 0xc3.toByte(), 0x28, 0)))
+        }
         assertFailsWith<DnsFormatException> { DnsPacketCodec.decode(questionWithName(byteArrayOf(63) + ByteArray(2))) }
 
         val badA = encodedRawRecord(DnsType.A, byteArrayOf(1, 2, 3))
@@ -140,5 +145,3 @@ class DnsPacketCodecTest {
         output.write(value)
     }
 }
-
-

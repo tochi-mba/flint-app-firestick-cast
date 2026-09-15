@@ -13,14 +13,18 @@ class HotspotInterfaceSelectorTest {
 
     @Test
     fun `selection prefers soft ap family then enumeration order`() {
-        val selected = assertNotNull(selector.select(listOf(
-            snapshot("rndis0", 8, address = "192.168.42.1"),
-            snapshot("wlan1", 7, address = "192.168.50.1"),
-            snapshot("softap0", 6, address = "192.168.60.1"),
-            snapshot("swlan0", 5, address = "192.168.70.1"),
-            snapshot("ap2", 4, address = "192.168.80.1", prefix = 26),
-            snapshot("ap1", 3, address = "192.168.90.1"),
-        )))
+        val selected = assertNotNull(
+            selector.select(
+                listOf(
+                    snapshot("rndis0", 8, address = "192.168.42.1"),
+                    snapshot("wlan1", 7, address = "192.168.50.1"),
+                    snapshot("softap0", 6, address = "192.168.60.1"),
+                    snapshot("swlan0", 5, address = "192.168.70.1"),
+                    snapshot("ap2", 4, address = "192.168.80.1", prefix = 26),
+                    snapshot("ap1", 3, address = "192.168.90.1"),
+                ),
+            ),
+        )
         assertEquals("ap2", selected.interfaceName)
         assertEquals(4, selected.interfaceIndex)
         assertEquals("192.168.80.1", selected.address.hostAddress)
@@ -98,5 +102,3 @@ class HotspotInterfaceSelectorTest {
         addresses = listOf(InterfaceAddressSnapshot(Ipv4.parse(address), prefix)),
     )
 }
-
-

@@ -18,7 +18,9 @@ class PreviewInputMapper(
         viewportWidth: Int,
         viewportHeight: Int,
     ): PreviewMappedInput {
-        if (input.navigationId != currentNavigationId || !frameReferenceMatches(input.frameId, currentFrameId, currentNavigationId)) {
+        if (input.navigationId != currentNavigationId ||
+            !frameReferenceMatches(input.frameId, currentFrameId, currentNavigationId)
+        ) {
             return PreviewMappedInput.Rejected(PreviewInputRejection.STALE_REFERENCE)
         }
         if (viewportWidth <= 0 || viewportHeight <= 0) {
@@ -48,7 +50,9 @@ class PreviewInputMapper(
         viewportWidth: Int,
         viewportHeight: Int,
     ): PreviewMappedInput {
-        if (input.navigationId != currentNavigationId || !frameReferenceMatches(input.frameId, currentFrameId, currentNavigationId)) {
+        if (input.navigationId != currentNavigationId ||
+            !frameReferenceMatches(input.frameId, currentFrameId, currentNavigationId)
+        ) {
             return PreviewMappedInput.Rejected(PreviewInputRejection.STALE_REFERENCE)
         }
         if (viewportWidth <= 0 || viewportHeight <= 0) {

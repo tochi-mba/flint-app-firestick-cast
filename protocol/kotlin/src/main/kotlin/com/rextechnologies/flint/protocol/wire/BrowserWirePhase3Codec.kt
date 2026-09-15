@@ -7,12 +7,19 @@ internal object BrowserWirePhase3Codec {
         val writer = PayloadWriter()
         when (message) {
             is BrowserWorkspaceResizeMessage -> {
-                writer.i64(message.epoch); writer.i64(message.commandId); writer.i64(message.expectedRevision)
-                writer.u16(message.column); writer.u16(message.row); writer.u8(message.mode)
+                writer.i64(message.epoch)
+                writer.i64(message.commandId)
+                writer.i64(message.expectedRevision)
+                writer.u16(message.column)
+                writer.u16(message.row)
+                writer.u8(message.mode)
             }
             is BrowserWorkspaceGeometryMessage -> {
-                writer.i64(message.epoch); writer.i64(message.revision)
-                writer.u16(message.column); writer.u16(message.row); writer.u8(message.mode)
+                writer.i64(message.epoch)
+                writer.i64(message.revision)
+                writer.u16(message.column)
+                writer.u16(message.row)
+                writer.u8(message.mode)
             }
             is BrowserWorkspaceCommandMessage -> {
                 writer.i64(message.epoch)
@@ -63,11 +70,19 @@ internal object BrowserWirePhase3Codec {
         val reader = PayloadReader(payload)
         val message = when (type) {
             WireMessageType.BROWSER_WORKSPACE_RESIZE -> BrowserWorkspaceResizeMessage(
-                reader.i64("epoch"), reader.i64("command ID"), reader.i64("revision"),
-                reader.u16("column split"), reader.u16("row split"), reader.u8("mode"),
+                reader.i64("epoch"),
+                reader.i64("command ID"),
+                reader.i64("revision"),
+                reader.u16("column split"),
+                reader.u16("row split"),
+                reader.u8("mode"),
             )
             WireMessageType.BROWSER_WORKSPACE_GEOMETRY -> BrowserWorkspaceGeometryMessage(
-                reader.i64("epoch"), reader.i64("revision"), reader.u16("column split"), reader.u16("row split"), reader.u8("mode"),
+                reader.i64("epoch"),
+                reader.i64("revision"),
+                reader.u16("column split"),
+                reader.u16("row split"),
+                reader.u8("mode"),
             )
             WireMessageType.BROWSER_WORKSPACE_COMMAND -> BrowserWorkspaceCommandMessage(
                 epoch = reader.i64("browser workspace command epoch"),
@@ -185,8 +200,9 @@ internal object BrowserWirePhase3Codec {
     )
 
     private fun validateGeometry(epoch: Long, revision: Long, column: Int, row: Int, mode: Int) {
-        if (epoch <= 0 || revision <= 0 || column !in 1500..8500 || row !in 1500..8500 || mode !in 0..2)
+        if (epoch <= 0 || revision <= 0 || column !in 1500..8500 || row !in 1500..8500 || mode !in 0..2) {
             throw WireFormatException("Invalid workspace geometry")
+        }
     }
 
     private fun validate(message: WireMessage) {
@@ -195,7 +211,13 @@ internal object BrowserWirePhase3Codec {
                 validateGeometry(message.epoch, message.expectedRevision, message.column, message.row, message.mode)
                 if (message.commandId <= 0) throw WireFormatException("Resize command ID must be positive")
             }
-            is BrowserWorkspaceGeometryMessage -> validateGeometry(message.epoch, message.revision, message.column, message.row, message.mode)
+            is BrowserWorkspaceGeometryMessage -> validateGeometry(
+                message.epoch,
+                message.revision,
+                message.column,
+                message.row,
+                message.mode,
+            )
             is BrowserWorkspaceCommandMessage -> validate(message)
             is BrowserWorkspaceStateMessage -> validate(message)
             is BrowserWorkspaceInputMessage -> validate(message)
@@ -276,10 +298,14 @@ internal object BrowserWirePhase3Codec {
     private fun validate(message: BrowserWorkspaceStateMessage) {
         requirePositive(message.epoch, "browser workspace state epoch")
         requirePositive(message.revision, "browser workspace state revision")
-        requireWire(message.panes.size <= BrowserWireLimits.MAX_WORKSPACE_PANES,
-            "Browser workspace pane count is out of range")
-        requireWire(message.maxLiveRenderers in 1..message.maxOpenPanes,
-            "Browser workspace max live renderers exceeds max open panes")
+        requireWire(
+            message.panes.size <= BrowserWireLimits.MAX_WORKSPACE_PANES,
+            "Browser workspace pane count is out of range",
+        )
+        requireWire(
+            message.maxLiveRenderers in 1..message.maxOpenPanes,
+            "Browser workspace max live renderers exceeds max open panes",
+        )
         val ids = HashSet<Long>(message.panes.size)
         message.panes.forEach {
             validate(it)
@@ -294,8 +320,10 @@ internal object BrowserWirePhase3Codec {
                 requireWire(message.focusedPaneId in ids, "Browser workspace focused pane is not present")
             }
             if (message.pageFullscreenPaneId > 0L) {
-                requireWire(message.pageFullscreenPaneId in ids,
-                    "Browser workspace page-fullscreen pane is not present")
+                requireWire(
+                    message.pageFullscreenPaneId in ids,
+                    "Browser workspace page-fullscreen pane is not present",
+                )
             }
             if (message.theaterPaneId > 0L) {
                 requireWire(message.theaterPaneId in ids, "Browser workspace theatre pane is not present")

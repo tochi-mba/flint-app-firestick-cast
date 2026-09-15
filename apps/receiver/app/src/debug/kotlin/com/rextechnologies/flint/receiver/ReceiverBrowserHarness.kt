@@ -36,6 +36,9 @@ import com.rextechnologies.flint.receiver.browser.BrowserOverlay
 import com.rextechnologies.flint.receiver.browser.BrowserProfilesUiState
 import com.rextechnologies.flint.receiver.browser.BrowserTab
 import com.rextechnologies.flint.receiver.browser.BrowserViewState
+import com.rextechnologies.flint.receiver.browser.BrowserVpnState
+import com.rextechnologies.flint.receiver.browser.ProfileNetworkSettings
+import com.rextechnologies.flint.receiver.browser.VpnCapability
 import com.rextechnologies.flint.receiver.ui.BrowserSurfaceActions
 import com.rextechnologies.flint.receiver.ui.BrowserSurfaceController
 import com.rextechnologies.flint.receiver.ui.ReceiverBrowserClearDataPrompt
@@ -52,9 +55,6 @@ import com.rextechnologies.flint.receiver.ui.ReceiverColors
 import com.rextechnologies.flint.receiver.ui.ReceiverSpace
 import com.rextechnologies.flint.receiver.ui.ReceiverTags
 import com.rextechnologies.flint.receiver.ui.ReceiverType
-import com.rextechnologies.flint.receiver.browser.BrowserVpnState
-import com.rextechnologies.flint.receiver.browser.ProfileNetworkSettings
-import com.rextechnologies.flint.receiver.browser.VpnCapability
 
 /** Where the deterministic browser harness begins, so UiAutomator need not invent key chords. */
 enum class BrowserHarnessStart {

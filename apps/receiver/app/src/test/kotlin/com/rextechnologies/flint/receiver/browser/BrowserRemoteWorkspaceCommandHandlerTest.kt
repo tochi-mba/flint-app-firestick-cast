@@ -16,8 +16,13 @@ class BrowserRemoteWorkspaceCommandHandlerTest {
         val panes = session.state.panes
         var accepted = false
         val modes = mutableListOf<Boolean>()
-        val handler = BrowserRemoteWorkspaceCommandHandler(session, {}, { 7 },
-            { _, _, _ -> accepted }, { modes += it })
+        val handler = BrowserRemoteWorkspaceCommandHandler(
+            session,
+            {},
+            { 7 },
+            { _, _, _ -> accepted },
+            { modes += it },
+        )
         val command = com.rextechnologies.flint.protocol.wire.BrowserWorkspaceResizeMessage(4, 130, 7, 7000, 3000, 1)
         handler.handle(command)
         assertEquals(emptyList(), modes)
@@ -92,7 +97,11 @@ class BrowserRemoteWorkspaceCommandHandlerTest {
     fun `move pane reorders slots without recreating panes`() {
         val session = BrowserWorkspaceSession()
         session.openLocalWorkspace("family", "https://example.test/a")
-        session.dispatch(com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceAction.OpenPane("https://example.test/b"))
+        session.dispatch(
+            com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceAction.OpenPane(
+                "https://example.test/b",
+            ),
+        )
         val first = session.state.panes.sortedBy { it.slot }.first()
         val second = session.state.panes.sortedBy { it.slot }.last()
         val handler = BrowserRemoteWorkspaceCommandHandler(session, {}, { 7 }, { _, _, _ -> true })

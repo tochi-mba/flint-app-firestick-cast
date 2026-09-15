@@ -7,7 +7,10 @@ class BrowserWorkspaceDialogsTest {
     private val dialogs = BrowserWorkspaceDialogs()
     private val answers = mutableListOf<BrowserDialogAnswer>()
     private fun show(kind: BrowserDialogKind = BrowserDialogKind.CONFIRM): Long = dialogs.show(
-        1, 7, PendingJsDialog(kind, "https://example.com", "Continue?", null, answers::add))
+        1,
+        7,
+        PendingJsDialog(kind, "https://example.com", "Continue?", null, answers::add),
+    )
 
     @Test fun `confirm resolves once and clears modal`() {
         val id = show()
@@ -46,8 +49,17 @@ class BrowserWorkspaceDialogsTest {
     }
 
     @Test fun `page text is bounded and sanitized`() {
-        dialogs.show(2, 8, PendingJsDialog(BrowserDialogKind.ALERT, "https://example.com",
-            "a\u0000".repeat(5000), "\u0000test", answers::add))
+        dialogs.show(
+            2,
+            8,
+            PendingJsDialog(
+                BrowserDialogKind.ALERT,
+                "https://example.com",
+                "a\u0000".repeat(5000),
+                "\u0000test",
+                answers::add,
+            ),
+        )
         val request = assertNotNull(dialogs.pending.value)
         assertTrue(request.dialog.message.toByteArray().size <= 4096)
         assertFalse(request.dialog.message.contains('\u0000'))
@@ -55,8 +67,16 @@ class BrowserWorkspaceDialogsTest {
     }
 
     @Test fun `resolve callback can open next dialog without it being cleared`() {
-        val id = dialogs.show(1, 7, PendingJsDialog(BrowserDialogKind.ALERT,
-            "https://example.com", "First", null) { show() })
+        val id = dialogs.show(
+            1,
+            7,
+            PendingJsDialog(
+                BrowserDialogKind.ALERT,
+                "https://example.com",
+                "First",
+                null,
+            ) { show() },
+        )
         dialogs.answer(id, BrowserDialogAnswer.Confirm)
         assertNotNull(dialogs.pending.value)
         assertNotEquals(id, dialogs.pending.value?.id)
@@ -65,10 +85,27 @@ class BrowserWorkspaceDialogsTest {
     @Test fun `cancellation opening another dialog does not leak the intervening replacement`() {
         val interveningAnswers = mutableListOf<BrowserDialogAnswer>()
         var newestId = 0L
-        dialogs.show(1, 7, PendingJsDialog(BrowserDialogKind.ALERT,
-            "https://example.com", "First", null) { newestId = show() })
-        val interveningId = dialogs.show(1, 7, PendingJsDialog(BrowserDialogKind.CONFIRM,
-            "https://example.com", "Intervening", null, interveningAnswers::add))
+        dialogs.show(
+            1,
+            7,
+            PendingJsDialog(
+                BrowserDialogKind.ALERT,
+                "https://example.com",
+                "First",
+                null,
+            ) { newestId = show() },
+        )
+        val interveningId = dialogs.show(
+            1,
+            7,
+            PendingJsDialog(
+                BrowserDialogKind.CONFIRM,
+                "https://example.com",
+                "Intervening",
+                null,
+                interveningAnswers::add,
+            ),
+        )
         assertEquals(listOf<BrowserDialogAnswer>(BrowserDialogAnswer.Cancel), interveningAnswers)
         assertEquals(newestId, dialogs.pending.value?.id)
         dialogs.answer(interveningId, BrowserDialogAnswer.Confirm)

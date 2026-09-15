@@ -74,6 +74,7 @@ class BrowserLibraryStore(
 ) {
     companion object {
         const val MAX_BOOKMARKS = 200
+
         // The phase-two browser protocol encodes each collection count as an unsigned byte.
         const val MAX_HISTORY = 0xff
         const val MAX_TITLE_CODE_POINTS = 512
@@ -457,7 +458,9 @@ private fun sanitizeProfileName(raw: String): String {
             when {
                 codePoint == 0xfffd -> appendCodePoint(codePoint)
                 Character.isSurrogate(raw[index]) && Character.charCount(codePoint) == 1 -> append('\uFFFD')
-                Character.isISOControl(codePoint) || Character.getType(codePoint) == Character.FORMAT.toInt() -> append(' ')
+                Character.isISOControl(
+                    codePoint,
+                ) || Character.getType(codePoint) == Character.FORMAT.toInt() -> append(' ')
                 else -> appendCodePoint(codePoint)
             }
             index += Character.charCount(codePoint)

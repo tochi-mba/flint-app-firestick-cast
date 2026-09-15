@@ -88,9 +88,12 @@ class MediaMessageCodecTest {
             val message = PlaybackStateMessage(state, 1_234, 9_999, "detail")
             assertEquals(message, roundTrip(message))
         }
-        assertEquals(-1, roundTrip(PlaybackStateMessage(PlaybackState.IDLE)).let {
-            (it as PlaybackStateMessage).durationMs
-        })
+        assertEquals(
+            -1,
+            roundTrip(PlaybackStateMessage(PlaybackState.IDLE)).let {
+                (it as PlaybackStateMessage).durationMs
+            },
+        )
     }
 
     @Test
@@ -163,4 +166,3 @@ class MediaMessageCodecTest {
         assertEquals(message, roundTrip(message))
     }
 }
-

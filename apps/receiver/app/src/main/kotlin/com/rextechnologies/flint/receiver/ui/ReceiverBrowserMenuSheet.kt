@@ -22,9 +22,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Text
-import com.rextechnologies.flint.receiver.browser.BrowserUserAgentMode
 import com.rextechnologies.flint.receiver.browser.BrowserProfileSource
 import com.rextechnologies.flint.receiver.browser.BrowserProfilesUiState
+import com.rextechnologies.flint.receiver.browser.BrowserUserAgentMode
 import com.rextechnologies.flint.receiver.browser.BrowserViewState
 
 /** The page tools that do not deserve permanent space in the omnibar. */

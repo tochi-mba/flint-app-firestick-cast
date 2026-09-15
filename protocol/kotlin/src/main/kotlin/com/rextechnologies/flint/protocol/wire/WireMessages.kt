@@ -94,7 +94,8 @@ data class HelloMessage(
 enum class AuthMethod(val id: Int) {
     PAIRING_CODE(1),
     SESSION_TOKEN(2),
-    PUBLIC_KEY_PROOF(3);
+    PUBLIC_KEY_PROOF(3),
+    ;
 
     companion object {
         fun fromId(id: Int): AuthMethod? = entries.firstOrNull { it.id == id }
@@ -173,7 +174,8 @@ enum class TransportAction(val id: Int) {
     STOP(3),
     SEEK_TO(4),
     NEXT(5),
-    PREVIOUS(6);
+    PREVIOUS(6),
+    ;
 
     companion object {
         fun fromId(id: Int): TransportAction? = entries.firstOrNull { it.id == id }
@@ -184,7 +186,8 @@ enum class PointerAction(val id: Int) {
     MOVE(1),
     DOWN(2),
     UP(3),
-    SCROLL(4);
+    SCROLL(4),
+    ;
 
     companion object {
         fun fromId(id: Int): PointerAction? = entries.firstOrNull { it.id == id }
@@ -193,7 +196,8 @@ enum class PointerAction(val id: Int) {
 
 enum class KeyAction(val id: Int) {
     DOWN(1),
-    UP(2);
+    UP(2),
+    ;
 
     companion object {
         fun fromId(id: Int): KeyAction? = entries.firstOrNull { it.id == id }
@@ -286,7 +290,8 @@ enum class ByeReason(val id: Int) {
     AUTHENTICATION_FAILED(2),
     UNSUPPORTED_VERSION(3),
     PROTOCOL_ERROR(4),
-    RECEIVER_STOPPED(5);
+    RECEIVER_STOPPED(5),
+    ;
 
     companion object {
         fun fromId(id: Int): ByeReason? = entries.firstOrNull { it.id == id }
@@ -360,6 +365,7 @@ enum class SurfaceMode(val id: Int) {
     PLAYER(2),
     MIRROR(3),
     PRESENTATION(4),
+
     /** Valid only in v2 and only on the TLS BrowserSession. */
     BROWSER(5),
     ;
@@ -442,4 +448,3 @@ object VersionNegotiator {
         return if (lower <= upper) upper else null
     }
 }
-

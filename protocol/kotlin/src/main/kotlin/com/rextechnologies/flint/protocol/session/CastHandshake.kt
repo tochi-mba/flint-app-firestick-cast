@@ -129,8 +129,9 @@ class ReceiverHandshake(
         val accepted = when (auth.method) {
             AuthMethod.PAIRING_CODE -> pairingCode.constantTimeMatches(presented)
             AuthMethod.SESSION_TOKEN -> sessionToken.constantTimeMatches(presented)
-            AuthMethod.PUBLIC_KEY_PROOF -> auth.publicKeyFingerprint in trustedFingerprints &&
-                sessionToken.constantTimeMatches(presented)
+            AuthMethod.PUBLIC_KEY_PROOF ->
+                auth.publicKeyFingerprint in trustedFingerprints &&
+                    sessionToken.constantTimeMatches(presented)
         }
         if (!accepted) return reject(ByeReason.AUTHENTICATION_FAILED, AUTH_FAILURE)
 
@@ -216,4 +217,3 @@ class SenderHandshake(
         return HandshakeOutcome.Established(parameters)
     }
 }
-

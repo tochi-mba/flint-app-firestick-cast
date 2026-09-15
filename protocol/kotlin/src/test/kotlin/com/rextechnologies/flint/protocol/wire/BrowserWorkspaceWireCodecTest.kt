@@ -49,7 +49,14 @@ class BrowserWorkspaceWireCodecTest {
             BrowserWorkspaceCommandMessage(4, 140, 140, BrowserWorkspaceCommandAction.ENTER_THEATER, paneId = 42),
             BrowserWorkspaceCommandMessage(4, 141, 140, BrowserWorkspaceCommandAction.EXIT_THEATER),
             BrowserWorkspaceCommandMessage(4, 142, 140, BrowserWorkspaceCommandAction.REQUEST_SNAPSHOT),
-            BrowserWorkspaceCommandMessage(4, 143, 140, BrowserWorkspaceCommandAction.MOVE_PANE, paneId = 42, value = 1),
+            BrowserWorkspaceCommandMessage(
+                4,
+                143,
+                140,
+                BrowserWorkspaceCommandAction.MOVE_PANE,
+                paneId = 42,
+                value = 1,
+            ),
         )
         val states = listOf(
             singlePaneState(),

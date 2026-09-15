@@ -64,5 +64,3 @@ class RangeRequestTest {
         assertFailsWith<IllegalArgumentException> { RangeRequest.parse(null, -1) }
     }
 }
-
-

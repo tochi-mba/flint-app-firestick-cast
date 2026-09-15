@@ -42,17 +42,15 @@ internal class ReceiverBrowserWorkspaceBinding(
         paneId: Long,
         generation: Long,
         fullscreen: PaneFullscreenController<View>,
-    ): BrowserWebViewDriver {
-        return BrowserWebViewDriver(
-            webView = webView,
-            onEvent = { event -> session.onPaneStateEvent(paneId, generation, event) },
-            onPageDialog = { dialog -> session.onDialog(paneId, generation, dialog) },
-            fullscreen = fullscreen,
-            onFavicon = {},
-            onRefused = onRefusal,
-            onFindChanged = {},
-        ).also {
-            webView.setTag(paneId)
-        }
+    ): BrowserWebViewDriver = BrowserWebViewDriver(
+        webView = webView,
+        onEvent = { event -> session.onPaneStateEvent(paneId, generation, event) },
+        onPageDialog = { dialog -> session.onDialog(paneId, generation, dialog) },
+        fullscreen = fullscreen,
+        onFavicon = {},
+        onRefused = onRefusal,
+        onFindChanged = {},
+    ).also {
+        webView.setTag(paneId)
     }
 }

@@ -223,7 +223,8 @@ internal fun receiverPreviewState(name: String): ReceiverUiState {
         ReceiverPreviewActivity.PREVIEW_BROWSER_BOOKMARKS,
         ReceiverPreviewActivity.PREVIEW_BROWSER_HISTORY,
         ReceiverPreviewActivity.PREVIEW_BROWSER_CLEAR,
-        ReceiverPreviewActivity.PREVIEW_BROWSER_PROFILES -> ready.copy(
+        ReceiverPreviewActivity.PREVIEW_BROWSER_PROFILES,
+        -> ready.copy(
             surfaceMode = SurfaceMode.BROWSER,
             title = "Harness tab",
             detail = "Browser harness",

@@ -8,11 +8,16 @@ import kotlin.test.assertTrue
 
 class BrowserDialogReducerTest {
     private val reducer = BrowserDialogReducer()
-    private val origin = (BrowserUrlPolicy().evaluate("https://example.com/checkout?token=private") as BrowserUrlResult.Accepted).url
+    private val origin = (
+        BrowserUrlPolicy().evaluate(
+            "https://example.com/checkout?token=private",
+        ) as BrowserUrlResult.Accepted
+        ).url
 
     @Test
     fun `only one current dialog is active and first valid reply wins`() {
-        val first = BrowserDialogRequest(9, 4, BrowserDialogKind.CONFIRM, origin, BrowserDialogText.fromPage("Proceed?"))
+        val first =
+            BrowserDialogRequest(9, 4, BrowserDialogKind.CONFIRM, origin, BrowserDialogText.fromPage("Proceed?"))
         val shown = reducer.reduce(BrowserDialogState(), BrowserDialogEvent.Show(first, nowMs = 100))
         assertIs<BrowserDialogEffect.ShowLocal>(shown.effect)
         assertEquals("https://example.com/checkout", shown.state.active?.origin?.displayUrl)
@@ -41,19 +46,36 @@ class BrowserDialogReducerTest {
     fun `stale epoch wrong ID bad prompt and expiry resolve safely without exposing input`() {
         val prompt = BrowserDialogRequest(9, 4, BrowserDialogKind.PROMPT, origin, BrowserDialogText.fromPage("Name"))
         val shown = reducer.reduce(BrowserDialogState(), BrowserDialogEvent.Show(prompt, nowMs = 100)).state
-        val stale = reducer.reduce(shown, BrowserDialogEvent.Reply(3, 9, BrowserDialogReplySource.PINNED_SESSION, BrowserDialogAnswer.Cancel))
-        val wrongId = reducer.reduce(shown, BrowserDialogEvent.Reply(4, 8, BrowserDialogReplySource.PINNED_SESSION, BrowserDialogAnswer.Cancel))
+        val stale = reducer.reduce(
+            shown,
+            BrowserDialogEvent.Reply(3, 9, BrowserDialogReplySource.PINNED_SESSION, BrowserDialogAnswer.Cancel),
+        )
+        val wrongId = reducer.reduce(
+            shown,
+            BrowserDialogEvent.Reply(4, 8, BrowserDialogReplySource.PINNED_SESSION, BrowserDialogAnswer.Cancel),
+        )
         assertNull(stale.effect)
         assertNull(wrongId.effect)
 
         val invalidPrompt = reducer.reduce(
             shown,
-            BrowserDialogEvent.Reply(4, 9, BrowserDialogReplySource.PINNED_SESSION, BrowserDialogAnswer.Prompt("not\u0000safe")),
+            BrowserDialogEvent.Reply(
+                4,
+                9,
+                BrowserDialogReplySource.PINNED_SESSION,
+                BrowserDialogAnswer.Prompt("not\u0000safe"),
+            ),
         )
         assertIs<BrowserDialogEffect.RejectReply>(invalidPrompt.effect)
         assertEquals(shown, invalidPrompt.state)
 
-        val expired = reducer.reduce(shown, BrowserDialogEvent.Expire(nowMs = 100 + BrowserDialogReducer.DEFAULT_TIMEOUT_MS))
+        val expired = reducer.reduce(
+            shown,
+            BrowserDialogEvent.Expire(
+                nowMs =
+                100 + BrowserDialogReducer.DEFAULT_TIMEOUT_MS,
+            ),
+        )
         val resolution = assertIs<BrowserDialogEffect.ResolvePageDialog>(expired.effect)
         assertTrue(!resolution.accepted)
         assertNull(resolution.text)
@@ -61,7 +83,14 @@ class BrowserDialogReducerTest {
 
     @Test
     fun `surface close cancels prompt and all dialog values have redacted representations`() {
-        val prompt = BrowserDialogRequest(9, 4, BrowserDialogKind.PROMPT, origin, BrowserDialogText.fromPage("Super secret prompt"))
+        val prompt =
+            BrowserDialogRequest(
+                9,
+                4,
+                BrowserDialogKind.PROMPT,
+                origin,
+                BrowserDialogText.fromPage("Super secret prompt"),
+            )
         val shown = reducer.reduce(BrowserDialogState(), BrowserDialogEvent.Show(prompt, nowMs = 100)).state
 
         val closed = reducer.reduce(shown, BrowserDialogEvent.Close)

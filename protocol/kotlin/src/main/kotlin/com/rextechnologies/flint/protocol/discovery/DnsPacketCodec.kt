@@ -280,5 +280,3 @@ private class DnsWriter {
 
     fun toByteArray(): ByteArray = output.toByteArray()
 }
-
-

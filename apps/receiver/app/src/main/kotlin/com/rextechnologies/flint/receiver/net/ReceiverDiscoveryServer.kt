@@ -2,6 +2,12 @@ package com.rextechnologies.flint.receiver.net
 
 import android.os.Build
 import com.rextechnologies.flint.protocol.discovery.ReceiverProbe
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.io.BufferedInputStream
 import java.io.Closeable
 import java.net.Inet4Address
@@ -11,12 +17,6 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.util.Collections
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 /** Small, explicitly bound probe endpoint used before authenticated pairing begins. */
 class ReceiverDiscoveryServer(
@@ -106,4 +106,3 @@ class ReceiverDiscoveryServer(
         }
     }
 }
-

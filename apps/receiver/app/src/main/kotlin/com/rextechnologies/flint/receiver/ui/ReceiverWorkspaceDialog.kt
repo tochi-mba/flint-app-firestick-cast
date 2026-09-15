@@ -24,7 +24,9 @@ internal fun ReceiverWorkspaceDialog(
 ) {
     val cancelFocus = remember(request.id) { FocusRequester() }
     val keyboard = remember { BrowserKeyboard() }
-    var input by remember(request.id) { mutableStateOf(BrowserKeyboardState(text = request.dialog.defaultValue.orEmpty())) }
+    var input by remember(request.id) {
+        mutableStateOf(BrowserKeyboardState(text = request.dialog.defaultValue.orEmpty()))
+    }
     var editing by remember(request.id) { mutableStateOf(false) }
     val prompt = request.dialog.kind == BrowserDialogKind.PROMPT
     Dialog(
@@ -48,13 +50,18 @@ internal fun ReceiverWorkspaceDialog(
                         else -> null
                     }
                     when {
-                        direction != null -> input = input.copy(cursor = keyboard.move(input.cursor, direction, input.page))
+                        direction != null ->
+                            input =
+                                input.copy(cursor = keyboard.move(input.cursor, direction, input.page))
                         key == KeyEvent.KEYCODE_BACK -> editing = false
                         (key == KeyEvent.KEYCODE_DPAD_CENTER || key == KeyEvent.KEYCODE_ENTER) &&
                             event.nativeKeyEvent.repeatCount == 0 -> {
                             val selected = keyboard.keyAt(input.cursor, input.page)
-                            if (selected == BrowserKey.Submit) editing = false
-                            else input = keyboard.press(input, selected)
+                            if (selected == BrowserKey.Submit) {
+                                editing = false
+                            } else {
+                                input = keyboard.press(input, selected)
+                            }
                         }
                     }
                     true
@@ -69,7 +76,9 @@ internal fun ReceiverWorkspaceDialog(
                 if (editing) ReceiverBrowserKeyboard(input, keyboard, submitLabel = "done")
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = { onAnswer(BrowserDialogAnswer.Cancel) }, modifier = Modifier.focusRequester(cancelFocus)) {
+                Button(onClick = {
+                    onAnswer(BrowserDialogAnswer.Cancel)
+                }, modifier = Modifier.focusRequester(cancelFocus)) {
                     Text("Cancel")
                 }
                 if (prompt) Button(onClick = { editing = true }) { Text("Edit response") }

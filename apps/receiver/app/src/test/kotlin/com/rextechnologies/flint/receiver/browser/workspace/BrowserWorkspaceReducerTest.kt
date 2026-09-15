@@ -20,9 +20,12 @@ class BrowserWorkspaceReducerTest {
         assertTrue(resized.effects.all { it is BrowserWorkspaceEffect.LayoutChanged })
         val stacked = reduce(resized.state, BrowserWorkspaceAction.SetLayout(BrowserWorkspaceLayout.SPLIT_VERTICAL))
         assertEquals(split, stacked.state.split)
-        val restored = reduce(BrowserWorkspaceAction.ActivateProfile(
-            before.profile!!, stacked.state.snapshotForPersistence(),
-        ))
+        val restored = reduce(
+            BrowserWorkspaceAction.ActivateProfile(
+                before.profile!!,
+                stacked.state.snapshotForPersistence(),
+            ),
+        )
         assertEquals(split, restored.state.split)
     }
 
@@ -31,8 +34,10 @@ class BrowserWorkspaceReducerTest {
         val before = openTwoPanes().state.copy(theaterPaneId = 1)
         val result = reduce(before, BrowserWorkspaceAction.SetSplit(BrowserWorkspaceSplit.of(7000, 3000)))
         assertEquals(before, result.state)
-        assertEquals(BrowserWorkspaceRefusal.EXCLUSIVE_PRESENTATION_ACTIVE,
-            assertIs<BrowserWorkspaceEffect.Refused>(result.effects.single()).reason)
+        assertEquals(
+            BrowserWorkspaceRefusal.EXCLUSIVE_PRESENTATION_ACTIVE,
+            assertIs<BrowserWorkspaceEffect.Refused>(result.effects.single()).reason,
+        )
     }
 
     @Test
@@ -140,8 +145,10 @@ class BrowserWorkspaceReducerTest {
             BrowserWorkspaceAction.SetPageFullscreen(paneId = 2, rendererGeneration = 1, active = true),
         )
         assertEquals(1L, second.state.pageFullscreenPaneId)
-        assertEquals(BrowserWorkspaceRefusal.EXCLUSIVE_PRESENTATION_ACTIVE,
-            assertIs<BrowserWorkspaceEffect.Refused>(second.effects.single()).reason)
+        assertEquals(
+            BrowserWorkspaceRefusal.EXCLUSIVE_PRESENTATION_ACTIVE,
+            assertIs<BrowserWorkspaceEffect.Refused>(second.effects.single()).reason,
+        )
     }
 
     @Test

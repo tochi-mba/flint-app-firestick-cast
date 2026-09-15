@@ -96,7 +96,10 @@ class AdbMessageCodecTest {
         assertFailsWith<AdbFormatException> { AdbMessageCodec.decode(oversizedHeader) }
         assertFailsWith<AdbFormatException> {
             AdbMessageCodec.encode(
-                AdbMessage(AdbCommands.WRTE, payload = BinaryData.of(ByteArray(AdbMessageCodec.MAX_PAYLOAD_LENGTH + 1))),
+                AdbMessage(
+                    AdbCommands.WRTE,
+                    payload = BinaryData.of(ByteArray(AdbMessageCodec.MAX_PAYLOAD_LENGTH + 1)),
+                ),
             )
         }
     }
@@ -116,5 +119,3 @@ class AdbMessageCodecTest {
         }
     }
 }
-
-

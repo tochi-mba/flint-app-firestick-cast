@@ -96,10 +96,20 @@ class WireCodecTest {
         assertFailsWith<WireFormatException> { WireCodec.decode(valid + 0) }
         assertFailsWith<WireFormatException> { WireCodec.decode(valid.copyOf().also { it[4] = 0 }) }
         assertFailsWith<WireFormatException> {
-            WireCodec.decode(valid.copyOf().also { it[6] = 0; it[7] = 0 })
+            WireCodec.decode(
+                valid.copyOf().also {
+                    it[6] = 0
+                    it[7] = 0
+                },
+            )
         }
         assertFailsWith<WireFormatException> {
-            WireCodec.decode(valid.copyOf().also { it[8] = 0; it[9] = 0 })
+            WireCodec.decode(
+                valid.copyOf().also {
+                    it[8] = 0
+                    it[9] = 0
+                },
+            )
         }
     }
 
@@ -181,4 +191,3 @@ class WireCodecTest {
             .put(payload)
             .array()
 }
-

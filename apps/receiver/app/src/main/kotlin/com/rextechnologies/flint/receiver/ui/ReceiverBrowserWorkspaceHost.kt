@@ -16,11 +16,11 @@ import com.rextechnologies.flint.receiver.browser.EditingAwareWebView
 import com.rextechnologies.flint.receiver.browser.PaneFullscreenController
 import com.rextechnologies.flint.receiver.browser.PaneFullscreenHost
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceHostPort
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceInteractionMode
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceLayout
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceLayoutFrames
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSplit
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceState
-import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceLayout
-import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceInteractionMode
-import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceLayoutFrames
 
 /** Native geometry understood by [ReceiverBrowserWorkspaceHost], deliberately separate from UI copy. */
 internal enum class ReceiverWorkspaceLayout {
@@ -272,8 +272,11 @@ internal class ReceiverBrowserWorkspaceHost(
             val acceptsFocus = enabled && id == focusedId
             pane.webView.isFocusable = acceptsFocus
             pane.webView.isFocusableInTouchMode = acceptsFocus
-            if (acceptsFocus && !pane.webView.hasFocus()) pane.webView.requestFocus()
-            else if (!acceptsFocus) pane.webView.clearFocus()
+            if (acceptsFocus && !pane.webView.hasFocus()) {
+                pane.webView.requestFocus()
+            } else if (!acceptsFocus) {
+                pane.webView.clearFocus()
+            }
         }
     }
 
@@ -282,14 +285,22 @@ internal class ReceiverBrowserWorkspaceHost(
         val rendered = state.panes.sortedBy { it.slot }.filter { theater == null || it.id == theater }
         render(
             panes = rendered.map { pane ->
-                ReceiverWorkspacePaneRender(pane.id, pane.page.title.ifBlank { pane.page.url },
-                    pane.rendererResidency.hasRenderer, pane.isSuspended)
+                ReceiverWorkspacePaneRender(
+                    pane.id,
+                    pane.page.title.ifBlank { pane.page.url },
+                    pane.rendererResidency.hasRenderer,
+                    pane.isSuspended,
+                )
             },
-            nextLayout = if (theater != null) ReceiverWorkspaceLayout.SINGLE else when (state.layout) {
-                BrowserWorkspaceLayout.SINGLE -> ReceiverWorkspaceLayout.SINGLE
-                BrowserWorkspaceLayout.SPLIT_HORIZONTAL -> ReceiverWorkspaceLayout.SIDE_BY_SIDE
-                BrowserWorkspaceLayout.SPLIT_VERTICAL -> ReceiverWorkspaceLayout.STACKED
-                BrowserWorkspaceLayout.GRID_2X2 -> ReceiverWorkspaceLayout.GRID
+            nextLayout = if (theater != null) {
+                ReceiverWorkspaceLayout.SINGLE
+            } else {
+                when (state.layout) {
+                    BrowserWorkspaceLayout.SINGLE -> ReceiverWorkspaceLayout.SINGLE
+                    BrowserWorkspaceLayout.SPLIT_HORIZONTAL -> ReceiverWorkspaceLayout.SIDE_BY_SIDE
+                    BrowserWorkspaceLayout.SPLIT_VERTICAL -> ReceiverWorkspaceLayout.STACKED
+                    BrowserWorkspaceLayout.GRID_2X2 -> ReceiverWorkspaceLayout.GRID
+                }
             },
             nextFocusedId = state.focusedPaneId,
             nextSplit = state.split,

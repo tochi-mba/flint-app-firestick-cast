@@ -53,7 +53,9 @@ class BrowserCockpitWorkspacePublisherTest {
             revisions.add((it as BrowserWorkspaceStateMessage).revision)
             false
         }
-        repeat(2) { assertFalse(publisher.publishWorkspace(BrowserState(epoch = 7), BrowserWorkspaceState(), capacity)) }
+        repeat(2) {
+            assertFalse(publisher.publishWorkspace(BrowserState(epoch = 7), BrowserWorkspaceState(), capacity))
+        }
         assertEquals(listOf(1L, 2L), revisions)
     }
 }

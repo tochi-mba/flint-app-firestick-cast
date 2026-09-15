@@ -24,8 +24,10 @@ enum class BrowserOverlay {
     PROFILES,
     PROFILE_NAME,
     PROFILE_DELETE,
+
     /** Multi-page browser workspace with independent WebViews (ADR-0023). */
     WORKSPACE,
+
     /** Per-profile network / VPN settings (ADR-0022). */
     NETWORK,
 }

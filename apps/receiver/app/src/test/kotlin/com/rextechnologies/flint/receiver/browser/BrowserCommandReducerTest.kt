@@ -221,7 +221,10 @@ class BrowserCommandReducerTest {
         assertIs<BrowserCommandEffect.SurfaceChanged>(claimed.effect)
         assertEquals(BrowserSurfaceOwner.PLAYER, claimed.state.surface)
         val browserClaim = reducer.claimExternalSurface(claimed.state, BrowserSurfaceOwner.BROWSER)
-        assertEquals(BrowserCommandRejection.SURFACE_BUSY, assertIs<BrowserCommandEffect.Rejected>(browserClaim.effect).reason)
+        assertEquals(
+            BrowserCommandRejection.SURFACE_BUSY,
+            assertIs<BrowserCommandEffect.Rejected>(browserClaim.effect).reason,
+        )
     }
 
     @Test

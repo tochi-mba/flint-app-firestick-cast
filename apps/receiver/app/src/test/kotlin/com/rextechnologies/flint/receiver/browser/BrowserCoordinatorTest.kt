@@ -3,8 +3,8 @@ package com.rextechnologies.flint.receiver.browser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class BrowserCoordinatorTest {
@@ -440,10 +440,18 @@ class BrowserCoordinatorTest {
             closeCalls += epoch
         }
 
-        override fun goBack() { historyCalls += "back" }
-        override fun goForward() { historyCalls += "forward" }
-        override fun reload() { historyCalls += "reload" }
-        override fun stop() { historyCalls += "stop" }
+        override fun goBack() {
+            historyCalls += "back"
+        }
+        override fun goForward() {
+            historyCalls += "forward"
+        }
+        override fun reload() {
+            historyCalls += "reload"
+        }
+        override fun stop() {
+            historyCalls += "stop"
+        }
 
         override fun dispatch(input: BrowserNativeInput) {
             dispatched += input

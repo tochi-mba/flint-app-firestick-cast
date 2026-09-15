@@ -10,10 +10,10 @@ import com.rextechnologies.flint.protocol.wire.BrowserCommandAction
 import com.rextechnologies.flint.protocol.wire.BrowserCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserDialogReplyMessage
 import com.rextechnologies.flint.protocol.wire.BrowserInputMessage
-import com.rextechnologies.flint.protocol.wire.BrowserLibraryEntry
-import com.rextechnologies.flint.protocol.wire.BrowserLibraryEntryKind
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryAction
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryCommandMessage
+import com.rextechnologies.flint.protocol.wire.BrowserLibraryEntry
+import com.rextechnologies.flint.protocol.wire.BrowserLibraryEntryKind
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryStateMessage
 import com.rextechnologies.flint.protocol.wire.BrowserProfileAction
 import com.rextechnologies.flint.protocol.wire.BrowserProfileCommandMessage
@@ -31,6 +31,8 @@ import com.rextechnologies.flint.protocol.wire.WireFrame
 import com.rextechnologies.flint.receiver.browser.BrowserPreviewCapture
 import com.rextechnologies.flint.receiver.browser.BrowserPreviewLoop
 import com.rextechnologies.flint.receiver.browser.identity.InMemoryReceiverIdentityProvider
+import org.junit.After
+import org.junit.Before
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.net.Inet4Address
@@ -50,8 +52,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
-import org.junit.After
-import org.junit.Before
 
 class BrowserTlsServerTest {
     private lateinit var server: BrowserTlsServer
@@ -180,13 +180,15 @@ class BrowserTlsServerTest {
             session.write(libraryCommand)
             session.write(profileCommand)
 
-            assertTrue(waitUntil {
-                tabCommands.singleOrNull() == tab &&
-                    viewCommands.singleOrNull() == view &&
-                    libraryStates.singleOrNull() == library &&
-                    libraryCommands.singleOrNull() == libraryCommand &&
-                    profileCommands.singleOrNull() == profileCommand
-            })
+            assertTrue(
+                waitUntil {
+                    tabCommands.singleOrNull() == tab &&
+                        viewCommands.singleOrNull() == view &&
+                        libraryStates.singleOrNull() == library &&
+                        libraryCommands.singleOrNull() == libraryCommand &&
+                        profileCommands.singleOrNull() == profileCommand
+                },
+            )
         }
     }
 

@@ -8,7 +8,10 @@ internal class BrowserWorkspacePointerRouter(private val send: (Long, BrowserNat
     private var active: Pair<Long, BrowserNativeInput.Pointer>? = null
 
     fun dispatch(paneId: Long, input: BrowserNativeInput) {
-        if (input !is BrowserNativeInput.Pointer) { send(paneId, input); return }
+        if (input !is BrowserNativeInput.Pointer) {
+            send(paneId, input)
+            return
+        }
         when (input.action) {
             BrowserPointerAction.DOWN -> {
                 cancel()

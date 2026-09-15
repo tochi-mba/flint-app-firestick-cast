@@ -4,8 +4,8 @@ import android.app.Service
 import android.content.Intent
 import android.media.AudioManager
 import android.os.Binder
-import android.os.IBinder
 import android.os.Build
+import android.os.IBinder
 import android.util.Log
 import android.view.KeyEvent
 import android.view.Surface
@@ -21,8 +21,15 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.rextechnologies.flint.protocol.discovery.PairingCode
+import com.rextechnologies.flint.protocol.discovery.ReceiverProbe
 import com.rextechnologies.flint.protocol.wire.AudioConfigMessage
 import com.rextechnologies.flint.protocol.wire.AudioPacket
+import com.rextechnologies.flint.protocol.wire.BrowserCommandAction
+import com.rextechnologies.flint.protocol.wire.BrowserCommandMessage
+import com.rextechnologies.flint.protocol.wire.BrowserDialogReplyMessage
+import com.rextechnologies.flint.protocol.wire.BrowserInputMessage
+import com.rextechnologies.flint.protocol.wire.BrowserPointerAction
+import com.rextechnologies.flint.protocol.wire.BrowserPreviewState
 import com.rextechnologies.flint.protocol.wire.ControlMessage
 import com.rextechnologies.flint.protocol.wire.KeyAction
 import com.rextechnologies.flint.protocol.wire.KeyControl
@@ -39,52 +46,43 @@ import com.rextechnologies.flint.protocol.wire.TransportControl
 import com.rextechnologies.flint.protocol.wire.VideoConfigMessage
 import com.rextechnologies.flint.protocol.wire.VideoPacket
 import com.rextechnologies.flint.protocol.wire.VolumeControl
-import com.rextechnologies.flint.receiver.media.MirrorAudioDecoder
-import com.rextechnologies.flint.receiver.media.PushedMediaSink
-import com.rextechnologies.flint.receiver.media.MirrorVideoDecoder
-import com.rextechnologies.flint.receiver.browser.BrowserCoordinator
-import com.rextechnologies.flint.receiver.browser.BrowserCommandEffect
-import com.rextechnologies.flint.receiver.browser.BrowserDialogAnswer
-import com.rextechnologies.flint.receiver.browser.BrowserPreviewPublisher
-import com.rextechnologies.flint.receiver.browser.net.BrowserOutboundMessage
-import com.rextechnologies.flint.receiver.browser.PendingJsDialog
-import com.rextechnologies.flint.receiver.browser.BrowserRefusal
-import com.rextechnologies.flint.receiver.browser.BrowserWebViewDriver
-import com.rextechnologies.flint.receiver.browser.BrowserStateEvent
-import com.rextechnologies.flint.receiver.browser.BrowserTabSurfacePort
-import com.rextechnologies.flint.receiver.browser.AndroidVpnCapabilityProbe
 import com.rextechnologies.flint.receiver.browser.AndroidBrowserVpnConnectionVerifier
 import com.rextechnologies.flint.receiver.browser.AndroidKeystoreBrowserNetworkCrypto
-import com.rextechnologies.flint.receiver.browser.BrowserLibraryNetworkProfileAuthority
-import com.rextechnologies.flint.receiver.browser.BrowserVpnTunnelImpl
-import com.rextechnologies.flint.receiver.browser.BrowserLibraryStore
-import com.rextechnologies.flint.receiver.browser.BrowserNetworkStore
-import com.rextechnologies.flint.receiver.browser.BrowserWorkspaceStore
-import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSession
+import com.rextechnologies.flint.receiver.browser.AndroidVpnCapabilityProbe
+import com.rextechnologies.flint.receiver.browser.BrowserCommandEffect
+import com.rextechnologies.flint.receiver.browser.BrowserCoordinator
+import com.rextechnologies.flint.receiver.browser.BrowserDialogAnswer
 import com.rextechnologies.flint.receiver.browser.BrowserHostBridge
 import com.rextechnologies.flint.receiver.browser.BrowserInputMapping
 import com.rextechnologies.flint.receiver.browser.BrowserInputRouter
+import com.rextechnologies.flint.receiver.browser.BrowserLibraryNetworkProfileAuthority
+import com.rextechnologies.flint.receiver.browser.BrowserLibraryStore
 import com.rextechnologies.flint.receiver.browser.BrowserNativeInput
+import com.rextechnologies.flint.receiver.browser.BrowserNetworkStore
+import com.rextechnologies.flint.receiver.browser.BrowserPreviewPublisher
+import com.rextechnologies.flint.receiver.browser.BrowserRefusal
 import com.rextechnologies.flint.receiver.browser.BrowserState
-import com.rextechnologies.flint.receiver.browser.toWireMessage
-import com.rextechnologies.flint.protocol.wire.BrowserPointerAction
+import com.rextechnologies.flint.receiver.browser.BrowserStateEvent
+import com.rextechnologies.flint.receiver.browser.BrowserTabSurfacePort
+import com.rextechnologies.flint.receiver.browser.BrowserVpnTunnelImpl
+import com.rextechnologies.flint.receiver.browser.BrowserWebViewDriver
+import com.rextechnologies.flint.receiver.browser.BrowserWorkspaceStore
+import com.rextechnologies.flint.receiver.browser.PendingJsDialog
 import com.rextechnologies.flint.receiver.browser.identity.AndroidKeystoreReceiverIdentityProvider
 import com.rextechnologies.flint.receiver.browser.identity.PersistentReceiverIdentityProvider
-import java.io.File
+import com.rextechnologies.flint.receiver.browser.net.BrowserOutboundMessage
 import com.rextechnologies.flint.receiver.browser.net.BrowserSecureSessionListener
 import com.rextechnologies.flint.receiver.browser.net.BrowserTlsServer
-import com.rextechnologies.flint.receiver.net.ReceiverServer
-import com.rextechnologies.flint.protocol.discovery.ReceiverProbe
+import com.rextechnologies.flint.receiver.browser.toWireMessage
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSession
+import com.rextechnologies.flint.receiver.media.MirrorAudioDecoder
+import com.rextechnologies.flint.receiver.media.MirrorVideoDecoder
+import com.rextechnologies.flint.receiver.media.PushedMediaSink
 import com.rextechnologies.flint.receiver.net.ReceiverBroadcastResponder
 import com.rextechnologies.flint.receiver.net.ReceiverMdnsResponder
+import com.rextechnologies.flint.receiver.net.ReceiverServer
 import com.rextechnologies.flint.receiver.net.ReceiverSessionListener
 import com.rextechnologies.flint.receiver.net.ReceiverState
-import com.rextechnologies.flint.protocol.wire.BrowserCommandAction
-import com.rextechnologies.flint.protocol.wire.BrowserCommandMessage
-import com.rextechnologies.flint.protocol.wire.BrowserDialogReplyMessage
-import com.rextechnologies.flint.protocol.wire.BrowserInputMessage
-import com.rextechnologies.flint.protocol.wire.BrowserPreviewState
-import java.net.Inet4Address
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -98,6 +96,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.net.Inet4Address
 
 /**
  * Owns the listening socket and decoders independently of the TV activity.
@@ -304,27 +304,53 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
             if (_uiState.value.surfaceMode == SurfaceMode.PLAYER) {
                 if (player.isPlaying) player.pause() else resumeOrRestartPlayback()
                 true
-            } else false
+            } else {
+                false
+            }
         }
-        KeyEvent.KEYCODE_MEDIA_PLAY -> { resumeOrRestartPlayback(); true }
-        KeyEvent.KEYCODE_MEDIA_PAUSE -> { player.pause(); true }
+        KeyEvent.KEYCODE_MEDIA_PLAY -> {
+            resumeOrRestartPlayback()
+            true
+        }
+        KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+            player.pause()
+            true
+        }
         KeyEvent.KEYCODE_MEDIA_STOP, KeyEvent.KEYCODE_BACK -> {
             if (_uiState.value.surfaceMode != SurfaceMode.IDLE) {
                 clearSessionSurface()
                 true
-            } else false
+            } else {
+                false
+            }
         }
-        KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> { seekBy(SEEK_STEP_MILLIS); true }
-        KeyEvent.KEYCODE_MEDIA_REWIND -> { seekBy(-SEEK_STEP_MILLIS); true }
+        KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
+            seekBy(SEEK_STEP_MILLIS)
+            true
+        }
+        KeyEvent.KEYCODE_MEDIA_REWIND -> {
+            seekBy(-SEEK_STEP_MILLIS)
+            true
+        }
         // The basic Fire TV remote has no dedicated fast-forward/rewind keys, so scrubbing during
         // playback is the D-pad's job — the same convention YouTube and Netflix's TV apps use.
         // Gated to the player surface: on every other screen, left/right is ordinary focus
         // navigation between on-screen controls and must not be swallowed here.
         KeyEvent.KEYCODE_DPAD_RIGHT -> {
-            if (_uiState.value.surfaceMode == SurfaceMode.PLAYER) { seekBy(SEEK_STEP_MILLIS); true } else false
+            if (_uiState.value.surfaceMode == SurfaceMode.PLAYER) {
+                seekBy(SEEK_STEP_MILLIS)
+                true
+            } else {
+                false
+            }
         }
         KeyEvent.KEYCODE_DPAD_LEFT -> {
-            if (_uiState.value.surfaceMode == SurfaceMode.PLAYER) { seekBy(-SEEK_STEP_MILLIS); true } else false
+            if (_uiState.value.surfaceMode == SurfaceMode.PLAYER) {
+                seekBy(-SEEK_STEP_MILLIS)
+                true
+            } else {
+                false
+            }
         }
         else -> false
     }
@@ -902,7 +928,11 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
 
     private fun Long.safeDuration(): Long = if (this == C.TIME_UNSET || this < 0) Long.MAX_VALUE else this
 
-    private fun subtitleMime(url: String): String = when (url.substringBefore('?').substringAfterLast('.', "").lowercase()) {
+    private fun subtitleMime(url: String): String = when (
+        url.substringBefore(
+            '?',
+        ).substringAfterLast('.', "").lowercase()
+    ) {
         "vtt" -> MimeTypes.TEXT_VTT
         "ssa", "ass" -> MimeTypes.TEXT_SSA
         "ttml", "xml" -> MimeTypes.APPLICATION_TTML
@@ -952,4 +982,3 @@ internal fun needsSeekToStartBeforeResuming(playbackState: Int): Boolean =
  */
 internal fun seekTargetMs(positionMs: Long, deltaMs: Long, durationMs: Long): Long =
     (positionMs + deltaMs).coerceIn(0L, durationMs)
-

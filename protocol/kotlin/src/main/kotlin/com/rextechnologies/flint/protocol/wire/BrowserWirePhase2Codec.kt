@@ -499,12 +499,18 @@ internal object BrowserWirePhase2Codec {
     private fun validate(message: BrowserFaviconMessage) {
         requirePositive(message.epoch, "browser favicon epoch")
         requirePositive(message.faviconId, "browser favicon ID")
-        requireWire(message.width in 1..BrowserWireLimits.MAX_FAVICON_DIMENSION,
-            "Browser favicon width is out of range")
-        requireWire(message.height in 1..BrowserWireLimits.MAX_FAVICON_DIMENSION,
-            "Browser favicon height is out of range")
-        requireWire(message.png.size in 1..BrowserWireLimits.MAX_FAVICON_BYTES,
-            "Browser favicon PNG length is out of range")
+        requireWire(
+            message.width in 1..BrowserWireLimits.MAX_FAVICON_DIMENSION,
+            "Browser favicon width is out of range",
+        )
+        requireWire(
+            message.height in 1..BrowserWireLimits.MAX_FAVICON_DIMENSION,
+            "Browser favicon height is out of range",
+        )
+        requireWire(
+            message.png.size in 1..BrowserWireLimits.MAX_FAVICON_BYTES,
+            "Browser favicon PNG length is out of range",
+        )
     }
 
     private fun validate(message: BrowserLibraryCommandMessage) {
@@ -522,18 +528,24 @@ internal object BrowserWirePhase2Codec {
             BrowserLibraryAction.CLEAR_HISTORY,
             BrowserLibraryAction.CLEAR_BOOKMARKS,
             BrowserLibraryAction.REQUEST_SNAPSHOT,
-            -> requireWire(message.url.isEmpty() && message.title.isEmpty(),
-                "Parameterless browser library command carries text")
+            -> requireWire(
+                message.url.isEmpty() && message.title.isEmpty(),
+                "Parameterless browser library command carries text",
+            )
         }
     }
 
     private fun validate(message: BrowserLibraryStateMessage) {
         requirePositive(message.epoch, "browser library state epoch")
         requirePositive(message.revision, "browser library state revision")
-        requireWire(message.bookmarks.size <= BrowserWireLimits.MAX_BOOKMARKS,
-            "Browser bookmark count is out of range")
-        requireWire(message.history.size <= BrowserWireLimits.MAX_HISTORY_ENTRIES,
-            "Browser history count is out of range")
+        requireWire(
+            message.bookmarks.size <= BrowserWireLimits.MAX_BOOKMARKS,
+            "Browser bookmark count is out of range",
+        )
+        requireWire(
+            message.history.size <= BrowserWireLimits.MAX_HISTORY_ENTRIES,
+            "Browser history count is out of range",
+        )
         message.bookmarks.forEach { validate(it, BrowserLibraryEntryKind.BOOKMARK) }
         message.history.forEach { validate(it, BrowserLibraryEntryKind.HISTORY) }
     }
@@ -715,8 +727,11 @@ internal object BrowserWirePhase2Codec {
         requireWire(message.text.isEmpty(), "Browser view command carries text")
 
     private fun viewTextLimit(action: BrowserViewAction): Int =
-        if (action == BrowserViewAction.FIND_START) BrowserWireLimits.MAX_FIND_TEXT_BYTES
-        else BrowserWireLimits.MAX_URL_BYTES
+        if (action == BrowserViewAction.FIND_START) {
+            BrowserWireLimits.MAX_FIND_TEXT_BYTES
+        } else {
+            BrowserWireLimits.MAX_URL_BYTES
+        }
 
     private fun <T> requireEnumValue(value: Int, fromId: (Int) -> T?, field: String): T =
         fromId(value) ?: throw WireFormatException("Unknown $field: $value")

@@ -8,20 +8,19 @@ import com.rextechnologies.flint.protocol.wire.BrowserCommandAction
 import com.rextechnologies.flint.protocol.wire.BrowserCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserDialogReplyMessage
 import com.rextechnologies.flint.protocol.wire.BrowserInputMessage
-import com.rextechnologies.flint.protocol.wire.BrowserPointerAction
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryAction
-import com.rextechnologies.flint.receiver.browser.BrowserNativeInput
-import com.rextechnologies.flint.receiver.browser.BrowserInputMapping
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryStateMessage
 import com.rextechnologies.flint.protocol.wire.BrowserNetworkCommandMessage
+import com.rextechnologies.flint.protocol.wire.BrowserPointerAction
 import com.rextechnologies.flint.protocol.wire.BrowserPreviewState
 import com.rextechnologies.flint.protocol.wire.BrowserProfileCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserTabCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserViewCommandMessage
+import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceCommandAction
 import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceCommandMessage
-import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceResizeMessage
 import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceInputMessage
+import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceResizeMessage
 import com.rextechnologies.flint.protocol.wire.ProtocolVersion
 import com.rextechnologies.flint.protocol.wire.SurfaceMode
 import com.rextechnologies.flint.receiver.browser.BrowserCockpitPublisher
@@ -29,68 +28,69 @@ import com.rextechnologies.flint.receiver.browser.BrowserCommandEffect
 import com.rextechnologies.flint.receiver.browser.BrowserCommandRejection
 import com.rextechnologies.flint.receiver.browser.BrowserCoordinator
 import com.rextechnologies.flint.receiver.browser.BrowserDialogAnswer
-import com.rextechnologies.flint.receiver.browser.BrowserHostBridge
 import com.rextechnologies.flint.receiver.browser.BrowserFaviconCache
 import com.rextechnologies.flint.receiver.browser.BrowserFaviconOffer
 import com.rextechnologies.flint.receiver.browser.BrowserFindState
+import com.rextechnologies.flint.receiver.browser.BrowserHostBridge
+import com.rextechnologies.flint.receiver.browser.BrowserInputMapping
 import com.rextechnologies.flint.receiver.browser.BrowserInputRouter
+import com.rextechnologies.flint.receiver.browser.BrowserInteractionMode
 import com.rextechnologies.flint.receiver.browser.BrowserLibraryStore
+import com.rextechnologies.flint.receiver.browser.BrowserNativeInput
 import com.rextechnologies.flint.receiver.browser.BrowserNetworkStore
-import com.rextechnologies.flint.receiver.browser.BrowserRemoteWorkspaceCommandHandler
-import com.rextechnologies.flint.receiver.browser.BrowserWorkspaceStore
-import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSession
-import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceAction
-import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceProfile
-import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceCommandAction
-import com.rextechnologies.flint.receiver.browser.BrowserVpnCoordinator
-import com.rextechnologies.flint.receiver.browser.BrowserVpnConnectionVerifier
-import com.rextechnologies.flint.receiver.browser.BrowserVpnState
-import com.rextechnologies.flint.receiver.browser.BrowserVpnTunnel
-import com.rextechnologies.flint.receiver.browser.FixedVpnCapabilityProbe
-import com.rextechnologies.flint.receiver.browser.NoOpBrowserVpnTunnel
-import com.rextechnologies.flint.receiver.browser.UnavailableBrowserVpnConnectionVerifier
-import com.rextechnologies.flint.receiver.browser.ProfileNetworkSettings
-import com.rextechnologies.flint.receiver.browser.VpnCapability
-import com.rextechnologies.flint.receiver.browser.VpnCapabilityProbe
-import com.rextechnologies.flint.receiver.browser.VpnConsentHost
-import com.rextechnologies.flint.receiver.browser.VpnProvider
-import com.rextechnologies.flint.receiver.browser.BrowserTvBrowsingSession
-import com.rextechnologies.flint.receiver.browser.BrowserSavedTab
-import com.rextechnologies.flint.receiver.browser.TvSessionRestore
-import com.rextechnologies.flint.receiver.browser.BrowserProfileSession
-import com.rextechnologies.flint.receiver.browser.BrowserProfileActions
-import com.rextechnologies.flint.receiver.browser.BrowserProfileSource
-import com.rextechnologies.flint.receiver.browser.BrowserRemoteCommandHandler
 import com.rextechnologies.flint.receiver.browser.BrowserNoticeReducer
 import com.rextechnologies.flint.receiver.browser.BrowserNoticeState
-import com.rextechnologies.flint.receiver.browser.BrowserRefusal
 import com.rextechnologies.flint.receiver.browser.BrowserPhase
 import com.rextechnologies.flint.receiver.browser.BrowserPreviewPublisher
+import com.rextechnologies.flint.receiver.browser.BrowserProfileActions
+import com.rextechnologies.flint.receiver.browser.BrowserProfileSession
+import com.rextechnologies.flint.receiver.browser.BrowserProfileSource
+import com.rextechnologies.flint.receiver.browser.BrowserRefusal
+import com.rextechnologies.flint.receiver.browser.BrowserRemoteCommandHandler
+import com.rextechnologies.flint.receiver.browser.BrowserRemoteWorkspaceCommandHandler
+import com.rextechnologies.flint.receiver.browser.BrowserSavedTab
+import com.rextechnologies.flint.receiver.browser.BrowserSearchEngine
 import com.rextechnologies.flint.receiver.browser.BrowserState
 import com.rextechnologies.flint.receiver.browser.BrowserStateEvent
 import com.rextechnologies.flint.receiver.browser.BrowserTabSession
 import com.rextechnologies.flint.receiver.browser.BrowserTabSurfacePort
-import com.rextechnologies.flint.receiver.browser.BrowserViewSettings
+import com.rextechnologies.flint.receiver.browser.BrowserTvBrowsingSession
 import com.rextechnologies.flint.receiver.browser.BrowserUserAgentMode
-import com.rextechnologies.flint.receiver.browser.BrowserInteractionMode
-import com.rextechnologies.flint.receiver.browser.BrowserSearchEngine
+import com.rextechnologies.flint.receiver.browser.BrowserViewSettings
+import com.rextechnologies.flint.receiver.browser.BrowserVpnConnectionVerifier
+import com.rextechnologies.flint.receiver.browser.BrowserVpnCoordinator
+import com.rextechnologies.flint.receiver.browser.BrowserVpnState
+import com.rextechnologies.flint.receiver.browser.BrowserVpnTunnel
 import com.rextechnologies.flint.receiver.browser.BrowserWebViewDriver
+import com.rextechnologies.flint.receiver.browser.BrowserWorkspaceStore
+import com.rextechnologies.flint.receiver.browser.FixedVpnCapabilityProbe
+import com.rextechnologies.flint.receiver.browser.NoOpBrowserVpnTunnel
 import com.rextechnologies.flint.receiver.browser.PendingJsDialog
+import com.rextechnologies.flint.receiver.browser.ProfileNetworkSettings
 import com.rextechnologies.flint.receiver.browser.TabEffect
 import com.rextechnologies.flint.receiver.browser.TabTransition
+import com.rextechnologies.flint.receiver.browser.TvSessionRestore
+import com.rextechnologies.flint.receiver.browser.UnavailableBrowserVpnConnectionVerifier
+import com.rextechnologies.flint.receiver.browser.VpnCapability
+import com.rextechnologies.flint.receiver.browser.VpnCapabilityProbe
+import com.rextechnologies.flint.receiver.browser.VpnConsentHost
+import com.rextechnologies.flint.receiver.browser.VpnProvider
 import com.rextechnologies.flint.receiver.browser.identity.ReceiverIdentityProvider
 import com.rextechnologies.flint.receiver.browser.net.BrowserOutboundMessage
 import com.rextechnologies.flint.receiver.browser.net.BrowserSecureSessionListener
 import com.rextechnologies.flint.receiver.browser.net.BrowserTlsServer
 import com.rextechnologies.flint.receiver.browser.toWireMessage
-import java.net.Inet4Address
-import java.net.URI
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceAction
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceProfile
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.net.Inet4Address
+import java.net.URI
 
 /**
  * Everything the receiver does for the TV-resident browser, kept out of [ReceiverService].
@@ -145,7 +145,11 @@ class ReceiverBrowserController(
         pendingWorkspaceOpen = false
         val session = workspaceSession ?: return
         val selection = profiles.snapshot().profiles
-        if (selection.activeSource == BrowserProfileSource.CONNECTED_DEVICE && authenticatedBrowserSessionId == 0L) return
+        if (selection.activeSource == BrowserProfileSource.CONNECTED_DEVICE &&
+            authenticatedBrowserSessionId == 0L
+        ) {
+            return
+        }
         // Keep tab identities and URLs; the departing UI releases their renderers.
         // Keep an existing preview opt-in across the tab → mosaic handoff; reattach the focused
         // pane WebView once the workspace host has a renderer (publishWorkspaceStateToHost).
@@ -155,9 +159,11 @@ class ReceiverBrowserController(
         } else if (selection.activeSource == BrowserProfileSource.TV) {
             session.openLocalWorkspace(selection.activeTvProfileId, seedUrl)
         } else {
-            session.dispatch(BrowserWorkspaceAction.ActivateProfile(
-                BrowserWorkspaceProfile.ConnectedDevice(authenticatedBrowserSessionId, selection.activeName),
-            ))
+            session.dispatch(
+                BrowserWorkspaceAction.ActivateProfile(
+                    BrowserWorkspaceProfile.ConnectedDevice(authenticatedBrowserSessionId, selection.activeName),
+                ),
+            )
             session.dispatch(BrowserWorkspaceAction.OpenPane(seedUrl))
         }
         uiState.update { it.copy(browserWorkspaceVisible = true, browserFullscreen = false) }
@@ -518,7 +524,11 @@ class ReceiverBrowserController(
         }
 
         override fun onWorkspaceInput(input: BrowserWorkspaceInputMessage) {
-            if (uiState.value.browserWorkspaceVisible && allowBrowsingUnderVpnPolicy()) remoteWorkspaceCommands?.handle(input)
+            if (uiState.value.browserWorkspaceVisible &&
+                allowBrowsingUnderVpnPolicy()
+            ) {
+                remoteWorkspaceCommands?.handle(input)
+            }
         }
 
         override fun onDialogReply(reply: BrowserDialogReplyMessage) {
@@ -880,8 +890,11 @@ class ReceiverBrowserController(
         val faviconId = tabs.state.active?.faviconId ?: 0
         scope.launch(Dispatchers.IO) {
             val saved = profiles.snapshot().library.bookmarks.any { it.url == url }
-            if (saved) profiles.removeBookmark(url)
-            else profiles.addBookmark(url, title, faviconId)
+            if (saved) {
+                profiles.removeBookmark(url)
+            } else {
+                profiles.addBookmark(url, title, faviconId)
+            }
             publishProfileState()
             publishLibraryStateToHost()
         }
@@ -1027,7 +1040,8 @@ class ReceiverBrowserController(
 
     private fun handleCommand(command: BrowserCommandMessage) {
         if (command.action != BrowserCommandAction.CLOSE &&
-            command.action != BrowserCommandAction.CLEAR_DATA && !allowBrowsingUnderVpnPolicy()) {
+            command.action != BrowserCommandAction.CLEAR_DATA && !allowBrowsingUnderVpnPolicy()
+        ) {
             Log.w(TAG, "Secure browser ${command.action} blocked by VPN policy cmdId=${command.commandId}")
             return
         }

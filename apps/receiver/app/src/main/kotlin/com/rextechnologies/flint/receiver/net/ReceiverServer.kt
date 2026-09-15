@@ -9,11 +9,11 @@ import com.rextechnologies.flint.protocol.session.CastSessionParameters
 import com.rextechnologies.flint.protocol.session.DeviceProfile
 import com.rextechnologies.flint.protocol.session.HandshakeOutcome
 import com.rextechnologies.flint.protocol.session.ReceiverHandshake
-import com.rextechnologies.flint.protocol.wire.ByeMessage
-import com.rextechnologies.flint.protocol.wire.ByeReason
 import com.rextechnologies.flint.protocol.wire.AudioConfigMessage
 import com.rextechnologies.flint.protocol.wire.AudioPacket
 import com.rextechnologies.flint.protocol.wire.BrowserWireRules
+import com.rextechnologies.flint.protocol.wire.ByeMessage
+import com.rextechnologies.flint.protocol.wire.ByeReason
 import com.rextechnologies.flint.protocol.wire.CodecId
 import com.rextechnologies.flint.protocol.wire.ControlMessage
 import com.rextechnologies.flint.protocol.wire.HelloMessage
@@ -27,6 +27,15 @@ import com.rextechnologies.flint.protocol.wire.WireCodec
 import com.rextechnologies.flint.protocol.wire.WireFormatException
 import com.rextechnologies.flint.protocol.wire.WireFrame
 import com.rextechnologies.flint.protocol.wire.WireMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.Closeable
@@ -37,15 +46,6 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicInteger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 /** What the receiver is doing right now, as the ten-foot UI needs to show it. */
 sealed interface ReceiverState {
@@ -96,6 +96,7 @@ class ReceiverServer(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val activeSessions = AtomicInteger(0)
     private var server: ServerSocket? = null
+
     @Volatile
     private var sender: FrameSender? = null
 
@@ -352,4 +353,3 @@ class ReceiverServer(
         fun peerName(hello: HelloMessage): String = hello.deviceName
     }
 }
-

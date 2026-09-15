@@ -128,4 +128,3 @@ class HotspotInterfaceSelector {
         val address: InterfaceAddressSnapshot,
     )
 }
-

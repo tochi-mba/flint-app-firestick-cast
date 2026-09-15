@@ -71,7 +71,9 @@ class BrowserVpnConnectionVerifierTest {
 
     private fun capabilities(vpn: Boolean, validated: Boolean): NetworkCapabilities {
         val result = ShadowNetworkCapabilities.newInstance()
-        shadowOf(result).addTransportType(if (vpn) NetworkCapabilities.TRANSPORT_VPN else NetworkCapabilities.TRANSPORT_WIFI)
+        shadowOf(
+            result,
+        ).addTransportType(if (vpn) NetworkCapabilities.TRANSPORT_VPN else NetworkCapabilities.TRANSPORT_WIFI)
         shadowOf(result).addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
         if (validated) shadowOf(result).addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
         return result

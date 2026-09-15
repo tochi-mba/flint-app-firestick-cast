@@ -2,7 +2,6 @@ package com.rextechnologies.flint.receiver.browser
 
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryAction
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryCommandMessage
-import com.rextechnologies.flint.protocol.wire.BrowserLibraryEntry as WireLibraryEntry
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryEntryKind
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryStateMessage
 import java.io.File
@@ -12,6 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import com.rextechnologies.flint.protocol.wire.BrowserLibraryEntry as WireLibraryEntry
 
 class BrowserProfileSessionTest {
     private val directory = File(

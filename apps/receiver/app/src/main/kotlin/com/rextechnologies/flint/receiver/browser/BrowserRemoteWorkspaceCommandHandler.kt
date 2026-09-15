@@ -4,8 +4,8 @@ import android.util.Log
 import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceCommandAction
 import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceInputKind
-import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceResizeMessage
 import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceInputMessage
+import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceResizeMessage
 import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceWireInteractionMode
 import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceWireLayout
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceAction
@@ -83,9 +83,11 @@ class BrowserRemoteWorkspaceCommandHandler(
         }
         if (!accept(input.epoch, input.commandId, "workspace-resize")) return
         if (input.mode != 0) setWorkspaceMode(input.mode == 2)
-        workspaceSession.dispatch(BrowserWorkspaceAction.SetSplit(
-            com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSplit.of(input.column, input.row),
-        ))
+        workspaceSession.dispatch(
+            BrowserWorkspaceAction.SetSplit(
+                com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSplit.of(input.column, input.row),
+            ),
+        )
         // Even a refused/no-op resize must acknowledge authoritative geometry.
         publishWorkspace()
     }

@@ -1,20 +1,20 @@
 package com.rextechnologies.flint.receiver.browser.net
 
 import com.rextechnologies.flint.protocol.wire.BrowserCommandMessage
+import com.rextechnologies.flint.protocol.wire.BrowserDialogMessage
 import com.rextechnologies.flint.protocol.wire.BrowserDialogReplyMessage
 import com.rextechnologies.flint.protocol.wire.BrowserInputMessage
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryStateMessage
 import com.rextechnologies.flint.protocol.wire.BrowserNetworkCommandMessage
+import com.rextechnologies.flint.protocol.wire.BrowserPreviewMessage
 import com.rextechnologies.flint.protocol.wire.BrowserProfileCommandMessage
+import com.rextechnologies.flint.protocol.wire.BrowserStateMessage
 import com.rextechnologies.flint.protocol.wire.BrowserTabCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserViewCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceCommandMessage
-import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceResizeMessage
 import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceInputMessage
-import com.rextechnologies.flint.protocol.wire.BrowserStateMessage
-import com.rextechnologies.flint.protocol.wire.BrowserDialogMessage
-import com.rextechnologies.flint.protocol.wire.BrowserPreviewMessage
+import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceResizeMessage
 import com.rextechnologies.flint.protocol.wire.WireMessage
 
 /** Authenticated browser-session callbacks owned by ReceiverService / BrowserCoordinator. */

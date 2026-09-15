@@ -26,6 +26,7 @@ class BrowserHostBridge(
     private var attachedDriver: BrowserWebViewDriver? = null
     private var previewLoop: BrowserPreviewLoop? = null
     private var previewPublisher: BrowserPreviewPublisher? = null
+
     /** Host-requested enablement; reapplied when the capture target WebView changes. */
     private var previewDesired = false
 

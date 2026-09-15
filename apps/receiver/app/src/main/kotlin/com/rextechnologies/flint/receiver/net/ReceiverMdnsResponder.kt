@@ -4,6 +4,12 @@ import android.os.Build
 import com.rextechnologies.flint.protocol.discovery.DnsPacketCodec
 import com.rextechnologies.flint.protocol.discovery.FlintDnsSd
 import com.rextechnologies.flint.protocol.discovery.FlintService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.io.Closeable
 import java.net.DatagramPacket
 import java.net.Inet4Address
@@ -13,12 +19,6 @@ import java.net.MulticastSocket
 import java.net.NetworkInterface
 import java.net.SocketException
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 /** Interface-pinned DNS-SD responder; TCP discovery remains available if multicast is filtered. */
 class ReceiverMdnsResponder(
@@ -121,4 +121,3 @@ class ReceiverMdnsResponder(
         const val RECEIVE_TIMEOUT_MILLIS = 500
     }
 }
-

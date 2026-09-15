@@ -1,6 +1,12 @@
 package com.rextechnologies.flint.receiver.net
 
 import com.rextechnologies.flint.protocol.discovery.ReceiverProbe
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.io.Closeable
 import java.net.DatagramPacket
 import java.net.DatagramSocket
@@ -11,12 +17,6 @@ import java.net.NetworkInterface
 import java.net.SocketTimeoutException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 /**
  * Answers a UDP broadcast probe on the hotspot LAN.

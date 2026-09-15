@@ -79,5 +79,3 @@ object RangeRequest {
     private fun unsatisfiable(resourceLength: Long, message: String): Nothing =
         throw RangeNotSatisfiableException(resourceLength, message)
 }
-
-

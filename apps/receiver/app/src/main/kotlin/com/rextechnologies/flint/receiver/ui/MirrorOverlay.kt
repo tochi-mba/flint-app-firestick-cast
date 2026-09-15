@@ -109,6 +109,6 @@ internal fun mirrorAspectRatio(width: Int, height: Int): Float? =
  */
 internal fun mirrorStatsLabel(width: Int, height: Int, frameReceived: Boolean): String = when {
     !frameReceived -> "Waiting for the first frame"
-    width > 0 && height > 0 -> "${width} x ${height}"
+    width > 0 && height > 0 -> "$width x $height"
     else -> "Streaming, size not reported"
 }

@@ -39,7 +39,12 @@ object BrowserTextPolicy {
     fun validate(value: String): BrowserTextValidation {
         if (value.isEmpty()) return BrowserTextValidation.Rejected(BrowserTextRejection.EMPTY)
         if (hasUnpairedSurrogate(value)) return BrowserTextValidation.Rejected(BrowserTextRejection.MALFORMED_UNICODE)
-        if (value.any(::isControlCharacter)) return BrowserTextValidation.Rejected(BrowserTextRejection.CONTROL_CHARACTER)
+        if (value.any(
+                ::isControlCharacter,
+            )
+        ) {
+            return BrowserTextValidation.Rejected(BrowserTextRejection.CONTROL_CHARACTER)
+        }
         val bytes = value.toByteArray(StandardCharsets.UTF_8).size
         if (bytes > MAX_UTF8_BYTES) return BrowserTextValidation.Rejected(BrowserTextRejection.TOO_LONG)
         return BrowserTextValidation.Accepted(BrowserText(value, bytes))
@@ -164,7 +169,9 @@ class BrowserInputMapper {
             ),
         )
         is BrowserInput.Text -> when (val validation = BrowserTextPolicy.validate(input.text)) {
-            is BrowserTextValidation.Accepted -> BrowserInputMapping.Accepted(BrowserNativeInput.ComposedText(validation.text))
+            is BrowserTextValidation.Accepted -> BrowserInputMapping.Accepted(
+                BrowserNativeInput.ComposedText(validation.text),
+            )
             is BrowserTextValidation.Rejected -> BrowserInputMapping.Rejected(BrowserInputRejection.INVALID_TEXT)
         }
     }

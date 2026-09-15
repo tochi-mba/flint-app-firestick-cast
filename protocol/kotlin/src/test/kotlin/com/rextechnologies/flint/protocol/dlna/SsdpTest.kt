@@ -99,4 +99,3 @@ class SsdpTest {
         assertFailsWith<IllegalArgumentException> { SsdpDevice("http://h", " ", "st") }
     }
 }
-

@@ -396,4 +396,3 @@ class AdbConnectionTest {
         assertNull(AdbBanner("no-separator").model)
     }
 }
-

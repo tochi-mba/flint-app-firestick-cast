@@ -99,4 +99,4 @@ fun ReceiverService.closeBrowserFromTv() = browserController.closeFromTv()
 
 fun ReceiverService.showBrowserNotice(message: String) = browserController.showNotice(message)
 
-    /** The television asking to leave a page's fullscreen; the page is told, as if it had asked. */
+/** The television asking to leave a page's fullscreen; the page is told, as if it had asked. */

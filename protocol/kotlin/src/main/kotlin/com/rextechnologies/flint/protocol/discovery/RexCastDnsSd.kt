@@ -108,4 +108,3 @@ object FlintDnsSd {
     private fun String.removeSuffixCaseInsensitive(suffix: String): String? =
         if (endsWith(suffix, ignoreCase = true)) dropLast(suffix.length) else null
 }
-

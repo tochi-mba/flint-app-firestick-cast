@@ -100,7 +100,11 @@ internal class ReceiverBrowserPublishers(
                 capacity = session.capacity,
             )
             if (ok && negotiatedProtocolVersion() >= 4) {
-                cockpitPublisher.publishGeometry(coordinator.snapshot(), session.state, uiState.value.browserWorkspaceVisible)
+                cockpitPublisher.publishGeometry(
+                    coordinator.snapshot(),
+                    session.state,
+                    uiState.value.browserWorkspaceVisible,
+                )
             }
             if (ok) {
                 Log.i(

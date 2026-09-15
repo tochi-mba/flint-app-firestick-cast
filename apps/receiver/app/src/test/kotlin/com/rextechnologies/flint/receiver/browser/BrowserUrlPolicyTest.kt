@@ -72,7 +72,8 @@ class BrowserUrlPolicyTest {
 
     @Test
     fun `enforces UTF8 input byte bound before parsing`() {
-        val exact = "https://example.com/" + "a".repeat(BrowserUrlPolicy.MAX_INPUT_BYTES - "https://example.com/".length)
+        val exact =
+            "https://example.com/" + "a".repeat(BrowserUrlPolicy.MAX_INPUT_BYTES - "https://example.com/".length)
         assertIs<BrowserUrlResult.Accepted>(policy.evaluate(exact))
 
         val tooLong = exact + "a"

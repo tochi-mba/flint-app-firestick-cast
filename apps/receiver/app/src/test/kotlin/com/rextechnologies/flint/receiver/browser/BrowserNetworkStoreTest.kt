@@ -159,9 +159,10 @@ class BrowserNetworkStoreTest {
         val unavailable = BrowserNetworkStore(
             file = file,
             crypto = object : BrowserNetworkCrypto {
-                override fun encrypt(plaintext: ByteArray, associatedData: ByteArray): BrowserNetworkCiphertext {
-                    throw BrowserNetworkCryptoException("Keystore unavailable")
-                }
+                override fun encrypt(
+                    plaintext: ByteArray,
+                    associatedData: ByteArray,
+                ): BrowserNetworkCiphertext = throw BrowserNetworkCryptoException("Keystore unavailable")
 
                 override fun decrypt(
                     ciphertext: BrowserNetworkCiphertext,

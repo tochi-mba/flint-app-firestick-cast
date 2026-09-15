@@ -1,6 +1,7 @@
 package com.rextechnologies.flint.receiver.ui
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -8,7 +9,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
-import androidx.compose.ui.input.key.Key
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.rextechnologies.flint.receiver.ReceiverNetworkState
 import com.rextechnologies.flint.receiver.ReceiverUiState

@@ -328,16 +328,26 @@ internal object BrowserWireCodec {
             return
         }
 
-        requireWire(message.previewMaxWidth in 1..BrowserWireLimits.MAX_PREVIEW_WIDTH,
-            "Browser preview width is out of range")
-        requireWire(message.previewMaxHeight in 1..BrowserWireLimits.MAX_PREVIEW_HEIGHT,
-            "Browser preview height is out of range")
-        requireWire(message.interactivePreviewFramesPerSecond in 1..BrowserWireLimits.MAX_INTERACTIVE_PREVIEW_FPS,
-            "Browser interactive preview rate is out of range")
-        requireWire(message.idlePreviewFramesPerSecond in 1..BrowserWireLimits.MAX_IDLE_PREVIEW_FPS,
-            "Browser idle preview rate is out of range")
-        requireWire(message.previewMaxBytes in 1..BrowserWireLimits.MAX_PREVIEW_BYTES,
-            "Browser preview byte limit is out of range")
+        requireWire(
+            message.previewMaxWidth in 1..BrowserWireLimits.MAX_PREVIEW_WIDTH,
+            "Browser preview width is out of range",
+        )
+        requireWire(
+            message.previewMaxHeight in 1..BrowserWireLimits.MAX_PREVIEW_HEIGHT,
+            "Browser preview height is out of range",
+        )
+        requireWire(
+            message.interactivePreviewFramesPerSecond in 1..BrowserWireLimits.MAX_INTERACTIVE_PREVIEW_FPS,
+            "Browser interactive preview rate is out of range",
+        )
+        requireWire(
+            message.idlePreviewFramesPerSecond in 1..BrowserWireLimits.MAX_IDLE_PREVIEW_FPS,
+            "Browser idle preview rate is out of range",
+        )
+        requireWire(
+            message.previewMaxBytes in 1..BrowserWireLimits.MAX_PREVIEW_BYTES,
+            "Browser preview byte limit is out of range",
+        )
     }
 
     private fun validate(message: BrowserCommandMessage) {
@@ -346,8 +356,10 @@ internal object BrowserWireCodec {
         val requiresUrl = message.action == BrowserCommandAction.OPEN || message.action == BrowserCommandAction.NAVIGATE
         val requiresPreview = message.action == BrowserCommandAction.SET_PREVIEW_ENABLED
         requireWire(requiresUrl == (message.url != null), "Browser command URL has an invalid action combination")
-        requireWire(requiresPreview == (message.previewEnabled != null),
-            "Browser preview setting has an invalid action combination")
+        requireWire(
+            requiresPreview == (message.previewEnabled != null),
+            "Browser preview setting has an invalid action combination",
+        )
         if (requiresUrl) {
             requireWire(message.url!!.isNotBlank(), "Browser command URL is blank")
             requireTextLength(message.url, BrowserWireLimits.MAX_URL_BYTES, "Browser command URL")
@@ -360,8 +372,10 @@ internal object BrowserWireCodec {
         when (val event = message.event) {
             is BrowserPointerInput -> {
                 validatePreviewReference(event.navigationId, event.frameId, event.x, event.y)
-                requireWire(event.buttons == 0 || event.buttons == 1,
-                    "Browser pointer buttons must be the primary bit or zero")
+                requireWire(
+                    event.buttons == 0 || event.buttons == 1,
+                    "Browser pointer buttons must be the primary bit or zero",
+                )
                 requireWire(
                     when (event.action) {
                         BrowserPointerAction.DOWN -> event.buttons == 1
@@ -409,12 +423,18 @@ internal object BrowserWireCodec {
         requirePositive(message.epoch, "browser preview epoch")
         requirePositive(message.navigationId, "browser preview navigation ID")
         requirePositive(message.frameId, "browser preview frame ID")
-        requireWire(message.width in 1..BrowserWireLimits.MAX_PREVIEW_WIDTH,
-            "Browser preview width is out of range")
-        requireWire(message.height in 1..BrowserWireLimits.MAX_PREVIEW_HEIGHT,
-            "Browser preview height is out of range")
-        requireWire(message.jpeg.size in 1..BrowserWireLimits.MAX_PREVIEW_BYTES,
-            "Browser preview JPEG length is out of range")
+        requireWire(
+            message.width in 1..BrowserWireLimits.MAX_PREVIEW_WIDTH,
+            "Browser preview width is out of range",
+        )
+        requireWire(
+            message.height in 1..BrowserWireLimits.MAX_PREVIEW_HEIGHT,
+            "Browser preview height is out of range",
+        )
+        requireWire(
+            message.jpeg.size in 1..BrowserWireLimits.MAX_PREVIEW_BYTES,
+            "Browser preview JPEG length is out of range",
+        )
     }
 
     private fun validate(message: BrowserDialogMessage) {
@@ -424,8 +444,10 @@ internal object BrowserWireCodec {
         requireTextLength(message.origin, BrowserWireLimits.MAX_ORIGIN_BYTES, "Browser dialog origin")
         requireTextLength(message.message, BrowserWireLimits.MAX_DIALOG_BYTES, "Browser dialog message")
         requireTextLength(message.defaultValue, BrowserWireLimits.MAX_DIALOG_BYTES, "Browser dialog default value")
-        requireWire(message.timeoutMilliseconds in 1..BrowserWireLimits.MAX_DIALOG_TIMEOUT_MILLISECONDS,
-            "Browser dialog timeout is out of range")
+        requireWire(
+            message.timeoutMilliseconds in 1..BrowserWireLimits.MAX_DIALOG_TIMEOUT_MILLISECONDS,
+            "Browser dialog timeout is out of range",
+        )
         if (message.type != BrowserDialogType.PROMPT) {
             requireWire(message.defaultValue.isEmpty(), "Only browser prompts carry a default value")
         }

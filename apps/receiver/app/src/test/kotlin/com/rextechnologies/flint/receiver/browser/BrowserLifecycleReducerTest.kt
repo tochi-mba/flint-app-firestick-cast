@@ -12,7 +12,11 @@ class BrowserLifecycleReducerTest {
     @Test
     fun `terminal close has the documented exact ordered cleanup before target surface activation`() {
         val active = BrowserLifecycleState.active(epoch = 4)
-        val transition = reducer.reduce(active, BrowserLifecycleEvent.SwitchSurface(BrowserSurfaceOwner.MIRROR), nowMs = 100)
+        val transition = reducer.reduce(
+            active,
+            BrowserLifecycleEvent.SwitchSurface(BrowserSurfaceOwner.MIRROR),
+            nowMs = 100,
+        )
 
         assertEquals(BrowserSurfaceOwner.IDLE, transition.state.surface)
         assertEquals(
@@ -52,7 +56,11 @@ class BrowserLifecycleReducerTest {
 
     @Test
     fun `reconnect requires a fresh higher epoch and cancels the grace timer`() {
-        val grace = reducer.reduce(BrowserLifecycleState.active(epoch = 4), BrowserLifecycleEvent.HostDisconnected, nowMs = 0).state
+        val grace = reducer.reduce(
+            BrowserLifecycleState.active(epoch = 4),
+            BrowserLifecycleEvent.HostDisconnected,
+            nowMs = 0,
+        ).state
         val rejected = reducer.reduce(grace, BrowserLifecycleEvent.HostReconnected(epoch = 4), nowMs = 1)
         assertEquals(grace, rejected.state)
 
@@ -64,9 +72,16 @@ class BrowserLifecycleReducerTest {
 
     @Test
     fun `driver failure finishes in explicit error only after cleanup`() {
-        val transition = reducer.reduce(BrowserLifecycleState.active(epoch = 4), BrowserLifecycleEvent.DriverFailure, nowMs = 0)
+        val transition = reducer.reduce(
+            BrowserLifecycleState.active(epoch = 4),
+            BrowserLifecycleEvent.DriverFailure,
+            nowMs = 0,
+        )
         assertEquals(BrowserLifecyclePhase.ERROR, transition.state.phase)
         assertEquals(BrowserTerminalReason.DRIVER_FAILURE, transition.state.failure)
-        assertEquals(BrowserLifecycleEffect.PublishError(BrowserTerminalReason.DRIVER_FAILURE), transition.effects.last())
+        assertEquals(
+            BrowserLifecycleEffect.PublishError(BrowserTerminalReason.DRIVER_FAILURE),
+            transition.effects.last(),
+        )
     }
 }

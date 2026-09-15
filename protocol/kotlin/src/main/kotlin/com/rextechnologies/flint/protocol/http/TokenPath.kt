@@ -91,4 +91,3 @@ class TokenPathRegistry<T>(
 
     fun clear() = items.clear()
 }
-

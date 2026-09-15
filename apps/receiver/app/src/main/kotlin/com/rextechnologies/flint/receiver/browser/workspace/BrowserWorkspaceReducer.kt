@@ -16,6 +16,7 @@ sealed interface BrowserWorkspaceAction {
 
     /** Leaves the profile picker / browser surface. Local state is persisted; device state is wiped. */
     data object DeactivateProfile : BrowserWorkspaceAction
+
     /** The Activity host changed; all renderer instances must be recreated with new guards. */
     data object RebuildRenderers : BrowserWorkspaceAction
 
@@ -217,7 +218,10 @@ data class BrowserWorkspaceTransition(
 class BrowserWorkspaceReducer(
     val capacity: BrowserWorkspaceCapacity = BrowserWorkspaceCapacity.CONSERVATIVE_FIRE_TV,
 ) {
-    fun reduce(state: BrowserWorkspaceState, action: BrowserWorkspaceAction): BrowserWorkspaceTransition = when (action) {
+    fun reduce(
+        state: BrowserWorkspaceState,
+        action: BrowserWorkspaceAction,
+    ): BrowserWorkspaceTransition = when (action) {
         is BrowserWorkspaceAction.ActivateProfile -> activateProfile(state, action)
         is BrowserWorkspaceAction.DisconnectDevice -> disconnectDevice(state, action.connectionId)
         BrowserWorkspaceAction.DeactivateProfile -> deactivateProfile(state)
@@ -257,7 +261,9 @@ class BrowserWorkspaceReducer(
         val incoming = when (val profile = action.profile) {
             is BrowserWorkspaceProfile.LocalTv -> if (action.snapshot != null) {
                 restoreLocalSnapshot(profile, action.snapshot)
-            } else BrowserWorkspaceState(profile = profile)
+            } else {
+                BrowserWorkspaceState(profile = profile)
+            }
             is BrowserWorkspaceProfile.ConnectedDevice -> BrowserWorkspaceState(profile = profile)
         } ?: return refuse(
             state,
@@ -291,11 +297,18 @@ class BrowserWorkspaceReducer(
     }
 
     private fun rebuildRenderers(state: BrowserWorkspaceState): BrowserWorkspaceTransition {
-        var next = state.copy(pageFullscreenPaneId = null, interactionMode = BrowserWorkspaceInteractionMode.WORKSPACE_CHROME)
+        var next = state.copy(
+            pageFullscreenPaneId = null,
+            interactionMode = BrowserWorkspaceInteractionMode.WORKSPACE_CHROME,
+        )
         val effects = mutableListOf<BrowserWorkspaceEffect>()
         for (pane in state.panes.filter { it.rendererResidency.hasRenderer }) {
-            next = next.withPane(pane.id) { it.copy(rendererResidency = BrowserWorkspaceRendererResidency.SUSPENDED,
-                media = BrowserWorkspaceMediaState(desiredMuted = it.media.desiredMuted)) }
+            next = next.withPane(pane.id) {
+                it.copy(
+                    rendererResidency = BrowserWorkspaceRendererResidency.SUSPENDED,
+                    media = BrowserWorkspaceMediaState(desiredMuted = it.media.desiredMuted),
+                )
+            }
             val residence = makePaneLive(next, pane.id) ?: continue
             next = residence.state
             effects += residence.effects
@@ -315,7 +328,11 @@ class BrowserWorkspaceReducer(
         if (!url.isNullOrEmpty() && BrowserUrlPolicy().evaluate(url) !is BrowserUrlResult.Accepted) {
             return refuse(state, BrowserWorkspaceRefusal.INVALID_URL)
         }
-        if (state.panes.size >= capacity.maxOpenPanes) return refuse(state, BrowserWorkspaceRefusal.PANE_CAPACITY_REACHED)
+        if (state.panes.size >=
+            capacity.maxOpenPanes
+        ) {
+            return refuse(state, BrowserWorkspaceRefusal.PANE_CAPACITY_REACHED)
+        }
         if (hasExclusivePresentation(state)) return refuse(state, BrowserWorkspaceRefusal.EXCLUSIVE_PRESENTATION_ACTIVE)
         if (state.nextPaneId <= BrowserWorkspaceState.NO_PANE_ID || state.nextPaneId == Long.MAX_VALUE) {
             return refuse(state, BrowserWorkspaceRefusal.PANE_ID_EXHAUSTED)
@@ -392,7 +409,10 @@ class BrowserWorkspaceReducer(
                 interactionMode = BrowserWorkspaceInteractionMode.WORKSPACE_CHROME,
             )
             val residence = makePaneLive(next, successor.id)
-                ?: return BrowserWorkspaceTransition(next, effects + BrowserWorkspaceEffect.Refused(BrowserWorkspaceRefusal.RENDERER_CAPACITY_BLOCKED))
+                ?: return BrowserWorkspaceTransition(
+                    next,
+                    effects + BrowserWorkspaceEffect.Refused(BrowserWorkspaceRefusal.RENDERER_CAPACITY_BLOCKED),
+                )
             next = residence.state
             effects += residence.effects
             effects += BrowserWorkspaceEffect.FocusChanged(successor.id)
@@ -404,7 +424,8 @@ class BrowserWorkspaceReducer(
     private fun focusPane(state: BrowserWorkspaceState, paneId: Long): BrowserWorkspaceTransition {
         val target = state.pane(paneId) ?: return refuse(state, BrowserWorkspaceRefusal.UNKNOWN_PANE)
         if (state.focusedPaneId == paneId && target.rendererResidency.hasRenderer &&
-            state.interactionMode == BrowserWorkspaceInteractionMode.WORKSPACE_CHROME) {
+            state.interactionMode == BrowserWorkspaceInteractionMode.WORKSPACE_CHROME
+        ) {
             return unchanged(state)
         }
         if (hasExclusivePresentation(state) && state.focusedPaneId != paneId) {
@@ -451,14 +472,16 @@ class BrowserWorkspaceReducer(
     }
 
     private fun setLayout(state: BrowserWorkspaceState, layout: BrowserWorkspaceLayout): BrowserWorkspaceTransition {
-        if (!capacity.allows(layout, state.panes.size)) return refuse(
-            state,
-            if (layout !in capacity.allowedLayouts) {
-                BrowserWorkspaceRefusal.LAYOUT_NOT_AVAILABLE
-            } else {
-                BrowserWorkspaceRefusal.LAYOUT_DOES_NOT_FIT_PANES
-            },
-        )
+        if (!capacity.allows(layout, state.panes.size)) {
+            return refuse(
+                state,
+                if (layout !in capacity.allowedLayouts) {
+                    BrowserWorkspaceRefusal.LAYOUT_NOT_AVAILABLE
+                } else {
+                    BrowserWorkspaceRefusal.LAYOUT_DOES_NOT_FIT_PANES
+                },
+            )
+        }
         if (hasExclusivePresentation(state)) return refuse(state, BrowserWorkspaceRefusal.EXCLUSIVE_PRESENTATION_ACTIVE)
         if (state.layout == layout) return unchanged(state)
         val next = state.copy(layout = layout)
@@ -482,19 +505,29 @@ class BrowserWorkspaceReducer(
 
     private fun navigatePane(state: BrowserWorkspaceState, paneId: Long, url: String): BrowserWorkspaceTransition {
         val pane = state.pane(paneId) ?: return refuse(state, BrowserWorkspaceRefusal.UNKNOWN_PANE)
-        if (BrowserUrlPolicy().evaluate(url) !is BrowserUrlResult.Accepted) return refuse(state, BrowserWorkspaceRefusal.INVALID_URL)
+        if (BrowserUrlPolicy().evaluate(
+                url,
+            ) !is BrowserUrlResult.Accepted
+        ) {
+            return refuse(state, BrowserWorkspaceRefusal.INVALID_URL)
+        }
         if (!pane.rendererResidency.hasRenderer) return refuse(state, BrowserWorkspaceRefusal.RENDERER_NOT_RESIDENT)
-        val navigation = beginNavigation(state, paneId, url) ?: return refuse(state, BrowserWorkspaceRefusal.PANE_ID_EXHAUSTED)
+        val navigation =
+            beginNavigation(state, paneId, url) ?: return refuse(state, BrowserWorkspaceRefusal.PANE_ID_EXHAUSTED)
         return BrowserWorkspaceTransition(
             navigation.state,
-            listOf(BrowserWorkspaceEffect.NavigateRenderer(paneId, pane.rendererGeneration, navigation.navigationId, url)),
+            listOf(
+                BrowserWorkspaceEffect.NavigateRenderer(paneId, pane.rendererGeneration, navigation.navigationId, url),
+            ),
         )
     }
 
     private fun reloadPane(state: BrowserWorkspaceState, paneId: Long): BrowserWorkspaceTransition {
         val pane = state.pane(paneId) ?: return refuse(state, BrowserWorkspaceRefusal.UNKNOWN_PANE)
         if (!pane.rendererResidency.hasRenderer) return refuse(state, BrowserWorkspaceRefusal.RENDERER_NOT_RESIDENT)
-        val navigation = beginNavigation(state, paneId, pane.page.url) ?: return refuse(state, BrowserWorkspaceRefusal.PANE_ID_EXHAUSTED)
+        val navigation =
+            beginNavigation(state, paneId, pane.page.url)
+                ?: return refuse(state, BrowserWorkspaceRefusal.PANE_ID_EXHAUSTED)
         return BrowserWorkspaceTransition(
             navigation.state,
             listOf(BrowserWorkspaceEffect.ReloadRenderer(paneId, pane.rendererGeneration, navigation.navigationId)),
@@ -505,7 +538,9 @@ class BrowserWorkspaceReducer(
         val pane = state.pane(paneId) ?: return refuse(state, BrowserWorkspaceRefusal.UNKNOWN_PANE)
         if (!pane.rendererResidency.hasRenderer) return refuse(state, BrowserWorkspaceRefusal.RENDERER_NOT_RESIDENT)
         if (!pane.page.canGoBack) return unchanged(state)
-        val navigation = beginNavigation(state, paneId, pane.page.url) ?: return refuse(state, BrowserWorkspaceRefusal.PANE_ID_EXHAUSTED)
+        val navigation =
+            beginNavigation(state, paneId, pane.page.url)
+                ?: return refuse(state, BrowserWorkspaceRefusal.PANE_ID_EXHAUSTED)
         return BrowserWorkspaceTransition(
             navigation.state,
             listOf(BrowserWorkspaceEffect.GoBackRenderer(paneId, pane.rendererGeneration, navigation.navigationId)),
@@ -516,7 +551,9 @@ class BrowserWorkspaceReducer(
         val pane = state.pane(paneId) ?: return refuse(state, BrowserWorkspaceRefusal.UNKNOWN_PANE)
         if (!pane.rendererResidency.hasRenderer) return refuse(state, BrowserWorkspaceRefusal.RENDERER_NOT_RESIDENT)
         if (!pane.page.canGoForward) return unchanged(state)
-        val navigation = beginNavigation(state, paneId, pane.page.url) ?: return refuse(state, BrowserWorkspaceRefusal.PANE_ID_EXHAUSTED)
+        val navigation =
+            beginNavigation(state, paneId, pane.page.url)
+                ?: return refuse(state, BrowserWorkspaceRefusal.PANE_ID_EXHAUSTED)
         return BrowserWorkspaceTransition(
             navigation.state,
             listOf(BrowserWorkspaceEffect.GoForwardRenderer(paneId, pane.rendererGeneration, navigation.navigationId)),
@@ -532,7 +569,9 @@ class BrowserWorkspaceReducer(
         val navigationId = pane.page.navigationId.nextPositiveOrNull() ?: return null
         return NavigationStart(
             state = state.withPane(paneId) {
-                it.copy(page = it.page.copy(url = url, loading = true, progressPercent = 0, navigationId = navigationId))
+                it.copy(
+                    page = it.page.copy(url = url, loading = true, progressPercent = 0, navigationId = navigationId),
+                )
             },
             navigationId = navigationId,
         )
@@ -543,7 +582,11 @@ class BrowserWorkspaceReducer(
         action: BrowserWorkspaceAction.PageStateReported,
     ): BrowserWorkspaceTransition {
         val pane = state.pane(action.paneId) ?: return unchanged(state)
-        if (!pane.rendererResidency.hasRenderer || pane.rendererGeneration != action.rendererGeneration) return unchanged(state)
+        if (!pane.rendererResidency.hasRenderer ||
+            pane.rendererGeneration != action.rendererGeneration
+        ) {
+            return unchanged(state)
+        }
         // A callback from an older navigation must never overwrite newly requested page chrome.
         if (action.page.navigationId < pane.page.navigationId) return unchanged(state)
         val normalized = action.page.copy(
@@ -558,7 +601,11 @@ class BrowserWorkspaceReducer(
         action: BrowserWorkspaceAction.RendererFailed,
     ): BrowserWorkspaceTransition {
         val pane = state.pane(action.paneId) ?: return unchanged(state)
-        if (pane.rendererGeneration != action.rendererGeneration || !pane.rendererResidency.hasRenderer) return unchanged(state)
+        if (pane.rendererGeneration != action.rendererGeneration ||
+            !pane.rendererResidency.hasRenderer
+        ) {
+            return unchanged(state)
+        }
         var next = state.withPane(action.paneId) {
             it.copy(
                 rendererResidency = BrowserWorkspaceRendererResidency.FAILED,
@@ -597,7 +644,11 @@ class BrowserWorkspaceReducer(
         action: BrowserWorkspaceAction.SetPageFullscreen,
     ): BrowserWorkspaceTransition {
         val pane = state.pane(action.paneId) ?: return unchanged(state)
-        if (!pane.rendererResidency.hasRenderer || pane.rendererGeneration != action.rendererGeneration) return unchanged(state)
+        if (!pane.rendererResidency.hasRenderer ||
+            pane.rendererGeneration != action.rendererGeneration
+        ) {
+            return unchanged(state)
+        }
         if (!action.active) {
             if (state.pageFullscreenPaneId != action.paneId) return unchanged(state)
             val next = state.copy(pageFullscreenPaneId = null)
@@ -632,18 +683,26 @@ class BrowserWorkspaceReducer(
     private fun enterTheaterMode(state: BrowserWorkspaceState, paneId: Long): BrowserWorkspaceTransition {
         val pane = state.pane(paneId) ?: return refuse(state, BrowserWorkspaceRefusal.UNKNOWN_PANE)
         if (!pane.rendererResidency.hasRenderer) return refuse(state, BrowserWorkspaceRefusal.RENDERER_NOT_RESIDENT)
-        if (state.pageFullscreenPaneId != null) return refuse(state, BrowserWorkspaceRefusal.EXCLUSIVE_PRESENTATION_ACTIVE)
+        if (state.pageFullscreenPaneId !=
+            null
+        ) {
+            return refuse(state, BrowserWorkspaceRefusal.EXCLUSIVE_PRESENTATION_ACTIVE)
+        }
         if (state.theaterPaneId == paneId) return unchanged(state)
         var next = state.copy(theaterPaneId = paneId, focusedPaneId = paneId)
         val effects = mutableListOf<BrowserWorkspaceEffect>()
         state.panes.filter { it.id != paneId && it.rendererResidency.hasRenderer }.forEach { other ->
             next = next.withPane(other.id) { it.copy(rendererResidency = BrowserWorkspaceRendererResidency.SUSPENDED) }
-            effects += BrowserWorkspaceEffect.FreezeRenderer(other.id, other.rendererGeneration,
-                BrowserWorkspaceRendererReleaseReason.LIVE_RENDERER_CAP)
+            effects += BrowserWorkspaceEffect.FreezeRenderer(
+                other.id,
+                other.rendererGeneration,
+                BrowserWorkspaceRendererReleaseReason.LIVE_RENDERER_CAP,
+            )
         }
         return BrowserWorkspaceTransition(
             next,
-            effects + listOf(BrowserWorkspaceEffect.TheaterModeChanged(paneId), BrowserWorkspaceEffect.FocusChanged(paneId)),
+            effects +
+                listOf(BrowserWorkspaceEffect.TheaterModeChanged(paneId), BrowserWorkspaceEffect.FocusChanged(paneId)),
         )
     }
 
@@ -663,7 +722,8 @@ class BrowserWorkspaceReducer(
     private fun requestMediaPlayPause(state: BrowserWorkspaceState, paneId: Long): BrowserWorkspaceTransition {
         val pane = state.pane(paneId) ?: return refuse(state, BrowserWorkspaceRefusal.UNKNOWN_PANE)
         if (!pane.rendererResidency.hasRenderer) return refuse(state, BrowserWorkspaceRefusal.RENDERER_NOT_RESIDENT)
-        val requestId = nextMediaRequestIdOrNull(state) ?: return refuse(state, BrowserWorkspaceRefusal.MEDIA_REQUEST_ID_EXHAUSTED)
+        val requestId =
+            nextMediaRequestIdOrNull(state) ?: return refuse(state, BrowserWorkspaceRefusal.MEDIA_REQUEST_ID_EXHAUSTED)
         val next = state.withPane(paneId) {
             it.copy(media = it.media.copy(playbackRequest = BrowserWorkspacePlaybackRequest(requestId)))
         }.copy(nextMediaRequestId = requestId + 1)
@@ -677,9 +737,11 @@ class BrowserWorkspaceReducer(
         val pane = state.pane(paneId) ?: return refuse(state, BrowserWorkspaceRefusal.UNKNOWN_PANE)
         val media = pane.media
         if (media.desiredMuted == muted &&
-            (media.muteApplication == BrowserWorkspaceMuteApplication.APPLIED_TO_RENDERER ||
-                media.muteApplication == BrowserWorkspaceMuteApplication.REQUESTED ||
-                media.muteApplication == BrowserWorkspaceMuteApplication.NOT_REQUESTED)
+            (
+                media.muteApplication == BrowserWorkspaceMuteApplication.APPLIED_TO_RENDERER ||
+                    media.muteApplication == BrowserWorkspaceMuteApplication.REQUESTED ||
+                    media.muteApplication == BrowserWorkspaceMuteApplication.NOT_REQUESTED
+                )
         ) {
             return unchanged(state)
         }
@@ -699,7 +761,8 @@ class BrowserWorkspaceReducer(
             }
             return BrowserWorkspaceTransition(next, emptyList())
         }
-        val requestId = nextMediaRequestIdOrNull(state) ?: return refuse(state, BrowserWorkspaceRefusal.MEDIA_REQUEST_ID_EXHAUSTED)
+        val requestId =
+            nextMediaRequestIdOrNull(state) ?: return refuse(state, BrowserWorkspaceRefusal.MEDIA_REQUEST_ID_EXHAUSTED)
         val next = state.withPane(paneId) {
             it.copy(
                 media = it.media.copy(
@@ -721,7 +784,9 @@ class BrowserWorkspaceReducer(
     ): BrowserWorkspaceTransition {
         val pane = state.pane(action.paneId) ?: return unchanged(state)
         val request = pane.media.playbackRequest ?: return unchanged(state)
-        if (!pane.rendererResidency.hasRenderer || pane.rendererGeneration != action.rendererGeneration || request.requestId != action.requestId) {
+        if (!pane.rendererResidency.hasRenderer || pane.rendererGeneration != action.rendererGeneration ||
+            request.requestId != action.requestId
+        ) {
             return unchanged(state)
         }
         val status = when (action.result) {
@@ -729,7 +794,9 @@ class BrowserWorkspaceReducer(
             BrowserWorkspaceMediaDispatchResult.REJECTED -> BrowserWorkspacePlaybackRequestStatus.REJECTED
         }
         return BrowserWorkspaceTransition(
-            state.withPane(action.paneId) { it.copy(media = it.media.copy(playbackRequest = request.copy(status = status))) },
+            state.withPane(action.paneId) {
+                it.copy(media = it.media.copy(playbackRequest = request.copy(status = status)))
+            },
             emptyList(),
         )
     }
@@ -739,7 +806,11 @@ class BrowserWorkspaceReducer(
         action: BrowserWorkspaceAction.PlaybackObserved,
     ): BrowserWorkspaceTransition {
         val pane = state.pane(action.paneId) ?: return unchanged(state)
-        if (!pane.rendererResidency.hasRenderer || pane.rendererGeneration != action.rendererGeneration) return unchanged(state)
+        if (!pane.rendererResidency.hasRenderer ||
+            pane.rendererGeneration != action.rendererGeneration
+        ) {
+            return unchanged(state)
+        }
         return BrowserWorkspaceTransition(
             state.withPane(action.paneId) {
                 it.copy(media = it.media.copy(observedPlayback = action.observation))
@@ -870,12 +941,20 @@ class BrowserWorkspaceReducer(
         profile: BrowserWorkspaceProfile.LocalTv,
         snapshot: BrowserWorkspaceSnapshot,
     ): BrowserWorkspaceState? {
-        if (snapshot.ownerProfileId != profile.profileId || snapshot.nextPaneId <= BrowserWorkspaceState.NO_PANE_ID) return null
-        if (snapshot.panes.size > capacity.maxOpenPanes || snapshot.panes.map(BrowserWorkspaceSavedPane::id).toSet().size != snapshot.panes.size) {
+        if (snapshot.ownerProfileId != profile.profileId ||
+            snapshot.nextPaneId <= BrowserWorkspaceState.NO_PANE_ID
+        ) {
+            return null
+        }
+        if (snapshot.panes.size > capacity.maxOpenPanes ||
+            snapshot.panes.map(BrowserWorkspaceSavedPane::id).toSet().size != snapshot.panes.size
+        ) {
             return null
         }
         val saved = snapshot.panes.sortedBy(BrowserWorkspaceSavedPane::slot)
-        if (saved.any { it.id <= BrowserWorkspaceState.NO_PANE_ID || it.slot < 0 } || saved.map(BrowserWorkspaceSavedPane::slot) != saved.indices.toList()) {
+        if (saved.any { it.id <= BrowserWorkspaceState.NO_PANE_ID || it.slot < 0 } ||
+            saved.map(BrowserWorkspaceSavedPane::slot) != saved.indices.toList()
+        ) {
             return null
         }
         if (!capacity.allows(snapshot.layout, saved.size)) return null
@@ -946,7 +1025,8 @@ class BrowserWorkspaceReducer(
     ): BrowserWorkspaceState = copy(panes = panes.map { if (it.id == paneId) change(it) else it })
 
     private fun BrowserWorkspaceState.touch(paneId: Long): BrowserWorkspaceState = copy(
-        rendererRecency = listOf(paneId) + rendererRecency.filterNot { it == paneId || panes.none { pane -> pane.id == it } },
+        rendererRecency =
+        listOf(paneId) + rendererRecency.filterNot { it == paneId || panes.none { pane -> pane.id == it } },
     )
 
     private fun List<BrowserWorkspacePane>.compactSlots(): List<BrowserWorkspacePane> =

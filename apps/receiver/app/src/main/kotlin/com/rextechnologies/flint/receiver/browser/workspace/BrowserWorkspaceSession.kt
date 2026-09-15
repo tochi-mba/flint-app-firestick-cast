@@ -3,17 +3,17 @@ package com.rextechnologies.flint.receiver.browser.workspace
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.rextechnologies.flint.receiver.browser.BrowserPaneAudioMuteResult
-import com.rextechnologies.flint.receiver.browser.BrowserStateEvent
-import com.rextechnologies.flint.receiver.browser.BrowserUrlPolicy
-import com.rextechnologies.flint.receiver.browser.BrowserUrlResult
-import com.rextechnologies.flint.receiver.browser.BrowserWebViewDriver
 import com.rextechnologies.flint.protocol.wire.BrowserPointerAction
 import com.rextechnologies.flint.protocol.wire.BrowserSemanticKey
 import com.rextechnologies.flint.receiver.browser.BrowserNativeInput
 import com.rextechnologies.flint.receiver.browser.BrowserNativeKey
+import com.rextechnologies.flint.receiver.browser.BrowserPaneAudioMuteResult
+import com.rextechnologies.flint.receiver.browser.BrowserStateEvent
 import com.rextechnologies.flint.receiver.browser.BrowserTextPolicy
 import com.rextechnologies.flint.receiver.browser.BrowserTextValidation
+import com.rextechnologies.flint.receiver.browser.BrowserUrlPolicy
+import com.rextechnologies.flint.receiver.browser.BrowserUrlResult
+import com.rextechnologies.flint.receiver.browser.BrowserWebViewDriver
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceCapacity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -138,7 +138,8 @@ class BrowserWorkspaceSession(
             before.theaterPaneId != transition.state.theaterPaneId ||
             beforePane?.rendererGeneration != afterPane?.rendererGeneration ||
             beforePane?.rendererResidency != afterPane?.rendererResidency ||
-            beforePane?.page?.navigationId != afterPane?.page?.navigationId) {
+            beforePane?.page?.navigationId != afterPane?.page?.navigationId
+        ) {
             // The old native host still exists here, before freeze/destroy effects are applied.
             pointerRouter.cancel()
         }
@@ -148,7 +149,10 @@ class BrowserWorkspaceSession(
             if (before.profile != transition.state.profile || pane == null ||
                 pane.rendererGeneration != before.pane(request.paneId)?.rendererGeneration ||
                 pane.page.navigationId != before.pane(request.paneId)?.page?.navigationId ||
-                transition.state.focusedPaneId != request.paneId) dialogs.cancel()
+                transition.state.focusedPaneId != request.paneId
+            ) {
+                dialogs.cancel()
+            }
         }
         applyEffects(transition.effects)
         renderHost()
@@ -381,8 +385,12 @@ class BrowserWorkspaceSession(
                     val token = ++nextRendererToken
                     rendererTokens[effect.paneId] = token
                     if (!binding.restore(effect.paneId, token) && effect.url.isNotBlank()) {
-                        navigateDriver(effect.paneId, effect.rendererGeneration, effect.url,
-                            state.pane(effect.paneId)?.page?.navigationId ?: 1)
+                        navigateDriver(
+                            effect.paneId,
+                            effect.rendererGeneration,
+                            effect.url,
+                            state.pane(effect.paneId)?.page?.navigationId ?: 1,
+                        )
                     }
                 }
             }
@@ -488,8 +496,9 @@ class BrowserWorkspaceSession(
     }
 
     private fun resumeDriver(paneId: Long, navigationId: Long) {
-        host?.driverFor(paneId)?.resume(com.rextechnologies.flint.receiver.browser.BrowserState(
-            epoch = 1, navigationId = navigationId))
+        host?.driverFor(
+            paneId,
+        )?.resume(com.rextechnologies.flint.receiver.browser.BrowserState(epoch = 1, navigationId = navigationId))
         pages[paneId] = state.pane(paneId)?.page ?: return
     }
 
@@ -555,4 +564,3 @@ private fun BrowserSemanticKey.toNativeKey(): BrowserNativeKey? = when (this) {
     BrowserSemanticKey.REFRESH -> BrowserNativeKey.REFRESH
     else -> null
 }
-

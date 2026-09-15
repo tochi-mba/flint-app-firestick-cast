@@ -1,8 +1,8 @@
 package com.rextechnologies.flint.receiver.ui
 
 import android.view.KeyEvent
-import com.rextechnologies.flint.receiver.browser.BrowserNativeInput
 import com.rextechnologies.flint.receiver.browser.BrowserLibraryProfile
+import com.rextechnologies.flint.receiver.browser.BrowserNativeInput
 import com.rextechnologies.flint.receiver.browser.BrowserOverlay
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -251,30 +251,74 @@ class BrowserSurfaceControllerTest {
 
         override fun dispatch(input: BrowserNativeInput) = Unit
         override fun viewport(): Pair<Int, Int> = 1280 to 720
-        override fun goBack() { calls += "back" }
-        override fun goForward() { calls += "forward" }
-        override fun reload() { calls += "reload" }
-        override fun stopLoading() { calls += "stop" }
-        override fun navigate(url: String) { calls += "navigate:$url" }
-        override fun openTab() { calls += "open-tab" }
-        override fun selectTab(tabId: Long) { calls += "select:$tabId" }
-        override fun closeTab(tabId: Long) { calls += "close:$tabId" }
-        override fun closeActiveTab() { calls += "close-active-tab" }
-        override fun startFind(query: String) { calls += "find:$query" }
-        override fun findNext() { calls += "find-next" }
-        override fun findPrevious() { calls += "find-previous" }
-        override fun clearFind() { calls += "find-clear" }
-        override fun selectTvProfile(profileId: String) { calls += "select-tv-profile:$profileId" }
-        override fun selectConnectedDeviceProfile() { calls += "select-device-profile" }
-        override fun createTvProfile(name: String) { calls += "create-profile:$name" }
+        override fun goBack() {
+            calls += "back"
+        }
+        override fun goForward() {
+            calls += "forward"
+        }
+        override fun reload() {
+            calls += "reload"
+        }
+        override fun stopLoading() {
+            calls += "stop"
+        }
+        override fun navigate(url: String) {
+            calls += "navigate:$url"
+        }
+        override fun openTab() {
+            calls += "open-tab"
+        }
+        override fun selectTab(tabId: Long) {
+            calls += "select:$tabId"
+        }
+        override fun closeTab(tabId: Long) {
+            calls += "close:$tabId"
+        }
+        override fun closeActiveTab() {
+            calls += "close-active-tab"
+        }
+        override fun startFind(query: String) {
+            calls += "find:$query"
+        }
+        override fun findNext() {
+            calls += "find-next"
+        }
+        override fun findPrevious() {
+            calls += "find-previous"
+        }
+        override fun clearFind() {
+            calls += "find-clear"
+        }
+        override fun selectTvProfile(profileId: String) {
+            calls += "select-tv-profile:$profileId"
+        }
+        override fun selectConnectedDeviceProfile() {
+            calls += "select-device-profile"
+        }
+        override fun createTvProfile(name: String) {
+            calls += "create-profile:$name"
+        }
         override fun renameTvProfile(profileId: String, name: String) {
             calls += "rename-profile:$profileId:$name"
         }
-        override fun deleteTvProfile(profileId: String) { calls += "delete-profile:$profileId" }
-        override fun closeBrowser() { calls += "close-browser" }
-        override fun dismissNotice() { calls += "dismiss-notice" }
-        override fun cancelDialog() { calls += "cancel-dialog" }
-        override fun exitFullscreen() { calls += "exit-fullscreen" }
-        override fun notice(message: String) { calls += "notice:$message" }
+        override fun deleteTvProfile(profileId: String) {
+            calls += "delete-profile:$profileId"
+        }
+        override fun closeBrowser() {
+            calls += "close-browser"
+        }
+        override fun dismissNotice() {
+            calls += "dismiss-notice"
+        }
+        override fun cancelDialog() {
+            calls += "cancel-dialog"
+        }
+        override fun exitFullscreen() {
+            calls += "exit-fullscreen"
+        }
+        override fun notice(message: String) {
+            calls += "notice:$message"
+        }
     }
 }

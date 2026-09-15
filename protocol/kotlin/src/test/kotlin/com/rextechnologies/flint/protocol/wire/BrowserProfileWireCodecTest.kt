@@ -104,20 +104,26 @@ class BrowserProfileWireCodecTest {
             device.copy(activeProfileId = "family"),
             device.copy(deviceName = "p".repeat(BrowserWireLimits.MAX_DEVICE_PROFILE_NAME_BYTES + 1)),
             device.copy(deviceName = "PC\u0000"),
-            tv.copy(profiles = List(BrowserWireLimits.MAX_TV_PROFILES + 1) {
-                BrowserProfileEntry("p$it", "Profile $it")
-            }),
+            tv.copy(
+                profiles = List(BrowserWireLimits.MAX_TV_PROFILES + 1) {
+                    BrowserProfileEntry("p$it", "Profile $it")
+                },
+            ),
             tv.copy(profiles = listOf(BrowserProfileEntry("bad id", "Family"))),
             tv.copy(profiles = listOf(BrowserProfileEntry("family", " Family"))),
             tv.copy(profiles = listOf(BrowserProfileEntry("family", "Family\nRoom"))),
-            tv.copy(profiles = listOf(
-                BrowserProfileEntry("family", "Family"),
-                BrowserProfileEntry("family", "Other"),
-            )),
-            tv.copy(profiles = listOf(
-                BrowserProfileEntry("family", "Family"),
-                BrowserProfileEntry("other", "Family"),
-            )),
+            tv.copy(
+                profiles = listOf(
+                    BrowserProfileEntry("family", "Family"),
+                    BrowserProfileEntry("family", "Other"),
+                ),
+            ),
+            tv.copy(
+                profiles = listOf(
+                    BrowserProfileEntry("family", "Family"),
+                    BrowserProfileEntry("other", "Family"),
+                ),
+            ),
         )
 
         invalid.forEach { message ->

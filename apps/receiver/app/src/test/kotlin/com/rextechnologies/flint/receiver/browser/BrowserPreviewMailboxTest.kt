@@ -56,7 +56,14 @@ class BrowserPreviewMailboxTest {
     }
 
     private fun frame(id: Long, payload: RecordingPayload, width: Int = 960, height: Int = 540) =
-        BrowserPreviewFrame(epoch = 1, navigationId = 1, frameId = id, width = width, height = height, payload = payload)
+        BrowserPreviewFrame(
+            epoch = 1,
+            navigationId = 1,
+            frameId = id,
+            width = width,
+            height = height,
+            payload = payload,
+        )
 
     private class RecordingPayload(
         override val byteCount: Int,

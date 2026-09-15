@@ -2,10 +2,10 @@ package com.rextechnologies.flint.receiver
 
 import com.rextechnologies.flint.protocol.wire.PlaybackState
 import com.rextechnologies.flint.protocol.wire.SurfaceMode
-import com.rextechnologies.flint.receiver.net.ReceiverServer
 import com.rextechnologies.flint.receiver.browser.BrowserLibraryState
 import com.rextechnologies.flint.receiver.browser.BrowserProfilesUiState
 import com.rextechnologies.flint.receiver.browser.BrowserViewState
+import com.rextechnologies.flint.receiver.net.ReceiverServer
 
 enum class ReceiverNetworkState {
     STARTING,

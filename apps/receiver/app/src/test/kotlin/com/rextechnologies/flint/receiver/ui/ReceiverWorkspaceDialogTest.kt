@@ -1,9 +1,9 @@
 package com.rextechnologies.flint.receiver.ui
 
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.test.*
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.rextechnologies.flint.receiver.browser.*
@@ -21,8 +21,12 @@ class ReceiverWorkspaceDialogTest {
     private val answers = mutableListOf<BrowserDialogAnswer>()
 
     private fun show(kind: BrowserDialogKind, defaultValue: String? = null) {
-        val request = BrowserWorkspaceDialogs.Request(1, 2, 7,
-            PendingJsDialog(kind, "https://example.com/private/path", "Continue?", defaultValue, {}))
+        val request = BrowserWorkspaceDialogs.Request(
+            1,
+            2,
+            7,
+            PendingJsDialog(kind, "https://example.com/private/path", "Continue?", defaultValue, {}),
+        )
         compose.setContent {
             ReceiverTheme { ReceiverWorkspaceDialog(request, answers::add) }
         }

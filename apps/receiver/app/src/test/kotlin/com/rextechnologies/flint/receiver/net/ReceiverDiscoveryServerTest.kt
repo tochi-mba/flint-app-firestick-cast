@@ -1,5 +1,8 @@
 package com.rextechnologies.flint.receiver.net
 
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.net.Inet4Address
 import java.net.InetSocketAddress
 import java.net.Socket
@@ -8,9 +11,6 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -59,4 +59,3 @@ class ReceiverDiscoveryServerTest {
         socket.getInputStream().readBytes().toString(Charsets.UTF_8)
     }
 }
-

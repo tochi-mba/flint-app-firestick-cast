@@ -1,20 +1,20 @@
 package com.rextechnologies.flint.receiver.snapshot
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.requestFocus
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.rextechnologies.flint.protocol.wire.PlaybackState
 import com.rextechnologies.flint.protocol.wire.SurfaceMode
-import com.rextechnologies.flint.receiver.ReceiverNetworkState
 import com.rextechnologies.flint.receiver.BrowserSurfaceUi
+import com.rextechnologies.flint.receiver.ReceiverNetworkState
 import com.rextechnologies.flint.receiver.ReceiverUiState
 import com.rextechnologies.flint.receiver.ui.ReceiverBrowserChrome
 import com.rextechnologies.flint.receiver.ui.ReceiverSurface

@@ -30,5 +30,3 @@ class PairingCode private constructor(private val value: String) {
             if (FORMAT.matches(value)) PairingCode(value) else null
     }
 }
-
-

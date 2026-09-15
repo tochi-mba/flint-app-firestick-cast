@@ -16,7 +16,14 @@ class BrowserWorkspaceLayoutFramesTest {
             val frames = BrowserWorkspaceLayoutFrames.frames(layout, 4, 204, 104, 4, split)
             frames.forEachIndexed { slot, frame ->
                 val hit = BrowserWorkspaceLayoutFrames.hitTest(
-                    layout, 4, 204, 104, frame.left, frame.top, 4, split,
+                    layout,
+                    4,
+                    204,
+                    104,
+                    frame.left,
+                    frame.top,
+                    4,
+                    split,
                 )
                 assertNotNull(hit)
                 assertEquals(slot, hit.slot)
@@ -25,26 +32,42 @@ class BrowserWorkspaceLayoutFramesTest {
             }
         }
         val frames = BrowserWorkspaceLayoutFrames.frames(
-            BrowserWorkspaceLayout.GRID_2X2, 4, 204, 104, 4, split,
+            BrowserWorkspaceLayout.GRID_2X2,
+            4,
+            204,
+            104,
+            4,
+            split,
         )
         assertEquals(BrowserWorkspaceLayoutFrames.Frame(0, 0, 140, 30), frames[0])
         assertEquals(BrowserWorkspaceLayoutFrames.Frame(144, 34, 60, 70), frames[3])
-        assertNull(BrowserWorkspaceLayoutFrames.hitTest(
-            BrowserWorkspaceLayout.GRID_2X2, 4, 204, 104, 141, 10, 4, split,
-        ))
+        assertNull(
+            BrowserWorkspaceLayoutFrames.hitTest(
+                BrowserWorkspaceLayout.GRID_2X2,
+                4,
+                204,
+                104,
+                141,
+                10,
+                4,
+                split,
+            ),
+        )
     }
 
     @Test
     fun `tiny roots and oversized gaps never put panes outside the mosaic`() {
-        for (width in 1..8) for (height in 1..8) {
-            for (layout in BrowserWorkspaceLayout.entries) {
-                for (split in listOf(BrowserWorkspaceSplit.of(1500, 8500), BrowserWorkspaceSplit.Even)) {
-                    val frames = BrowserWorkspaceLayoutFrames.frames(layout, 4, width, height, 99, split)
-                    frames.forEach { frame ->
-                        assertTrue(frame.left >= 0 && frame.top >= 0)
-                        assertTrue(frame.width >= 0 && frame.height >= 0)
-                        assertTrue(frame.left + frame.width <= width)
-                        assertTrue(frame.top + frame.height <= height)
+        for (width in 1..8) {
+            for (height in 1..8) {
+                for (layout in BrowserWorkspaceLayout.entries) {
+                    for (split in listOf(BrowserWorkspaceSplit.of(1500, 8500), BrowserWorkspaceSplit.Even)) {
+                        val frames = BrowserWorkspaceLayoutFrames.frames(layout, 4, width, height, 99, split)
+                        frames.forEach { frame ->
+                            assertTrue(frame.left >= 0 && frame.top >= 0)
+                            assertTrue(frame.width >= 0 && frame.height >= 0)
+                            assertTrue(frame.left + frame.width <= width)
+                            assertTrue(frame.top + frame.height <= height)
+                        }
                     }
                 }
             }

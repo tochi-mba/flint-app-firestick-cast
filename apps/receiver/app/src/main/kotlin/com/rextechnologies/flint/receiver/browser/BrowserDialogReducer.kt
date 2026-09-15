@@ -221,7 +221,9 @@ class BrowserDialogReducer {
                 accepted = true,
                 text = BrowserDialogText.fromValidatedReply(text.text.value),
             )
-            is BrowserTextValidation.Rejected -> DialogResolution(rejection = BrowserDialogReplyRejection.INVALID_PROMPT)
+            is BrowserTextValidation.Rejected -> DialogResolution(
+                rejection = BrowserDialogReplyRejection.INVALID_PROMPT,
+            )
         }
     }
 

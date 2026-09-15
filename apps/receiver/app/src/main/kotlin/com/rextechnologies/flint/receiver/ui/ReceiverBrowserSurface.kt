@@ -1,5 +1,47 @@
 package com.rextechnologies.flint.receiver.ui
 
+import android.view.KeyEvent
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameMillis
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.tv.material3.Text
+import com.rextechnologies.flint.receiver.BrowserCursorUi
+import com.rextechnologies.flint.receiver.ReceiverService
+import com.rextechnologies.flint.receiver.ReceiverUiState
+import com.rextechnologies.flint.receiver.browser.BrowserInteractionMode
+import com.rextechnologies.flint.receiver.browser.BrowserNativeInput
+import com.rextechnologies.flint.receiver.browser.BrowserOverlay
 import com.rextechnologies.flint.receiver.clearBrowserFind
 import com.rextechnologies.flint.receiver.closeBrowserFromTv
 import com.rextechnologies.flint.receiver.createBrowserTvProfile
@@ -15,48 +57,6 @@ import com.rextechnologies.flint.receiver.selectBrowserTvProfile
 import com.rextechnologies.flint.receiver.setBrowserEditing
 import com.rextechnologies.flint.receiver.showBrowserNotice
 import com.rextechnologies.flint.receiver.startBrowserFind
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.withFrameMillis
-import androidx.compose.runtime.withFrameNanos
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
-import com.rextechnologies.flint.receiver.browser.BrowserInteractionMode
-import com.rextechnologies.flint.receiver.browser.BrowserNativeInput
-import com.rextechnologies.flint.receiver.browser.BrowserOverlay
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import android.view.KeyEvent
-import com.rextechnologies.flint.receiver.BrowserCursorUi
-import com.rextechnologies.flint.receiver.ReceiverService
-import com.rextechnologies.flint.receiver.ReceiverUiState
-import androidx.tv.material3.Text
 
 /**
  * The television's browsing surface: a page, chrome, and any active native dialog.
@@ -145,7 +145,6 @@ internal fun ReceiverBrowserSurface(
                 }
             },
     ) {
-
         // Focus ping-pongs between the page and the chrome's first control, the same shape the
         // mirror surface uses. Without it a D-pad press has no owner and the surface reads as frozen.
         LaunchedEffect(controller.chromeVisible, controller.overlay, controller.leaveConfirmVisible) {
@@ -280,9 +279,11 @@ internal fun ReceiverBrowserSurface(
                         ReceiverBrowserOmnibar(
                             page = state.browser,
                             tabCount = state.browser.tabs.size.coerceAtLeast(1),
-                            activeTab = (state.browser.tabs.indexOfFirst {
-                                it.id == state.browser.activeTabId
-                            } + 1).coerceAtLeast(1),
+                            activeTab = (
+                                state.browser.tabs.indexOfFirst {
+                                    it.id == state.browser.activeTabId
+                                } + 1
+                                ).coerceAtLeast(1),
                             firstControl = chromeFocus,
                             onAction = controller::onOmnibarAction,
                         )
@@ -369,8 +370,18 @@ private fun BrowserHostCursor(cursor: BrowserCursorUi) {
                 style = stroke,
             )
             val arm = radius * 0.55f
-            drawLine(ReceiverColors.Signal, Offset(center.x - arm, center.y), Offset(center.x + arm, center.y), strokeWidth = stroke.width)
-            drawLine(ReceiverColors.Signal, Offset(center.x, center.y - arm), Offset(center.x, center.y + arm), strokeWidth = stroke.width)
+            drawLine(
+                ReceiverColors.Signal,
+                Offset(center.x - arm, center.y),
+                Offset(center.x + arm, center.y),
+                strokeWidth = stroke.width,
+            )
+            drawLine(
+                ReceiverColors.Signal,
+                Offset(center.x, center.y - arm),
+                Offset(center.x, center.y + arm),
+                strokeWidth = stroke.width,
+            )
         }
     }
 }

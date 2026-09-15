@@ -16,11 +16,11 @@ import com.rextechnologies.flint.protocol.wire.BrowserNetworkCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserProfileCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserTabCommandMessage
 import com.rextechnologies.flint.protocol.wire.BrowserViewCommandMessage
-import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceCommandMessage
-import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceResizeMessage
-import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceInputMessage
 import com.rextechnologies.flint.protocol.wire.BrowserWireLimits
 import com.rextechnologies.flint.protocol.wire.BrowserWireRules
+import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceCommandMessage
+import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceInputMessage
+import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceResizeMessage
 import com.rextechnologies.flint.protocol.wire.ByeMessage
 import com.rextechnologies.flint.protocol.wire.ByeReason
 import com.rextechnologies.flint.protocol.wire.CodecId
@@ -33,15 +33,24 @@ import com.rextechnologies.flint.protocol.wire.WireMessage
 import com.rextechnologies.flint.receiver.browser.BrowserPreviewCapture
 import com.rextechnologies.flint.receiver.browser.BrowserPreviewLoop
 import com.rextechnologies.flint.receiver.browser.identity.ReceiverIdentity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.Closeable
 import java.io.IOException
-import java.net.SocketTimeoutException
 import java.net.Inet4Address
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
+import java.net.SocketTimeoutException
 import java.security.KeyStore
 import java.security.SecureRandom
 import java.util.concurrent.ArrayBlockingQueue
@@ -56,15 +65,6 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLServerSocket
 import javax.net.ssl.SSLServerSocketFactory
 import javax.net.ssl.SSLSocket
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 /** Dedicated TLS listener for browser protocol v2+. Never multiplexed with ReceiverServer. */
 class BrowserTlsServer(
@@ -182,7 +182,9 @@ class BrowserTlsServer(
             authenticatedSessionId = sessionId
             Log.i(
                 TAG,
-                "Browser TLS authenticated sessionId=$sessionId protocol=v$negotiatedVersion host=${hostHello.deviceName.trim().ifBlank { "Windows device" }}",
+                "Browser TLS authenticated sessionId=$sessionId protocol=v$negotiatedVersion host=${hostHello.deviceName.trim().ifBlank {
+                    "Windows device"
+                }}",
             )
             writer = BrowserReliableWriter(output, negotiatedVersion).also {
                 activeWriter.set(it)

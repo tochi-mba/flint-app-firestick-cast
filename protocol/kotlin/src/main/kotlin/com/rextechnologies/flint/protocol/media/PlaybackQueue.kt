@@ -149,4 +149,3 @@ data class PlaybackQueue(
 
     fun clear(): PlaybackQueue = PlaybackQueue(repeatMode = repeatMode, shuffled = shuffled)
 }
-

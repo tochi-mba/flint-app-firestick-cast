@@ -778,23 +778,31 @@ object BrowserWireRules {
         message is BrowserNetworkStateMessage ||
         message is BrowserWorkspaceCommandMessage ||
         message is BrowserWorkspaceStateMessage ||
-        message is BrowserWorkspaceInputMessage || message is BrowserWorkspaceResizeMessage || message is BrowserWorkspaceGeometryMessage
+        message is BrowserWorkspaceInputMessage || message is BrowserWorkspaceResizeMessage ||
+        message is BrowserWorkspaceGeometryMessage
 
     fun isWorkspaceMessage(message: WireMessage): Boolean =
         message is BrowserWorkspaceCommandMessage ||
             message is BrowserWorkspaceStateMessage ||
-            message is BrowserWorkspaceInputMessage || message is BrowserWorkspaceResizeMessage || message is BrowserWorkspaceGeometryMessage
+            message is BrowserWorkspaceInputMessage || message is BrowserWorkspaceResizeMessage ||
+            message is BrowserWorkspaceGeometryMessage
 
-    fun isBrowserType(typeId: Int): Boolean = typeId in WireMessageType.BROWSER_CAPABILITY.id..
-        WireMessageType.BROWSER_WORKSPACE_GEOMETRY.id
+    fun isBrowserType(typeId: Int): Boolean =
+        typeId in WireMessageType.BROWSER_CAPABILITY.id..WireMessageType.BROWSER_WORKSPACE_GEOMETRY.id
 
     fun isForbiddenOnOrdinaryChannel(message: WireMessage): Boolean =
         isBrowserMessage(message) || (message is SurfaceMessage && message.mode == SurfaceMode.BROWSER)
 
     fun isAllowedAtVersion(protocolVersion: Int, message: WireMessage): Boolean {
-        if ((message is BrowserWorkspaceResizeMessage || message is BrowserWorkspaceGeometryMessage) && protocolVersion < 4) return false
+        if ((message is BrowserWorkspaceResizeMessage || message is BrowserWorkspaceGeometryMessage) &&
+            protocolVersion < 4
+        ) {
+            return false
+        }
         if (isWorkspaceMessage(message) && protocolVersion < 3) return false
-        return protocolVersion >= 2 || (!isBrowserMessage(message) &&
-            (message !is SurfaceMessage || message.mode != SurfaceMode.BROWSER))
+        return protocolVersion >= 2 || (
+            !isBrowserMessage(message) &&
+                (message !is SurfaceMessage || message.mode != SurfaceMode.BROWSER)
+            )
     }
 }

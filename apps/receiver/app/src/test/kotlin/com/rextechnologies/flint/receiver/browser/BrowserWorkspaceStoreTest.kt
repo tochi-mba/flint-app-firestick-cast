@@ -1,10 +1,10 @@
 package com.rextechnologies.flint.receiver.browser
 
-import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSplit
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceLayout
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspacePage
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSavedPane
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSnapshot
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSplit
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

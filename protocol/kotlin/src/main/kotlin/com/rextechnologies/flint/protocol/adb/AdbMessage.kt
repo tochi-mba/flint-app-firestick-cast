@@ -83,5 +83,3 @@ data class AdbMessage(
             AdbMessage(AdbCommands.CLSE, localId, remoteId)
     }
 }
-
-

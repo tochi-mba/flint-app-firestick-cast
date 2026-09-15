@@ -31,7 +31,9 @@ internal class BrowserWorkspaceTvControls(
         addressOpen = true
     }
 
-    fun closeAddress() { addressOpen = false }
+    fun closeAddress() {
+        addressOpen = false
+    }
 
     fun resetPointer() {
         cancelGesture()
@@ -47,7 +49,10 @@ internal class BrowserWorkspaceTvControls(
     fun onKey(key: Int, down: Boolean, repeat: Int = 0): Boolean {
         if (addressOpen) {
             if (!down) return isDirection(key) || isSelect(key) || key == KeyEvent.KEYCODE_BACK
-            if (key == KeyEvent.KEYCODE_BACK) { closeAddress(); return true }
+            if (key == KeyEvent.KEYCODE_BACK) {
+                closeAddress()
+                return true
+            }
             direction(key)?.let {
                 keyboardState = keyboardState.copy(cursor = keyboard.move(keyboardState.cursor, it, keyboardState.page))
                 return true
@@ -63,7 +68,9 @@ internal class BrowserWorkspaceTvControls(
                         ResolvedQuery.Empty -> Unit
                     }
                     addressOpen = false
-                } else keyboardState = keyboard.press(keyboardState, selected)
+                } else {
+                    keyboardState = keyboard.press(keyboardState, selected)
+                }
                 return true
             }
             return false
@@ -72,7 +79,9 @@ internal class BrowserWorkspaceTvControls(
             if (down && repeat == 0) {
                 if (cursor.x == 0 && cursor.y == 0) cursor = engine.centre(measured())
                 applyStep(engine.tap(cursor, dir, measured()))
-            } else if (!down) cursor = engine.release(cursor)
+            } else if (!down) {
+                cursor = engine.release(cursor)
+            }
             return true
         }
         if (isSelect(key)) {
@@ -90,16 +99,25 @@ internal class BrowserWorkspaceTvControls(
     }
 
     fun frame(elapsedMs: Long) {
-        if (!addressOpen && cursor.direction != null) applyStep(engine.hold(cursor, elapsedMs.coerceIn(1, 64), measured()))
+        if (!addressOpen &&
+            cursor.direction != null
+        ) {
+            applyStep(engine.hold(cursor, elapsedMs.coerceIn(1, 64), measured()))
+        }
     }
 
     private fun applyStep(step: CursorStep) {
         cursor = step.state
         send(BrowserNativeInput.Pointer(BrowserPointerAction.MOVE, cursor.x, cursor.y, if (pressed) 1 else 0))
-        if (step.scrollX != 0 || step.scrollY != 0) send(BrowserNativeInput.Scroll(cursor.x, cursor.y, step.scrollX, step.scrollY))
+        if (step.scrollX != 0 ||
+            step.scrollY != 0
+        ) {
+            send(BrowserNativeInput.Scroll(cursor.x, cursor.y, step.scrollX, step.scrollY))
+        }
     }
 
-    private fun measured(): CursorViewport = viewport()?.let { CursorViewport(it.first, it.second) } ?: CursorViewport(0, 0)
+    private fun measured(): CursorViewport =
+        viewport()?.let { CursorViewport(it.first, it.second) } ?: CursorViewport(0, 0)
     private fun direction(key: Int): CursorDirection? = when (key) {
         KeyEvent.KEYCODE_DPAD_UP -> CursorDirection.UP
         KeyEvent.KEYCODE_DPAD_DOWN -> CursorDirection.DOWN

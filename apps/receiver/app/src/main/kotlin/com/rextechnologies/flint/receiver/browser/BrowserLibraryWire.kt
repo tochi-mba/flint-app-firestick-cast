@@ -1,8 +1,8 @@
 package com.rextechnologies.flint.receiver.browser
 
-import com.rextechnologies.flint.protocol.wire.BrowserLibraryEntry as WireLibraryEntry
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryEntryKind
 import com.rextechnologies.flint.protocol.wire.BrowserLibraryStateMessage
+import com.rextechnologies.flint.protocol.wire.BrowserLibraryEntry as WireLibraryEntry
 
 /** Converts one already-validated local/profile projection into its bounded full wire snapshot. */
 fun BrowserLibraryState.toWireMessage(epoch: Long, revision: Long): BrowserLibraryStateMessage =

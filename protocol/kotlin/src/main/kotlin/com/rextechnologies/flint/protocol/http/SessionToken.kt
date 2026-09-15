@@ -86,5 +86,3 @@ class SessionToken private constructor(private val encoded: String) {
         }
     }
 }
-
-

@@ -145,4 +145,3 @@ class BitrateController(
         const val HEADROOM_RTT_US = 40_000L
     }
 }
-
