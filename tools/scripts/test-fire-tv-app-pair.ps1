@@ -41,7 +41,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 
 if (-not $AcknowledgePhysicalDevice) {
     throw 'Pass -AcknowledgePhysicalDevice to confirm this run may exercise a real receiver.'
@@ -74,7 +74,7 @@ $env:FLINT_HARDWARE_E2E_STEP_MS = "$StepPauseMs"
 
 Push-Location $projectRoot
 try {
-    dotnet test tests/Flint.Hardware.E2E/Flint.Hardware.E2E.csproj --nologo `
+    dotnet test apps/windows/tests/Flint.Hardware.E2E/Flint.Hardware.E2E.csproj --nologo `
         --filter 'Category=Hardware'
     if ($LASTEXITCODE -ne 0) {
         throw "Hardware E2E failed ($LASTEXITCODE)."

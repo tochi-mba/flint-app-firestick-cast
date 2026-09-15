@@ -115,8 +115,8 @@ dependencies {
     testImplementation(composeBom)
 
     implementation(project(":protocol"))
-    implementation(project(":castcore"))
-    implementation(project(":design"))
+    implementation(project(":phone:core"))
+    implementation(project(":phone:design"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
@@ -170,7 +170,7 @@ tasks.named("check") {
     dependsOn(ktlintCheck)
 }
 
-// :mobile may not declare a colour: the palette belongs to :design, and a Color literal
+// :phone:app may not declare a colour: the palette belongs to :phone:design, and a Color literal
 // here is a token that has escaped it.
 extra["forbidColourLiterals"] = "true"
 apply(from = rootProject.file("gradle/scripts/source-checks.gradle.kts"))

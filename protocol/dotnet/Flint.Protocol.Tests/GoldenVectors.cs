@@ -1,12 +1,12 @@
 namespace Flint.Protocol.Tests;
 
 /// <summary>
-/// The canonical wire corpus, mirroring <c>flint-engine/tests/golden.rs</c>.
+/// The canonical wire corpus, mirroring <c>apps/windows/engine/tests/golden.rs</c>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Case names are the contract between languages: each one names a file in
-/// <c>testdata/golden/</c>. A case defined here with no counterpart in Rust, or the other way
+/// <c>protocol/golden/</c>. A case defined here with no counterpart in Rust, or the other way
 /// round, is caught by the completeness test rather than discovered later on a television.
 /// </para>
 /// <para>
@@ -20,7 +20,7 @@ internal static class GoldenVectors
     internal static IReadOnlyDictionary<string, WireFrame> All { get; } = Build();
 
     /// <summary>
-    /// Locates <c>testdata/golden</c> by walking up from the test binary.
+    /// Locates <c>protocol/golden</c> by walking up from the test binary.
     /// </summary>
     /// <remarks>
     /// Walking up rather than hardcoding a relative depth: the path from the output directory to
@@ -32,7 +32,7 @@ internal static class GoldenVectors
         var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null)
         {
-            var candidate = Path.Combine(current.FullName, "testdata", "golden");
+            var candidate = Path.Combine(current.FullName, "protocol", "golden");
             if (System.IO.Directory.Exists(candidate))
             {
                 return candidate;
@@ -42,7 +42,7 @@ internal static class GoldenVectors
         }
 
         throw new DirectoryNotFoundException(
-            "Could not find testdata/golden above " + AppContext.BaseDirectory
+            "Could not find protocol/golden above " + AppContext.BaseDirectory
             + ". Generate the vectors with: cargo test --test golden -- --ignored regenerate");
     }
 

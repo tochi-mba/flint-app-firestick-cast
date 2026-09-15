@@ -182,12 +182,12 @@ fn manifest() -> BTreeMap<String, Vec<u8>> {
 fn manifest_path() -> PathBuf {
     let mut current = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     loop {
-        let candidate = current.join("testdata").join("golden");
+        let candidate = current.join("protocol").join("golden");
         if candidate.is_dir() {
             return candidate.join("browser-enums.txt");
         }
         if !current.pop() {
-            panic!("could not find testdata/golden above the crate root");
+            panic!("could not find protocol/golden above the crate root");
         }
     }
 }

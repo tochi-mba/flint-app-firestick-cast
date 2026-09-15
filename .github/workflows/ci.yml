@@ -1,4 +1,4 @@
-# The same checks scripts/build.ps1 runs locally, so a green local run means a green CI run.
+# The same checks tools/scripts/build.ps1 runs locally, so a green local run means a green CI run.
 name: CI
 
 # The phone app lives in the same repository but shares none of this job's toolchains, so a change
@@ -13,17 +13,13 @@ on:
   push:
     branches: [master]
     paths-ignore:
-      - 'mobile/**'
-      - 'design/**'
-      - 'castcore/**'
+      - 'apps/phone/**'
       - '.github/workflows/mobile.yml'
       - '.github/workflows/mobile-release.yml'
   pull_request:
     # Duplicated rather than shared: GitHub Actions does not resolve YAML anchors.
     paths-ignore:
-      - 'mobile/**'
-      - 'design/**'
-      - 'castcore/**'
+      - 'apps/phone/**'
       - '.github/workflows/mobile.yml'
       - '.github/workflows/mobile-release.yml'
   workflow_dispatch:
@@ -80,12 +76,12 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            flint-engine/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('flint-engine/Cargo.toml') }}
+            apps/windows/engine/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('apps/windows/engine/Cargo.toml') }}
 
       - name: Build and test
         shell: pwsh
-        run: ./scripts/build.ps1
+        run: ./tools/scripts/build.ps1
 
       # The same gate as the local one. Protocol tests and lint were missing, so a wire
       # change that broke Kotlin, or a lint regression, could pass CI and fail on a television.
@@ -97,7 +93,7 @@ jobs:
         shell: pwsh
         run: >
           ./gradlew.bat --no-daemon
-          :protocol:check :receiver:testDebugUnitTest :receiver:lintDebug
+          :protocol:check :receiver:app:testDebugUnitTest :receiver:app:lintDebug
           --console plain
 
       # Reports are the only way to see which case failed once the runner is gone.
@@ -107,13 +103,13 @@ jobs:
         with:
           name: test-reports
           path: |
-            receiver/build/reports/**
-            receiver/build/test-results/**
-            protocol/build/reports/**
+            apps/receiver/app/build/reports/**
+            apps/receiver/app/build/test-results/**
+            protocol/kotlin/build/reports/**
             **/TestResults/**
           retention-days: 7
           if-no-files-found: ignore
 
       - name: Check the site
         shell: pwsh
-        run: python scripts/check-site.py
+        run: python tools/scripts/check-site.py

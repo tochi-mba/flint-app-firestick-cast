@@ -4,7 +4,7 @@ namespace Flint.Cli;
 /// What `flint` returns to whatever ran it.
 /// </summary>
 /// <remarks>
-/// These are a contract, not an implementation detail: `scripts/*.ps1`, CI steps and anything
+/// These are a contract, not an implementation detail: `tools/scripts/*.ps1`, CI steps and anything
 /// piping this command branch on them, so a number that changes meaning breaks a caller silently.
 /// They were previously written inline as bare integers at five call sites, where nothing said what
 /// 3 meant or that 69 had been chosen deliberately.

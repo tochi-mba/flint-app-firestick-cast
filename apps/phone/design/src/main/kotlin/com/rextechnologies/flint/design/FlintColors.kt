@@ -6,9 +6,9 @@ import androidx.compose.ui.graphics.Color
  * The REX Technologies ink/signal palette.
  *
  * These values are shared with the Windows shell and the Fire TV receiver. They are asserted on the
- * desktop by `tests/Flint.App.Tests/RexDesignSystemTests.cs` and here by `FlintTokenTest`, because
- * drift across three codebases is exactly the kind of defect no compiler catches: nothing fails to
- * build, the product simply stops looking like one product.
+ * desktop by `apps/windows/tests/Flint.App.Tests/RexDesignSystemTests.cs` and here by
+ * `FlintTokenTest`, because drift across three codebases is exactly the kind of defect no compiler
+ * catches: nothing fails to build, the product simply stops looking like one product.
  *
  * Do not re-pick them, and do not add a light variant. REX is a dark system by design, and a washed
  * out light mode would break the instrument character the palette exists to create.

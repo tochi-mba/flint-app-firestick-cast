@@ -49,7 +49,7 @@ Full walkthrough, including the unsigned-build warning Windows will show you, is
 [installation guide](docs/INSTALL.md). To build a package yourself:
 
 ```powershell
-./scripts/package.ps1     # produces dist/Flint-<version>-win-x64.zip
+./tools/scripts/package.ps1     # produces dist/Flint-<version>-win-x64.zip
 ```
 
 ## Why this shape
@@ -66,15 +66,15 @@ the whole point of a custom receiver is control over the decode path.
 
 | Module | Role |
 |---|---|
-| `flint-engine` | Rust engine; native adapter/encoder probing and the wire codec |
-| `src/Flint.App` | Avalonia desktop shell and the REX visual system |
-| `src/Flint.Core` | Device model, capability report, session configuration |
-| `src/Flint.Discovery` | Fire TV discovery, authenticated read-only ADB identification, and path sampling |
-| `src/Flint.Protocol` | The REX wire protocol: framing, messages, and a strict codec |
-| `src/Flint.Engine.Interop` | The small managed FFI boundary to `flint-engine` |
-| `src/Flint.Cli` | Headless probe runner, for capturing a report into a bug thread |
-| `receiver` | Fire TV decode and render: Compose for TV surfaces, MediaCodec, and Media3 playback |
-| `protocol` | The REX wire protocol in Kotlin, sharing the committed vector corpus |
+| `apps/windows/engine` | Rust engine; native adapter/encoder probing and the wire codec |
+| `apps/windows/src/Flint.App` | Avalonia desktop shell and the REX visual system |
+| `apps/windows/src/Flint.Core` | Device model, capability report, session configuration |
+| `apps/windows/src/Flint.Discovery` | Fire TV discovery, authenticated read-only ADB identification, and path sampling |
+| `protocol/dotnet/Flint.Protocol` | The REX wire protocol: framing, messages, and a strict codec |
+| `apps/windows/src/Flint.Engine.Interop` | The small managed FFI boundary to `flint-engine` |
+| `apps/windows/src/Flint.Cli` | Headless probe runner, for capturing a report into a bug thread |
+| `apps/receiver/app` | Fire TV decode and render: Compose for TV surfaces, MediaCodec, and Media3 playback |
+| `protocol/kotlin` | The REX wire protocol in Kotlin, sharing the committed vector corpus |
 | `site` | The GitHub Pages site, published by CI from `main` |
 
 ## Running the probe
@@ -82,9 +82,9 @@ the whole point of a custom receiver is control over the decode path.
 The desktop app has a Probe button on the Cast page. The same probe runs headlessly:
 
 ```powershell
-dotnet run --project src/Flint.Cli          # full capability report
-dotnet run --project src/Flint.Cli -- --services   # what is advertising on this network
-dotnet run --project src/Flint.Cli -- --address 192.168.1.42
+dotnet run --project apps/windows/src/Flint.Cli          # full capability report
+dotnet run --project apps/windows/src/Flint.Cli -- --services   # what is advertising on this network
+dotnet run --project apps/windows/src/Flint.Cli -- --address 192.168.1.42
 ```
 
 The `--services` scan exists to separate two failures that look identical from the Cast page: a
@@ -99,7 +99,7 @@ field in the Cast page or `--address`; leaving `--port` out checks only the boun
 to stderr, so the stream pipes straight into a parser without being cleaned up first:
 
 ```powershell
-dotnet run --project src/Flint.Cli -- --json --address 192.168.1.42 | ConvertFrom-Json
+dotnet run --project apps/windows/src/Flint.Cli -- --json --address 192.168.1.42 | ConvertFrom-Json
 ```
 
 The object carries a `schema` number, and enums are written as names rather than ordinals so a
@@ -108,7 +108,7 @@ separate absence from failure, and are worth branching on: `host.encodersProbed`
 encoder" from "never looked", and `path.throughputMeasured` distinguishes a slow network from one
 that was not measured.
 
-Exit codes are a contract — `scripts/*.ps1` and CI branch on them:
+Exit codes are a contract — `tools/scripts/*.ps1` and CI branch on them:
 
 | Code | Meaning |
 |---:|---|
@@ -131,7 +131,7 @@ It is generated rather than checked in as an opaque binary, so the palette stays
 the UI uses:
 
 ```powershell
-python scripts/generate-icon.py
+python tools/scripts/generate-icon.py
 ```
 
 Icons at or below 32 pixels drop the frame and draw the spark larger, because at that size the
@@ -156,7 +156,7 @@ Requirements:
 - JDK 17 and Android SDK platform 36, for the receiver only
 
 ```powershell
-./scripts/build.ps1
+./tools/scripts/build.ps1
 ```
 
 This runs Rust formatting, Clippy, tests and a native build, followed by the warning-free .NET build

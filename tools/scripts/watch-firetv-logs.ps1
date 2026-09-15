@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     Leaves a long-running adb logcat process writing to artifacts/logs/firetv-watch.log.
-    Prefer scripts/pull-dev-logs.ps1 for on-demand snapshots agents can read after a repro.
+    Prefer tools/scripts/pull-dev-logs.ps1 for on-demand snapshots agents can read after a repro.
 
 .PARAMETER Serial
     ADB serial. When omitted, uses ANDROID_SERIAL or the first online device.
@@ -16,7 +16,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $logDir = Join-Path $projectRoot 'artifacts\logs'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $outFile = Join-Path $logDir 'firetv-watch.log'

@@ -23,7 +23,7 @@ so the error reads `extra operand ... Try 'link --help'` rather than "no linker 
 Install the build tools, then:
 
 ```powershell
-cd flint-engine
+cd apps/windows/engine
 cargo test
 cargo clippy --all-targets -- -D warnings
 cargo build

@@ -12,8 +12,10 @@ spark. Side by side they read as one family, which is the point.
 Geometry uses REX Cast's 108-unit viewport so the two marks can be compared directly.
 
 Usage:
-    python scripts/generate-icon.py            # the Windows .ico and .png (needs Pillow)
-    python scripts/generate-icon.py --android  # the phone app's adaptive icon layers (no Pillow)
+    python tools/scripts/generate-icon.py
+        The Windows .ico and .png (needs Pillow).
+    python tools/scripts/generate-icon.py --android
+        The phone app's adaptive icon layers (no Pillow).
 """
 
 from __future__ import annotations
@@ -160,7 +162,7 @@ NOTIFICATION_SPARK_RADIUS_Y = 41.0
 NOTIFICATION_SPARK_RADIUS_X = 30.0
 NOTIFICATION_SPARK_WAIST = 9.0
 
-GENERATED_BY = "scripts/generate-icon.py"
+GENERATED_BY = "tools/scripts/generate-icon.py"
 
 
 def spark_path_data(radius_x: float, radius_y: float, waist: float) -> str:
@@ -191,7 +193,7 @@ def _hex(colour: tuple[int, int, int, int]) -> str:
 
 def write_android_icons(root: Path) -> None:
     """Emit the phone app's adaptive icon layers and its notification silhouette."""
-    res = root / "mobile" / "src" / "main" / "res"
+    res = root / "apps" / "phone" / "app" / "src" / "main" / "res"
     drawable = res / "drawable"
     # anydpi rather than anydpi-v26: the phone app's floor is API 26, which is exactly where
     # adaptive icons arrived, so the version qualifier would only add a configuration that can
@@ -266,13 +268,13 @@ def write_android_icons(root: Path) -> None:
 
 
 def main() -> None:
-    root = Path(__file__).resolve().parent.parent
+    root = Path(__file__).resolve().parents[2]
 
     if "--android" in sys.argv:
         write_android_icons(root)
         return
 
-    assets = root / "src" / "Flint.App" / "Assets"
+    assets = root / "apps" / "windows" / "src" / "Flint.App" / "Assets"
     assets.mkdir(parents=True, exist_ok=True)
 
     frames = [render(size) for size in ICO_SIZES]

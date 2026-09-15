@@ -13,7 +13,7 @@ namespace Flint.App.Services;
 /// Writes to <c>%LOCALAPPDATA%\Flint\logs\windows-latest.log</c>. Truncates at session start.
 /// While the process runs, growth past <see cref="MaximumBytes"/> drops the oldest lines and keeps
 /// the newest <see cref="RetainBytes"/> (newline-aligned). Agents copy it into
-/// <c>artifacts/logs/</c> via <c>scripts/pull-dev-logs.ps1</c>.
+/// <c>artifacts/logs/</c> via <c>tools/scripts/pull-dev-logs.ps1</c>.
 /// </para>
 /// <para>
 /// Never write VPN config, private keys, cookies, passwords, certificate PEMs, preview pixels, or

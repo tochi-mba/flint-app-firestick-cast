@@ -36,5 +36,5 @@ tv-*.png
 # Staged by the mobile release workflow, never by hand. The Fire TV package the phone can install is
 # built from the same commit and copied in just before assembleRelease; committing one would ship a
 # receiver from whenever somebody last ran the build locally.
-mobile/src/main/assets/flint-receiver.apk
-mobile/src/main/assets/flint-receiver.properties
+apps/phone/app/src/main/assets/flint-receiver.apk
+apps/phone/app/src/main/assets/flint-receiver.properties

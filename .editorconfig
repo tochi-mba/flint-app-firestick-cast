@@ -25,8 +25,8 @@ indent_size = 4
 indent_size = 4
 max_line_length = 120
 
-# ktlint settings. Nothing else reads these, and ktlint only runs on :castcore, :design and
-# :mobile today, but the file is the tool's own configuration mechanism so it belongs here.
+# ktlint settings. Nothing else reads these, and ktlint only runs on :phone:core, :phone:design and
+# :phone:app today, but the file is the tool's own configuration mechanism so it belongs here.
 #
 # intellij_idea rather than ktlint_official: the official style rewrites signatures and expression
 # bodies to its own taste, which would put a formatter's opinion in the diff of every change to
@@ -34,7 +34,7 @@ max_line_length = 120
 # no wildcard imports -- are in both.
 ktlint_code_style = intellij_idea
 # Composable functions are PascalCase by the framework's own convention, which the function-naming
-# rule reads as a violation on every component in :design.
+# rule reads as a violation on every component in :phone:design.
 ktlint_function_naming_ignore_when_annotated_with = Composable
 # These two collapse a multi-line signature onto one line whenever it happens to fit, which is the
 # opposite of how every other Kotlin file in this repository is written. Leaving them on would put a

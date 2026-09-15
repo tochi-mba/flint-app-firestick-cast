@@ -4,7 +4,7 @@
 //! family means the host, the phone app and the receiver can never disagree about what a byte
 //! means, and a receiver written for one can be reused by the other.
 //!
-//! Byte compatibility with the Kotlin implementation is not aspirational: `testdata/golden/` holds
+//! Byte compatibility with the Kotlin implementation is not aspirational: `protocol/golden/` holds
 //! encoded frames committed as bytes, and Rust, C# and Kotlin each assert they produce and parse
 //! them identically.
 //!

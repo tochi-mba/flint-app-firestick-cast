@@ -11,9 +11,9 @@ name: Mobile release
 
 # Deliberately unfiltered by path, unlike mobile.yml. A push event carries one paths filter for both
 # its branch and its tag patterns, and a tag push is matched against the diff of whatever commit it
-# names -- so a `v*` tag placed on a commit that happened to touch nothing under mobile/ would be
-# skipped silently. A release that does not happen is a worse failure than a build that did not need
-# to run, so this one runs on every merge and every tag.
+# names -- so a `v*` tag placed on a commit that happened to touch nothing under apps/phone/ would
+# be skipped silently. A release that does not happen is a worse failure than a build that did not
+# need to run, so this one runs on every merge and every tag.
 on:
   push:
     branches: [master]
@@ -107,24 +107,24 @@ jobs:
       # version the phone offers to install is never a mystery. Debug rather than release on purpose:
       # Android's debug signing makes this receiver package installable without a second release key.
       - name: Build the receiver package to bundle
-        run: ./gradlew :receiver:assembleDebug --console plain
+        run: ./gradlew :receiver:app:assembleDebug --console plain
 
       - name: Stage the receiver package as an asset
         run: |
           set -euo pipefail
-          apk="$(find receiver/build/outputs/apk/debug -name '*.apk' -print -quit)"
+          apk="$(find apps/receiver/app/build/outputs/apk/debug -name '*.apk' -print -quit)"
           if [ -z "$apk" ]; then
             echo "No receiver APK was produced." >&2
             exit 1
           fi
-          mkdir -p mobile/src/main/assets
-          cp "$apk" mobile/src/main/assets/flint-receiver.apk
+          mkdir -p apps/phone/app/src/main/assets
+          cp "$apk" apps/phone/app/src/main/assets/flint-receiver.apk
           {
             echo "source=$apk"
             echo "commit=${GITHUB_SHA}"
             echo "sha256=$(sha256sum "$apk" | cut -d' ' -f1)"
-          } > mobile/src/main/assets/flint-receiver.properties
-          cat mobile/src/main/assets/flint-receiver.properties
+          } > apps/phone/app/src/main/assets/flint-receiver.properties
+          cat apps/phone/app/src/main/assets/flint-receiver.properties
 
       # R8 runs here and nowhere else. package.ps1 only ever assembles debug, so the receiver's
       # proguard rules have never actually been exercised; the phone's are, every merge.
@@ -135,7 +135,7 @@ jobs:
           MOBILE_KEY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
           MOBILE_KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
         run: >
-          ./gradlew :mobile:assembleRelease --console plain
+          ./gradlew :phone:app:assembleRelease --console plain
           -Pmobile.versionCode=${{ steps.version.outputs.code }}
           -Pmobile.versionSuffix=${{ steps.version.outputs.suffix }}
 
@@ -144,7 +144,7 @@ jobs:
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.name }}${{ steps.version.outputs.suffix }}"
-          apk="$(find mobile/build/outputs/apk/release -name '*.apk' -print -quit)"
+          apk="$(find apps/phone/app/build/outputs/apk/release -name '*.apk' -print -quit)"
           if [ -z "$apk" ]; then
             echo "No release APK was produced." >&2
             exit 1
@@ -160,7 +160,7 @@ jobs:
 
           # R8 is on for this build type, so a missing mapping file means a stack trace from a
           # crashing phone can never be read again. That is worth failing the release for.
-          mapping=mobile/build/outputs/mapping/release/mapping.txt
+          mapping=apps/phone/app/build/outputs/mapping/release/mapping.txt
           if [ ! -f "$mapping" ]; then
             echo "Minification is enabled but no mapping.txt was produced." >&2
             exit 1

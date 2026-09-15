@@ -2,8 +2,8 @@
 #
 # Before this file, each version was a literal repeated across the module build files, and the only
 # thing keeping them in step was that someone remembered. Four modules is where that stops working:
-# :mobile, :design and :receiver all compose against the same Compose BOM, and a BOM that differs
-# between two of them produces a link error a long way from its cause.
+# :phone:app, :phone:design and :receiver:app all compose against the same Compose BOM, and a BOM
+# that differs between two of them produces a link error a long way from its cause.
 #
 # Rules for adding an entry:
 #   - Pin an exact version. A range makes a build that passed today fail tomorrow for no commit.

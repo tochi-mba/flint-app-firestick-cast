@@ -25,7 +25,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Push-Location $projectRoot
 
 function Resolve-Cargo {
@@ -74,7 +74,7 @@ try {
 
     Write-Host ''
     Write-Host '  Building the engine' -ForegroundColor Green
-    Push-Location flint-engine
+    Push-Location apps/windows/engine
     try {
         & $cargo build --release
         if ($LASTEXITCODE -ne 0) { throw 'cargo build --release failed.' }
@@ -83,7 +83,7 @@ try {
         Pop-Location
     }
 
-    $engine = Join-Path $projectRoot 'flint-engine\target\release\flint_engine.dll'
+    $engine = Join-Path $projectRoot 'apps\windows\engine\target\release\flint_engine.dll'
     if (-not (Test-Path -LiteralPath $engine)) {
         throw "The engine did not produce $engine."
     }
@@ -94,7 +94,7 @@ try {
 
     Write-Host ''
     Write-Host '  Publishing the app' -ForegroundColor Green
-    dotnet publish src/Flint.App/Flint.App.csproj `
+    dotnet publish apps/windows/src/Flint.App/Flint.App.csproj `
         --configuration Release `
         --runtime win-x64 `
         --self-contained true `
@@ -105,7 +105,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed ($LASTEXITCODE)." }
 
     Write-Host '  Publishing the probe CLI' -ForegroundColor Green
-    dotnet publish src/Flint.Cli/Flint.Cli.csproj `
+    dotnet publish apps/windows/src/Flint.Cli/Flint.Cli.csproj `
         --configuration Release `
         --runtime win-x64 `
         --self-contained true `
@@ -128,10 +128,10 @@ try {
     }
 
     Write-Host '  Building the Fire TV receiver' -ForegroundColor Green
-    & (Join-Path $projectRoot 'gradlew.bat') --no-daemon :receiver:assembleDebug
+    & (Join-Path $projectRoot 'gradlew.bat') --no-daemon :receiver:app:assembleDebug
     if ($LASTEXITCODE -ne 0) { throw 'Gradle receiver build failed.' }
 
-    $receiverApk = Join-Path $projectRoot 'receiver\build\outputs\apk\debug\receiver-debug.apk'
+    $receiverApk = Join-Path $projectRoot 'apps\receiver\app\build\outputs\apk\debug\app-debug.apk'
     if (-not (Test-Path -LiteralPath $receiverApk)) {
         throw "The receiver did not produce $receiverApk."
     }

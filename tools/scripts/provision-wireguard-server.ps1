@@ -67,7 +67,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$repoRoot = Split-Path -Parent $PSScriptRoot
+$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 if (-not $OutFile) {
     $OutFile = Join-Path $repoRoot "artifacts/wireguard/$ClientName.conf"
 }

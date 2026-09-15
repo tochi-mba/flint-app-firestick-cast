@@ -25,9 +25,10 @@ object FlintType {
     /**
      * Inter is the face this system is drawn in, on the desktop and on the site.
      *
-     * It is not bundled here. Dropping the four weights into `design/src/main/res/font/` and pointing
-     * this one value at them is the whole change; until then the platform's own sans-serif is used,
-     * which is metrically close enough that no layout depends on the difference.
+     * It is not bundled here. Dropping the four weights into `apps/phone/design/src/main/res/font/`
+     * and pointing this one value at them is the whole change; until then the platform's own
+     * sans-serif is used, which is metrically close enough that no layout depends on the
+     * difference.
      */
     val fontFamily: FontFamily = FontFamily.SansSerif
 

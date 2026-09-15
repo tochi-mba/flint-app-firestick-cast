@@ -17,7 +17,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 if (-not $AcknowledgeDesktopControl) { throw 'Pass -AcknowledgeDesktopControl to allow real desktop input.' }
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $savedEnvironment = @{}
 $testEnvironment = @{
     FLINT_HARDWARE_E2E = '1'
@@ -33,7 +33,7 @@ try {
         [Environment]::SetEnvironmentVariable($name, $testEnvironment[$name], 'Process')
     }
     Write-Host 'Opening a separate Flint window. The test will use the mouse and keyboard.'
-    dotnet test tests/Flint.Hardware.E2E/Flint.Hardware.E2E.csproj --nologo `
+    dotnet test apps/windows/tests/Flint.Hardware.E2E/Flint.Hardware.E2E.csproj --nologo `
         --filter 'FullyQualifiedName~WindowsIntroductionHardwareTests'
     if ($LASTEXITCODE -ne 0) { throw "Windows headed introduction test failed ($LASTEXITCODE)." }
 }

@@ -44,7 +44,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 
 function Write-Action([string]$Message) {
     Write-Host "[receiver-browser] $Message" -ForegroundColor Cyan
@@ -83,7 +83,7 @@ try {
             Write-Action 'Running Robolectric browser harness + controller unit tests'
             $gradleArgs = @(
                 '--no-daemon',
-                ':receiver:testDebugUnitTest',
+                ':receiver:app:testDebugUnitTest',
                 '--console=plain'
             )
             if (-not [string]::IsNullOrWhiteSpace($ClassFilter)) {
@@ -121,8 +121,8 @@ try {
 
             $gradleArgs = @(
                 '--no-daemon',
-                ':receiver:installDebug',
-                ':receiver:connectedDebugAndroidTest',
+                ':receiver:app:installDebug',
+                ':receiver:app:connectedDebugAndroidTest',
                 '-Pandroid.injected.androidTest.connected=true',
                 '--console=plain'
             )
@@ -158,8 +158,8 @@ try {
 
             $gradleArgs = @(
                 '--no-daemon',
-                ':receiver:installDebug',
-                ':receiver:connectedDebugAndroidTest',
+                ':receiver:app:installDebug',
+                ':receiver:app:connectedDebugAndroidTest',
                 '-Pandroid.injected.androidTest.connected=true',
                 '--console=plain'
             )

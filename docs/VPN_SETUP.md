@@ -27,11 +27,11 @@ This is not a packet kill switch and is not described as one.
 
 ## Standing up a server
 
-`scripts/provision-wireguard-server.ps1` builds an endpoint on a host you already have SSH
+`tools/scripts/provision-wireguard-server.ps1` builds an endpoint on a host you already have SSH
 access to, and writes a Flint-ready client config locally.
 
 ~~~powershell
-.\scripts\provision-wireguard-server.ps1 `
+.\tools\scripts\provision-wireguard-server.ps1 `
     -HostAddress 141.147.109.67 `
     -User ubuntu `
     -ClientName firetv

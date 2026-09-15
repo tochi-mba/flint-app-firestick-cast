@@ -51,7 +51,7 @@ When the user reports a Fire TV / Windows browser, cast, pairing, VPN, or worksp
 **pull and read the latest logs before guessing**.
 
 ```powershell
-.\scripts\pull-dev-logs.ps1
+.\tools\scripts\pull-dev-logs.ps1
 # optional: -Serial 10.x.x.x:5555  -ClearLogcat
 ```
 
@@ -62,7 +62,8 @@ Then read, in order:
 3. `artifacts/logs/windows-latest.log` — copy of `%LOCALAPPDATA%\Flint\logs\windows-latest.log`
 
 Windows `Flint.App` opens that LocalAppData file automatically via `DevFileLog` (Avalonia
-`LogToTrace` included). Continuous Stick capture (optional): `.\scripts\watch-firetv-logs.ps1`.
+`LogToTrace` included). Continuous Stick capture (optional):
+`.\tools\scripts\watch-firetv-logs.ps1`.
 
 Granular breadcrumbs (privacy-safe) are written so a session can be reconstructed step by step:
 

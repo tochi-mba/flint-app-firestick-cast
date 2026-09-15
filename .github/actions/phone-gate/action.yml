@@ -1,9 +1,9 @@
 # The phone's one gate, so the pull-request run and the release run cannot diverge.
 #
 # They had. The release workflow ran a shorter list than the pull-request workflow did -- no
-# :mobile:ktlintCheck, no :design:ktlintCheck, no :design:lintDebug -- which meant a release could
-# ship code that would have been rejected on review. A composite action is the only way GitHub
-# Actions lets two workflows share steps, so this is that.
+# :phone:app:ktlintCheck, no :phone:design:ktlintCheck, no :phone:design:lintDebug -- which meant
+# a release could ship code that would have been rejected on review. A composite action is the
+# only way GitHub Actions lets two workflows share steps, so this is that.
 name: Phone gate
 description: Installs the toolchain and runs every check the phone app has to pass.
 
@@ -29,8 +29,8 @@ runs:
       with:
         packages: platform-tools
 
-    # Both versions. :receiver pins build-tools 35.0.0 and the release job builds it, so a runner
-    # with only 36 fails there and nowhere else -- which is the hardest place to notice.
+    # Both versions. :receiver:app pins build-tools 35.0.0 and the release job builds it, so a
+    # runner with only 36 fails there and nowhere else -- which is the hardest place to notice.
     - name: Install Android build tools
       shell: bash
       run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "build-tools;35.0.0"
@@ -41,18 +41,18 @@ runs:
       shell: bash
       run: ./gradlew :protocol:check --console plain
 
-    # :castcore is Android-free on purpose, which is what lets it carry the same 95% line / 85%
+    # :phone:core is Android-free on purpose, which is what lets it carry the same 95% line / 85%
     # branch gate as :protocol without Robolectric anywhere near it. `check` on both, because
     # `test` alone skips the coverage rule :protocol declares. `check` is tests, the coverage
     # verification, the source guards and ktlint.
     - name: Check the phone's pure logic
       shell: bash
-      run: ./gradlew :castcore:check --console plain
+      run: ./gradlew :phone:core:check --console plain
 
     - name: Check the design system
       shell: bash
-      run: ./gradlew :design:check :design:lintDebug --console plain
+      run: ./gradlew :phone:design:check :phone:design:lintDebug --console plain
 
     - name: Check the phone app
       shell: bash
-      run: ./gradlew :mobile:check :mobile:lintDebug --console plain
+      run: ./gradlew :phone:app:check :phone:app:lintDebug --console plain

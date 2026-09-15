@@ -1,11 +1,11 @@
 // Source checks that are grammatical rather than behavioural, wired as real Gradle tasks.
 //
-// They used to be JUnit tests inside :castcore that walked the filesystem from File("."). That made
-// them invisible to Gradle: the sources they scanned were not declared inputs, so a change confined
-// to :mobile left :castcore:test up to date and the guard did not run at all. It also meant one
-// module's test knew where three other modules kept their sources. A task with declared inputs over
-// its own module's tree cannot be skipped for a change it would have caught, and it lives in the
-// module whose rule it is.
+// They used to be JUnit tests inside :phone:core that walked the filesystem from File("."). That
+// made them invisible to Gradle: the sources they scanned were not declared inputs, so a change
+// confined to :phone:app left :phone:core:test up to date and the guard did not run at all. It also
+// meant one module's test knew where three other modules kept their sources. A task with declared
+// inputs over its own module's tree cannot be skipped for a change it would have caught, and it
+// lives in the module whose rule it is.
 //
 // The work is in named task classes rather than in `doLast` lambdas. A lambda written in a script
 // plugin holds a reference to the script object, which the configuration cache cannot serialise, so

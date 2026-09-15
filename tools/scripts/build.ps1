@@ -21,7 +21,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Push-Location $projectRoot
 
 function Write-Section {
@@ -102,7 +102,7 @@ try {
             throw 'Rust is required, but no MSVC linker was found. Install Visual Studio Build Tools with the "Desktop development with C++" workload, or explicitly pass -SkipRust for a managed-only check.'
         }
 
-        Push-Location flint-engine
+        Push-Location apps/windows/engine
         try {
             & $cargoPath fmt --check
             if ($LASTEXITCODE -ne 0) { throw 'cargo fmt found unformatted code.' }

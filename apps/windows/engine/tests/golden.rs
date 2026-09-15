@@ -1,6 +1,6 @@
 //! Canonical wire vectors, shared across languages.
 //!
-//! The corpus below is the contract. Each case is encoded once, committed to `testdata/golden/`,
+//! The corpus below is the contract. Each case is encoded once, committed to `protocol/golden/`,
 //! and asserted byte for byte by Rust here and by C# in `Flint.Protocol.Tests`. Kotlin joins when
 //! the receiver lands.
 //!
@@ -25,12 +25,16 @@ mod corpus_data;
 use corpus_data::corpus;
 
 fn golden_dir() -> PathBuf {
-    // Integration tests run with the crate root as the working directory.
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("the crate has a parent directory")
-        .join("testdata")
-        .join("golden")
+    // Walks up from the crate rather than counting parents: the crate has moved inside the
+    // repository before, and a fixed depth points the corpus at nothing when it moves again.
+    let mut current = Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf();
+    loop {
+        let candidate = current.join("protocol").join("golden");
+        if candidate.is_dir() {
+            return candidate;
+        }
+        assert!(current.pop(), "could not find protocol/golden above the crate root");
+    }
 }
 
 #[test]
@@ -166,7 +170,7 @@ fn a_truncated_vector_is_reported_as_truncated_not_corrupt() {
 }
 
 #[test]
-#[ignore = "writes to testdata; run deliberately when the wire format changes"]
+#[ignore = "writes to protocol/golden; run deliberately when the wire format changes"]
 fn regenerate() {
     let directory = golden_dir();
     fs::create_dir_all(&directory).expect("golden directory can be created");

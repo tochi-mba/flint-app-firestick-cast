@@ -12,16 +12,16 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Release'">
-    <None Include="../../flint-engine/target/release/flint_engine.dll"
-          Condition="Exists('../../flint-engine/target/release/flint_engine.dll')"
+    <None Include="../../engine/target/release/flint_engine.dll"
+          Condition="Exists('../../engine/target/release/flint_engine.dll')"
           Link="flint_engine.dll"
           CopyToOutputDirectory="PreserveNewest"
           CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' != 'Release'">
-    <None Include="../../flint-engine/target/debug/flint_engine.dll"
-          Condition="Exists('../../flint-engine/target/debug/flint_engine.dll')"
+    <None Include="../../engine/target/debug/flint_engine.dll"
+          Condition="Exists('../../engine/target/debug/flint_engine.dll')"
           Link="flint_engine.dll"
           CopyToOutputDirectory="PreserveNewest"
           CopyToPublishDirectory="PreserveNewest" />

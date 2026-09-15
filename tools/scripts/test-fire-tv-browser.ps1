@@ -33,7 +33,7 @@
 
 .NOTES
     For headless / emulator / device mode switching without pairing, use
-    scripts/test-receiver-browser.ps1 (-Mode Headless|Emulator|Device).
+    tools/scripts/test-receiver-browser.ps1 (-Mode Headless|Emulator|Device).
 #>
 [CmdletBinding()]
 param(
@@ -52,7 +52,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 
 if (-not $AcknowledgePhysicalDevice) {
     throw 'Pass -AcknowledgePhysicalDevice to confirm this run may exercise a real receiver.'
@@ -111,12 +111,12 @@ if (-not (Test-Path -LiteralPath $latencyDoc)) {
         }
     }
 
-    $flint = Join-Path $projectRoot 'src\Flint.Cli\bin\Release\net10.0-windows\flint.exe'
+    $flint = Join-Path $projectRoot 'apps\windows\src\Flint.Cli\bin\Release\net10.0-windows\flint.exe'
     if (-not (Test-Path -LiteralPath $flint)) {
         Write-Action 'Building flint CLI (Release)'
         Push-Location $projectRoot
         try {
-            dotnet build src\Flint.Cli -c Release --nologo
+            dotnet build apps\windows\src\Flint.Cli -c Release --nologo
             if ($LASTEXITCODE -ne 0) { throw 'dotnet build failed.' }
         } finally {
             Pop-Location
@@ -134,7 +134,7 @@ if ($BrowserChromeE2E) {
     Write-Action 'Installing debug receiver and running browser chrome UiAutomator suite'
     Push-Location $projectRoot
     try {
-        & .\gradlew.bat --no-daemon :receiver:installDebug :receiver:connectedDebugAndroidTest `
+        & .\gradlew.bat --no-daemon :receiver:app:installDebug :receiver:app:connectedDebugAndroidTest `
             "-Pandroid.testInstrumentationRunnerArguments.class=com.rextechnologies.flint.receiver.ReceiverBrowserE2ETest" `
             "-Pandroid.injected.androidTest.connected=true" `
             --console=plain

@@ -1,8 +1,9 @@
 # R8 configuration for the phone app.
 #
-# This is the only place in the repository where R8 actually runs: scripts/package.ps1 only ever
-# assembles the receiver in debug, so the receiver's rules have never been exercised. Everything
-# here is therefore written from what the code does rather than copied from a working build.
+# This is the only place in the repository where R8 actually runs: tools/scripts/package.ps1 only
+# ever assembles the receiver in debug, so the receiver's rules have never been exercised.
+# Everything here is therefore written from what the code does rather than copied from a working
+# build.
 #
 # The app has no reflection of its own. Three things underneath it do.
 

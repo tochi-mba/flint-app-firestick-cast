@@ -9,7 +9,7 @@ Standard library only, deliberately: the Pages workflow should not need a depend
 verify a page with no build step.
 
 Usage:
-    python scripts/check-site.py
+    python tools/scripts/check-site.py
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
-SITE = Path(__file__).resolve().parent.parent / "site"
+SITE = Path(__file__).resolve().parents[2] / "site"
 
 # Claims the site must keep making. Each one exists because dropping it would make the page
 # misleading rather than merely incomplete.

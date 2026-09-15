@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 /**
- * Asserts Kotlin agrees byte-for-byte with the Rust-generated corpus in `testdata/golden/`.
+ * Asserts Kotlin agrees byte-for-byte with the Rust-generated corpus in `protocol/golden/`.
  *
  * Case names are the cross-language contract. A case defined here without a committed `.bin`, or a
  * committed `.bin` without a Kotlin case, fails completeness rather than drifting on a television.
@@ -62,14 +62,14 @@ class GoldenVectorTest {
     private fun goldenDirectory(): Path {
         var current: Path? = Path.of("").toAbsolutePath()
         while (current != null) {
-            val candidate = current.resolve("testdata").resolve("golden")
+            val candidate = current.resolve("protocol").resolve("golden")
             if (candidate.exists() && candidate.isDirectory()) {
                 return candidate
             }
             current = current.parent
         }
         fail(
-            "Could not find testdata/golden. Generate vectors with: " +
+            "Could not find protocol/golden. Generate vectors with: " +
                 "cargo test --test golden -- --ignored regenerate",
         )
     }
@@ -85,7 +85,7 @@ class GoldenVectorTest {
     }
 }
 
-/** Mirrors `flint-engine/tests/golden.rs` and `Flint.Protocol.Tests.GoldenVectors`. */
+/** Mirrors `apps/windows/engine/tests/golden.rs` and `Flint.Protocol.Tests.GoldenVectors`. */
 internal object GoldenVectors {
     val all: Map<String, WireFrame> = build()
 

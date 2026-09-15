@@ -8,9 +8,9 @@ android {
     compileSdk = libs.versions.compile.sdk.get().toInt()
 
     defaultConfig {
-        // The receiver's floor, not the phone's. :design has no API requirement above 21; holding it
-        // at the lower of the two apps is what lets the Fire TV app adopt these tokens later without
-        // the module itself being the reason it cannot.
+        // The receiver's floor, not the phone's. :phone:design has no API requirement above 21;
+        // holding it at the lower of the two apps is what lets the Fire TV app adopt these tokens
+        // later without the module itself being the reason it cannot.
         minSdk = libs.versions.receiver.min.sdk.get().toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -22,7 +22,8 @@ android {
 
     buildFeatures {
         compose = true
-        // Nothing in :design reads BuildConfig, and generating it adds a Javac task for no source.
+        // Nothing in :phone:design reads BuildConfig, and generating it adds a Javac task for no
+        // source.
         buildConfig = false
     }
 
@@ -37,10 +38,10 @@ android {
             isIncludeAndroidResources = true
             isReturnDefaultValues = true
 
-            // Carried verbatim from :receiver. Robolectric instruments the platform reflectively and
-            // on JDK 17 that needs the module system opened to it; without java.net in particular a
-            // Robolectric class earlier in the same worker JVM leaves JSSE unable to resolve a peer
-            // address, and a perfectly correct test fails only when run in the suite.
+            // Carried verbatim from :receiver:app. Robolectric instruments the platform
+            // reflectively and on JDK 17 that needs the module system opened to it; without java.net
+            // in particular a Robolectric class earlier in the same worker JVM leaves JSSE unable to
+            // resolve a peer address, and a perfectly correct test fails only when run in the suite.
             all { test ->
                 test.jvmArgs(
                     "--add-opens=java.base/java.net=ALL-UNNAMED",

@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/Flint.Protocol/Flint.Protocol.csproj" />
+    <ProjectReference Include="../Flint.Protocol/Flint.Protocol.csproj" />
   </ItemGroup>
 
 </Project>

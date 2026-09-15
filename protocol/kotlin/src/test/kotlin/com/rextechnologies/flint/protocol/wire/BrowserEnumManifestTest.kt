@@ -103,14 +103,14 @@ class BrowserEnumManifestTest {
     private fun goldenDirectory(): Path {
         var current: Path? = Path.of("").toAbsolutePath()
         while (current != null) {
-            val candidate = current.resolve("testdata").resolve("golden")
+            val candidate = current.resolve("protocol").resolve("golden")
             if (candidate.exists() && candidate.isDirectory()) {
                 return candidate
             }
             current = current.parent
         }
         fail(
-            "Could not find testdata/golden. Generate the manifest with: " +
+            "Could not find protocol/golden. Generate the manifest with: " +
                 "cargo test --test enum_manifest -- --ignored regenerate",
         )
     }

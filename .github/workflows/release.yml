@@ -102,11 +102,11 @@ jobs:
       # A release must never ship code that does not pass its own gate.
       - name: Build and test
         shell: pwsh
-        run: ./scripts/build.ps1
+        run: ./tools/scripts/build.ps1
 
       - name: Package
         shell: pwsh
-        run: ./scripts/package.ps1 -Version ${{ steps.version.outputs.value }}
+        run: ./tools/scripts/package.ps1 -Version ${{ steps.version.outputs.value }}
 
       # Never publish on faith. package.ps1 checks the engine reached the staging folder; this opens
       # the zip that will actually be downloaded and checks what someone extracting it would find.

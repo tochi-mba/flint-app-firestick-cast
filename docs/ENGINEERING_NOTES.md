@@ -35,8 +35,8 @@ a device class fell through the gap. Fire OS 5 is Android 5.1, API 22; the recei
 rather than installable, with its own verdict: Vega is not Android and never will be, while a Fire OS
 5 device is Android and simply too old, and neither carries a remedy because no setting on the
 television and no future version of Flint can lower a package manager's floor. The floor is a single
-constant in `:castcore` pinned by a test to the catalogue value, so raising `receiver-min-sdk` fails
-the build until the copy and the verdicts move with it.
+constant in `:phone:core` pinned by a test to the catalogue value, so raising `receiver-min-sdk`
+fails the build until the copy and the verdicts move with it.
 
 Vega OS is a Linux system Amazon built in-house. It is not Android, it does not run APKs, and no
 sideloading path exists — not ADB, not Downloader, not a sideload helper app. Devices known to ship
@@ -159,7 +159,7 @@ For agent-assisted debugging, Windows `Flint.App` writes Avalonia/Trace output t
 under `Flint*` / `BrowserTlsServer` tags. Snapshot both into the repo with:
 
 ```powershell
-.\scripts\pull-dev-logs.ps1
+.\tools\scripts\pull-dev-logs.ps1
 ```
 
 Outputs land in `artifacts/logs/` (`firetv-latest.log`, `windows-latest.log`, `session-meta.txt`),

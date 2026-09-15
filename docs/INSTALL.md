@@ -176,8 +176,8 @@ Requirements:
 ```powershell
 git clone https://github.com/tochi-mba/flint-app-firestick-cast.git
 cd flint-app-firestick-cast
-./scripts/build.ps1        # builds and runs every test
-./scripts/package.ps1      # produces dist/Flint-<version>-win-x64.zip
+./tools/scripts/build.ps1        # builds and runs every test
+./tools/scripts/package.ps1      # produces dist/Flint-<version>-win-x64.zip
 ```
 
 `build.ps1` is the same command CI runs. If it passes, the package will build.

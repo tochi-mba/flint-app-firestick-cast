@@ -12,7 +12,8 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * The config `scripts/provision-wireguard-server.ps1` emits must be one Flint actually admits.
+ * The config `tools/scripts/provision-wireguard-server.ps1` emits must be one Flint actually
+ * admits.
  *
  * Every gate between a paste and a tunnel is exercised here against the exact shape that script
  * produces — full tunnel, preshared key, DNS line, keepalive — because each gate was written

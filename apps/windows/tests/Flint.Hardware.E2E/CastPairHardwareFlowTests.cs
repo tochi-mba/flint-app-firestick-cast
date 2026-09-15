@@ -20,7 +20,7 @@ public sealed class CastPairHardwareFlowTests
         facts.BrowserPort.ShouldNotBeNull("A running TLS browser is required; absence must not pass as tested.");
         var root = FindProjectRoot();
         var executable = Environment.GetEnvironmentVariable("FLINT_HARDWARE_APP_PATH")
-            ?? Path.Combine(root, "src", "Flint.App", "bin", "Debug", "net10.0-windows", "Flint.App.exe");
+            ?? Path.Combine(root, "apps", "windows", "src", "Flint.App", "bin", "Debug", "net10.0-windows", "Flint.App.exe");
         using var windows = new WindowsUiDriver(executable, timeout.Token);
         try
         {

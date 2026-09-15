@@ -14,7 +14,7 @@ public sealed class WindowsIntroductionHardwareTests
         using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(3));
         var root = CastPairHardwareFlowTests.FindProjectRoot();
         var executable = Environment.GetEnvironmentVariable("FLINT_HARDWARE_APP_PATH")
-            ?? Path.Combine(root, "src", "Flint.App", "bin", "Debug", "net10.0-windows", "Flint.App.exe");
+            ?? Path.Combine(root, "apps", "windows", "src", "Flint.App", "bin", "Debug", "net10.0-windows", "Flint.App.exe");
         using var windows = new WindowsUiDriver(executable, timeout.Token);
         var artifacts = Path.Combine(root, "artifacts", "windows-introduction", DateTime.UtcNow.ToString("yyyyMMdd-HHmmss"));
         Directory.CreateDirectory(artifacts);

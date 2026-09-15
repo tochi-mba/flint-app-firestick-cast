@@ -2,7 +2,7 @@
 #
 # Separate from ci.yml on purpose. That job runs .NET, Rust, a JDK and the Android SDK on a Windows
 # runner because the host probe reads the driver registry and the engine links against Win32 — none
-# of which a phone-app change can affect. Left alone, every :mobile pull request would have paid
+# of which a phone-app change can affect. Left alone, every :phone:app pull request would have paid
 # forty-five Windows minutes to prove something about a desktop it did not touch.
 name: Mobile CI
 
@@ -14,12 +14,9 @@ on:
   push:
     branches: ['**']
     paths:
-      - 'mobile/**'
-      - 'design/**'
-      - 'castcore/**'
+      - 'apps/phone/**'
+      - 'apps/receiver/**'
       - 'protocol/**'
-      - 'receiver/**'
-      - 'testdata/golden/**'
       - 'gradle/**'
       - 'gradlew'
       - 'gradlew.bat'
@@ -31,12 +28,9 @@ on:
   pull_request:
     # GitHub Actions does not resolve YAML anchors, so this list is duplicated rather than shared.
     paths:
-      - 'mobile/**'
-      - 'design/**'
-      - 'castcore/**'
+      - 'apps/phone/**'
+      - 'apps/receiver/**'
       - 'protocol/**'
-      - 'receiver/**'
-      - 'testdata/golden/**'
       - 'gradle/**'
       - 'gradlew'
       - 'gradlew.bat'
@@ -69,14 +63,14 @@ jobs:
       - uses: ./.github/actions/phone-gate
 
       - name: Build the debug APK
-        run: ./gradlew :mobile:assembleDebug --console plain
+        run: ./gradlew :phone:app:assembleDebug --console plain
 
       # So a reviewer can install the branch on a real phone instead of taking the diff's word for it.
       - name: Upload the debug APK
         uses: actions/upload-artifact@v4
         with:
           name: flint-mobile-debug-apk
-          path: mobile/build/outputs/apk/debug/*.apk
+          path: apps/phone/app/build/outputs/apk/debug/*.apk
           retention-days: 7
           if-no-files-found: error
 
@@ -87,12 +81,12 @@ jobs:
         with:
           name: mobile-test-reports
           path: |
-            castcore/build/reports/**
-            castcore/build/test-results/**
-            design/build/reports/**
-            design/build/test-results/**
-            mobile/build/reports/**
-            mobile/build/test-results/**
-            protocol/build/reports/**
+            apps/phone/core/build/reports/**
+            apps/phone/core/build/test-results/**
+            apps/phone/design/build/reports/**
+            apps/phone/design/build/test-results/**
+            apps/phone/app/build/reports/**
+            apps/phone/app/build/test-results/**
+            protocol/kotlin/build/reports/**
           retention-days: 7
           if-no-files-found: ignore
