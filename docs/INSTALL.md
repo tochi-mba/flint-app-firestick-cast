@@ -29,7 +29,9 @@ Devices known to ship with it are the **Fire TV Stick 4K Select** (October 2025)
 ## Install
 
 1. Download `Flint-<version>-win-x64.zip` from the
-   [latest release](https://github.com/rex-technologies/flint/releases/latest).
+   [rolling Windows release](https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest-windows),
+   which every merge replaces with the newest build. For one that will never change under you, take
+   a `v*` release from the [releases page](https://github.com/tochi-mba/flint-app-firestick-cast/releases).
 2. Right-click the zip, choose **Extract All**, and pick somewhere you can find again —
    `C:\Program Files` is not required and not recommended, because Flint does not need it.
 3. Open the extracted folder and run **Flint.App.exe**.
@@ -172,8 +174,8 @@ Requirements:
   link on Windows
 
 ```powershell
-git clone https://github.com/rex-technologies/flint.git
-cd flint
+git clone https://github.com/tochi-mba/flint-app-firestick-cast.git
+cd flint-app-firestick-cast
 ./scripts/build.ps1        # builds and runs every test
 ./scripts/package.ps1      # produces dist/Flint-<version>-win-x64.zip
 ```

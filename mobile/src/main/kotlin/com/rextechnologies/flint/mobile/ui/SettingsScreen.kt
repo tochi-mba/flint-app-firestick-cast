@@ -1,5 +1,7 @@
 package com.rextechnologies.flint.mobile.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.rextechnologies.flint.castcore.capability.ReceiverPlatform
 import com.rextechnologies.flint.castcore.copy.DiagnosticsCopy
+import com.rextechnologies.flint.castcore.copy.FailureCopy
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.Placeholders
 import com.rextechnologies.flint.castcore.copy.SettingsCopy
@@ -32,6 +35,7 @@ import com.rextechnologies.flint.mobile.BuildConfig
 import com.rextechnologies.flint.mobile.MobileActivity
 import com.rextechnologies.flint.mobile.MobileController
 import com.rextechnologies.flint.mobile.MobileUiState
+import com.rextechnologies.flint.mobile.platform.CrashLog
 import com.rextechnologies.flint.protocol.text.Decimal
 
 /** The Settings tab: the receiver on the TV, the checks, the diagnostics and the about card. */
@@ -83,6 +87,8 @@ fun SettingsScreen(state: MobileUiState, controller: MobileController, activity:
     SectionLabel(DiagnosticsCopy.SECTION_PHONE)
     DiagnosticsCard(state)
 
+    LastFailureCard(activity)
+
     Spacer(Modifier.height(FlintSpace.Small))
     SectionLabel(SettingsCopy.SECTION_ABOUT)
     InfoCard {
@@ -104,6 +110,49 @@ fun SettingsScreen(state: MobileUiState, controller: MobileController, activity:
             onClick = controller::forgetEveryPairing,
             tone = Tone.Live,
         )
+    }
+}
+
+/**
+ * The last failure this phone recorded, if there was one.
+ *
+ * Absent entirely when nothing has failed, which is the ordinary case and should not take up a
+ * section. Present, it is the only route a fault found on somebody's phone has back to the people
+ * who could fix it: there is no crash service behind this app and no way to read its log without a
+ * computer, so the text on this card is the whole report.
+ */
+@Composable
+private fun LastFailureCard(activity: MobileActivity) {
+    var recorded by remember { mutableStateOf(CrashLog.last(activity)) }
+    val text = recorded ?: return
+    var copied by remember { mutableStateOf(false) }
+
+    Spacer(Modifier.height(FlintSpace.Small))
+    SectionLabel(FailureCopy.SECTION, tone = Tone.Live)
+    InfoCard {
+        FlintText(text = FailureCopy.TITLE, style = FlintType.TitleMedium)
+        FlintText(text = FailureCopy.BODY, style = FlintType.BodySmall)
+        Spacer(Modifier.height(FlintSpace.Small))
+        FlintText(text = text, style = FlintType.BodySmall)
+        Spacer(Modifier.height(FlintSpace.Small))
+        Row(horizontalArrangement = Arrangement.spacedBy(FlintSpace.Small)) {
+            OutlineAction(
+                text = if (copied) FailureCopy.COPIED else FailureCopy.COPY_ACTION,
+                onClick = {
+                    val clipboard = activity.getSystemService(ClipboardManager::class.java)
+                    clipboard?.setPrimaryClip(ClipData.newPlainText("Flint failure", text))
+                    copied = true
+                },
+            )
+            OutlineAction(
+                text = FailureCopy.CLEAR_ACTION,
+                onClick = {
+                    CrashLog.clear(activity)
+                    recorded = null
+                },
+                tone = Tone.Live,
+            )
+        }
     }
 }
 

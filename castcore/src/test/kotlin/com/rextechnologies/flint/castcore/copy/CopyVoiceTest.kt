@@ -50,6 +50,7 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
         DiagnosticsCopy,
         NotificationCopy,
         Placeholders,
+        FailureCopy,
         ReceiverSetup,
         SceneCopy,
         MobileCapabilityAssessor,
@@ -111,6 +112,7 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
     add("MediaCopy.sendingBytes", MediaCopy.sendingBytes(3L * 1024 * 1024))
     add("MediaCopy.sendingFraction", MediaCopy.sendingFraction(0.42))
     add("MediaCopy.sizeLabel", MediaCopy.sizeLabel(3L * 1024 * 1024).orEmpty())
+    add("FailureCopy.unexpectedFailure", FailureCopy.unexpectedFailure("IllegalStateException"))
     add("NotificationCopy.text", NotificationCopy.text("Fire TV Stick"))
     add(
         "ReceiverSetup.removeConfirmation",

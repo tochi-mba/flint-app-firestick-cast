@@ -6,8 +6,11 @@ import android.os.Build
 import com.rextechnologies.flint.castcore.capability.PhoneCapabilities
 import com.rextechnologies.flint.castcore.capability.ProbeOutcome
 import com.rextechnologies.flint.castcore.media.CodecChoice
+import com.rextechnologies.flint.mobile.platform.CapabilityStore
 import com.rextechnologies.flint.mobile.platform.EncoderRoundTrip
 import com.rextechnologies.flint.mobile.platform.PhoneProbes
+import com.rextechnologies.flint.mobile.platform.PreferenceCapabilityStore
+import com.rextechnologies.flint.mobile.platform.StoredCapabilities
 import com.rextechnologies.flint.protocol.wire.CodecId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,6 +74,7 @@ class CapabilityCoordinator(
         EncoderRoundTrip.run(activity, codec, Build.VERSION.SDK_INT)
     },
     private val probeDisplay: suspend (Activity) -> ProbeOutcome = PhoneProbes::probeVirtualDisplay,
+    private val store: CapabilityStore = PreferenceCapabilityStore(context),
 ) {
     private val applicationContext = context.applicationContext
 
@@ -115,6 +119,7 @@ class CapabilityCoordinator(
                 encoderProbeRunning = false,
             )
         }
+        remember()
         return EncoderCheck(found, codec, trip.outcome, trip.detail)
     }
 
@@ -130,7 +135,53 @@ class CapabilityCoordinator(
         mutable.update { it.copy(secondScreenProbeRunning = true) }
         val outcome = probeDisplay(activity)
         mutable.update { it.copy(virtualDisplayProbe = outcome, secondScreenProbeRunning = false) }
+        remember()
         return outcome
+    }
+
+    /**
+     * Reads back what this phone answered on an earlier run, if it is still the same phone.
+     *
+     * Suspends rather than running in `init` because the first read of a preference file is disk,
+     * and the caller is a cold start. An absent or retired record leaves every answer
+     * [ProbeOutcome.NOT_PROBED], which is the honest state and the one the verdicts already handle.
+     */
+    suspend fun restore() {
+        val stored = withContext(Dispatchers.IO) { runCatching { store.load() }.getOrNull() } ?: return
+        mutable.update {
+            // Nothing overwrites an answer this run has already produced: a check the person ran
+            // just now is better evidence than a check they ran last week.
+            if (it.hasBeenAsked) {
+                it
+            } else {
+                it.copy(
+                    encoders = stored.encoders,
+                    encoderProbe = stored.encoderProbe,
+                    virtualDisplayProbe = stored.virtualDisplayProbe,
+                    encoderRoundTrip = stored.encoderRoundTrip,
+                    roundTripDetail = stored.roundTripDetail,
+                    roundTripCodec = stored.roundTripCodec,
+                )
+            }
+        }
+    }
+
+    private suspend fun remember() {
+        val probed = mutable.value
+        withContext(Dispatchers.IO) {
+            runCatching {
+                store.save(
+                    StoredCapabilities(
+                        encoders = probed.encoders,
+                        encoderProbe = probed.encoderProbe,
+                        virtualDisplayProbe = probed.virtualDisplayProbe,
+                        encoderRoundTrip = probed.encoderRoundTrip,
+                        roundTripDetail = probed.roundTripDetail,
+                        roundTripCodec = probed.roundTripCodec,
+                    ),
+                )
+            }
+        }
     }
 
     /** Everything the assessor needs about this phone, from what has actually been asked. */

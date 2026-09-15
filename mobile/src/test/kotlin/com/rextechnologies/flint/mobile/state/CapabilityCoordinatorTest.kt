@@ -5,7 +5,9 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.rextechnologies.flint.castcore.capability.ProbeOutcome
+import com.rextechnologies.flint.mobile.platform.CapabilityStore
 import com.rextechnologies.flint.mobile.platform.EncoderRoundTrip
+import com.rextechnologies.flint.mobile.platform.StoredCapabilities
 import com.rextechnologies.flint.protocol.wire.CodecId
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
@@ -16,6 +18,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
@@ -31,6 +34,7 @@ class CapabilityCoordinatorTest {
             EncoderRoundTrip.Outcome(ProbeOutcome.SUPPORTED, "Intact.")
         },
         display: ProbeOutcome = ProbeOutcome.SUPPORTED,
+        store: CapabilityStore = RecordingStore(),
     ) = CapabilityCoordinator(
         context = context,
         deviceName = "Pixel",
@@ -40,7 +44,21 @@ class CapabilityCoordinatorTest {
         enumerateEncoders = { encoders },
         roundTrip = roundTrip,
         probeDisplay = { display },
+        store = store,
     )
+
+    /** A store in memory, so these tests never touch a preference file. */
+    private class RecordingStore(var value: StoredCapabilities? = null) : CapabilityStore {
+        var saves = 0
+            private set
+
+        override fun load(): StoredCapabilities? = value
+
+        override fun save(value: StoredCapabilities) {
+            this.value = value
+            saves++
+        }
+    }
 
     @Test
     fun `the encoder check lists the encoders, exercises the preferred one, and remembers both`() = runBlocking {
@@ -120,5 +138,77 @@ class CapabilityCoordinatorTest {
         gate.complete(Unit)
         assertEquals(ProbeOutcome.SUPPORTED, first.await().roundTrip)
         assertEquals(1, runs)
+    }
+
+    @Test
+    fun `an answer from an earlier run is restored rather than asked for again`() = runBlocking {
+        // The defect this pins: the flag saying the introduction had been read was persisted while
+        // these answers were not, so from the second launch onward every streaming mode was Blocked
+        // until somebody went to Settings and ran the check by hand.
+        val store = RecordingStore(
+            StoredCapabilities(
+                encoders = setOf(CodecId.H264),
+                encoderProbe = ProbeOutcome.SUPPORTED,
+                virtualDisplayProbe = ProbeOutcome.SUPPORTED,
+                encoderRoundTrip = ProbeOutcome.SUPPORTED,
+                roundTripDetail = "Intact.",
+                roundTripCodec = CodecId.H264,
+            ),
+        )
+        val coordinator = coordinator(store = store)
+
+        coordinator.restore()
+
+        val probed = coordinator.state.value
+        assertEquals(setOf(CodecId.H264), probed.encoders)
+        assertEquals(ProbeOutcome.SUPPORTED, probed.encoderProbe)
+        assertEquals(ProbeOutcome.SUPPORTED, probed.encoderRoundTrip)
+        assertEquals(CodecId.H264, probed.roundTripCodec)
+        assertTrue(probed.hasBeenAsked)
+    }
+
+    @Test
+    fun `nothing stored leaves every answer outstanding`() = runBlocking {
+        val coordinator = coordinator(store = RecordingStore(null))
+
+        coordinator.restore()
+
+        assertEquals(ProbeOutcome.NOT_PROBED, coordinator.state.value.encoderProbe)
+        assertFalse(coordinator.state.value.hasBeenAsked)
+    }
+
+    @Test
+    fun `a check run this session is not overwritten by an older stored answer`() = runBlocking {
+        val store = RecordingStore(
+            StoredCapabilities(
+                encoders = setOf(CodecId.H265),
+                encoderProbe = ProbeOutcome.SUPPORTED,
+                virtualDisplayProbe = ProbeOutcome.SUPPORTED,
+                encoderRoundTrip = ProbeOutcome.UNSUPPORTED,
+                roundTripDetail = "From last week.",
+                roundTripCodec = CodecId.H265,
+            ),
+        )
+        val coordinator = coordinator(encoders = setOf(CodecId.H264), store = store)
+
+        coordinator.probeEncoders(activity)
+        coordinator.restore()
+
+        val probed = coordinator.state.value
+        assertEquals(setOf(CodecId.H264), probed.encoders, "the fresh answer must win")
+        assertEquals(ProbeOutcome.SUPPORTED, probed.encoderRoundTrip)
+    }
+
+    @Test
+    fun `both checks write their answers down`() = runBlocking {
+        val store = RecordingStore()
+        val coordinator = coordinator(store = store)
+
+        coordinator.probeEncoders(activity)
+        assertEquals(ProbeOutcome.SUPPORTED, assertNotNull(store.value).encoderProbe)
+
+        coordinator.probeSecondScreen(activity)
+        assertEquals(ProbeOutcome.SUPPORTED, assertNotNull(store.value).virtualDisplayProbe)
+        assertEquals(2, store.saves)
     }
 }
