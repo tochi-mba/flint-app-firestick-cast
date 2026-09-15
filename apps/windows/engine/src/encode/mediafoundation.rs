@@ -128,7 +128,7 @@ fn hardware_encoder_names(subtype: GUID, adapter_luid: i64) -> Vec<String> {
 
     let mut attributes = None;
     // SAFETY: `attributes` is a valid out parameter and is released by its COM wrapper.
-    if unsafe { MFCreateAttributes(&mut attributes, 1) }.is_err() {
+    if unsafe { MFCreateAttributes(&raw mut attributes, 1) }.is_err() {
         return Vec::new();
     }
     let Some(attributes) = attributes else {
@@ -150,10 +150,10 @@ fn hardware_encoder_names(subtype: GUID, adapter_luid: i64) -> Vec<String> {
             MFT_CATEGORY_VIDEO_ENCODER,
             MFT_ENUM_FLAG_HARDWARE | MFT_ENUM_FLAG_SORTANDFILTER,
             None,
-            Some(&output),
+            Some(&raw const output),
             &attributes,
-            &mut activates,
-            &mut count,
+            &raw mut activates,
+            &raw mut count,
         )
     };
 
@@ -169,9 +169,10 @@ fn hardware_encoder_names(subtype: GUID, adapter_luid: i64) -> Vec<String> {
         .filter_map(friendly_name)
         .collect::<Vec<_>>();
 
-    // SAFETY: every array element is an initialised `Option<IMFActivate>`. Drop each wrapper to
-    // release its COM reference before freeing the separately allocated pointer array.
+    // Drop each wrapper to release its COM reference before freeing the separately allocated
+    // pointer array.
     for index in 0..count as usize {
+        // SAFETY: every element below `count` is an initialised `Option<IMFActivate>`, dropped once.
         unsafe { std::ptr::drop_in_place(activates.add(index)) };
     }
 
@@ -187,7 +188,11 @@ fn friendly_name(activate: &IMFActivate) -> Option<String> {
     let mut length = 0u32;
     // SAFETY: both out parameters are valid and the activation object remains live for the call.
     if unsafe {
-        activate.GetAllocatedString(&MFT_FRIENDLY_NAME_Attribute, &mut pointer, &mut length)
+        activate.GetAllocatedString(
+            &MFT_FRIENDLY_NAME_Attribute,
+            &raw mut pointer,
+            &raw mut length,
+        )
     }
     .is_err()
         || pointer.is_null()
@@ -317,13 +322,19 @@ mod tests {
 
     #[test]
     fn wide_buffer_stops_at_the_first_nul() {
-        let buffer = [b'R' as u16, b'E' as u16, b'X' as u16, 0, b'!' as u16];
+        let buffer = [
+            u16::from(b'R'),
+            u16::from(b'E'),
+            u16::from(b'X'),
+            0,
+            u16::from(b'!'),
+        ];
         assert_eq!(wide_to_string(&buffer), "REX");
     }
 
     #[test]
     fn wide_buffer_without_a_nul_reads_to_the_end() {
-        let buffer = [b'R' as u16, b'E' as u16, b'X' as u16];
+        let buffer = [u16::from(b'R'), u16::from(b'E'), u16::from(b'X')];
         assert_eq!(wide_to_string(&buffer), "REX");
     }
 

@@ -136,9 +136,8 @@ pub unsafe extern "C" fn flint_probe_encoders(
     }
 
     let result = catch_unwind(AssertUnwindSafe(|| {
-        let inventory = match mediafoundation::probe() {
-            Ok(inventory) => inventory,
-            Err(_) => return Err(FlintStatus::PlatformError),
+        let Ok(inventory) = mediafoundation::probe() else {
+            return Err(FlintStatus::PlatformError);
         };
 
         // SAFETY: checked non-null above.
@@ -196,9 +195,8 @@ pub unsafe extern "C" fn flint_probe_adapters(
     }
 
     let result = catch_unwind(AssertUnwindSafe(|| {
-        let inventory = match mediafoundation::adapters() {
-            Ok(inventory) => inventory,
-            Err(_) => return Err(FlintStatus::PlatformError),
+        let Ok(inventory) = mediafoundation::adapters() else {
+            return Err(FlintStatus::PlatformError);
         };
 
         // SAFETY: checked non-null above.
@@ -451,6 +449,7 @@ pub unsafe extern "C" fn flint_mirror_start(
     }
 
     // A failed start never leaves a caller's stale handle looking live.
+    // SAFETY: checked non-null above; the caller guarantees it is aligned and writable.
     unsafe { *out_handle = std::ptr::null_mut() };
     if config.is_null() {
         return FlintStatus::NullArgument as i32;
@@ -561,6 +560,7 @@ pub unsafe extern "C" fn flint_mirror_next(
     }
 
     // Initialise the result before any fallible work, including the unwind guard.
+    // SAFETY: checked non-null above; the caller guarantees it is aligned and writable.
     unsafe { *out_frame = FlintMirrorFrame::EMPTY };
     if handle.is_null() || buffer.is_null() {
         return FlintStatus::NullArgument as i32;
@@ -639,6 +639,7 @@ pub unsafe extern "C" fn flint_mirror_codec_data(
         return FlintStatus::NullArgument as i32;
     }
 
+    // SAFETY: checked non-null above; the caller guarantees it is aligned and writable.
     unsafe { *out_len = 0 };
     if handle.is_null() || (buffer.is_null() && capacity > 0) {
         return FlintStatus::NullArgument as i32;

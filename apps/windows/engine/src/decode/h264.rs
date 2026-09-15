@@ -82,10 +82,10 @@ impl H264Decoder {
             MFTEnumEx(
                 MFT_CATEGORY_VIDEO_DECODER,
                 MFT_ENUM_FLAG_SYNCMFT | MFT_ENUM_FLAG_SORTANDFILTER,
-                Some(&input_info),
+                Some(&raw const input_info),
                 None,
-                &mut activates,
-                &mut count,
+                &raw mut activates,
+                &raw mut count,
             )
             .map_err(platform)?;
         }
@@ -188,7 +188,10 @@ impl H264Decoder {
         let _ = provided;
 
         // SAFETY: one correctly-initialised entry, and stream 0 exists on every decoder.
-        match unsafe { self.transform.ProcessOutput(0, &mut buffers, &mut status) } {
+        match unsafe {
+            self.transform
+                .ProcessOutput(0, &mut buffers, &raw mut status)
+        } {
             Ok(()) => {}
             Err(error) if error.code() == MF_E_TRANSFORM_NEED_MORE_INPUT => return Ok(None),
             Err(error) if error.code() == MF_E_TRANSFORM_STREAM_CHANGE => {
@@ -213,7 +216,7 @@ impl H264Decoder {
         // SAFETY: both out-parameters are valid; the lock is released before returning.
         unsafe {
             buffer
-                .Lock(&mut data, None, Some(&mut length))
+                .Lock(&raw mut data, None, Some(&raw mut length))
                 .map_err(platform)?;
         }
         // SAFETY: Lock reported `length` readable bytes at `data`.
@@ -242,6 +245,7 @@ impl H264Decoder {
         let media_type = unsafe { self.transform.GetOutputCurrentType(0) }.map_err(platform)?;
         // SAFETY: the type is live; both keys are standard.
         let packed = unsafe { media_type.GetUINT64(&MF_MT_FRAME_SIZE) }.map_err(platform)?;
+        // SAFETY: as above; a type with no stride reports an error, read as zero.
         let stride = unsafe { media_type.GetUINT32(&MF_MT_DEFAULT_STRIDE) }.unwrap_or(0);
         Ok(((packed >> 32) as u32, packed as u32, stride))
     }
@@ -284,7 +288,7 @@ impl H264Decoder {
         // SAFETY: the buffer was just created with room for `length` bytes.
         unsafe {
             buffer
-                .Lock(&mut destination, None, None)
+                .Lock(&raw mut destination, None, None)
                 .map_err(platform)?;
             std::ptr::copy_nonoverlapping(access_unit.as_ptr(), destination, access_unit.len());
             buffer.SetCurrentLength(length).map_err(platform)?;

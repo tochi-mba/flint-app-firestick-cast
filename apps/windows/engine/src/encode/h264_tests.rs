@@ -416,7 +416,7 @@ pub(super) fn noisy_frame(index: u32, width: u32, height: u32) -> SourceFrame {
     let mut pixels = vec![0u8; (width * height * 4) as usize];
     // A cheap deterministic hash per pixel, so the content is incompressible but reproducible.
     let mut state = index.wrapping_mul(2_654_435_761).wrapping_add(1);
-    for byte in pixels.iter_mut() {
+    for byte in &mut pixels {
         state ^= state << 13;
         state ^= state >> 17;
         state ^= state << 5;

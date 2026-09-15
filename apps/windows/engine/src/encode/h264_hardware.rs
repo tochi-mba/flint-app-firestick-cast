@@ -87,7 +87,7 @@ impl std::fmt::Debug for HardwareH264Encoder {
                 &self.codec_specific_data.len(),
             )
             .field("ready", &self.ready.len())
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
@@ -196,11 +196,12 @@ impl HardwareH264Encoder {
         let media_type = unsafe { transform.GetInputCurrentType(0) }.map_err(platform)?;
         // SAFETY: the type is live; all three keys are standard.
         let size = unsafe { media_type.GetUINT64(&MF_MT_FRAME_SIZE) }.unwrap_or(0);
+        // SAFETY: as above; a type with no stride reports an error, read as zero.
         let stride = unsafe { media_type.GetUINT32(&MF_MT_DEFAULT_STRIDE) }.unwrap_or(0) as i32;
 
         let mut info = windows::Win32::Media::MediaFoundation::MFT_INPUT_STREAM_INFO::default();
         // SAFETY: stream 0 exists and the out-parameter is valid.
-        unsafe { transform.GetInputStreamInfo(0, &mut info) }.map_err(platform)?;
+        unsafe { transform.GetInputStreamInfo(0, &raw mut info) }.map_err(platform)?;
 
         Ok(((size >> 32) as u32, size as u32, stride, info.cbSize))
     }
@@ -601,7 +602,7 @@ impl HardwareH264Encoder {
 
         // Hardware transforms allocate their own output samples, so `pSample` stays null going in.
         // SAFETY: one correctly-initialised entry, and stream 0 exists on every encoder.
-        match unsafe { transform.ProcessOutput(0, &mut buffers, &mut status) } {
+        match unsafe { transform.ProcessOutput(0, &mut buffers, &raw mut status) } {
             Ok(()) => {}
             Err(error) if error.code() == MF_E_TRANSFORM_NEED_MORE_INPUT => return Ok(None),
             Err(error) if error.code() == MF_E_TRANSFORM_STREAM_CHANGE => {
@@ -750,6 +751,7 @@ fn build_media_type(
     config: &EncoderConfig,
     is_output: bool,
 ) -> Result<IMFMediaType, EncodeError> {
+    // SAFETY: takes no arguments, and returns an owned interface or an error.
     let media_type = unsafe { MFCreateMediaType() }.map_err(platform)?;
     // SAFETY: the media type was just created and every key below matches its documented value
     // type.

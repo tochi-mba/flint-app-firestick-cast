@@ -68,7 +68,7 @@ pub(super) fn encode(message: &Message) -> Result<Option<Vec<u8>>, WireError> {
                     "browser command URL",
                 )?,
                 BrowserCommandAction::SetPreviewEnabled => {
-                    writer.boolean((*preview_enabled).expect("validated browser preview setting"))
+                    writer.boolean((*preview_enabled).expect("validated browser preview setting"));
                 }
                 _ => {}
             }
@@ -303,7 +303,7 @@ fn encode_input(writer: &mut Writer, event: &BrowserInputEvent) -> Result<(), Wi
         }
         BrowserInputEvent::SemanticKey(key) => writer.u8(*key as u8),
         BrowserInputEvent::Text(text) => {
-            writer.utf8_u16(text, limits::MAX_TEXT_BYTES, "browser text input")?
+            writer.utf8_u16(text, limits::MAX_TEXT_BYTES, "browser text input")?;
         }
     }
     Ok(())
@@ -450,16 +450,7 @@ fn validate(message: &Message) -> Result<(), WireError> {
                     "available browser capability requires a secure endpoint",
                 )?;
             }
-            if !*preview_supported {
-                require(
-                    *preview_max_width == 0
-                        && *preview_max_height == 0
-                        && *interactive_preview_frames_per_second == 0
-                        && *idle_preview_frames_per_second == 0
-                        && *preview_max_bytes == 0,
-                    "unavailable preview must advertise zero limits",
-                )?;
-            } else {
+            if *preview_supported {
                 require(
                     (1..=limits::MAX_PREVIEW_WIDTH).contains(preview_max_width),
                     "browser preview width is out of range",
@@ -481,6 +472,15 @@ fn validate(message: &Message) -> Result<(), WireError> {
                     *preview_max_bytes > 0
                         && *preview_max_bytes <= limits::MAX_PREVIEW_BYTES as i32,
                     "browser preview byte limit is out of range",
+                )?;
+            } else {
+                require(
+                    *preview_max_width == 0
+                        && *preview_max_height == 0
+                        && *interactive_preview_frames_per_second == 0
+                        && *idle_preview_frames_per_second == 0
+                        && *preview_max_bytes == 0,
+                    "unavailable preview must advertise zero limits",
                 )?;
             }
         }
@@ -701,7 +701,7 @@ fn validate_input(event: &BrowserInputEvent) -> Result<(), WireError> {
         }
         BrowserInputEvent::SemanticKey(_) => {}
         BrowserInputEvent::Text(text) => {
-            require_text(text, limits::MAX_TEXT_BYTES, "browser text input")?
+            require_text(text, limits::MAX_TEXT_BYTES, "browser text input")?;
         }
     }
     Ok(())
@@ -814,15 +814,12 @@ impl Writer {
         maximum: usize,
         field: &'static str,
     ) -> Result<(), WireError> {
-        match value {
-            Some(value) => {
-                self.boolean(true);
-                self.utf8_u16(value, maximum, field)
-            }
-            None => {
-                self.boolean(false);
-                Ok(())
-            }
+        if let Some(value) = value {
+            self.boolean(true);
+            self.utf8_u16(value, maximum, field)
+        } else {
+            self.boolean(false);
+            Ok(())
         }
     }
 

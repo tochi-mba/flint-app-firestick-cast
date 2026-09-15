@@ -69,9 +69,9 @@ impl DesktopDuplication {
                 D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_VIDEO_SUPPORT,
                 Some(&[D3D_FEATURE_LEVEL_11_0]),
                 D3D11_SDK_VERSION,
-                Some(&mut device),
+                Some(&raw mut device),
                 None,
-                Some(&mut context),
+                Some(&raw mut context),
             )
             .map_err(platform)?;
         }
@@ -139,7 +139,7 @@ impl DesktopDuplication {
         // SAFETY: both out-parameters are valid, and the duplication is live.
         let result = unsafe {
             self.duplication
-                .AcquireNextFrame(timeout_ms, &mut info, &mut resource)
+                .AcquireNextFrame(timeout_ms, &raw mut info, &raw mut resource)
         };
 
         if let Err(error) = result {
@@ -265,7 +265,7 @@ mod tests {
         let result = DesktopDuplication::open(9_999);
         assert!(matches!(
             result,
-            Err(CaptureError::NoSuchOutput(9_999)) | Err(CaptureError::NoDisplayAdapter)
+            Err(CaptureError::NoSuchOutput(9_999) | CaptureError::NoDisplayAdapter)
         ));
     }
 
@@ -329,7 +329,7 @@ mod live_probe {
                             println!("captured a frame on attempt {attempt}");
                             return;
                         }
-                        Ok(_) => continue,
+                        Ok(_) => {}
                         Err(error) => {
                             println!("acquire failed: {error}");
                             return;

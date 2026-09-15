@@ -195,7 +195,7 @@ impl FrameReadback {
         // mapped; the unmap below balances this on every path.
         unsafe {
             self.context
-                .Map(staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped))
+                .Map(staging, 0, D3D11_MAP_READ, 0, Some(&raw mut mapped))
                 .map_err(platform)?;
         }
 
@@ -272,7 +272,7 @@ impl FrameReadback {
             // SAFETY: the description is fully initialised and the out-parameter is valid.
             unsafe {
                 self.device
-                    .CreateTexture2D(&description, None, Some(&mut reduced))
+                    .CreateTexture2D(&raw const description, None, Some(&raw mut reduced))
             }
             .ok()?;
             self.reduced = reduced;
@@ -315,7 +315,7 @@ impl FrameReadback {
 
         let mut description = D3D11_TEXTURE2D_DESC::default();
         // SAFETY: the texture is live; GetDesc fills the description by pointer.
-        unsafe { texture.GetDesc(&mut description) };
+        unsafe { texture.GetDesc(&raw mut description) };
 
         description.Usage = D3D11_USAGE_STAGING;
         description.BindFlags = 0;
@@ -333,10 +333,10 @@ impl FrameReadback {
         // texture; the out-parameter is valid.
         unsafe {
             self.device
-                .CreateTexture2D(&description, None, Some(&mut first))
+                .CreateTexture2D(&raw const description, None, Some(&raw mut first))
                 .map_err(platform)?;
             self.device
-                .CreateTexture2D(&description, None, Some(&mut second))
+                .CreateTexture2D(&raw const description, None, Some(&raw mut second))
                 .map_err(platform)?;
         }
 
@@ -594,7 +594,7 @@ impl BgraTexturePool {
         for _ in 0..Self::DEPTH {
             let mut texture: Option<ID3D11Texture2D> = None;
             // SAFETY: the description is fully initialised and the out-parameter is valid.
-            unsafe { device.CreateTexture2D(&description, None, Some(&mut texture)) }
+            unsafe { device.CreateTexture2D(&raw const description, None, Some(&raw mut texture)) }
                 .map_err(platform)?;
             textures.push(texture.ok_or_else(|| CaptureError::Platform("no BGRA texture".into()))?);
         }
@@ -637,7 +637,7 @@ fn packed_bgra_len(width: u32, height: u32) -> Option<usize> {
         .checked_mul(4)?;
     usize::try_from(len)
         .ok()
-        .filter(|&len| len <= isize::MAX as usize)
+        .filter(|&len| isize::try_from(len).is_ok())
 }
 
 fn platform(error: windows::core::Error) -> CaptureError {

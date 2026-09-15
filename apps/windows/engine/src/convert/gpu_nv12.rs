@@ -154,8 +154,9 @@ impl GpuNv12Converter {
         };
 
         // SAFETY: the description is fully initialised; the enumerator is released with this scope.
-        let enumerator = unsafe { video_device.CreateVideoProcessorEnumerator(&description) }
-            .map_err(platform)?;
+        let enumerator =
+            unsafe { video_device.CreateVideoProcessorEnumerator(&raw const description) }
+                .map_err(platform)?;
         // SAFETY: rate conversion index 0 is the processor's default capability set.
         let processor =
             unsafe { video_device.CreateVideoProcessor(&enumerator, 0) }.map_err(platform)?;
@@ -215,10 +216,13 @@ impl GpuNv12Converter {
         // fail in a way worth acting on — a driver that ignores them produces a defined picture in
         // the wrong range, which the round-trip test catches.
         unsafe {
+            self.video_context.VideoProcessorSetStreamColorSpace(
+                &self.processor,
+                0,
+                &raw const input,
+            );
             self.video_context
-                .VideoProcessorSetStreamColorSpace(&self.processor, 0, &input);
-            self.video_context
-                .VideoProcessorSetOutputColorSpace(&self.processor, &output);
+                .VideoProcessorSetOutputColorSpace(&self.processor, &raw const output);
         }
     }
 
@@ -247,8 +251,8 @@ impl GpuNv12Converter {
             self.video_device.CreateVideoProcessorInputView(
                 source,
                 &self.enumerator,
-                &input_description,
-                Some(&mut input_view),
+                &raw const input_description,
+                Some(&raw mut input_view),
             )
         }
         .map_err(|error| step("creating the input view", error))?;
@@ -267,8 +271,8 @@ impl GpuNv12Converter {
             self.video_device.CreateVideoProcessorOutputView(
                 destination,
                 &self.enumerator,
-                &output_description,
-                Some(&mut output_view),
+                &raw const output_description,
+                Some(&raw mut output_view),
             )
         }
         .map_err(|error| step("creating the output view", error))?;
@@ -295,18 +299,18 @@ impl GpuNv12Converter {
                 &self.processor,
                 0,
                 true,
-                Some(&source_rect),
+                Some(&raw const source_rect),
             );
             self.video_context.VideoProcessorSetStreamDestRect(
                 &self.processor,
                 0,
                 true,
-                Some(&target_rect),
+                Some(&raw const target_rect),
             );
             self.video_context.VideoProcessorSetOutputTargetRect(
                 &self.processor,
                 true,
-                Some(&target_rect),
+                Some(&raw const target_rect),
             );
         }
 

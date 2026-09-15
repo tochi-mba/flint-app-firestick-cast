@@ -22,9 +22,9 @@ fn device() -> Option<(ID3D11Device, ID3D11DeviceContext)> {
             D3D11_CREATE_DEVICE_VIDEO_SUPPORT | D3D11_CREATE_DEVICE_BGRA_SUPPORT,
             Some(&[D3D_FEATURE_LEVEL_11_0]),
             D3D11_SDK_VERSION,
-            Some(&mut device),
+            Some(&raw mut device),
             None,
-            Some(&mut context),
+            Some(&raw mut context),
         )
         .ok()?;
     }
@@ -66,7 +66,14 @@ fn solid_bgra(
     };
     let mut texture = None;
     // SAFETY: the description and initial data match, and the out-parameter is valid.
-    unsafe { device.CreateTexture2D(&description, Some(&initial), Some(&mut texture)) }.ok()?;
+    unsafe {
+        device.CreateTexture2D(
+            &raw const description,
+            Some(&raw const initial),
+            Some(&raw mut texture),
+        )
+    }
+    .ok()?;
     texture
 }
 
@@ -92,7 +99,7 @@ fn nv12_target(device: &ID3D11Device, width: u32, height: u32) -> Option<ID3D11T
     };
     let mut texture = None;
     // SAFETY: the description is fully initialised and the out-parameter is valid.
-    unsafe { device.CreateTexture2D(&description, None, Some(&mut texture)) }.ok()?;
+    unsafe { device.CreateTexture2D(&raw const description, None, Some(&raw mut texture)) }.ok()?;
     texture
 }
 
@@ -184,12 +191,12 @@ fn a_device_without_video_support_is_refused_rather_than_used() {
             None,
             D3D_DRIVER_TYPE_HARDWARE,
             None,
-            Default::default(),
+            windows::Win32::Graphics::Direct3D11::D3D11_CREATE_DEVICE_FLAG::default(),
             Some(&[D3D_FEATURE_LEVEL_11_0]),
             D3D11_SDK_VERSION,
-            Some(&mut device),
+            Some(&raw mut device),
             None,
-            Some(&mut context),
+            Some(&raw mut context),
         )
     };
     if created.is_err() {
@@ -315,7 +322,8 @@ fn report_which_input_texture_the_capture_device_will_accept() {
         };
         let mut texture = None;
         // SAFETY: the description is fully initialised and the out-parameter is valid.
-        let created = unsafe { device.CreateTexture2D(&description, None, Some(&mut texture)) };
+        let created =
+            unsafe { device.CreateTexture2D(&raw const description, None, Some(&raw mut texture)) };
         let Ok(()) = created else {
             println!("  {label:32}: texture refused");
             continue;

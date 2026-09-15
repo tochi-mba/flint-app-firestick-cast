@@ -1,3 +1,8 @@
+#![allow(
+    clippy::undocumented_unsafe_blocks,
+    reason = "every unsafe block is the FFI call under test, made with the arguments the test names"
+)]
+
 use super::*;
 
 #[test]
@@ -46,7 +51,7 @@ fn probe_rejects_a_null_count() {
 #[test]
 fn probe_rejects_a_null_buffer_with_a_nonzero_capacity() {
     let mut found = 0u32;
-    let status = unsafe { flint_probe_encoders(std::ptr::null_mut(), 4, &mut found) };
+    let status = unsafe { flint_probe_encoders(std::ptr::null_mut(), 4, &raw mut found) };
     assert_eq!(status, FlintStatus::NullArgument as i32);
 }
 
@@ -59,7 +64,7 @@ fn adapter_probe_rejects_a_null_count() {
 #[test]
 fn adapter_probe_rejects_a_null_buffer_with_a_nonzero_capacity() {
     let mut found = 0u32;
-    let status = unsafe { flint_probe_adapters(std::ptr::null_mut(), 1, &mut found) };
+    let status = unsafe { flint_probe_adapters(std::ptr::null_mut(), 1, &raw mut found) };
     assert_eq!(status, FlintStatus::NullArgument as i32);
 }
 

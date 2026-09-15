@@ -1,3 +1,8 @@
+#![allow(
+    clippy::undocumented_unsafe_blocks,
+    reason = "tests driving Media Foundation directly to find where a round trip breaks"
+)]
+
 use crate::convert::nv12::bgra_to_nv12;
 use crate::decode::h264::H264Decoder;
 use crate::encode::selected::SelectedEncoder;
@@ -124,7 +129,7 @@ fn what_the_hardware_encoder_produces_decodes_back_into_a_picture() {
     );
     match decoder.negotiated_output() {
         Ok((width, height, stride)) => {
-            println!("decoder negotiated {width}x{height}, stride {stride}")
+            println!("decoder negotiated {width}x{height}, stride {stride}");
         }
         Err(error) => println!("no negotiated output type: {error}"),
     }
@@ -344,8 +349,7 @@ fn describe_nals(access_unit: &[u8]) -> String {
     for (position, (payload, _)) in starts.iter().enumerate() {
         let end = starts
             .get(position + 1)
-            .map(|(next, prefix)| next - prefix)
-            .unwrap_or(access_unit.len());
+            .map_or(access_unit.len(), |(next, prefix)| next - prefix);
         let header = access_unit[*payload];
         let name = match header & 0x1f {
             1 => "slice",
@@ -492,7 +496,7 @@ fn report_what_the_hardware_transform_expects_of_its_input() {
     let transform = hardware.transform();
     let mut input_info = windows::Win32::Media::MediaFoundation::MFT_INPUT_STREAM_INFO::default();
     // SAFETY: stream 0 exists on every encoder and the out-parameter is valid.
-    match unsafe { transform.GetInputStreamInfo(0, &mut input_info) } {
+    match unsafe { transform.GetInputStreamInfo(0, &raw mut input_info) } {
         Ok(()) => println!(
             "input: cbSize {} alignment {} maxLookahead {} flags {:#010x}",
             input_info.cbSize,

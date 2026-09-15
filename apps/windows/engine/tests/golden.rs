@@ -142,7 +142,10 @@ fn no_committed_vector_is_orphaned() {
     for entry in fs::read_dir(&directory).expect("golden directory exists") {
         let entry = entry.expect("directory entry is readable");
         let name = entry.file_name().to_string_lossy().into_owned();
-        if !name.ends_with(".bin") {
+        if !Path::new(&name)
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("bin"))
+        {
             continue;
         }
         assert!(

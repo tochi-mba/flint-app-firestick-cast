@@ -186,18 +186,20 @@ fn manifest_path() -> PathBuf {
         if candidate.is_dir() {
             return candidate.join("browser-enums.txt");
         }
-        if !current.pop() {
-            panic!("could not find protocol/golden above the crate root");
-        }
+        assert!(
+            current.pop(),
+            "could not find protocol/golden above the crate root"
+        );
     }
 }
 
 /// One line per value: `Enum.VARIANT=value`. A text format so the diff is readable in review.
 fn render(all: &BTreeMap<String, Vec<u8>>) -> String {
     let mut out = String::new();
+    use std::fmt::Write as _;
     for (name, values) in all {
         let joined: Vec<String> = values.iter().map(u8::to_string).collect();
-        out.push_str(&format!("{name}={}\n", joined.join(",")));
+        writeln!(out, "{name}={}", joined.join(",")).expect("writing to a String cannot fail");
     }
     out
 }

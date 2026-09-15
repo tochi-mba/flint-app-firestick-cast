@@ -1,2 +1,3 @@
-# The hot path must not allocate; flag the obvious offenders in review.
-too-many-arguments-threshold = 8
+# Names that are words in this crate's prose rather than code to be set in backticks. ".." keeps
+# clippy's own list as well.
+doc-valid-idents = ["WebView", "WireGuard", "PCIe", "DuckDuckGo", ".."]

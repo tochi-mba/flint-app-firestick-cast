@@ -103,8 +103,10 @@ impl Nv12TexturePool {
         };
         let mut staging: Option<ID3D11Texture2D> = None;
         // SAFETY: the description is fully initialised and the out-parameter is valid.
-        unsafe { device.CreateTexture2D(&staging_description, None, Some(&mut staging)) }
-            .map_err(platform)?;
+        unsafe {
+            device.CreateTexture2D(&raw const staging_description, None, Some(&raw mut staging))
+        }
+        .map_err(platform)?;
         let staging =
             staging.ok_or_else(|| EncodeError::Platform("no NV12 staging texture".into()))?;
 
@@ -112,7 +114,8 @@ impl Nv12TexturePool {
         for _ in 0..Self::DEPTH {
             let mut texture: Option<ID3D11Texture2D> = None;
             // SAFETY: as above.
-            unsafe { device.CreateTexture2D(&base, None, Some(&mut texture)) }.map_err(platform)?;
+            unsafe { device.CreateTexture2D(&raw const base, None, Some(&raw mut texture)) }
+                .map_err(platform)?;
             textures.push(texture.ok_or_else(|| EncodeError::Platform("no NV12 texture".into()))?);
         }
 
@@ -197,7 +200,7 @@ impl Nv12TexturePool {
         // requires; the unmap below balances this on every path.
         unsafe {
             self.context
-                .Map(&self.staging, 0, D3D11_MAP_WRITE, 0, Some(&mut mapped))
+                .Map(&self.staging, 0, D3D11_MAP_WRITE, 0, Some(&raw mut mapped))
                 .map_err(platform)?;
         }
 
@@ -283,9 +286,9 @@ mod tests {
                 D3D11_CREATE_DEVICE_VIDEO_SUPPORT,
                 Some(&[D3D_FEATURE_LEVEL_11_0]),
                 D3D11_SDK_VERSION,
-                Some(&mut device),
+                Some(&raw mut device),
                 None,
-                Some(&mut context),
+                Some(&raw mut context),
             )
             .ok()?;
         }

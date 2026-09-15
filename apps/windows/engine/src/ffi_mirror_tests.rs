@@ -1,3 +1,8 @@
+#![allow(
+    clippy::undocumented_unsafe_blocks,
+    reason = "every unsafe block is the FFI call under test, made with the arguments the test names"
+)]
+
 use super::*;
 
 fn config() -> FlintMirrorConfig {
@@ -24,14 +29,14 @@ fn frame() -> FlintMirrorFrame {
 fn starting_rejects_null_arguments() {
     let mut handle = std::ptr::dangling_mut::<FlintMirrorSession>();
     assert_eq!(
-        unsafe { flint_mirror_start(std::ptr::null(), &mut handle) },
+        unsafe { flint_mirror_start(std::ptr::null(), &raw mut handle) },
         FlintStatus::NullArgument as i32
     );
     assert!(handle.is_null(), "a failed start must clear a stale handle");
 
     let config = config();
     assert_eq!(
-        unsafe { flint_mirror_start(&config, std::ptr::null_mut()) },
+        unsafe { flint_mirror_start(&raw const config, std::ptr::null_mut()) },
         FlintStatus::NullArgument as i32
     );
 }
@@ -54,7 +59,7 @@ fn starting_rejects_invalid_scalar_configuration_before_opening_the_desktop() {
     ] {
         let mut handle = std::ptr::dangling_mut::<FlintMirrorSession>();
         assert_eq!(
-            unsafe { flint_mirror_start(&invalid, &mut handle) },
+            unsafe { flint_mirror_start(&raw const invalid, &raw mut handle) },
             FlintStatus::InvalidArgument as i32
         );
         assert!(handle.is_null());
@@ -76,19 +81,32 @@ fn every_entry_point_rejects_a_null_handle_rather_than_dereferencing_it() {
     };
 
     assert_eq!(
-        unsafe { flint_mirror_next(std::ptr::null_mut(), buffer.as_mut_ptr(), 8, &mut frame) },
+        unsafe { flint_mirror_next(std::ptr::null_mut(), buffer.as_mut_ptr(), 8, &raw mut frame) },
         FlintStatus::NullArgument as i32
     );
     assert_eq!(frame, FlintMirrorFrame::EMPTY);
     assert_eq!(
         unsafe {
-            flint_mirror_codec_data(std::ptr::null_mut(), 0, buffer.as_mut_ptr(), 8, &mut length)
+            flint_mirror_codec_data(
+                std::ptr::null_mut(),
+                0,
+                buffer.as_mut_ptr(),
+                8,
+                &raw mut length,
+            )
         },
         FlintStatus::NullArgument as i32
     );
     assert_eq!(length, 0);
     assert_eq!(
-        unsafe { flint_mirror_next(std::ptr::null_mut(), std::ptr::null_mut(), 8, &mut frame) },
+        unsafe {
+            flint_mirror_next(
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                8,
+                &raw mut frame,
+            )
+        },
         FlintStatus::NullArgument as i32,
         "a null frame buffer is a mistake even though a null codec-data buffer is not"
     );
@@ -98,11 +116,11 @@ fn every_entry_point_rejects_a_null_handle_rather_than_dereferencing_it() {
     );
     let mut codec = 0u32;
     assert_eq!(
-        unsafe { flint_mirror_codec(std::ptr::null_mut(), &mut codec) },
+        unsafe { flint_mirror_codec(std::ptr::null_mut(), &raw mut codec) },
         FlintStatus::NullArgument as i32
     );
     assert_eq!(
-        unsafe { flint_mirror_stats(std::ptr::null_mut(), &mut stats) },
+        unsafe { flint_mirror_stats(std::ptr::null_mut(), &raw mut stats) },
         FlintStatus::NullArgument as i32
     );
 }
@@ -146,7 +164,7 @@ fn the_mirror_structs_have_stable_layouts() {
 fn a_real_session_reports_codec_data_and_a_capped_frame_size() {
     let config = config();
     let mut handle: *mut FlintMirrorSession = std::ptr::null_mut();
-    if unsafe { flint_mirror_start(&config, &mut handle) } != FlintStatus::Ok as i32 {
+    if unsafe { flint_mirror_start(&raw const config, &raw mut handle) } != FlintStatus::Ok as i32 {
         return;
     }
     assert!(!handle.is_null());
@@ -160,7 +178,7 @@ fn a_real_session_reports_codec_data_and_a_capped_frame_size() {
         height: 0,
     };
     assert_eq!(
-        unsafe { flint_mirror_stats(handle, &mut stats) },
+        unsafe { flint_mirror_stats(handle, &raw mut stats) },
         FlintStatus::Ok as i32
     );
     assert!(stats.width > 0 && stats.width <= config.max_width);
@@ -171,7 +189,7 @@ fn a_real_session_reports_codec_data_and_a_capped_frame_size() {
     // allocates one, so that exact call has to work rather than read as a null argument.
     let mut length = 0u32;
     let status =
-        unsafe { flint_mirror_codec_data(handle, 0, std::ptr::null_mut(), 0, &mut length) };
+        unsafe { flint_mirror_codec_data(handle, 0, std::ptr::null_mut(), 0, &raw mut length) };
     assert!(
         status == FlintStatus::Ok as i32 || status == FlintStatus::BufferTooSmall as i32,
         "unexpected status {status}"
@@ -183,7 +201,7 @@ fn a_real_session_reports_codec_data_and_a_capped_frame_size() {
 
     let mut block = vec![0u8; length as usize];
     assert_eq!(
-        unsafe { flint_mirror_codec_data(handle, 0, block.as_mut_ptr(), length, &mut length) },
+        unsafe { flint_mirror_codec_data(handle, 0, block.as_mut_ptr(), length, &raw mut length) },
         FlintStatus::Ok as i32
     );
     assert_eq!(
@@ -195,7 +213,9 @@ fn a_real_session_reports_codec_data_and_a_capped_frame_size() {
     // Past the last block is "no more", not an error, which is how the walk terminates.
     let mut past_the_end = 0u32;
     assert_eq!(
-        unsafe { flint_mirror_codec_data(handle, 64, std::ptr::null_mut(), 0, &mut past_the_end) },
+        unsafe {
+            flint_mirror_codec_data(handle, 64, std::ptr::null_mut(), 0, &raw mut past_the_end)
+        },
         FlintStatus::Ok as i32
     );
     assert_eq!(past_the_end, 0);
@@ -204,7 +224,7 @@ fn a_real_session_reports_codec_data_and_a_capped_frame_size() {
     // a decoder for a codec it is never sent, which is a black screen rather than an error.
     let mut codec = 0u32;
     assert_eq!(
-        unsafe { flint_mirror_codec(handle, &mut codec) },
+        unsafe { flint_mirror_codec(handle, &raw mut codec) },
         FlintStatus::Ok as i32
     );
     assert_eq!(codec, crate::encode::VideoCodec::H264 as u32);
@@ -217,7 +237,14 @@ fn a_real_session_reports_codec_data_and_a_capped_frame_size() {
     let mut buffer = vec![0u8; 1024 * 1024];
     let mut frame = frame();
     assert_eq!(
-        unsafe { flint_mirror_next(handle, buffer.as_mut_ptr(), buffer.len() as u32, &mut frame) },
+        unsafe {
+            flint_mirror_next(
+                handle,
+                buffer.as_mut_ptr(),
+                buffer.len() as u32,
+                &raw mut frame,
+            )
+        },
         FlintStatus::Ok as i32
     );
     assert!(

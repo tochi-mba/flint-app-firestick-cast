@@ -73,7 +73,7 @@ impl std::fmt::Debug for H264Encoder {
                 &self.codec_specific_data.len(),
             )
             .field("streaming", &self.streaming)
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
@@ -143,9 +143,11 @@ impl H264Encoder {
         // Output before input: an encoder cannot describe the pixels it accepts until it knows
         // what it is producing, and setting them the other way round fails with a type error that
         // reads like the input format is unsupported.
+        // SAFETY: the transform lives as long as this encoder, and the type outlives the call.
         unsafe { self.transform.SetOutputType(0, &output, 0) }.map_err(platform)?;
 
         let input = self.input_media_type()?;
+        // SAFETY: as for the output type.
         unsafe { self.transform.SetInputType(0, &input, 0) }.map_err(platform)?;
 
         // After the types, not before: see the note on the method.
@@ -156,6 +158,7 @@ impl H264Encoder {
         // a complete SPS/PPS pair now instead of starting a stream that can only render black.
         self.codec_specific_data = read_sequence_header(&self.transform)?;
 
+        // SAFETY: both media types are committed, which is what these notifications require.
         unsafe {
             self.transform
                 .ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, 0)
@@ -169,7 +172,9 @@ impl H264Encoder {
     }
 
     fn output_media_type(&self) -> Result<IMFMediaType, EncodeError> {
+        // SAFETY: takes no arguments, and returns an owned interface or an error.
         let media_type = unsafe { MFCreateMediaType() }.map_err(platform)?;
+        // SAFETY: the type was just created, and each key below matches its documented value type.
         unsafe {
             media_type
                 .SetGUID(&MF_MT_MAJOR_TYPE, &MFMediaType_Video)
@@ -203,7 +208,9 @@ impl H264Encoder {
     }
 
     fn input_media_type(&self) -> Result<IMFMediaType, EncodeError> {
+        // SAFETY: takes no arguments, and returns an owned interface or an error.
         let media_type = unsafe { MFCreateMediaType() }.map_err(platform)?;
+        // SAFETY: the type was just created, and each key below matches its documented value type.
         unsafe {
             media_type
                 .SetGUID(&MF_MT_MAJOR_TYPE, &MFMediaType_Video)
@@ -241,8 +248,11 @@ impl H264Encoder {
         let length = u32::try_from(self.nv12.len()).map_err(|_| {
             EncodeError::Platform("frame is larger than a Media Foundation buffer".into())
         })?;
+        // SAFETY: takes only a size, and returns an owned interface or an error.
         let buffer = unsafe { MFCreateMemoryBuffer(length) }.map_err(platform)?;
 
+        // SAFETY: the buffer was just created with room for `length` bytes, the out-parameters live
+        // for the call, and the copy below is bounded by the capacity Lock reports.
         unsafe {
             let mut destination: *mut u8 = std::ptr::null_mut();
             // The buffer's capacity, which is its *maximum* length. Its current length is zero
@@ -251,7 +261,7 @@ impl H264Encoder {
             // stream — the reason this reads the second out-parameter and not the third.
             let mut capacity = 0u32;
             buffer
-                .Lock(&mut destination, Some(&mut capacity), None)
+                .Lock(&raw mut destination, Some(&raw mut capacity), None)
                 .map_err(platform)?;
             // SAFETY: Lock handed back a buffer of at least `capacity` bytes, and the copy is
             // bounded by the smaller of it and the source.
@@ -264,7 +274,9 @@ impl H264Encoder {
             buffer.SetCurrentLength(length).map_err(platform)?;
         }
 
+        // SAFETY: takes no arguments, and returns an owned interface or an error.
         let sample = unsafe { MFCreateSample() }.map_err(platform)?;
+        // SAFETY: the sample and its buffer were both created above and are live.
         unsafe {
             sample.AddBuffer(&buffer).map_err(platform)?;
             sample
@@ -292,7 +304,10 @@ impl H264Encoder {
 
         // SAFETY: `buffers` holds exactly one correctly-initialised entry, carrying a sample when
         // the transform expects the caller to supply one and null when it allocates its own.
-        let result = unsafe { self.transform.ProcessOutput(0, &mut buffers, &mut status) };
+        let result = unsafe {
+            self.transform
+                .ProcessOutput(0, &mut buffers, &raw mut status)
+        };
         match result {
             Ok(()) => {}
             Err(error) if error.code() == MF_E_TRANSFORM_NEED_MORE_INPUT => return Ok(None),
@@ -401,7 +416,9 @@ impl H264Encoder {
             nv12_len(self.config.width, self.config.height) as u32
         };
 
+        // SAFETY: takes only a size, and returns an owned interface or an error.
         let buffer = unsafe { MFCreateMemoryBuffer(size) }.map_err(platform)?;
+        // SAFETY: takes no arguments, and returns an owned interface or an error.
         let sample = unsafe { MFCreateSample() }.map_err(platform)?;
         // SAFETY: both objects were just created and the buffer is empty.
         unsafe { sample.AddBuffer(&buffer) }.map_err(platform)?;
@@ -451,6 +468,7 @@ impl VideoEncoder for H264Encoder {
         debug_assert_eq!(self.nv12.len(), nv12_len(frame.width, frame.height));
 
         let sample = self.sample_from_nv12(frame.presentation_time_us)?;
+        // SAFETY: the transform is streaming, and the sample holds one frame of the configured size.
         unsafe { self.transform.ProcessInput(0, &sample, 0) }.map_err(platform)?;
         self.drain()
     }
@@ -491,9 +509,9 @@ fn find_encoder() -> Result<IMFTransform, EncodeError> {
             MFT_CATEGORY_VIDEO_ENCODER,
             MFT_ENUM_FLAG(MFT_ENUM_FLAG_SYNCMFT.0 | MFT_ENUM_FLAG_SORTANDFILTER.0),
             None,
-            Some(&output_info),
-            &mut activates,
-            &mut count,
+            Some(&raw const output_info),
+            &raw mut activates,
+            &raw mut count,
         )
         .map_err(platform)?;
     }
@@ -527,6 +545,7 @@ pub(crate) fn read_sequence_header(transform: &IMFTransform) -> Result<Vec<Vec<u
     // SAFETY: the output type was set above, so the transform has one to report.
     let output_type = unsafe { transform.GetOutputCurrentType(0) }.map_err(platform)?;
 
+    // SAFETY: the type is live; an encoder without the attribute returns an error, handled below.
     let length = match unsafe { output_type.GetBlobSize(&MF_MT_MPEG_SEQUENCE_HEADER) } {
         Ok(length) if length > 0 => length,
         _ => {
@@ -604,7 +623,7 @@ fn annex_b_parameter_sets(header: &[u8]) -> Result<Vec<&[u8]>, EncodeError> {
     Ok(nals)
 }
 
-/// Borrows SPS/PPS NAL payloads from an AVCDecoderConfigurationRecord (`avcC`).
+/// Borrows SPS/PPS NAL payloads from an `AVCDecoderConfigurationRecord` (`avcC`).
 fn avcc_parameter_sets(header: &[u8]) -> Result<Vec<&[u8]>, EncodeError> {
     if header.len() < 7 || header[0] != 1 {
         return Err(invalid_sequence_header());
@@ -678,7 +697,7 @@ pub(crate) fn read_sample(sample: &IMFSample) -> Result<EncodedFrame, EncodeErro
     // SAFETY: both out-parameters are valid; the lock is released before returning.
     unsafe {
         buffer
-            .Lock(&mut data, None, Some(&mut length))
+            .Lock(&raw mut data, None, Some(&raw mut length))
             .map_err(platform)?;
     }
 
@@ -738,14 +757,14 @@ const RATE_CONTROL_CBR: u32 = 0;
 pub(crate) fn set_codec_bool(codec_api: &ICodecAPI, property: &windows::core::GUID, value: bool) {
     let variant = VARIANT::from(value);
     // SAFETY: the variant outlives the call, and a rejected property is a normal outcome here.
-    let _ = unsafe { codec_api.SetValue(property, &variant) };
+    let _ = unsafe { codec_api.SetValue(property, &raw const variant) };
 }
 
 /// Sets an optional numeric codec property, ignoring an encoder that does not offer it.
 pub(crate) fn set_codec_u32(codec_api: &ICodecAPI, property: &windows::core::GUID, value: u32) {
     let variant = VARIANT::from(value);
     // SAFETY: as above.
-    let _ = unsafe { codec_api.SetValue(property, &variant) };
+    let _ = unsafe { codec_api.SetValue(property, &raw const variant) };
 }
 
 /// `MFT_OUTPUT_STREAM_PROVIDES_SAMPLES`: the transform always allocates its own output samples.

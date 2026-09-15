@@ -136,7 +136,7 @@ impl MipScaler {
 
         let mut description = D3D11_TEXTURE2D_DESC::default();
         // SAFETY: the texture is live; GetDesc fills the description by pointer.
-        unsafe { texture.GetDesc(&mut description) };
+        unsafe { texture.GetDesc(&raw mut description) };
 
         description.Usage = D3D11_USAGE_DEFAULT;
         description.CPUAccessFlags = 0;
@@ -150,17 +150,17 @@ impl MipScaler {
         // SAFETY: the description is a valid render-target texture and the out-parameter is live.
         unsafe {
             self.device
-                .CreateTexture2D(&description, None, Some(&mut chain))
+                .CreateTexture2D(&raw const description, None, Some(&raw mut chain))
                 .map_err(platform)?;
         }
         let chain = chain.ok_or_else(|| CaptureError::Platform("mip chain not created".into()))?;
 
+        let mut view = None;
         // SAFETY: the texture was just created with SHADER_RESOURCE binding, so a default view
         // over it is valid.
-        let mut view = None;
         unsafe {
             self.device
-                .CreateShaderResourceView(&chain, None, Some(&mut view))
+                .CreateShaderResourceView(&chain, None, Some(&raw mut view))
                 .map_err(platform)?;
         }
 

@@ -1,3 +1,8 @@
+#![allow(
+    clippy::undocumented_unsafe_blocks,
+    reason = "a report run by hand against this machine's encoder; nothing here ships"
+)]
+
 use super::*;
 use windows::Win32::Media::MediaFoundation::{
     CODECAPI_AVEncCommonBufferSize, CODECAPI_AVEncCommonMaxBitRate, CODECAPI_AVEncCommonQuality,
@@ -45,9 +50,9 @@ fn report_rate_control_state() {
         ("AVEncMPVGOPSize", CODECAPI_AVEncMPVGOPSize),
         ("AVEncVideoEncodeQP", CODECAPI_AVEncVideoEncodeQP),
     ] {
-        let supported = unsafe { codec_api.IsSupported(&guid) }.is_ok();
-        let modifiable = unsafe { codec_api.IsModifiable(&guid) }.is_ok();
-        let current = unsafe { codec_api.GetValue(&guid) };
+        let supported = unsafe { codec_api.IsSupported(&raw const guid) }.is_ok();
+        let modifiable = unsafe { codec_api.IsModifiable(&raw const guid) }.is_ok();
+        let current = unsafe { codec_api.GetValue(&raw const guid) };
         let readback = match current {
             Ok(value) => format!("{:?}", u32::try_from(&value)),
             Err(error) => format!("unreadable ({})", error.code().0),
@@ -77,7 +82,7 @@ fn report_rate_control_state() {
                 frame.key_frame
             ),
             Ok(None) => {
-                println!("  frame {index}: bgra_sum={source_sum} nv12_sum={nv12_sum} -> buffered")
+                println!("  frame {index}: bgra_sum={source_sum} nv12_sum={nv12_sum} -> buffered");
             }
             Err(error) => println!("  frame {index}: FAILED {error}"),
         }
@@ -112,9 +117,9 @@ fn report_every_encoder_against_noise() {
             MFT_CATEGORY_VIDEO_ENCODER,
             MFT_ENUM_FLAG(MFT_ENUM_FLAG_SYNCMFT.0 | MFT_ENUM_FLAG_SORTANDFILTER.0),
             None,
-            Some(&output_info),
-            &mut activates,
-            &mut count,
+            Some(&raw const output_info),
+            &raw mut activates,
+            &raw mut count,
         )
     };
     if enumerated.is_err() || activates.is_null() {
@@ -212,9 +217,9 @@ fn report_codec_api_support() {
                 ("AVLowLatencyMode", CODECAPI_AVLowLatencyMode),
                 ("AVEncCommonRealTime", CODECAPI_AVEncCommonRealTime),
             ] {
-                let supported = unsafe { codec_api.IsSupported(&guid) }.is_ok();
-                let modifiable = unsafe { codec_api.IsModifiable(&guid) }.is_ok();
-                let set = unsafe { codec_api.SetValue(&guid, &VARIANT::from(true)) };
+                let supported = unsafe { codec_api.IsSupported(&raw const guid) }.is_ok();
+                let modifiable = unsafe { codec_api.IsModifiable(&raw const guid) }.is_ok();
+                let set = unsafe { codec_api.SetValue(&raw const guid, &VARIANT::from(true)) };
                 println!("  {name}: supported={supported} modifiable={modifiable} set={set:?}");
             }
             for (name, guid, value) in [
@@ -229,8 +234,8 @@ fn report_codec_api_support() {
                     RATE_CONTROL_CBR,
                 ),
             ] {
-                let supported = unsafe { codec_api.IsSupported(&guid) }.is_ok();
-                let set = unsafe { codec_api.SetValue(&guid, &VARIANT::from(value)) };
+                let supported = unsafe { codec_api.IsSupported(&raw const guid) }.is_ok();
+                let set = unsafe { codec_api.SetValue(&raw const guid, &VARIANT::from(value)) };
                 println!("  {name}: supported={supported} set={set:?}");
             }
         }

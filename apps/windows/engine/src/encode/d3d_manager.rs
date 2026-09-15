@@ -83,7 +83,7 @@ impl DeviceManager {
         let mut token = 0u32;
         let mut manager: Option<IMFDXGIDeviceManager> = None;
         // SAFETY: both out-parameters are valid for the duration of the call.
-        unsafe { MFCreateDXGIDeviceManager(&mut token, &mut manager) }.map_err(platform)?;
+        unsafe { MFCreateDXGIDeviceManager(&raw mut token, &raw mut manager) }.map_err(platform)?;
         let manager =
             manager.ok_or_else(|| EncodeError::Platform("no DXGI device manager".into()))?;
 
@@ -178,9 +178,9 @@ fn create_video_device(
             D3D11_CREATE_DEVICE_VIDEO_SUPPORT | D3D11_CREATE_DEVICE_BGRA_SUPPORT,
             Some(&[D3D_FEATURE_LEVEL_11_0]),
             D3D11_SDK_VERSION,
-            Some(&mut device),
+            Some(&raw mut device),
             None,
-            Some(&mut context),
+            Some(&raw mut context),
         )
         .map_err(platform)?;
     }

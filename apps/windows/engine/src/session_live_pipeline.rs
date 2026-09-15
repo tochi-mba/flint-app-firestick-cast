@@ -68,7 +68,7 @@ fn report_captured_frame_as_a_bitmap() {
     let mut lowest = u8::MAX;
     let mut highest = u8::MIN;
     let mut total = 0u64;
-    for &byte in pixels.iter() {
+    for &byte in pixels {
         lowest = lowest.min(byte);
         highest = highest.max(byte);
         total += u64::from(byte);
@@ -105,7 +105,7 @@ fn report_captured_frame_as_a_bitmap() {
             let mut lowest = u8::MAX;
             let mut highest = u8::MIN;
             let mut total = 0u64;
-            for &byte in scaled.iter() {
+            for &byte in &scaled {
                 lowest = lowest.min(byte);
                 highest = highest.max(byte);
                 total += u64::from(byte);
@@ -477,12 +477,11 @@ fn report_gpu_path_against_readback_path() {
                 }
             }
         } else {
-            match SelectedEncoder::open(encoder_config, adapter) {
-                Ok(encoder) => encoder,
-                Err(_) => {
-                    println!("no encoder");
-                    continue;
-                }
+            if let Ok(encoder) = SelectedEncoder::open(encoder_config, adapter) {
+                encoder
+            } else {
+                println!("no encoder");
+                continue;
             }
         };
 

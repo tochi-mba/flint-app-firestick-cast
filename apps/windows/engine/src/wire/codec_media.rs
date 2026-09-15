@@ -193,15 +193,12 @@ impl Writer {
         maximum: usize,
         field: &'static str,
     ) -> Result<(), WireError> {
-        match value {
-            Some(value) => {
-                self.u8(1);
-                self.utf8_u16(value, maximum, field)
-            }
-            None => {
-                self.u8(0);
-                Ok(())
-            }
+        if let Some(value) = value {
+            self.u8(1);
+            self.utf8_u16(value, maximum, field)
+        } else {
+            self.u8(0);
+            Ok(())
         }
     }
 

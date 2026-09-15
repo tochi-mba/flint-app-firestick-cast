@@ -596,7 +596,7 @@ pub enum Message {
         command_id: i64,
         /// Requested network operation.
         action: BrowserNetworkAction,
-        /// Target TV profile id; empty only for RequestSnapshot meaning the active TV profile.
+        /// Target TV profile id; empty only for `RequestSnapshot` meaning the active TV profile.
         profile_id: String,
         /// Whether VPN auto-connect prefs are enabled for the profile.
         vpn_enabled: bool,

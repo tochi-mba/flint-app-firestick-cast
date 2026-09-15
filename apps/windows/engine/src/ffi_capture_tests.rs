@@ -1,3 +1,8 @@
+#![allow(
+    clippy::undocumented_unsafe_blocks,
+    reason = "every unsafe block is the FFI call under test, made with the arguments the test names"
+)]
+
 use super::*;
 
 #[test]
@@ -18,7 +23,7 @@ fn probe_always_succeeds_even_with_no_desktop() {
         adapter_luid: 1,
     };
 
-    let status = unsafe { flint_probe_capture(&mut capture) };
+    let status = unsafe { flint_probe_capture(&raw mut capture) };
 
     assert_eq!(status, FlintStatus::Ok as i32);
     assert!(capture.available <= 1, "availability must be a clean flag");
@@ -36,7 +41,7 @@ fn an_available_capture_reports_a_usable_geometry() {
     };
 
     assert_eq!(
-        unsafe { flint_probe_capture(&mut capture) },
+        unsafe { flint_probe_capture(&raw mut capture) },
         FlintStatus::Ok as i32
     );
 

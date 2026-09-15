@@ -167,7 +167,7 @@ impl<S: FrameSource, E: VideoEncoder> MirrorSession<S, E> {
 
         let frame = match outcome {
             Ok((FrameOutcome::Captured, Some(frame))) => frame,
-            Ok((FrameOutcome::Captured, None)) | Ok((FrameOutcome::Unchanged, _)) => {
+            Ok((FrameOutcome::Captured, None) | (FrameOutcome::Unchanged, _)) => {
                 self.stats.frames_unchanged += 1;
                 return Ok(Tick::Unchanged);
             }
@@ -271,7 +271,7 @@ fn packed_bgra_len(width: u32, height: u32) -> Option<usize> {
         .checked_mul(4)?;
     usize::try_from(len)
         .ok()
-        .filter(|&len| len <= isize::MAX as usize)
+        .filter(|&len| isize::try_from(len).is_ok())
 }
 
 #[cfg(test)]

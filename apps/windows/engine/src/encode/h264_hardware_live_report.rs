@@ -1,3 +1,8 @@
+#![allow(
+    clippy::undocumented_unsafe_blocks,
+    reason = "a report run by hand against this machine's encoder; nothing here ships"
+)]
+
 use super::*;
 use crate::capture::duplication::DesktopDuplication;
 use windows::Win32::Media::MediaFoundation::MF_TRANSFORM_ASYNC_UNLOCK;

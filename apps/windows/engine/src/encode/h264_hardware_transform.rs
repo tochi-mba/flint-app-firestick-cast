@@ -122,7 +122,7 @@ impl HardwareTransform {
         // and encode end up on different GPUs.
         let mut attributes = None;
         // SAFETY: the out-parameter is valid and the store is released with this scope.
-        unsafe { MFCreateAttributes(&mut attributes, 1) }.map_err(platform)?;
+        unsafe { MFCreateAttributes(&raw mut attributes, 1) }.map_err(platform)?;
         let attributes =
             attributes.ok_or_else(|| EncodeError::Platform("no attribute store".into()))?;
         // Set as a blob of the LUID's own bytes, which is the shape MFT_ENUM_ADAPTER_LUID is
@@ -148,10 +148,10 @@ impl HardwareTransform {
                 MFT_CATEGORY_VIDEO_ENCODER,
                 MFT_ENUM_FLAG_HARDWARE | MFT_ENUM_FLAG_SORTANDFILTER,
                 None,
-                Some(&output_info),
+                Some(&raw const output_info),
                 &attributes,
-                &mut activates,
-                &mut count,
+                &raw mut activates,
+                &raw mut count,
             )
             .map_err(platform)?;
         }
