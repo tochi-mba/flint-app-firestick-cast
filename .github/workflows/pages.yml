@@ -9,7 +9,7 @@ on:
     paths:
       - 'site/**'
       - '.github/workflows/pages.yml'
-      - 'scripts/check-site.py'
+      - 'tools/scripts/check-site.py'
   workflow_dispatch:
 
 permissions:
@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check the site
-        run: python scripts/check-site.py
+        run: python tools/scripts/check-site.py
 
       - uses: actions/configure-pages@v5
 

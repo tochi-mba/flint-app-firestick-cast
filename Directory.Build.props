@@ -7,6 +7,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- The recommended rule set rather than the handful the SDK enables by default. The rules this
+         codebase turns off are listed in .editorconfig, each with its reason. -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <!-- Generated so the build can report unused usings, which the compiler only tracks when it
+         writes documentation. Checked comments must be correct; not every member needs one. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
@@ -15,12 +22,9 @@
     <Authors>REX Technologies</Authors>
     <Product>Flint</Product>
     <Copyright>Copyright (c) 2026 REX Technologies</Copyright>
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <!-- VERSION at the repository root is the one version every build reads. -->
+    <VersionPrefix>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</VersionPrefix>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
 </Project>

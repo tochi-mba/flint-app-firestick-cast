@@ -1,21 +1,23 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/Flint.App/Flint.App.csproj" />
-    <Project Path="src/Flint.Cli/Flint.Cli.csproj" />
-    <Project Path="src/Flint.Core/Flint.Core.csproj" />
-    <Project Path="src/Flint.Discovery/Flint.Discovery.csproj" />
-    <Project Path="src/Flint.Engine.Interop/Flint.Engine.Interop.csproj" />
-    <Project Path="src/Flint.Protocol/Flint.Protocol.csproj" />
-    <Project Path="src/Flint.Session/Flint.Session.csproj" />
+  <Folder Name="/windows/">
+    <Project Path="apps/windows/src/Flint.App/Flint.App.csproj" />
+    <Project Path="apps/windows/src/Flint.Cli/Flint.Cli.csproj" />
+    <Project Path="apps/windows/src/Flint.Core/Flint.Core.csproj" />
+    <Project Path="apps/windows/src/Flint.Discovery/Flint.Discovery.csproj" />
+    <Project Path="apps/windows/src/Flint.Engine.Interop/Flint.Engine.Interop.csproj" />
+    <Project Path="apps/windows/src/Flint.Session/Flint.Session.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Flint.App.Tests/Flint.App.Tests.csproj" />
-    <Project Path="tests/Flint.Cli.Tests/Flint.Cli.Tests.csproj" />
-    <Project Path="tests/Flint.Core.Tests/Flint.Core.Tests.csproj" />
-    <Project Path="tests/Flint.Discovery.Tests/Flint.Discovery.Tests.csproj" />
-    <Project Path="tests/Flint.Engine.Interop.Tests/Flint.Engine.Interop.Tests.csproj" />
-    <Project Path="tests/Flint.Hardware.E2E/Flint.Hardware.E2E.csproj" />
-    <Project Path="tests/Flint.Protocol.Tests/Flint.Protocol.Tests.csproj" />
-    <Project Path="tests/Flint.Session.Tests/Flint.Session.Tests.csproj" />
+  <Folder Name="/windows-tests/">
+    <Project Path="apps/windows/tests/Flint.App.Tests/Flint.App.Tests.csproj" />
+    <Project Path="apps/windows/tests/Flint.Cli.Tests/Flint.Cli.Tests.csproj" />
+    <Project Path="apps/windows/tests/Flint.Core.Tests/Flint.Core.Tests.csproj" />
+    <Project Path="apps/windows/tests/Flint.Discovery.Tests/Flint.Discovery.Tests.csproj" />
+    <Project Path="apps/windows/tests/Flint.Engine.Interop.Tests/Flint.Engine.Interop.Tests.csproj" />
+    <Project Path="apps/windows/tests/Flint.Hardware.E2E/Flint.Hardware.E2E.csproj" />
+    <Project Path="apps/windows/tests/Flint.Session.Tests/Flint.Session.Tests.csproj" />
+  </Folder>
+  <Folder Name="/protocol/">
+    <Project Path="protocol/dotnet/Flint.Protocol/Flint.Protocol.csproj" />
+    <Project Path="protocol/dotnet/Flint.Protocol.Tests/Flint.Protocol.Tests.csproj" />
   </Folder>
 </Solution>

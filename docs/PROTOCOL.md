@@ -139,7 +139,7 @@ confidential or encrypted.
 
 ## Golden vectors
 
-`testdata/golden/` holds encoded frames committed as bytes. Rust, C#, and Kotlin each assert they
+`protocol/golden/` holds encoded frames committed as bytes. Rust, C#, and Kotlin each assert they
 produce and parse them identically. A wire change that does not regenerate these fails the build,
 which is what stops three implementations drifting apart in three languages.
 
@@ -156,7 +156,7 @@ generated rather than producing its own.
 ### Regenerating
 
 ```text
-cd flint-engine
+cd apps/windows/engine
 cargo test --test golden -- --ignored regenerate
 ```
 

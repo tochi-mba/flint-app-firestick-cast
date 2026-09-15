@@ -51,7 +51,7 @@ host side. It cannot control the panel, and it will not publish a figure that qu
 The only figure that matters is glass to glass: the time between a change appearing on the laptop
 screen and the same change appearing on the television.
 
-1. Run `scripts/measure-latency.ps1`, which drives a full-screen flashing pattern with a frame
+1. Run `tools/scripts/measure-latency.ps1`, which drives a full-screen flashing pattern with a frame
    counter.
 2. Film the laptop screen and the television together, in one frame, at 240 fps.
 3. Count the frames between the change on each screen. Each frame is 4.17 ms.
@@ -254,7 +254,7 @@ correlation IDs used. Redact URLs, text, cookies, certificates, and preview pixe
 
 | Date | Device | Span | Samples | p50 | p95 | p99 | Max | Result |
 |---|---|---|---:|---:|---:|---:|---:|---|
-| _pending_ | _pending_ | _pending_ | | | | | | Use `scripts/test-fire-tv-browser.ps1`. |
+| _pending_ | _pending_ | _pending_ | | | | | | Use `tools/scripts/test-fire-tv-browser.ps1`. |
 
 ### First device run — functional, not yet timed
 
@@ -344,8 +344,8 @@ Targets and probe status for ADR-0019. **Do not treat targets as measurements.**
 Hardware probe entry points (opt-in, ignore when no device):
 
 - `receiver` androidTest / debug harness may call `MosaicCapability.fromProbe`
-- Script: `scripts/test-receiver-browser.ps1 -Mode Device` plus manual `dumpsys meminfo` while mosaic
-  holds N live panes
+- Script: `tools/scripts/test-receiver-browser.ps1 -Mode Device` plus manual `dumpsys meminfo`
+  while mosaic holds N live panes
 
 
 ## Flint Mobile (targets and measurement vocabulary)
@@ -364,13 +364,13 @@ term is competing with.
 
 | Stage | Target | Owner | Why this bound |
 |---|---|---|---|
-| Compose render into the virtual display | ~8 ms | `:mobile` | One frame at 120 Hz. The second screen draws its own content, so this is a normal Compose frame rather than a capture. |
+| Compose render into the virtual display | ~8 ms | `:phone:app` | One frame at 120 Hz. The second screen draws its own content, so this is a normal Compose frame rather than a capture. |
 | VirtualDisplay to encoder input surface | ~0 ms | platform | The display writes straight into the encoder's input `Surface`. There is no copy here to bound; if one appears, the surface has been wired wrongly. |
 | MediaProjection to encoder input surface | ~0 ms | platform | The same, on the mirror path. |
 | Encode | ~6-10 ms | platform | A hardware encoder at 1080p60 with no B-frames, `KEY_LATENCY = 1`, and `KEY_LOW_LATENCY = 1` where `FEATURE_LowLatency` is supported. Vendor variance here is large and is the main reason this is a range. |
 | Frame and socket write | <1 ms | `:protocol` | `FrameWriter` writes the envelope from a reused header array and the payload straight from the encoder's buffer. Nothing on this path allocates. |
 | Wi-Fi traversal, SoftAP | ~5-15 ms | network | The phone is the access point, so this is one hop rather than two. It is also the term the bitrate controller is protecting: an over-large stream degrades every other hotspot client. |
-| Receiver jitter queue | ~2 frames | `:receiver` | `MirrorVideoDecoder` holds three frames and discards the whole queue on overflow. Two is the working depth; the third is the margin. |
+| Receiver jitter queue | ~2 frames | `:receiver:app` | `MirrorVideoDecoder` holds three frames and discards the whole queue on overflow. Two is the working depth; the third is the margin. |
 | Decode | unknown | television | Not under Flint's control and not measured. On the desktop path this term is already larger than everything on the host side put together. |
 | Present | unknown | television | Panel processing. Also not under Flint's control, and a television's own picture modes can add more than every other stage combined. |
 

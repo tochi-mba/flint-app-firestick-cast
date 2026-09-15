@@ -18,7 +18,7 @@ on:
       modules:
         description: 'Gradle test tasks to regenerate against'
         required: false
-        default: ':receiver:testDebugUnitTest :design:testDebugUnitTest :mobile:testDebugUnitTest'
+        default: ':receiver:app:testDebugUnitTest :phone:design:testDebugUnitTest :phone:app:testDebugUnitTest'
       push:
         description: 'Commit the regenerated images to this branch for review'
         required: false
@@ -60,7 +60,7 @@ jobs:
           packages: platform-tools
 
       - name: Install Android build tools
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "build-tools;35.0.0"
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       # FLINT_UPDATE_SNAPSHOTS is what the harness reads to overwrite rather than assert. Failures
       # are tolerated here on purpose: a test that fails for an unrelated reason should not stop the
@@ -76,7 +76,7 @@ jobs:
           set -euo pipefail
           mkdir -p regenerated
           found=0
-          for module in receiver design mobile; do
+          for module in apps/receiver/app apps/phone/design apps/phone/app; do
             directory="$module/src/test/snapshots/approved"
             if [ -d "$directory" ]; then
               mkdir -p "regenerated/$module"
@@ -107,7 +107,7 @@ jobs:
           set -euo pipefail
           # One directory at a time: `git add` refuses the whole command when any pathspec matches
           # nothing, and a module without a snapshot suite yet is the ordinary case.
-          for module in receiver design mobile; do
+          for module in apps/receiver/app apps/phone/design apps/phone/app; do
             directory="$module/src/test/snapshots/approved"
             [ -d "$directory" ] && git add -A -- "$directory"
           done

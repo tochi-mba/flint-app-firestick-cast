@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Flint.Engine.Interop</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>The small managed FFI boundary to flint-engine.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Flint.Core/Flint.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <None Include="../../engine/target/release/flint_engine.dll"
+          Condition="Exists('../../engine/target/release/flint_engine.dll')"
+          Link="flint_engine.dll"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)' != 'Release'">
+    <None Include="../../engine/target/debug/flint_engine.dll"
+          Condition="Exists('../../engine/target/debug/flint_engine.dll')"
+          Link="flint_engine.dll"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

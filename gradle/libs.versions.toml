@@ -2,8 +2,8 @@
 #
 # Before this file, each version was a literal repeated across the module build files, and the only
 # thing keeping them in step was that someone remembered. Four modules is where that stops working:
-# :mobile, :design and :receiver all compose against the same Compose BOM, and a BOM that differs
-# between two of them produces a link error a long way from its cause.
+# :phone:app, :phone:design and :receiver:app all compose against the same Compose BOM, and a BOM
+# that differs between two of them produces a link error a long way from its cause.
 #
 # Rules for adding an entry:
 #   - Pin an exact version. A range makes a build that passed today fail tomorrow for no commit.
@@ -92,6 +92,11 @@ androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-te
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-ext-junit" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
 androidx-test-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "androidx-test-uiautomator" }
+
+# What the convention plugins in tools/build-logic compile against. The build that applies them
+# already has these on its classpath, at the same versions.
+android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
 # Run as a plain JavaExec rather than through a Gradle plugin. The plugin has to track both Gradle
 # and Kotlin releases to keep working; the command-line distribution only has to be on the

@@ -1,0 +1,47 @@
+# Line endings in the repository are LF, always. What a checkout gets mirrors .editorconfig: CRLF for
+# the Windows projects' own file types, LF for everything else. Without this file the result depended
+# on each machine's core.autocrlf, so the same commit checked out differently on two laptops and a
+# formatter on one of them rewrote every line of a file it touched.
+* text=auto eol=lf
+
+*.cs text eol=crlf
+*.csproj text eol=crlf
+*.props text eol=crlf
+*.targets text eol=crlf
+*.axaml text eol=crlf
+*.xaml text eol=crlf
+*.ps1 text eol=crlf
+*.sln text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Shell entry points break outright when a carriage return reaches the interpreter.
+gradlew text eol=lf
+*.sh text eol=lf
+
+# Declared rather than detected. Git guesses "binary" from a NUL byte, and a golden vector that
+# happens to contain none would be treated as text and have its line endings converted, which
+# silently changes the wire bytes three languages are asserting against.
+*.bin binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.jar binary
+*.apk binary
+*.aab binary
+*.jks binary
+*.keystore binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.nupkg binary
+*.dll binary
+*.exe binary
+
+# Generated and lock files are reviewed by what they do, not line by line.
+Cargo.lock linguist-generated=true

@@ -25,8 +25,8 @@ indent_size = 4
 indent_size = 4
 max_line_length = 120
 
-# ktlint settings. Nothing else reads these, and ktlint only runs on :castcore, :design and
-# :mobile today, but the file is the tool's own configuration mechanism so it belongs here.
+# ktlint settings. Nothing else reads these. ktlint runs on every Kotlin module through the
+# flint.quality convention, and this file is the tool's own configuration mechanism.
 #
 # intellij_idea rather than ktlint_official: the official style rewrites signatures and expression
 # bodies to its own taste, which would put a formatter's opinion in the diff of every change to
@@ -34,7 +34,7 @@ max_line_length = 120
 # no wildcard imports -- are in both.
 ktlint_code_style = intellij_idea
 # Composable functions are PascalCase by the framework's own convention, which the function-naming
-# rule reads as a violation on every component in :design.
+# rule reads as a violation on every component in :phone:design.
 ktlint_function_naming_ignore_when_annotated_with = Composable
 # These two collapse a multi-line signature onto one line whenever it happens to fit, which is the
 # opposite of how every other Kotlin file in this repository is written. Leaving them on would put a
@@ -49,3 +49,26 @@ indent_size = 2
 csharp_style_namespace_declarations = file_scoped:error
 csharp_style_var_when_type_is_apparent = true:suggestion
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:error
+
+# Rules from the recommended analysis level that this codebase turns off, each for a stated reason.
+#
+# CA1859 and CA1826 trade an interface for a concrete type to save a virtual call. Stores and view
+# models are written against interfaces so tests can substitute them, and for the lists this code
+# passes, LINQ already takes the indexed path.
+dotnet_diagnostic.CA1859.severity = none
+dotnet_diagnostic.CA1826.severity = none
+# CA1720 reads domain words as type names: a one-pane layout is Single, and a DNS PTR record is Ptr.
+dotnet_diagnostic.CA1720.severity = none
+# CA1716 protects callers in other .NET languages. Flint publishes no library, so a member named
+# Next collides with nothing anyone will write.
+dotnet_diagnostic.CA1716.severity = none
+
+# Dead code fails the build. An unused private member, an unread field, an unused parameter, a
+# needless using or a class nothing creates is something every reader has to work out is not there
+# for a reason.
+dotnet_diagnostic.IDE0005.severity = warning
+dotnet_diagnostic.IDE0051.severity = warning
+dotnet_diagnostic.IDE0052.severity = warning
+dotnet_diagnostic.IDE0060.severity = warning
+dotnet_diagnostic.CA1812.severity = warning
+dotnet_diagnostic.CA1823.severity = warning

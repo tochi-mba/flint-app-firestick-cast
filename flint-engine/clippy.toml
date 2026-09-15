@@ -1,2 +1,0 @@
-# The hot path must not allocate; flag the obvious offenders in review.
-too-many-arguments-threshold = 8

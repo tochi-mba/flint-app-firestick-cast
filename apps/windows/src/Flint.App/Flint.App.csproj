@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- Windows-only: the host probe reads the driver registry and the engine is Win32. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Flint.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets/flint.ico</ApplicationIcon>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <Description>Flint desktop shell. REX Technologies ink/signal visual system.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+    <PackageReference Include="Avalonia.Diagnostics" Condition="'$(Configuration)' == 'Debug'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Flint.Core/Flint.Core.csproj" />
+    <ProjectReference Include="../Flint.Discovery/Flint.Discovery.csproj" />
+    <ProjectReference Include="../Flint.Engine.Interop/Flint.Engine.Interop.csproj" />
+    <ProjectReference Include="../Flint.Session/Flint.Session.csproj" />
+  </ItemGroup>
+
+</Project>

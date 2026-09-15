@@ -7,7 +7,7 @@ alwaysApply: true
 
 When the user reports a cast, browser, pairing, VPN, or workspace problem on Fire TV or Windows:
 
-1. Run `.\scripts\pull-dev-logs.ps1` (optional `-Serial host:5555`, `-ClearLogcat` after they reproduce).
+1. Run `.\tools\scripts\pull-dev-logs.ps1` (optional `-Serial host:5555`, `-ClearLogcat` after they reproduce).
 2. Read `artifacts/logs/session-meta.txt`, then `firetv-latest.log`, then `windows-latest.log`.
 3. Do not invent device behaviour that contradicts those logs.
 

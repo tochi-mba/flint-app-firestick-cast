@@ -12,6 +12,10 @@
   which already fixes this project's distribution scope as a sideload experiment
 - **Supersedes:** None
 - **Superseded by:** None
+- **Amended:** 2026-09-15. The decision stands, with one version source for the whole repository
+  rather than one per build: the root `VERSION` file, which the .NET, Gradle and release builds all
+  read. `mobile.version` and the literal `<VersionPrefix>` described below no longer exist, and
+  `tools/dev/source-check.ps1` fails when Cargo's copy disagrees.
 
 ## Context
 
@@ -130,9 +134,9 @@ any unmeasured performance claim are not triggers.
 - [Flint Mobile implementation slices](../README.md)
 - [Mobile release workflow](../../../.github/workflows/mobile-release.yml)
 - [Mobile pull-request gate](../../../.github/workflows/mobile.yml)
-- [`mobile/build.gradle.kts`](../../../mobile/build.gradle.kts)
+- [`mobile/build.gradle.kts`](../../../apps/phone/app/build.gradle.kts)
 - [`gradle.properties`](../../../gradle.properties)
-- [`HonestyRules`](../../../castcore/src/main/kotlin/com/rextechnologies/flint/castcore/copy/Honesty.kt)
-- [Desktop packaging script](../../../scripts/package.ps1)
-- [Receiver shrinker rules that have never run](../../../receiver/proguard-rules.pro)
+- [`HonestyRules`](../../../apps/phone/core/src/main/kotlin/com/rextechnologies/flint/castcore/copy/HonestyRules.kt)
+- [Desktop packaging script](../../../tools/scripts/package.ps1)
+- [Receiver shrinker rules that have never run](../../../apps/receiver/app/proguard-rules.pro)
 - [Manual sideloading instructions today](../../INSTALL.md)

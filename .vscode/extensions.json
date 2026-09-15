@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "editorconfig.editorconfig",
+    "ms-dotnettools.csdevkit",
+    "avaloniateam.vscode-avalonia",
+    "rust-lang.rust-analyzer",
+    "tamasfe.even-better-toml",
+    "ms-vscode.powershell",
+    "ms-python.python",
+    "github.vscode-github-actions"
+  ]
+}
