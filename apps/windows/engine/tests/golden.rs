@@ -33,7 +33,10 @@ fn golden_dir() -> PathBuf {
         if candidate.is_dir() {
             return candidate;
         }
-        assert!(current.pop(), "could not find protocol/golden above the crate root");
+        assert!(
+            current.pop(),
+            "could not find protocol/golden above the crate root"
+        );
     }
 }
 
