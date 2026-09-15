@@ -106,7 +106,10 @@ class BrowserSecurityProfileTest {
     @Test
     @Config(sdk = [25])
     fun `on Fire OS 6 the profile stops the WebView remembering form input`() {
-        assertTrue(webView.settings.savesFormData, "saved form data is on by default below API 26")
+        // Do not depend on a Robolectric/WebView default. The thing this test owns is that Flint
+        // turns the legacy switch off when it starts enabled on an API where the switch still works.
+        webView.settings.enableSavedFormDataForTest()
+        assertTrue(webView.settings.savesFormData)
 
         BrowserSecurityProfile.apply(settings = webView.settings, darkening = RecordingDarkening(supported = false))
 
@@ -124,7 +127,12 @@ class BrowserSecurityProfileTest {
     }
 }
 
-// Deprecated because Android 8 made it do nothing; API 25, where it still works, is what this reads.
+// Deprecated because Android 8 made it do nothing; API 25, where it still works, is what these use.
 @Suppress("DEPRECATION")
 private val WebSettings.savesFormData: Boolean
     get() = saveFormData
+
+@Suppress("DEPRECATION")
+private fun WebSettings.enableSavedFormDataForTest() {
+    saveFormData = true
+}
