@@ -52,8 +52,12 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # Not the action's default packages: that list names the legacy `tools` package, which Google
+      # has removed, so the default fails before anything builds. See the phone-gate action.
       - name: Install the Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install Android build tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "build-tools;35.0.0"

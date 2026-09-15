@@ -20,8 +20,14 @@ runs:
     - name: Set up Gradle
       uses: gradle/actions/setup-gradle@v4
 
+    # `packages` is set because the action's default is `tools platform-tools`, and Google has since
+    # removed the legacy `tools` package from the SDK repository: the default now fails with "Failed
+    # to find package 'tools'" before anything is built. platform-tools is the half that still
+    # exists; the platforms and build tools the modules need are installed by name below.
     - name: Install the Android SDK
       uses: android-actions/setup-android@v3
+      with:
+        packages: platform-tools
 
     # Both versions. :receiver pins build-tools 35.0.0 and the release job builds it, so a runner
     # with only 36 fails there and nowhere else -- which is the hardest place to notice.
