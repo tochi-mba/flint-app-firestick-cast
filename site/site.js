@@ -63,9 +63,9 @@
       eyebrow: "Flint for Windows",
       title: "Flint for Windows",
       requirement: "Windows 10 or 11, 64-bit. The PC is the host; the Fire TV is the screen. Screen mirroring and media handoff are proven end to end on a Fire TV Stick.",
-      primaryLabel: "Build from source",
-      primaryHref: "#install",
-      fine: "No packaged Windows release has been tagged yet, so there is nothing to download. Building it takes about two minutes and produces the same program.",
+      primaryLabel: "Download for Windows",
+      primaryHref: RELEASES + "/tag/latest-windows",
+      fine: "A rolling build, replaced on every merge: a zip to extract, then run Flint.App.exe. Windows will warn that it does not recognise the publisher; that warning is true, and building from source avoids it.",
       install: "windows",
     },
     firetv: {
@@ -195,7 +195,7 @@
         "<span>Built <b>" + escapeHtml(r.date) + "</b></span>";
     }
     if (platformKey === "windows") {
-      if (!r) return "<span>Packaged release <b>not yet tagged</b></span>";
+      if (!r) return "";
       return "<span>Version <b>" + escapeHtml(r.version) + "</b></span>" +
         "<span>Size <b>" + escapeHtml(r.size) + "</b></span>";
     }
@@ -314,7 +314,9 @@
   }
 
   function versionFrom(name, fallback) {
-    var m = /(\d+\.\d+\.\d+(?:-[0-9a-f]{6,})?)/i.exec(name || "");
+    // A rolling phone build is `-<hash>`; a rolling Windows build is `-g<hash>`, because dotnet reads
+    // the version strictly and the `g` keeps a hash that happens to be all digits a valid label.
+    var m = /(\d+\.\d+\.\d+(?:-g?[0-9a-f]{6,})?)/i.exec(name || "");
     return m ? m[1] : fallback;
   }
 
@@ -357,17 +359,27 @@
       applyRelease();
     }).catch(function () { /* The static links stand. */ });
 
-    fetchJson(API + "/releases/latest").then(function (rel) {
-      if (!rel || rel.prerelease) return;
+    // The rolling Windows build first, as the phone's is: every merge replaces it. A tagged stable
+    // release is only the fallback, for when the rolling one is missing or has no zip on it.
+    fetchJson(API + "/releases/tags/latest-windows").then(function (rel) {
       var zip = zipOf(rel);
-      if (!zip) return;
+      if (!zip) throw new Error("The rolling release has no zip.");
+      return { rel: rel, zip: zip };
+    }).catch(function () {
+      return fetchJson(API + "/releases/latest").then(function (rel) {
+        if (!rel || rel.prerelease) return null;
+        var zip = zipOf(rel);
+        return zip ? { rel: rel, zip: zip } : null;
+      });
+    }).then(function (found) {
+      if (!found) return;
       release.windows = {
-        url: zip.browser_download_url,
-        version: versionFrom(zip.name, rel.tag_name),
-        size: formatSize(zip.size),
+        url: found.zip.browser_download_url,
+        version: versionFrom(found.zip.name, found.rel.tag_name),
+        size: formatSize(found.zip.size),
       };
       applyRelease();
-    }).catch(function () { /* No stable release yet, which the page already says. */ });
+    }).catch(function () { /* Neither is reachable from here; the static link and build steps stand. */ });
   }
 
   // A hash such as #install-windows opens that tab directly.

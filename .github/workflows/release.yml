@@ -1,27 +1,42 @@
-# Builds the downloadable Windows package and attaches it to a GitHub Release.
+# The downloadable Windows package.
 #
-# Triggered by a version tag, so the download on the site is only ever a build that someone
-# deliberately tagged, not whatever happened to be on main.
+# Two cadences, one job, the same shape as mobile-release.yml. Every merge to the default branch
+# replaces a rolling `latest-windows` prerelease, so the download link never changes and always
+# points at the newest build; a `v*` tag cuts an immutable release that will still be exactly these
+# bytes in five years.
+#
+# Until this ran on merges, only a tag published anything. No tag was ever pushed, so there was no
+# Windows download at all, and the site sent every Windows visitor to build from source.
+#
+# The rolling tag is Windows' own rather than mobile's `latest`: mobile-release.yml deletes every
+# asset on `latest` before each upload, so a zip parked there would vanish with the next phone build.
 name: Release
 
+# Deliberately unfiltered by path, for the reason mobile-release.yml gives: a tag push is matched
+# against the diff of whatever commit it names, so a `v*` tag on a commit that touched nothing under
+# a filtered path would be skipped silently. A release that does not happen is the worse failure.
 on:
   push:
+    branches: [master]
     tags: ['v*']
   workflow_dispatch:
-    inputs:
-      version:
-        description: Version to stamp into the package
-        required: true
 
 permissions:
   contents: write
 
+concurrency:
+  group: windows-release
+  cancel-in-progress: false
+
 jobs:
   package:
     runs-on: windows-latest
+    timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install the .NET SDK
         uses: actions/setup-dotnet@v4
@@ -45,17 +60,40 @@ jobs:
         shell: pwsh
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
+      # The version has one source: <VersionPrefix> in Directory.Build.props, which package.ps1 also
+      # defaults to. The tag used to be the version and nothing compared the two, so a package could
+      # be named one thing and stamped another (ADR-0028). Now a tag that disagrees fails the release.
+      #
+      # A rolling build appends the commit, prefixed `g` as git describe does. A short hash can come
+      # out all digits with a leading zero, which strict SemVer does not allow in a prerelease label,
+      # and dotnet reads Version as a package version. The prefix rules that out rather than leaving
+      # it to be discovered on whichever merge happens to draw that hash.
       - name: Resolve the version
         id: version
         shell: pwsh
         run: |
-          $version = if ($env:GITHUB_REF -like 'refs/tags/v*') {
-            $env:GITHUB_REF -replace '^refs/tags/v', ''
-          } else {
-            '${{ github.event.inputs.version }}'
+          $props = Get-Content -LiteralPath Directory.Build.props -Raw
+          if ($props -match '<VersionPrefix>([^<]+)</VersionPrefix>') {
+            $base = $Matches[1].Trim()
           }
-          if ([string]::IsNullOrWhiteSpace($version)) { throw 'Could not resolve a version.' }
+          else {
+            throw 'Directory.Build.props has no VersionPrefix.'
+          }
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $tagged = $env:GITHUB_REF -replace '^refs/tags/v', ''
+            if ($tagged -ne $base) {
+              throw "Tag v$tagged does not match VersionPrefix $base in Directory.Build.props."
+            }
+            $version = $base
+            $isTagged = 'true'
+          }
+          else {
+            $version = "$base-g$($env:GITHUB_SHA.Substring(0, 7))"
+            $isTagged = 'false'
+          }
           "value=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "tagged=$isTagged" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Version $version (tagged: $isTagged)"
 
       # A release must never ship code that does not pass its own gate.
       - name: Build and test
@@ -66,7 +104,98 @@ jobs:
         shell: pwsh
         run: ./scripts/package.ps1 -Version ${{ steps.version.outputs.value }}
 
-      - name: Publish the release
+      # Never publish on faith. package.ps1 checks the engine reached the staging folder; this opens
+      # the zip that will actually be downloaded and checks what someone extracting it would find.
+      - name: Verify the package
+        shell: pwsh
+        run: |
+          $zip = Join-Path $PWD "dist/Flint-${{ steps.version.outputs.value }}-win-x64.zip"
+          if (-not (Test-Path -LiteralPath $zip)) {
+            throw "No package was produced at $zip."
+          }
+          $check = Join-Path $env:RUNNER_TEMP 'package-check'
+          if (Test-Path -LiteralPath $check) {
+            Remove-Item -LiteralPath $check -Recurse -Force
+          }
+          Expand-Archive -LiteralPath $zip -DestinationPath $check
+          foreach ($file in 'Flint.App.exe', 'flint_engine.dll', 'Flint.Receiver.apk', 'INSTALL.md') {
+            if (-not (Test-Path -LiteralPath (Join-Path $check $file))) {
+              throw "The package is missing $file."
+            }
+          }
+          $size = [math]::Round((Get-Item -LiteralPath $zip).Length / 1MB, 1)
+          Write-Host "Verified $zip ($size MB)"
+
+      # A rolling release is mutable by design: take the previous build's zip off before uploading
+      # this one, so the release never offers two versions side by side.
+      - name: Clear previous rolling assets
+        if: steps.version.outputs.tagged == 'false' && github.ref == 'refs/heads/master'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view latest-windows --json tagName | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host 'No rolling Windows release exists yet; nothing to clear.'
+            exit 0
+          }
+          $assets = gh release view latest-windows --json assets --jq '.assets[].name'
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Could not list the rolling release assets.'
+          }
+          foreach ($asset in $assets) {
+            if ([string]::IsNullOrWhiteSpace($asset)) { continue }
+            gh release delete-asset latest-windows $asset --yes
+            if ($LASTEXITCODE -ne 0) {
+              throw "Could not delete $asset from the rolling release."
+            }
+          }
+
+      - name: Publish the rolling prerelease
+        # Guarded on the branch as well as the tag. A workflow_dispatch from any other branch builds,
+        # packages and verifies, then stops: it must never move the download everyone is sent to onto
+        # a branch build.
+        if: steps.version.outputs.tagged == 'false' && github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-windows
+          target_commitish: ${{ github.sha }}
+          name: Flint for Windows (rolling)
+          prerelease: true
+          make_latest: false
+          files: dist/*.zip
+          body: |
+            **The newest build of Flint for Windows, replaced on every merge.** Version
+            `${{ steps.version.outputs.value }}`. For a build that will not change under you, use a
+            `v*` release instead.
+
+            **Windows 10/11, 64-bit.** Download the zip, extract it, and run `Flint.App.exe`.
+            Everything it needs is in the folder; there is no .NET runtime to install and no
+            installer to run.
+
+            The build is not code-signed, so Windows will say "Windows protected your PC": choose
+            **More info**, then **Run anyway**. That warning is accurate — Windows does not
+            recognise this publisher. Building from source avoids it.
+
+            Check your Fire TV first — **Settings → My Fire TV → About**. Fire OS 7 or 8 works;
+            Vega OS cannot, and no future version will change that.
+
+            See the [installation guide](https://github.com/tochi-mba/flint-app-firestick-cast/blob/master/docs/INSTALL.md).
+
+      # After the release, not before, for the reason mobile-release.yml gives: action-gh-release
+      # will not move a tag that already exists, and moving it first would leave a failed publish
+      # pointing the link at bytes nobody published.
+      - name: Move the rolling tag
+        if: steps.version.outputs.tagged == 'false' && github.ref == 'refs/heads/master'
+        shell: pwsh
+        run: |
+          git tag -f latest-windows $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) { throw 'Could not move the rolling tag.' }
+          git push -f origin refs/tags/latest-windows
+          if ($LASTEXITCODE -ne 0) { throw 'Could not push the rolling tag.' }
+
+      - name: Publish the tagged release
+        if: steps.version.outputs.tagged == 'true'
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.zip
@@ -80,4 +209,4 @@ jobs:
             Check your Fire TV first — **Settings → My Fire TV → About**. Fire OS 7 or 8 works;
             Vega OS cannot, and no future version will change that.
 
-            See the [installation guide](docs/INSTALL.md).
+            See the [installation guide](https://github.com/tochi-mba/flint-app-firestick-cast/blob/master/docs/INSTALL.md).

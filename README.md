@@ -38,8 +38,9 @@ boundary, and [Latency Budget](docs/LATENCY_BUDGET.md) for what has and has not 
 ## Install
 
 Windows 10 or 11, 64-bit. Download the zip from the
-[latest release](https://github.com/rex-technologies/flint/releases/latest), extract it, and run
-`Flint.App.exe`. Everything it needs is included; there is no .NET runtime to install first.
+[rolling Windows release](https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest-windows),
+which every merge replaces with the newest build, extract it, and run `Flint.App.exe`. Everything it
+needs is included; there is no .NET runtime to install first.
 
 Check your Fire TV before you bother: **Settings → My Fire TV → About**. Fire OS 7 or 8 works.
 Vega OS cannot, and no future version will change that.
