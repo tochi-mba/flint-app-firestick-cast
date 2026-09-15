@@ -37,21 +37,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      # versionName has one source: mobile.version in gradle.properties. A tag that disagrees with it
-      # is a mistake worth failing on rather than a second source of truth worth honouring.
+      # versionName has one source: the VERSION file, which the Gradle build reads too. A tag that
+      # disagrees with it is a mistake worth failing on rather than a second source of truth worth
+      # honouring.
       - name: Resolve the version
         id: version
         run: |
           set -euo pipefail
-          base="$(sed -n 's/^mobile\.version=//p' gradle.properties)"
-          if [ -z "$base" ]; then
-            echo "gradle.properties has no mobile.version" >&2
+          base="$(tr -d '[:space:]' < VERSION)"
+          if [[ ! "$base" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "VERSION holds '$base', which is not a MAJOR.MINOR.PATCH version." >&2
             exit 1
           fi
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             tagged="${GITHUB_REF#refs/tags/v}"
             if [ "$tagged" != "$base" ]; then
-              echo "Tag v$tagged does not match mobile.version=$base in gradle.properties." >&2
+              echo "Tag v$tagged does not match VERSION $base." >&2
               exit 1
             fi
             echo "name=$base" >> "$GITHUB_OUTPUT"

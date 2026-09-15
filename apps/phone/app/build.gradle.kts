@@ -8,7 +8,15 @@ plugins {
 // as an input, so the cache is rebuilt whenever it changes; environment variables and Gradle
 // properties read through providers are tracked the same way but need no file on disk at all,
 // which is what a CI runner handing secrets in through the environment wants.
-val mobileVersionName = providers.gradleProperty("mobile.version").get()
+//
+// The version name is VERSION at the repository root, which every build reads. The release workflow
+// appends a short commit sha to anything that is not a tag build, and passes mobile.versionCode from
+// the run number, so a rolling build is always distinguishable from the tagged release it came after.
+val mobileVersionName = providers
+    .fileContents(rootProject.layout.projectDirectory.file("VERSION"))
+    .asText
+    .get()
+    .trim()
 val mobileVersionSuffix = providers.gradleProperty("mobile.versionSuffix").getOrElse("")
 val mobileVersionCode = providers.gradleProperty("mobile.versionCode").map(String::toInt).getOrElse(1)
 

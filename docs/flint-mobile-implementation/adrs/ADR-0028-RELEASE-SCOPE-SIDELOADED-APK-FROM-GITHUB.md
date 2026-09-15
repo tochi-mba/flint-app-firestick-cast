@@ -12,6 +12,10 @@
   which already fixes this project's distribution scope as a sideload experiment
 - **Supersedes:** None
 - **Superseded by:** None
+- **Amended:** 2026-09-15. The decision stands, with one version source for the whole repository
+  rather than one per build: the root `VERSION` file, which the .NET, Gradle and release builds all
+  read. `mobile.version` and the literal `<VersionPrefix>` described below no longer exist, and
+  `tools/dev/source-check.ps1` fails when Cargo's copy disagrees.
 
 ## Context
 

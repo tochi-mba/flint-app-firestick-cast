@@ -11,6 +11,13 @@ if (keystorePropertiesFile.exists()) {
     keystorePropertiesFile.inputStream().use(keystoreProperties::load)
 }
 
+// VERSION at the repository root is the one version every build reads.
+val flintVersion = providers
+    .fileContents(rootProject.layout.projectDirectory.file("VERSION"))
+    .asText
+    .get()
+    .trim()
+
 android {
     namespace = "com.rextechnologies.flint.receiver"
     compileSdk = libs.versions.compile.sdk.get().toInt()
@@ -23,7 +30,7 @@ android {
         minSdk = libs.versions.receiver.min.sdk.get().toInt()
         targetSdk = libs.versions.target.sdk.get().toInt()
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = flintVersion
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

@@ -13,7 +13,7 @@
     report honestly downgrades to "encoders not probed", which is not what a release should ship.
 
 .PARAMETER Version
-    Version stamped into the package name. Defaults to the version in Directory.Build.props.
+    Version stamped into the package name. Defaults to the VERSION file.
 
 .PARAMETER OutputDirectory
     Where to place the package. Defaults to ./dist.
@@ -46,13 +46,7 @@ function Resolve-Cargo {
 
 try {
     if ([string]::IsNullOrWhiteSpace($Version)) {
-        $props = Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw
-        if ($props -match '<VersionPrefix>([^<]+)</VersionPrefix>') {
-            $Version = $Matches[1]
-        }
-        else {
-            throw 'Could not read VersionPrefix from Directory.Build.props; pass -Version.'
-        }
+        $Version = (Get-Content -LiteralPath (Join-Path $projectRoot 'VERSION') -Raw).Trim()
     }
 
     if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {

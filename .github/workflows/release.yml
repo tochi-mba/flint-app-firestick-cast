@@ -64,9 +64,10 @@ jobs:
         shell: pwsh
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
-      # The version has one source: <VersionPrefix> in Directory.Build.props, which package.ps1 also
-      # defaults to. The tag used to be the version and nothing compared the two, so a package could
-      # be named one thing and stamped another (ADR-0028). Now a tag that disagrees fails the release.
+      # The version has one source: the VERSION file, which Directory.Build.props, the Gradle build
+      # and package.ps1 all read. The tag used to be the version and nothing compared the two, so a
+      # package could be named one thing and stamped another (ADR-0028). Now a tag that disagrees
+      # fails the release.
       #
       # A rolling build appends the commit, prefixed `g` as git describe does. A short hash can come
       # out all digits with a leading zero, which strict SemVer does not allow in a prerelease label,
@@ -76,17 +77,14 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $props = Get-Content -LiteralPath Directory.Build.props -Raw
-          if ($props -match '<VersionPrefix>([^<]+)</VersionPrefix>') {
-            $base = $Matches[1].Trim()
-          }
-          else {
-            throw 'Directory.Build.props has no VersionPrefix.'
+          $base = (Get-Content -LiteralPath VERSION -Raw).Trim()
+          if ($base -notmatch '^\d+\.\d+\.\d+$') {
+            throw "VERSION holds '$base', which is not a MAJOR.MINOR.PATCH version."
           }
           if ($env:GITHUB_REF -like 'refs/tags/v*') {
             $tagged = $env:GITHUB_REF -replace '^refs/tags/v', ''
             if ($tagged -ne $base) {
-              throw "Tag v$tagged does not match VersionPrefix $base in Directory.Build.props."
+              throw "Tag v$tagged does not match VERSION $base."
             }
             $version = $base
             $isTagged = 'true'

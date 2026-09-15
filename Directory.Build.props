@@ -18,7 +18,8 @@
     <Authors>REX Technologies</Authors>
     <Product>Flint</Product>
     <Copyright>Copyright (c) 2026 REX Technologies</Copyright>
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <!-- VERSION at the repository root is the one version every build reads. -->
+    <VersionPrefix>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</VersionPrefix>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
