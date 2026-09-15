@@ -103,6 +103,28 @@ enum class BrowserNativeKey {
     ENTER,
 }
 
+/**
+ * The native key a remote's semantic key presses.
+ *
+ * Every semantic key has one, so this never fails. SHIFT_TAB presses TAB; the shift is the caller's
+ * to add, because it belongs to the keystroke rather than to the key.
+ */
+fun BrowserSemanticKey.toNativeKey(): BrowserNativeKey = when (this) {
+    BrowserSemanticKey.UP -> BrowserNativeKey.UP
+    BrowserSemanticKey.DOWN -> BrowserNativeKey.DOWN
+    BrowserSemanticKey.LEFT -> BrowserNativeKey.LEFT
+    BrowserSemanticKey.RIGHT -> BrowserNativeKey.RIGHT
+    BrowserSemanticKey.SELECT -> BrowserNativeKey.SELECT
+    BrowserSemanticKey.BACK -> BrowserNativeKey.BACK
+    BrowserSemanticKey.TAB, BrowserSemanticKey.SHIFT_TAB -> BrowserNativeKey.TAB
+    BrowserSemanticKey.ESCAPE -> BrowserNativeKey.ESCAPE
+    BrowserSemanticKey.PAGE_UP -> BrowserNativeKey.PAGE_UP
+    BrowserSemanticKey.PAGE_DOWN -> BrowserNativeKey.PAGE_DOWN
+    BrowserSemanticKey.HOME -> BrowserNativeKey.HOME
+    BrowserSemanticKey.END -> BrowserNativeKey.END
+    BrowserSemanticKey.REFRESH -> BrowserNativeKey.REFRESH
+}
+
 sealed interface BrowserNativeInput {
     data class KeyStroke(
         val key: BrowserNativeKey,

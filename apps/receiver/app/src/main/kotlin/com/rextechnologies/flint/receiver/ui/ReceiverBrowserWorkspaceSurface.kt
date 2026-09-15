@@ -381,7 +381,10 @@ private fun WorkspaceChrome(
                         )
                         .background(ReceiverColors.Panel, ReceiverShapes.Small)
                         .tvClickable(shape = ReceiverShapes.Small, onClick = {
-                            if (focused && state.interactionMode == BrowserWorkspaceInteractionMode.WORKSPACE_CHROME) {
+                            // A stopped or suspended page has nothing to enter; focusing it loads it again.
+                            val entersPage = focused && pane.rendererResidency.hasRenderer &&
+                                state.interactionMode == BrowserWorkspaceInteractionMode.WORKSPACE_CHROME
+                            if (entersPage) {
                                 onEnterPage()
                             } else {
                                 onFocusPane(pane.id)
@@ -393,6 +396,7 @@ private fun WorkspaceChrome(
                                 append("Page ${pane.slot + 1}")
                                 if (pane.page.title.isNotBlank()) append(", ${pane.page.title}")
                                 if (pane.isSuspended) append(", suspended")
+                                if (pane.isFailed) append(", stopped")
                                 if (focused) append(", focused")
                             }
                         },

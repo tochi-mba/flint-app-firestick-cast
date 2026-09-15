@@ -42,7 +42,7 @@ class BrowserNoticeReducerTest {
         val second = reducer.show(first, BrowserRefusal.POPUP, nowMs = 1_100)
 
         assertEquals(first.active!!.id, second.active!!.id)
-        assertEquals(first.active!!.shownAtMs, second.active!!.shownAtMs)
+        assertEquals(first.active.shownAtMs, second.active.shownAtMs)
     }
 
     @Test

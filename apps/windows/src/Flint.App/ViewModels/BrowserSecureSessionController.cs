@@ -1,4 +1,3 @@
-using System.IO;
 using Flint.App.Services;
 using Flint.Protocol;
 using Flint.Session.Browser;
@@ -30,6 +29,7 @@ internal sealed class BrowserSecureSessionController(BrowserPageViewModel page)
     /// True only for a Verify click, where a person has just compared the two codes. An unattended
     /// reconnect passes false and takes a mismatch rather than pinning something new.
     /// </param>
+    /// <param name="cancellationToken">Abandons the attempt.</param>
     public async Task ConnectAsync(bool allowFirstUseAccept, CancellationToken cancellationToken)
     {
         page.SessionPhase = BrowserUiPhase.Verifying;

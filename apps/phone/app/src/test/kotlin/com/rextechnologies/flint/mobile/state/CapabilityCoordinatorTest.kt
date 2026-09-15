@@ -11,6 +11,7 @@ import com.rextechnologies.flint.mobile.platform.StoredCapabilities
 import com.rextechnologies.flint.protocol.wire.CodecId
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import org.junit.Test
@@ -18,6 +19,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -35,15 +37,17 @@ class CapabilityCoordinatorTest {
         },
         display: ProbeOutcome = ProbeOutcome.SUPPORTED,
         store: CapabilityStore = RecordingStore(),
+        enumerateEncoders: () -> Set<CodecId> = { encoders },
+        probeDisplay: suspend (Activity) -> ProbeOutcome = { display },
     ) = CapabilityCoordinator(
         context = context,
         deviceName = "Pixel",
         screenWidth = 1080,
         screenHeight = 2400,
         densityDpi = 420,
-        enumerateEncoders = { encoders },
+        enumerateEncoders = enumerateEncoders,
         roundTrip = roundTrip,
-        probeDisplay = { display },
+        probeDisplay = probeDisplay,
         store = store,
     )
 
@@ -210,5 +214,116 @@ class CapabilityCoordinatorTest {
         coordinator.probeSecondScreen(activity)
         assertEquals(ProbeOutcome.SUPPORTED, assertNotNull(store.value).virtualDisplayProbe)
         assertEquals(2, store.saves)
+    }
+
+    @Test
+    fun `an enumeration failure leaves the check retryable without saving a verdict`() = runBlocking {
+        val failure = IllegalStateException("Codec enumeration failed")
+        val store = RecordingStore()
+        var failProbe = true
+        val coordinator = coordinator(store = store, enumerateEncoders = {
+            if (failProbe) throw failure
+            setOf(CodecId.H264)
+        })
+
+        val caught = runCatching { coordinator.probeEncoders(activity) }.exceptionOrNull()
+        assertEquals(failure.message, assertIs<IllegalStateException>(caught).message)
+        assertFalse(coordinator.state.value.encoderProbeRunning)
+        assertEquals(ProbeOutcome.NOT_PROBED, coordinator.state.value.encoderProbe)
+        assertEquals(0, store.saves)
+
+        failProbe = false
+        assertEquals(ProbeOutcome.SUPPORTED, coordinator.probeEncoders(activity).roundTrip)
+        assertEquals(1, store.saves)
+    }
+
+    @Test
+    fun `a round trip failure keeps the last answer and allows another check`() = runBlocking {
+        val failure = IllegalStateException("Decoder failed")
+        val store = RecordingStore()
+        var failProbe = false
+        val coordinator = coordinator(store = store, roundTrip = { _, _ ->
+            if (failProbe) throw failure
+            EncoderRoundTrip.Outcome(ProbeOutcome.SUPPORTED, "Intact.")
+        })
+        coordinator.probeEncoders(activity)
+        val previous = coordinator.state.value
+
+        failProbe = true
+        val caught = runCatching { coordinator.probeEncoders(activity) }.exceptionOrNull()
+        assertEquals(failure.message, assertIs<IllegalStateException>(caught).message)
+        assertEquals(previous, coordinator.state.value)
+        assertEquals(1, store.saves)
+
+        failProbe = false
+        assertEquals(ProbeOutcome.SUPPORTED, coordinator.probeEncoders(activity).roundTrip)
+        assertEquals(2, store.saves)
+    }
+
+    @Test
+    fun `cancelling the encoder check releases the button without saving an answer`() = runBlocking {
+        val entered = CompletableDeferred<Unit>()
+        val gate = CompletableDeferred<Unit>()
+        val store = RecordingStore()
+        val coordinator = coordinator(store = store, roundTrip = { _, _ ->
+            entered.complete(Unit)
+            gate.await()
+            EncoderRoundTrip.Outcome(ProbeOutcome.SUPPORTED, "Intact.")
+        })
+        val check = async { coordinator.probeEncoders(activity) }
+        entered.await()
+        check.cancelAndJoin()
+
+        assertFalse(coordinator.state.value.encoderProbeRunning)
+        assertEquals(ProbeOutcome.NOT_PROBED, coordinator.state.value.encoderProbe)
+        assertEquals(0, store.saves)
+
+        gate.complete(Unit)
+        assertEquals(ProbeOutcome.SUPPORTED, coordinator.probeEncoders(activity).roundTrip)
+        assertEquals(1, store.saves)
+    }
+
+    @Test
+    fun `a display failure leaves the check retryable without saving a verdict`() = runBlocking {
+        val failure = IllegalStateException("Display failed")
+        val store = RecordingStore()
+        var failProbe = true
+        val coordinator = coordinator(store = store, probeDisplay = {
+            if (failProbe) throw failure
+            ProbeOutcome.SUPPORTED
+        })
+
+        val caught = runCatching { coordinator.probeSecondScreen(activity) }.exceptionOrNull()
+        assertEquals(failure.message, assertIs<IllegalStateException>(caught).message)
+        assertFalse(coordinator.state.value.secondScreenProbeRunning)
+        assertEquals(ProbeOutcome.NOT_PROBED, coordinator.state.value.virtualDisplayProbe)
+        assertEquals(0, store.saves)
+
+        failProbe = false
+        assertEquals(ProbeOutcome.SUPPORTED, coordinator.probeSecondScreen(activity))
+        assertEquals(1, store.saves)
+    }
+
+    @Test
+    fun `cancelling the display check releases the button without saving an answer`() = runBlocking {
+        val entered = CompletableDeferred<Unit>()
+        val gate = CompletableDeferred<Unit>()
+        val store = RecordingStore()
+        val coordinator = coordinator(store = store, probeDisplay = {
+            entered.complete(Unit)
+            gate.await()
+            ProbeOutcome.SUPPORTED
+        })
+        val check = async { coordinator.probeSecondScreen(activity) }
+        entered.await()
+        check.cancelAndJoin()
+
+        assertFalse(coordinator.state.value.secondScreenProbeRunning)
+        assertEquals(ProbeOutcome.NOT_PROBED, coordinator.state.value.virtualDisplayProbe)
+        assertEquals(0, store.saves)
+
+        gate.complete(Unit)
+        assertEquals(ProbeOutcome.SUPPORTED, coordinator.probeSecondScreen(activity))
+        assertEquals(1, store.saves)
     }
 }

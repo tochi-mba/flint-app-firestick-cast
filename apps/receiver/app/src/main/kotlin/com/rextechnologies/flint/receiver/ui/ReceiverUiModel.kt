@@ -114,8 +114,6 @@ internal object ReceiverTags {
     const val BROWSER_OMNIBOX_DESKTOP_HINT = "receiver-browser-omnibox-desktop-hint"
     const val BROWSER_OMNIBAR = "receiver-browser-omnibar"
     const val BROWSER_SECURITY_CHIP = "receiver-browser-security-chip"
-    const val BROWSER_MODE_BADGE = "receiver-browser-mode-badge"
-    const val BROWSER_CURSOR = "receiver-browser-cursor"
     const val BROWSER_TAB_STRIP = "receiver-browser-tab-strip"
     const val BROWSER_TAB_SWITCHER = "receiver-browser-tab-switcher"
     const val BROWSER_NEW_TAB = "receiver-browser-new-tab"

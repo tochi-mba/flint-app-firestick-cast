@@ -64,7 +64,3 @@ const val DISABLED_ALPHA: Float = 0.45f
 
 private const val PRESSED_ALPHA = 0.72f
 private const val HOVERED_ALPHA = 0.88f
-
-/** Whether to animate at all, for a caller that has to branch rather than scale a duration. */
-@Composable
-fun shouldAnimate(): Boolean = !LocalReducedMotion.current

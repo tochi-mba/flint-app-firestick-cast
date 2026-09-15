@@ -168,19 +168,22 @@ Takes about two minutes on a machine that already has the tooling.
 
 Requirements:
 
+- [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows)
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - [Rust](https://rustup.rs) with the MSVC toolchain
 - Visual Studio Build Tools with the **Desktop development with C++** workload, which Rust needs to
   link on Windows
+- JDK 17 and the Android SDK, because the package includes the Fire TV receiver
 
 ```powershell
 git clone https://github.com/tochi-mba/flint-app-firestick-cast.git
 cd flint-app-firestick-cast
-./tools/scripts/build.ps1        # builds and runs every test
-./tools/scripts/package.ps1      # produces dist/Flint-<version>-win-x64.zip
+./dev.ps1 doctor     # confirms the list above, and prints the command for anything missing
+./dev.ps1 check      # builds and runs every test
+./dev.ps1 package    # produces dist/Flint-<version>-win-x64.zip
 ```
 
-`build.ps1` is the same command CI runs. If it passes, the package will build.
+`./dev.ps1 check` is the same gate CI runs. If it passes, the package will build.
 
 ## Privacy
 

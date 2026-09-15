@@ -128,12 +128,6 @@ class SessionCoordinator(
         return true
     }
 
-    /** Whether this television has already granted a token. Reads storage, so it suspends. */
-    suspend fun isRemembered(device: ReceiverDevice?): Boolean {
-        val address = device?.address ?: return false
-        return withContext(Dispatchers.IO) { tokens.tokenFor(address) != null }
-    }
-
     /**
      * Sends a control message, or `false` when there is no session to send it on.
      *

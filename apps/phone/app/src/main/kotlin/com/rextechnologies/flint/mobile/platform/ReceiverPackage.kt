@@ -2,7 +2,7 @@ package com.rextechnologies.flint.mobile.platform
 
 import android.content.Context
 import android.content.pm.PackageInfo
-import android.os.Build
+import androidx.core.content.pm.PackageInfoCompat
 import com.rextechnologies.flint.castcore.setup.BundledReceiver
 import com.rextechnologies.flint.mobile.BuildConfig
 import kotlinx.coroutines.Dispatchers
@@ -45,7 +45,7 @@ object ReceiverPackage {
             BundledReceiver(
                 packageName = packageName,
                 versionName = versionName,
-                versionCode = longVersionCode(info),
+                versionCode = PackageInfoCompat.getLongVersionCode(info),
                 sizeBytes = staged.length(),
             )
         }.getOrNull()
@@ -89,18 +89,6 @@ object ReceiverPackage {
     private fun archiveInfo(context: Context, file: File): PackageInfo? = runCatching {
         context.packageManager.getPackageArchiveInfo(file.absolutePath, 0)
     }.getOrNull()
-
-    @Suppress("DEPRECATION")
-    private fun longVersionCode(info: PackageInfo): Long =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            info.longVersionCode
-        } else {
-            info.versionCode.toLong()
-        }
-
-    /** Whether the receiver package this build carries is already on the television. */
-    fun isInstalledOn(installedPackages: Collection<String>, bundled: BundledReceiver?): Boolean =
-        bundled != null && bundled.packageName in installedPackages
 
     private const val STAGED_PREFIX = "flint-receiver-"
 }

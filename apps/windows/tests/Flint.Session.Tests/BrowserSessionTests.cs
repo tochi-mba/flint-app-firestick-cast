@@ -422,9 +422,6 @@ public sealed class BrowserSessionTests
         return WireCodec.Decode(encoded);
     }
 
-    private static Task WriteFrameAsync(Stream stream, WireMessage message) =>
-        WriteFrameAsync(stream, 2, message);
-
     private static Task WriteFrameAsync(Stream stream, int protocolVersion, WireMessage message) =>
         stream.WriteAsync(WireCodec.Encode(new WireFrame(protocolVersion, message)), TestContext.Current.CancellationToken).AsTask();
 

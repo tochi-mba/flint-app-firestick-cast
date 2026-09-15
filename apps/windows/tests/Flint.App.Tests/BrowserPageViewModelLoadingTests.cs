@@ -1,7 +1,5 @@
 using Flint.App.Services;
-using Flint.App.ViewModels;
 using Flint.Protocol;
-using Flint.Session.Browser;
 using Shouldly;
 
 namespace Flint.App.Tests;

@@ -5,7 +5,6 @@ using Avalonia.VisualTree;
 using Flint.App.ViewModels;
 using Flint.App.Views;
 using Flint.Core;
-using Flint.Discovery;
 using Shouldly;
 
 namespace Flint.App.Tests;

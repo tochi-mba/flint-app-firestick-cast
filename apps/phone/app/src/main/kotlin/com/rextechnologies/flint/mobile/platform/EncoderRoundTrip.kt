@@ -26,16 +26,16 @@ import com.rextechnologies.flint.castcore.media.CodecNames
 import com.rextechnologies.flint.castcore.media.EncoderPolicy
 import com.rextechnologies.flint.castcore.media.KeyFrameStrategy
 import com.rextechnologies.flint.castcore.media.PatternCheck
-import com.rextechnologies.flint.castcore.media.PlaneBytes
 import com.rextechnologies.flint.castcore.media.Quadrant
 import com.rextechnologies.flint.castcore.media.Rgb
 import com.rextechnologies.flint.castcore.media.TestPattern
-import com.rextechnologies.flint.castcore.media.YuvSampler
+import com.rextechnologies.flint.castcore.media.YuvToRgb
 import com.rextechnologies.flint.mobile.media.EncodedVideoSink
 import com.rextechnologies.flint.mobile.media.ScreenEncoder
 import com.rextechnologies.flint.mobile.media.VideoMime
 import com.rextechnologies.flint.protocol.wire.CodecId
 import com.rextechnologies.flint.protocol.wire.VideoConfigMessage
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -178,6 +178,8 @@ object EncoderRoundTrip {
         val thread = HandlerThread("flint-round-trip").apply { start() }
         val verdict = CompletableDeferred<Outcome>()
         val lastDetail = AtomicReference("the decoder produced no frame to look at")
+        val imageAccess = Any()
+        var readerClosed = false
 
         // Outside every try until now. A phone that refuses this size or format threw from here
         // straight out of the check and into the caller, which had no handler for it.
@@ -198,34 +200,41 @@ object EncoderRoundTrip {
                 // listener reaches the default uncaught handler, and on Android that ends the
                 // process -- so a decoder handing back a frame shaped differently from the one
                 // this code expects would close the whole app rather than fail a check.
-                runCatching {
-                    val image = source.acquireLatestImage() ?: return@runCatching
-                    try {
-                        val result = PatternCheck.verdict(sample(image))
-                        if (result.passed) {
-                            val size = "${config.width}×${config.height}"
-                            verdict.complete(
-                                Outcome(
-                                    ProbeOutcome.SUPPORTED,
-                                    "${result.detail.removeSuffix(".")}, through $label at $size.",
-                                ),
-                            )
-                        } else {
-                            lastDetail.set(result.detail)
+                synchronized(imageAccess) {
+                    if (readerClosed || verdict.isCompleted) return@synchronized
+                    runCatching {
+                        val image = source.acquireLatestImage() ?: return@runCatching
+                        try {
+                            val result = PatternCheck.verdict(sample(image))
+                            if (result.passed) {
+                                val size = "${config.width}×${config.height}"
+                                verdict.complete(
+                                    Outcome(
+                                        ProbeOutcome.SUPPORTED,
+                                        "${result.detail.removeSuffix(".")}, through $label at $size.",
+                                    ),
+                                )
+                            } else {
+                                lastDetail.set(result.detail)
+                            }
+                        } finally {
+                            image.close()
                         }
-                    } finally {
-                        image.close()
+                    }.onFailure { failure ->
+                        lastDetail.set("the decoded frame could not be read: ${reason(failure)}")
                     }
-                }.onFailure { failure ->
-                    lastDetail.set("the decoded frame could not be read: ${reason(failure)}")
                 }
             },
             Handler(thread.looper),
         )
 
         val decoder = runCatching { MediaCodec.createDecoderByType(mime) }.getOrElse { failure ->
+            synchronized(imageAccess) {
+                readerClosed = true
+                runCatching { reader.setOnImageAvailableListener(null, null) }
+                runCatching { reader.close() }
+            }
             thread.quitSafely()
-            reader.close()
             return Outcome(
                 ProbeOutcome.UNSUPPORTED,
                 "This phone has no $label decoder to check with: ${reason(failure)}.",
@@ -245,13 +254,21 @@ object EncoderRoundTrip {
                     "The frames the $label encoder produced did not decode to the pattern that was " +
                         "drawn: ${lastDetail.get()}",
                 )
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (failure: Throwable) {
             return Outcome(ProbeOutcome.UNSUPPORTED, "Decoding the $label encoder's output failed: ${reason(failure)}.")
         } finally {
-            runCatching { decoder.stop() }
-            runCatching { decoder.release() }
-            runCatching { reader.setOnImageAvailableListener(null, null) }
-            runCatching { reader.close() }
+            // Completing the verdict wakes this coroutine before the callback has necessarily
+            // released its Image. ImageReader.close invalidates every acquired plane buffer;
+            // reading one concurrently is native memory access that runCatching cannot protect.
+            synchronized(imageAccess) {
+                readerClosed = true
+                runCatching { reader.setOnImageAvailableListener(null, null) }
+                runCatching { decoder.stop() }
+                runCatching { decoder.release() }
+                runCatching { reader.close() }
+            }
             thread.quitSafely()
         }
     }
@@ -293,23 +310,28 @@ object EncoderRoundTrip {
     private fun sample(image: Image): Map<Quadrant, Rgb> {
         val planes = image.planes
         if (planes.size < 3) return emptyMap()
-        val luma = planeBytes(planes[0])
-        val cb = planeBytes(planes[1])
-        val cr = planeBytes(planes[2])
+        val luma = planeBuffer(planes[0])
+        val cb = planeBuffer(planes[1])
+        val cr = planeBuffer(planes[2])
+        val crop = image.cropRect
         return buildMap {
             Quadrant.entries.forEach { quadrant ->
-                val (x, y) = TestPattern.samplePoint(quadrant, image.width, image.height)
-                YuvSampler.sample(luma, cb, cr, x, y)?.let { put(quadrant, it) }
+                val (column, row) = TestPattern.samplePoint(quadrant, crop.width(), crop.height())
+                val x = crop.left + column
+                val y = crop.top + row
+                val l = luma.at(x, y) ?: return@forEach
+                val u = cb.at(x / 2, y / 2) ?: return@forEach
+                val v = cr.at(x / 2, y / 2) ?: return@forEach
+                put(quadrant, YuvToRgb.convert(l, u, v))
             }
         }
     }
 
-    private fun planeBytes(plane: Image.Plane): PlaneBytes {
-        val buffer = plane.buffer
-        val bytes = ByteArray(buffer.remaining())
-        buffer.duplicate().get(bytes)
-        return PlaneBytes(bytes, plane.rowStride, plane.pixelStride)
-    }
+    // Only pixel bytes are readable: Android does not guarantee mapped padding after the last
+    // row of a plane. Bulk-copying buffer.remaining() crashed in native memcpy on the SM-G998B.
+    // Borrow the planes while the Image is held and read just the four Y/U/V sample locations.
+    private fun planeBuffer(plane: Image.Plane): PlaneBuffer =
+        PlaneBuffer(plane.buffer, plane.rowStride, plane.pixelStride)
 
     private fun reason(failure: Throwable): String =
         failure.message.orEmpty().ifBlank { failure.javaClass.simpleName }

@@ -47,11 +47,6 @@ class BrowserWebViewDriver(
     private val onFindChanged: (BrowserFindState) -> Unit = {},
 ) : BrowserPort {
     private companion object {
-        /**
-         * Fallback notch size when a host still speaks in wheel notches rather than pixels.
-         * Kept for documentation/tests; live scroll now applies pixel deltas via [WebView.scrollBy].
-         */
-        const val SCROLL_PIXELS_PER_NOTCH = 60f
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -215,9 +210,6 @@ class BrowserWebViewDriver(
     fun activeEpoch(): Long = activeEpoch
     fun activeNavigationId(): Long = activeNavigationId
 
-    /** The result of the latest feature-gated WebView preference application. */
-    fun viewCapabilities(): BrowserWebViewCapabilities = capabilities
-
     fun applyViewSettings(state: BrowserViewState) {
         runOnUi {
             capabilities = BrowserSecurityProfile.applyViewSettings(
@@ -348,18 +340,6 @@ class BrowserWebViewDriver(
                 onFailure = { BrowserPaneAudioMuteResult.FAILED },
             )
             onResult(result)
-        }
-    }
-
-    /**
-     * Legacy key delivery kept for non-workspace callers. New pane UI must use [setAudioMuted],
-     * whose result is feature-gated and truthful.
-     */
-    fun dispatchMuteToggle() {
-        runOnUi {
-            val now = SystemClock.uptimeMillis()
-            webView.dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MUTE, 0))
-            webView.dispatchKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MUTE, 0))
         }
     }
 

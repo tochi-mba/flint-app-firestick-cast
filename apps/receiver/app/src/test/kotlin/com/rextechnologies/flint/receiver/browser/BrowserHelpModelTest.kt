@@ -1,6 +1,9 @@
 package com.rextechnologies.flint.receiver.browser
 
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class BrowserHelpModelTest {
     @Test fun `help never opens automatically for new or returning users`() {

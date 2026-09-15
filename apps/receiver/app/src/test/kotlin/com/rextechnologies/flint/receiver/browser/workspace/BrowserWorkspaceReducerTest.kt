@@ -233,6 +233,49 @@ class BrowserWorkspaceReducerTest {
         }
     }
 
+    @Test
+    fun `a dead renderer fails its pane and leaves page mode until the pane is focused again`() {
+        val opened = openOnePane().state
+        val generation = opened.pane(1)!!.rendererGeneration
+        val inPage = reduce(opened, BrowserWorkspaceAction.SetInteractionMode(BrowserWorkspaceInteractionMode.PAGE))
+
+        val failed = reduce(inPage.state, rendererGone(1, generation))
+
+        val pane = failed.state.pane(1)!!
+        assertEquals(BrowserWorkspaceRendererResidency.FAILED, pane.rendererResidency)
+        assertEquals(BrowserWorkspaceRendererFailure.RENDERER_PROCESS_GONE, pane.rendererFailure)
+        assertEquals(BrowserWorkspaceInteractionMode.WORKSPACE_CHROME, failed.state.interactionMode)
+        assertIs<BrowserWorkspaceEffect.DestroyPane>(failed.effects.first())
+
+        val refocused = reduce(failed.state, BrowserWorkspaceAction.FocusPane(1)).state.pane(1)!!
+        assertTrue(refocused.rendererResidency.hasRenderer)
+        assertEquals(generation + 1, refocused.rendererGeneration)
+        assertNull(refocused.rendererFailure)
+    }
+
+    @Test
+    fun `a renderer failure from another generation or for a pane without a renderer is ignored`() {
+        val opened = openOnePane().state
+        val generation = opened.pane(1)!!.rendererGeneration
+        assertEquals(opened, reduce(opened, rendererGone(1, generation + 1)).state)
+        val failed = reduce(opened, rendererGone(1, generation)).state
+        assertEquals(failed, reduce(failed, rendererGone(1, generation)).state)
+    }
+
+    @Test
+    fun `a dead renderer in theater ends theater mode`() {
+        val theater = openTwoPanes().state.copy(theaterPaneId = 1)
+        val failed = reduce(theater, rendererGone(1, theater.pane(1)!!.rendererGeneration))
+        assertNull(failed.state.theaterPaneId)
+        assertTrue(failed.effects.any { it is BrowserWorkspaceEffect.TheaterModeChanged })
+    }
+
+    private fun rendererGone(paneId: Long, generation: Long) = BrowserWorkspaceAction.RendererFailed(
+        paneId = paneId,
+        rendererGeneration = generation,
+        reason = BrowserWorkspaceRendererFailure.RENDERER_PROCESS_GONE,
+    )
+
     private fun openOnePane(): BrowserWorkspaceTransition {
         val activated = reduce(BrowserWorkspaceAction.ActivateProfile(BrowserWorkspaceProfile.LocalTv("family")))
         return reduce(activated.state, BrowserWorkspaceAction.OpenPane("https://example.com/a"))

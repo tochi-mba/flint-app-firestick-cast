@@ -43,7 +43,7 @@ class BrowserRemoteWorkspaceCommandHandler(
             BrowserWorkspaceCommandAction.CLOSE_PANE ->
                 workspaceSession.dispatch(BrowserWorkspaceAction.ClosePane(command.paneId))
             BrowserWorkspaceCommandAction.MOVE_PANE ->
-                workspaceSession.dispatch(BrowserWorkspaceAction.MovePane(command.paneId, command.value.toInt()))
+                workspaceSession.dispatch(BrowserWorkspaceAction.MovePane(command.paneId, command.value))
             BrowserWorkspaceCommandAction.SET_LAYOUT -> {
                 val layout = wireLayout(command.value) ?: return
                 workspaceSession.dispatch(BrowserWorkspaceAction.SetLayout(layout))

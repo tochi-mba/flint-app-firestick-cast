@@ -126,15 +126,6 @@ class BrowserNetworkStore(
         return removeStored(profileId, reportMissing = true)
     }
 
-    /** Removes stale credentials after an external catalog migration or recovery. */
-    @Synchronized
-    fun purgeProfilesNoLongerOwnedByTv(): Int {
-        val next = current.filterKeys(profileAuthority::isPersistentTvProfile)
-        val removed = current.size - next.size
-        if (removed > 0) persist(next)
-        return removed
-    }
-
     /** A defensive copy containing only current, local-TV owned settings. */
     @Synchronized
     fun snapshot(): Map<String, ProfileNetworkSettings> = current

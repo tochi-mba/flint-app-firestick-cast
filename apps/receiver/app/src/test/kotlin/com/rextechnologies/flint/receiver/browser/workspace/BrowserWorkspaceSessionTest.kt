@@ -1,12 +1,23 @@
 package com.rextechnologies.flint.receiver.browser.workspace
 
 import com.rextechnologies.flint.protocol.wire.BrowserPointerAction
-import com.rextechnologies.flint.receiver.browser.*
+import com.rextechnologies.flint.receiver.browser.BrowserDialogAnswer
+import com.rextechnologies.flint.receiver.browser.BrowserDialogKind
+import com.rextechnologies.flint.receiver.browser.BrowserFailure
+import com.rextechnologies.flint.receiver.browser.BrowserNativeInput
+import com.rextechnologies.flint.receiver.browser.BrowserStateEvent
+import com.rextechnologies.flint.receiver.browser.BrowserWebViewDriver
+import com.rextechnologies.flint.receiver.browser.PendingJsDialog
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [28])
@@ -172,6 +183,37 @@ class BrowserWorkspaceSessionTest {
         session.dispatch(BrowserWorkspaceAction.NavigatePane(id, "https://example.com"))
         session.onPaneStateEvent(id, token, BrowserStateEvent.Title(1, 0, "Old title"))
         assertEquals("", session.state.focusedPane?.page?.title)
+    }
+
+    @Test fun `dead renderer fails its pane even when the driver lags a navigation and focus rebuilds it`() {
+        val host = Host()
+        val session = BrowserWorkspaceSession()
+        val token = open(session, host)
+        val id = session.state.focusedPaneId
+        val generation = assertNotNull(session.state.focusedPane).rendererGeneration
+        // The fake driver never reports this navigation, so its failure carries navigation 0.
+        session.dispatch(BrowserWorkspaceAction.NavigatePane(id, "https://example.com"))
+        val answers = mutableListOf<BrowserDialogAnswer>()
+        session.onDialog(
+            id,
+            token,
+            PendingJsDialog(BrowserDialogKind.ALERT, "https://example.com", "Still there?", null, answers::add),
+        )
+
+        session.onPaneStateEvent(id, token, BrowserStateEvent.Failed(1, 0, BrowserFailure.RENDERER_STOPPED))
+
+        val failed = assertNotNull(session.state.pane(id))
+        assertEquals(BrowserWorkspaceRendererResidency.FAILED, failed.rendererResidency)
+        assertEquals(BrowserWorkspaceRendererFailure.RENDERER_PROCESS_GONE, failed.rendererFailure)
+        assertNull(host.tokens[id])
+        assertEquals(listOf<BrowserDialogAnswer>(BrowserDialogAnswer.Cancel), answers)
+
+        session.dispatch(BrowserWorkspaceAction.FocusPane(id))
+
+        val restored = assertNotNull(session.state.pane(id))
+        assertTrue(restored.rendererResidency.hasRenderer)
+        assertEquals(generation + 1, restored.rendererGeneration)
+        assertNotEquals(token, host.tokens.getValue(id))
     }
 
     @Test fun `missing renderer reports media requests honestly`() {

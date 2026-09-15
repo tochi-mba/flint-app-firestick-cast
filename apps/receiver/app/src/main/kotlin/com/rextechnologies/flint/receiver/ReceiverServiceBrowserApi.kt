@@ -1,7 +1,13 @@
 package com.rextechnologies.flint.receiver
 
+import com.rextechnologies.flint.receiver.browser.BrowserInteractionMode
 import com.rextechnologies.flint.receiver.browser.BrowserRefusal
+import com.rextechnologies.flint.receiver.browser.BrowserVpnState
 import com.rextechnologies.flint.receiver.browser.PendingJsDialog
+import com.rextechnologies.flint.receiver.browser.ProfileNetworkSettings
+import com.rextechnologies.flint.receiver.browser.VpnCapability
+import com.rextechnologies.flint.receiver.browser.VpnConsentHost
+import kotlinx.coroutines.flow.StateFlow
 
 /*
  * The service's browser switchboard.
@@ -24,7 +30,7 @@ fun ReceiverService.cycleBrowserUserAgent() = browserController.cycleBrowserUser
 
 fun ReceiverService.toggleBrowserDarkMode() = browserController.toggleBrowserDarkMode()
 
-fun ReceiverService.setBrowserInputMode(mode: com.rextechnologies.flint.receiver.browser.BrowserInteractionMode) =
+fun ReceiverService.setBrowserInputMode(mode: BrowserInteractionMode) =
     browserController.setBrowserInputMode(mode)
 
 fun ReceiverService.cycleBrowserSearchEngine() = browserController.cycleBrowserSearchEngine()
@@ -54,16 +60,16 @@ fun ReceiverService.deleteBrowserTvProfile(profileId: String) = browserControlle
 
 fun ReceiverService.requestBrowserDataClear() = browserController.requestClearData()
 
-fun ReceiverService.attachVpnConsentHost(host: com.rextechnologies.flint.receiver.browser.VpnConsentHost?) =
+fun ReceiverService.attachVpnConsentHost(host: VpnConsentHost?) =
     browserController.attachVpnConsentHost(host)
 
-fun ReceiverService.browserNetworkSettings(): com.rextechnologies.flint.receiver.browser.ProfileNetworkSettings =
+fun ReceiverService.browserNetworkSettings(): ProfileNetworkSettings =
     browserController.networkSettingsForActiveProfile()
 
-fun ReceiverService.browserVpnCapability(): com.rextechnologies.flint.receiver.browser.VpnCapability =
+fun ReceiverService.browserVpnCapability(): VpnCapability =
     browserController.vpnCapability()
 
-fun ReceiverService.browserVpnState(): kotlinx.coroutines.flow.StateFlow<com.rextechnologies.flint.receiver.browser.BrowserVpnState> =
+fun ReceiverService.browserVpnState(): StateFlow<BrowserVpnState> =
     browserController.vpnState
 
 fun ReceiverService.toggleBrowserVpnEnabled() = browserController.toggleVpnEnabledForActiveProfile()
@@ -79,8 +85,6 @@ fun ReceiverService.clearBrowserVpn() = browserController.clearVpnForActiveProfi
 fun ReceiverService.connectBrowserVpn() = browserController.connectVpnForActiveProfile()
 
 fun ReceiverService.ensureBrowserVpn() = browserController.ensureVpnForActiveProfile()
-
-fun ReceiverService.onBrowserPageDialog(pending: PendingJsDialog) = browserController.onPageDialog(pending)
 
 fun ReceiverService.replyBrowserDialogLocal(accepted: Boolean, promptText: String? = null) =
     browserController.replyDialogLocal(accepted, promptText)

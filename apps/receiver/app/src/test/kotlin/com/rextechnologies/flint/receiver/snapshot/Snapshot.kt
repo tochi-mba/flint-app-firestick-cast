@@ -30,8 +30,8 @@ object Snapshot {
 
     /** Whether this run should overwrite approved images instead of asserting against them. */
     val isUpdating: Boolean
-        get() = System.getenv("FLINT_UPDATE_SNAPSHOTS") in setOf("1", "true") ||
-            System.getProperty("flint.update.snapshots") in setOf("1", "true")
+        get() = System.getenv("FLINT_UPDATE_SNAPSHOTS").orEmpty() in setOf("1", "true") ||
+            System.getProperty("flint.update.snapshots").orEmpty() in setOf("1", "true")
 
     /**
      * The instant every animated surface is sampled at.
@@ -73,7 +73,14 @@ object Snapshot {
         // an animation. The clock is driven by hand to a fixed instant instead, which terminates
         // and makes the captured frame identical every run: an animation sampled at whatever moment
         // the machine happened to reach is the other way a screenshot suite becomes a coin toss.
-        rule.mainClock.advanceTimeBy(ANIMATION_SAMPLE_MILLIS)
+        //
+        // Frame by frame, not in one jump. The test rule runs effects between frames, so a button that
+        // takes focus when it is composed plays its focus animation out as it would on a television.
+        // Advanced in a single step, the focus landed at the sampled instant with no time to animate.
+        val start = rule.mainClock.currentTime
+        while (rule.mainClock.currentTime - start < ANIMATION_SAMPLE_MILLIS) {
+            rule.mainClock.advanceTimeByFrame()
+        }
 
         compare(name, rule.captureDecorView(), maximumDifferingPercent)
     }

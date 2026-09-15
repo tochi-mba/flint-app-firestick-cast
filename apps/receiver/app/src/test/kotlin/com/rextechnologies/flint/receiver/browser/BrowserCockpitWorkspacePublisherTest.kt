@@ -1,8 +1,19 @@
 package com.rextechnologies.flint.receiver.browser
 
-import com.rextechnologies.flint.protocol.wire.*
-import com.rextechnologies.flint.receiver.browser.workspace.*
-import kotlin.test.*
+import com.rextechnologies.flint.protocol.wire.BrowserWorkspaceStateMessage
+import com.rextechnologies.flint.protocol.wire.WireCodec
+import com.rextechnologies.flint.protocol.wire.WireFrame
+import com.rextechnologies.flint.protocol.wire.WireMessage
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceAction
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceCapacity
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceController
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceProfile
+import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceState
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlin.test.fail
 
 class BrowserCockpitWorkspacePublisherTest {
     private val capacity = BrowserWorkspaceCapacity.CONSERVATIVE_FIRE_TV

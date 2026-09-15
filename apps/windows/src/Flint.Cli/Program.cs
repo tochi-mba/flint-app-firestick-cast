@@ -5,7 +5,6 @@ using Flint.Discovery;
 using Flint.Engine.Interop;
 using Flint.Protocol;
 using Flint.Session;
-using Flint.Session.Browser;
 
 namespace Flint.Cli;
 

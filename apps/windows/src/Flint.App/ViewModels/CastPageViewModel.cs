@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Avalonia.Threading;
@@ -21,7 +20,6 @@ namespace Flint.App.ViewModels;
 /// This page answers one question — what can this PC and this television actually do together — and
 /// refuses to answer it before the probe has run.
 /// </remarks>
-/// <param name="prober">Runs the probe. Injected so the page is testable without hardware.</param>
 [SuppressMessage(
     "Design",
     "CA1001:Types that own disposable fields should be disposable",

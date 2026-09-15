@@ -1,4 +1,3 @@
-using Flint.Cli;
 using Shouldly;
 
 namespace Flint.Cli.Tests;

@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Headless;
-using Flint.App;
 
 [assembly: AvaloniaTestApplication(typeof(Flint.App.Tests.TestAppBuilder))]
 

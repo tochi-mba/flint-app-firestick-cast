@@ -2,7 +2,6 @@ using System.Net;
 using Flint.App.Services;
 using Flint.App.ViewModels;
 using Flint.Core;
-using Flint.Discovery;
 using Flint.Protocol;
 using Flint.Session.Browser;
 

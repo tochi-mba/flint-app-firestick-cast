@@ -20,6 +20,7 @@ import android.view.View
 import com.rextechnologies.flint.castcore.capability.PhoneCapabilities
 import com.rextechnologies.flint.castcore.capability.ProbeOutcome
 import com.rextechnologies.flint.protocol.wire.CodecId
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -104,6 +105,8 @@ object PhoneProbes {
      */
     suspend fun probeVirtualDisplay(activity: Activity): ProbeOutcome = try {
         runVirtualDisplayProbe(activity)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
     } catch (_: Throwable) {
         // Deliberately broad. This is a capability question, and every way of answering "no" —
         // a SecurityException, a vendor NPE inside DisplayManager, a timeout — is the same answer.
@@ -201,8 +204,10 @@ object PhoneProbes {
     private fun probeColourArrived(image: Image): Boolean {
         val plane = image.planes.firstOrNull() ?: return false
         val buffer = plane.buffer
-        val bytes = ByteArray(buffer.remaining())
-        buffer.duplicate().get(bytes)
+        if (plane.pixelStride < 3 || buffer.remaining() < 3) return false
+        // Only the first pixel is needed. A plane's trailing row padding is not necessarily mapped.
+        val start = buffer.position()
+        val bytes = byteArrayOf(buffer.get(start), buffer.get(start + 1), buffer.get(start + 2))
         val pixel = PixelReader.channelsAt(
             bytes = bytes,
             position = 0,

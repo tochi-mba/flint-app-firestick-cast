@@ -43,6 +43,7 @@ internal data class ReceiverWorkspacePaneRender(
     val title: String,
     val live: Boolean,
     val suspended: Boolean,
+    val failed: Boolean,
 )
 
 /**
@@ -119,6 +120,16 @@ internal class ReceiverBrowserWorkspaceHost(
             placeholder.text = buildString {
                 append(if (title.isBlank()) "Page suspended" else title)
                 append("\n\nSelect this page to restore it")
+            }
+            placeholder.visibility = VISIBLE
+        }
+
+        fun showFailed(title: String) {
+            page.removeAllViews()
+            page.visibility = VISIBLE
+            placeholder.text = buildString {
+                if (title.isNotBlank()) append(title).append("\n\n")
+                append("This page stopped. Select it to reload.")
             }
             placeholder.visibility = VISIBLE
         }
@@ -223,9 +234,6 @@ internal class ReceiverBrowserWorkspaceHost(
         } ?: false
     }
 
-    /** The fallback URL is intentionally exposed only to the owning workspace session. */
-    fun fallbackUrl(id: Long): String? = fallbackUrls[id]
-
     override fun driverFor(id: Long): BrowserWebViewDriver? = live[id]?.driver
 
     override fun previewCaptureView(): View = this
@@ -264,8 +272,6 @@ internal class ReceiverBrowserWorkspaceHost(
 
     override fun exitFullscreen(id: Long): Boolean = live[id]?.fullscreen?.exit() == true
 
-    fun exitFocusedFullscreen(): Boolean = exitFullscreen(focusedId)
-
     override fun setPageFocusEnabled(enabled: Boolean) {
         pageFocusEnabled = enabled
         live.forEach { (id, pane) ->
@@ -290,6 +296,7 @@ internal class ReceiverBrowserWorkspaceHost(
                     pane.page.title.ifBlank { pane.page.url },
                     pane.rendererResidency.hasRenderer,
                     pane.isSuspended,
+                    pane.isFailed,
                 )
             },
             nextLayout = if (theater != null) {
@@ -326,6 +333,7 @@ internal class ReceiverBrowserWorkspaceHost(
             val active = live[pane.id]
             when {
                 pane.live && active != null -> container.showPage(active.webView)
+                pane.failed -> container.showFailed(pane.title)
                 pane.suspended -> container.showSuspended(pane.title)
                 else -> container.showUnavailable(pane.title)
             }
@@ -356,7 +364,11 @@ internal class ReceiverBrowserWorkspaceHost(
         }
     }
 
-    private fun paneFullscreenController(id: Long, generation: Long, container: PaneContainer): PaneFullscreenController<View> =
+    private fun paneFullscreenController(
+        id: Long,
+        generation: Long,
+        container: PaneContainer,
+    ): PaneFullscreenController<View> =
         PaneFullscreenController(
             host = object : PaneFullscreenHost<View> {
                 override fun showInPane(view: View) {
@@ -433,8 +445,6 @@ internal class ReceiverBrowserWorkspaceHost(
         val pane = visible.getOrNull(hit.slot) ?: return null
         return pane.id to (hit.localX to hit.localY)
     }
-
-    fun mosaicGapPixels(): Int = paneGapPixels
 
     private fun updateKeepScreenOn() {
         keepScreenOn = fullscreenIds.isNotEmpty()

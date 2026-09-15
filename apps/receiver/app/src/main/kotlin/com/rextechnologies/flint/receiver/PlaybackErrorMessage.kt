@@ -4,7 +4,8 @@ package com.rextechnologies.flint.receiver
 internal fun friendlyPlaybackError(errorCodeName: String): String = when (errorCodeName) {
     "ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT",
     "ERROR_CODE_IO_NETWORK_CONNECTION_FAILED",
-    -> "This TV couldn't reach the media on your phone or PC. Keep Flint open and make sure both devices stay on the same network."
+    -> "This TV couldn't reach the media on your phone or PC. " +
+        "Keep Flint open and make sure both devices stay on the same network."
 
     "ERROR_CODE_IO_BAD_HTTP_STATUS" ->
         "The media source rejected the request. Choose the item again in Flint."

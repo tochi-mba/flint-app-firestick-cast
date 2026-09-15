@@ -60,7 +60,7 @@ jobs:
           packages: platform-tools
 
       - name: Install Android build tools
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "build-tools;35.0.0"
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       # FLINT_UPDATE_SNAPSHOTS is what the harness reads to overwrite rather than assert. Failures
       # are tolerated here on purpose: a test that fails for an unrelated reason should not stop the

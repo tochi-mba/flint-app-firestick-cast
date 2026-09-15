@@ -2,7 +2,9 @@ package com.rextechnologies.flint.receiver.browser.workspace
 
 import com.rextechnologies.flint.protocol.wire.BrowserPointerAction
 import com.rextechnologies.flint.receiver.browser.BrowserNativeInput
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class BrowserWorkspacePointerRouterTest {
     private val sent = mutableListOf<Pair<Long, BrowserNativeInput>>()

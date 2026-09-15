@@ -104,8 +104,6 @@ sealed interface TvKeyOutcome {
  */
 class BrowserTvInputModel {
     companion object {
-        /** How far Up/Down scroll in focus mode, as a fraction of the viewport. */
-        const val SCROLL_FRACTION = 0.33f
 
         /** Nominal scroll step, scaled by the caller against the real viewport height. */
         const val SCROLL_STEP_PIXELS = 320

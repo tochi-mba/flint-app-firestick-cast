@@ -1,4 +1,3 @@
-using System.IO;
 using Flint.Protocol;
 
 namespace Flint.App.ViewModels;

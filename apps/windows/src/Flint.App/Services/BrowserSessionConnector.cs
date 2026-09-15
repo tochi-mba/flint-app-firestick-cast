@@ -1,4 +1,3 @@
-using System.Net;
 using Flint.Core;
 using Flint.Protocol;
 using Flint.Session.Browser;

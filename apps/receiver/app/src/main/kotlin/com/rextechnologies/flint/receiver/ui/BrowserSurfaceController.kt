@@ -24,6 +24,7 @@ import com.rextechnologies.flint.receiver.browser.CursorState
 import com.rextechnologies.flint.receiver.browser.CursorViewport
 import com.rextechnologies.flint.receiver.browser.ResolvedQuery
 import com.rextechnologies.flint.receiver.browser.TvKeyOutcome
+import com.rextechnologies.flint.receiver.browser.toNativeKey
 
 /** What the surface asks of the rest of the receiver. */
 internal interface BrowserSurfaceActions {
@@ -128,9 +129,6 @@ internal class BrowserSurfaceController(
      * (handled a ladder rung); false to dismiss the workspace.
      */
     var workspaceBackHandler: (() -> Boolean)? = null
-
-    /** Which key the omnibox keyboard is on, exposed for the composable to draw the selection. */
-    val keyboardCursor get() = keyboardState.cursor
 
     private var heldDirection: CursorDirection? = null
     private var backPressed = false
@@ -395,15 +393,12 @@ internal class BrowserSurfaceController(
         }
 
         is TvKeyOutcome.SendKey -> {
-            outcome.key.toNativeKey()?.let {
-                actions.dispatch(
-                    BrowserNativeInput.KeyStroke(
-                        it,
-                        shift =
-                        outcome.key == BrowserSemanticKey.SHIFT_TAB,
-                    ),
-                )
-            }
+            actions.dispatch(
+                BrowserNativeInput.KeyStroke(
+                    outcome.key.toNativeKey(),
+                    shift = outcome.key == BrowserSemanticKey.SHIFT_TAB,
+                ),
+            )
             true
         }
 
@@ -614,20 +609,4 @@ internal class BrowserSurfaceController(
 
     private fun isSelectKey(keyCode: Int) = keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER ||
         keyCode == android.view.KeyEvent.KEYCODE_ENTER
-
-    private fun BrowserSemanticKey.toNativeKey(): BrowserNativeKey? = when (this) {
-        BrowserSemanticKey.UP -> BrowserNativeKey.UP
-        BrowserSemanticKey.DOWN -> BrowserNativeKey.DOWN
-        BrowserSemanticKey.LEFT -> BrowserNativeKey.LEFT
-        BrowserSemanticKey.RIGHT -> BrowserNativeKey.RIGHT
-        BrowserSemanticKey.SELECT -> BrowserNativeKey.SELECT
-        BrowserSemanticKey.BACK -> BrowserNativeKey.BACK
-        BrowserSemanticKey.TAB, BrowserSemanticKey.SHIFT_TAB -> BrowserNativeKey.TAB
-        BrowserSemanticKey.ESCAPE -> BrowserNativeKey.ESCAPE
-        BrowserSemanticKey.PAGE_UP -> BrowserNativeKey.PAGE_UP
-        BrowserSemanticKey.PAGE_DOWN -> BrowserNativeKey.PAGE_DOWN
-        BrowserSemanticKey.HOME -> BrowserNativeKey.HOME
-        BrowserSemanticKey.END -> BrowserNativeKey.END
-        BrowserSemanticKey.REFRESH -> BrowserNativeKey.REFRESH
-    }
 }

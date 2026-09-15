@@ -72,7 +72,9 @@ internal fun ReceiverBrowserProfilesSheet(
         ) {
             Text(text = "WHO'S BROWSING?", style = ReceiverType.Label, color = ReceiverColors.Signal)
             Text(
-                text = "TV profiles keep bookmarks and history separate on this television; TV site sign-ins remain shared. A connected-device profile stays on that device and is forgotten here when it disconnects.",
+                text = "TV profiles keep bookmarks and history separate on this television; TV site sign-ins " +
+                    "remain shared. A connected-device profile stays on that device and is forgotten here when " +
+                    "it disconnects.",
                 style = ReceiverType.Caption,
                 color = ReceiverColors.Muted,
             )
@@ -294,7 +296,8 @@ internal fun ReceiverBrowserProfileDeletePrompt(
         ) {
             Text(text = "Delete ${profile.name} from this TV?", style = ReceiverType.Title, color = ReceiverColors.Text)
             Text(
-                text = "This permanently removes only this profile's TV bookmarks and history. Other TV profiles and connected devices are not changed.",
+                text = "This permanently removes only this profile's TV bookmarks and history. " +
+                    "Other TV profiles and connected devices are not changed.",
                 style = ReceiverType.Body,
                 color = ReceiverColors.Muted,
             )

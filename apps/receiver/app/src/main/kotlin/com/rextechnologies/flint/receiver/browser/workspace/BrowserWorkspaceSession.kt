@@ -5,6 +5,7 @@ import android.os.Looper
 import android.util.Log
 import com.rextechnologies.flint.protocol.wire.BrowserPointerAction
 import com.rextechnologies.flint.protocol.wire.BrowserSemanticKey
+import com.rextechnologies.flint.receiver.browser.BrowserFailure
 import com.rextechnologies.flint.receiver.browser.BrowserNativeInput
 import com.rextechnologies.flint.receiver.browser.BrowserNativeKey
 import com.rextechnologies.flint.receiver.browser.BrowserPaneAudioMuteResult
@@ -14,7 +15,7 @@ import com.rextechnologies.flint.receiver.browser.BrowserTextValidation
 import com.rextechnologies.flint.receiver.browser.BrowserUrlPolicy
 import com.rextechnologies.flint.receiver.browser.BrowserUrlResult
 import com.rextechnologies.flint.receiver.browser.BrowserWebViewDriver
-import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceCapacity
+import com.rextechnologies.flint.receiver.browser.toNativeKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -148,6 +149,7 @@ class BrowserWorkspaceSession(
             val pane = transition.state.pane(request.paneId)
             if (before.profile != transition.state.profile || pane == null ||
                 pane.rendererGeneration != before.pane(request.paneId)?.rendererGeneration ||
+                pane.rendererResidency != before.pane(request.paneId)?.rendererResidency ||
                 pane.page.navigationId != before.pane(request.paneId)?.page?.navigationId ||
                 transition.state.focusedPaneId != request.paneId
             ) {
@@ -181,7 +183,7 @@ class BrowserWorkspaceSession(
         ) {
             return
         }
-        val nativeKey = key.toNativeKey() ?: return
+        val nativeKey = key.toNativeKey()
         runOnUi {
             host?.driverFor(paneId)?.dispatch(
                 BrowserNativeInput.KeyStroke(
@@ -193,6 +195,16 @@ class BrowserWorkspaceSession(
     }
 
     fun onPaneStateEvent(paneId: Long, token: Long, event: BrowserStateEvent) {
+        // The page goes first: failing the pane forgets its token, and the page update would be dropped.
+        reportPageState(paneId, token, event)
+        // A dead renderer belongs to no navigation, so it skips the page report's stale-navigation guard.
+        // Without that, a renderer restored before its first navigation could never be reported gone.
+        if (event is BrowserStateEvent.Failed && event.failure == BrowserFailure.RENDERER_STOPPED) {
+            onRendererGone(paneId, token)
+        }
+    }
+
+    private fun reportPageState(paneId: Long, token: Long, event: BrowserStateEvent) {
         if (rendererTokens[paneId] != token) return
         val generation = generations[paneId] ?: return
         val current = pages[paneId] ?: state.pane(paneId)?.page ?: BrowserWorkspacePage()
@@ -533,7 +545,7 @@ class BrowserWorkspaceSession(
             "A Windows-device profile cannot restore a saved TV workspace."
         BrowserWorkspaceRefusal.EXCLUSIVE_PRESENTATION_ACTIVE ->
             "Finish fullscreen or theater mode first."
-        BrowserWorkspaceRefusal.RENDERER_NOT_RESIDENT -> "That page is suspended — select it to restore."
+        BrowserWorkspaceRefusal.RENDERER_NOT_RESIDENT -> "That page is not loaded — select it to load it again."
         BrowserWorkspaceRefusal.INVALID_SLOT -> "That page slot is not available."
         BrowserWorkspaceRefusal.PANE_ID_EXHAUSTED,
         BrowserWorkspaceRefusal.MEDIA_REQUEST_ID_EXHAUSTED,
@@ -546,21 +558,4 @@ class BrowserWorkspaceSession(
     companion object {
         private const val TAG = "FlintWorkspace"
     }
-}
-
-private fun BrowserSemanticKey.toNativeKey(): BrowserNativeKey? = when (this) {
-    BrowserSemanticKey.UP -> BrowserNativeKey.UP
-    BrowserSemanticKey.DOWN -> BrowserNativeKey.DOWN
-    BrowserSemanticKey.LEFT -> BrowserNativeKey.LEFT
-    BrowserSemanticKey.RIGHT -> BrowserNativeKey.RIGHT
-    BrowserSemanticKey.SELECT -> BrowserNativeKey.SELECT
-    BrowserSemanticKey.BACK -> BrowserNativeKey.BACK
-    BrowserSemanticKey.TAB, BrowserSemanticKey.SHIFT_TAB -> BrowserNativeKey.TAB
-    BrowserSemanticKey.ESCAPE -> BrowserNativeKey.ESCAPE
-    BrowserSemanticKey.PAGE_UP -> BrowserNativeKey.PAGE_UP
-    BrowserSemanticKey.PAGE_DOWN -> BrowserNativeKey.PAGE_DOWN
-    BrowserSemanticKey.HOME -> BrowserNativeKey.HOME
-    BrowserSemanticKey.END -> BrowserNativeKey.END
-    BrowserSemanticKey.REFRESH -> BrowserNativeKey.REFRESH
-    else -> null
 }

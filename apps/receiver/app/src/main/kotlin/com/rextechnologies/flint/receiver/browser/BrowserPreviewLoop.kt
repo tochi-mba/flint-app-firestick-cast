@@ -72,10 +72,6 @@ class BrowserPreviewLoop(
         if (value) start() else stop()
     }
 
-    fun setInteractive(value: Boolean) {
-        interactive = value
-    }
-
     /** The view currently being drawn, if any — useful for tests and attachment diagnostics. */
     fun attachedTarget(): View? = target
 

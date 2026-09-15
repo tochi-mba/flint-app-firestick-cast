@@ -1,5 +1,4 @@
 using System.Globalization;
-using Flint.Protocol;
 using Shouldly;
 
 namespace Flint.Protocol.Tests;

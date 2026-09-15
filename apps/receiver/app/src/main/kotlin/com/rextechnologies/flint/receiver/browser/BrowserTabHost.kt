@@ -69,16 +69,11 @@ class BrowserTabHost(
         addView(fullscreenContainer)
     }
 
-    /** The driver for the tab currently on the glass, or null before the first one exists. */
-    fun activeDriver(): BrowserWebViewDriver? = live[foreground]?.driver
-
     fun activeId(): Long = foreground
 
     fun driverFor(id: Long): BrowserWebViewDriver? = live[id]?.driver
 
     fun liveCount(): Int = live.size
-
-    fun isFrozen(id: Long): Boolean = frozen.containsKey(id) || fallbackUrls.containsKey(id)
 
     fun create(id: Long, url: String?) {
         if (live.containsKey(id)) {

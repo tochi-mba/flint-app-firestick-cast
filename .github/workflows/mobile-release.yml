@@ -137,8 +137,8 @@ jobs:
           MOBILE_KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
         run: >
           ./gradlew :phone:app:assembleRelease --console plain
-          -Pmobile.versionCode=${{ steps.version.outputs.code }}
-          -Pmobile.versionSuffix=${{ steps.version.outputs.suffix }}
+          -Pflint.versionCode=${{ steps.version.outputs.code }}
+          -Pflint.versionSuffix=${{ steps.version.outputs.suffix }}
 
       - name: Name and verify the artifacts
         id: artifacts

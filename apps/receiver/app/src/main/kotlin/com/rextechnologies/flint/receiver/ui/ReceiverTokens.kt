@@ -51,12 +51,6 @@ object ReceiverType {
         fontWeight = FontWeight.Bold,
         letterSpacing = 1.2.sp,
     )
-
-    /** Trims the leading a font reserves above and below, so chrome rows measure predictably. */
-    val TvLineHeight = LineHeightStyle(
-        alignment = LineHeightStyle.Alignment.Center,
-        trim = LineHeightStyle.Trim.Both,
-    )
 }
 
 /** One spacing ramp, so chrome rows line up without each component inventing its own gaps. */
@@ -168,7 +162,3 @@ fun Modifier.tvClickable(
             onClick = onClick,
         )
 }
-
-/** Focus state without the visual, for surfaces that draw their own selection. */
-@Composable
-fun rememberFocusFlag(): MutableInteractionSource = remember { MutableInteractionSource() }

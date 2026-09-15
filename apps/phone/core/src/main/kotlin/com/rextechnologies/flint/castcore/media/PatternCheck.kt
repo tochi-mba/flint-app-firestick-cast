@@ -95,37 +95,6 @@ object YuvToRgb {
     private fun clamp(value: Double): Int = value.roundToInt().coerceIn(0, 255)
 }
 
-/**
- * One plane of a 4:2:0 image, as bytes plus the strides the platform reported for it.
- *
- * The strides are the whole point. A row is commonly padded to an alignment the hardware likes, and
- * the two chroma planes of a semi-planar buffer are interleaved with a pixel stride of two. Indexing
- * the bytes as if they were packed reads the wrong pixel on exactly the devices worth checking.
- */
-class PlaneBytes(private val bytes: ByteArray, val rowStride: Int, val pixelStride: Int) {
-    init {
-        require(rowStride > 0 && pixelStride > 0) { "A stride is a positive number of bytes" }
-    }
-
-    /** The sample at ([column], [row]), or `null` when the buffer does not reach it. */
-    fun at(column: Int, row: Int): Int? {
-        if (column < 0 || row < 0) return null
-        val index = row.toLong() * rowStride + column.toLong() * pixelStride
-        if (index >= bytes.size) return null
-        return bytes[index.toInt()].toInt() and 0xff
-    }
-}
-
-/** Reads one colour out of a 4:2:0 image whose chroma planes are half the size in each direction. */
-object YuvSampler {
-    fun sample(luma: PlaneBytes, cb: PlaneBytes, cr: PlaneBytes, x: Int, y: Int): Rgb? {
-        val l = luma.at(x, y) ?: return null
-        val u = cb.at(x / 2, y / 2) ?: return null
-        val v = cr.at(x / 2, y / 2) ?: return null
-        return YuvToRgb.convert(l, u, v)
-    }
-}
-
 /** What a decoded frame turned out to be, in one sentence. */
 data class PatternVerdict(val passed: Boolean, val detail: String)
 

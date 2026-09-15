@@ -240,7 +240,7 @@ class BrowserTlsServerTest {
                 val input = BufferedInputStream(second.inputStream)
                 // The refused client may get a BYE after handshake or an immediate close.
                 runCatching {
-                    WireCodec.writeTo(output, WireFrame(BROWSER_PROTOCOL_MINIMUM, hostHello()))
+                    WireCodec.writeTo(output, WireFrame(browserProtocolMinimum, hostHello()))
                     output.flush()
                     WireCodec.readFrom(input)
                 }
@@ -287,7 +287,7 @@ class BrowserTlsServerTest {
                     socket.soTimeout = 1_000
                     val output = BufferedOutputStream(socket.outputStream)
                     val input = BufferedInputStream(socket.inputStream)
-                    WireCodec.writeTo(output, WireFrame(BROWSER_PROTOCOL_MINIMUM, hostHello()))
+                    WireCodec.writeTo(output, WireFrame(browserProtocolMinimum, hostHello()))
                     output.flush()
                     WireCodec.readFrom(input)
                 }
@@ -376,12 +376,12 @@ class BrowserTlsServerTest {
         val input = BufferedInputStream(socket.inputStream)
         val output = BufferedOutputStream(socket.outputStream)
         val hostHelloMessage = hostHello()
-        WireCodec.writeTo(output, WireFrame(BROWSER_PROTOCOL_MINIMUM, hostHelloMessage))
+        WireCodec.writeTo(output, WireFrame(browserProtocolMinimum, hostHelloMessage))
         output.flush()
         val peerHelloFrame = WireCodec.readFrom(input) ?: error("expected hello")
         val peerHello = assertIs<HelloMessage>(peerHelloFrame.message)
         val negotiated = VersionNegotiator.negotiate(
-            localMinimum = BROWSER_PROTOCOL_MINIMUM,
+            localMinimum = browserProtocolMinimum,
             localMaximum = ProtocolVersion.CURRENT,
             remote = peerHello,
         ) ?: error("expected compatible browser protocol")
@@ -439,10 +439,10 @@ class BrowserTlsServerTest {
     private fun openRawTls(): SSLSocket = openRawTlsAgainst(server.port)
 
     /** Matches [BrowserTlsServer.BROWSER_PROTOCOL_MINIMUM]. */
-    private val BROWSER_PROTOCOL_MINIMUM = 2
+    private val browserProtocolMinimum = 2
 
     private fun hostHello(): HelloMessage = HelloMessage(
-        BROWSER_PROTOCOL_MINIMUM,
+        browserProtocolMinimum,
         ProtocolVersion.CURRENT,
         "Flint Windows Browser Remote",
         setOf(CodecId.H264),

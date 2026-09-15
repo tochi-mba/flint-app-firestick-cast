@@ -23,7 +23,8 @@ class BrowserPreviewPublisherTest {
     fun `enabled publisher sends a bounded jpeg and replaces older candidates`() {
         val sent = mutableListOf<Int>()
         val publisher = BrowserPreviewPublisher(send = { outbound ->
-            val preview = (outbound as com.rextechnologies.flint.receiver.browser.net.BrowserOutboundMessage.Preview).message
+            val preview =
+                (outbound as com.rextechnologies.flint.receiver.browser.net.BrowserOutboundMessage.Preview).message
             sent += preview.frameId.toInt()
             true
         })

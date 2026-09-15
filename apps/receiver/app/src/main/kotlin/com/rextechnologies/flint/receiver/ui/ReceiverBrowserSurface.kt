@@ -467,25 +467,6 @@ private fun rememberBrowserSurfaceController(service: ReceiverService): BrowserS
     }
 
 /**
- * What the omnibox offers under the field.
- *
- * Bookmarks and history arrive with the library store; until then the search row alone is honest
- * and still useful, because looking something up is the commonest thing anyone types here.
- */
-private fun omniboxSuggestions(controller: BrowserSurfaceController): List<OmniboxSuggestion> {
-    val typed = controller.keyboardState.text.trim()
-    if (typed.isEmpty()) {
-        return emptyList()
-    }
-    return listOf(
-        OmniboxSuggestion(
-            glyph = "⌕",
-            primary = "Search ${controller.searchEngine.name} for \u201C$typed\u201D",
-        ),
-    )
-}
-
-/**
  * The prompt shown when Back would otherwise end the session.
  *
  * Deliberately a stop rather than a confirmation dialog with a default: losing a browsing session

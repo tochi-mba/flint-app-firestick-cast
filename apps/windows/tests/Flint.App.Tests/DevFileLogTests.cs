@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text;
 using Flint.App.Services;
-using Flint.Core;
 using Shouldly;
 
 namespace Flint.App.Tests;

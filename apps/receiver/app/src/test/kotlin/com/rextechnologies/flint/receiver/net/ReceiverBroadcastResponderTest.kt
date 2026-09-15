@@ -8,6 +8,7 @@ import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,15 +19,23 @@ import kotlin.test.assertTrue
 
 /** The broadcast rung, exercised with a real broadcast whenever the host exposes one. */
 class ReceiverBroadcastResponderTest {
+    /**
+     * The first address on a real subnet, whose broadcast address is the top of its own prefix.
+     *
+     * Windows also lists VPN links and disconnected adapters, reporting broadcast addresses such as
+     * 0.0.0.0 that belong to no subnet. Sending to one fails with "Cannot assign requested address",
+     * and which adapter came first changed from run to run, so different tests failed each time.
+     */
     private val broadcastCapable: Pair<Inet4Address, Inet4Address>? =
         NetworkInterface.getNetworkInterfaces()
             .asSequence()
-            .filter { runCatching { it.isUp && !it.isLoopback }.getOrDefault(false) }
+            .filter { runCatching { it.isUp && !it.isLoopback && !it.isPointToPoint }.getOrDefault(false) }
             .flatMap { it.interfaceAddresses.asSequence() }
             .mapNotNull { candidate ->
-                val local = candidate.address as? Inet4Address ?: return@mapNotNull null
+                val local = (candidate.address as? Inet4Address)?.takeUnless { it.isLinkLocalAddress }
+                    ?: return@mapNotNull null
                 val broadcast = candidate.broadcast as? Inet4Address ?: return@mapNotNull null
-                local to broadcast
+                (local to broadcast).takeIf { subnetBroadcast(local, candidate.networkPrefixLength) == broadcast }
             }
             .firstOrNull()
 
@@ -147,6 +156,13 @@ class ReceiverBroadcastResponderTest {
 
     private fun unassignedAddress(): Inet4Address =
         InetAddress.getByAddress(byteArrayOf(192.toByte(), 0, 2, 1)) as Inet4Address
+
+    /** The broadcast address of [local]'s subnet; a /31 or /32 link has none. */
+    private fun subnetBroadcast(local: Inet4Address, prefixLength: Short): Inet4Address? {
+        if (prefixLength !in 1..30) return null
+        val bits = ByteBuffer.wrap(local.address).int or (-1 ushr prefixLength.toInt())
+        return InetAddress.getByAddress(ByteBuffer.allocate(4).putInt(bits).array()) as Inet4Address
+    }
 
     private companion object {
         const val TIMEOUT_MILLIS = 2_000

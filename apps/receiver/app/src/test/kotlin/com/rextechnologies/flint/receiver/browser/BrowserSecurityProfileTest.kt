@@ -103,6 +103,16 @@ class BrowserSecurityProfileTest {
         assertEquals(125, webView.settings.textZoom)
     }
 
+    @Test
+    @Config(sdk = [25])
+    fun `on Fire OS 6 the profile stops the WebView remembering form input`() {
+        assertTrue(webView.settings.savesFormData, "saved form data is on by default below API 26")
+
+        BrowserSecurityProfile.apply(settings = webView.settings, darkening = RecordingDarkening(supported = false))
+
+        assertFalse(webView.settings.savesFormData)
+    }
+
     private class RecordingDarkening(
         override val supported: Boolean,
     ) : BrowserAlgorithmicDarkening {
@@ -113,3 +123,8 @@ class BrowserSecurityProfileTest {
         }
     }
 }
+
+// Deprecated because Android 8 made it do nothing; API 25, where it still works, is what this reads.
+@Suppress("DEPRECATION")
+private val WebSettings.savesFormData: Boolean
+    get() = saveFormData

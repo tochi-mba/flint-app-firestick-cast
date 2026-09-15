@@ -212,7 +212,8 @@ private fun ReceiverPrimaryCard(
         IdleExperience.NO_NETWORK -> StatusCard(
             eyebrow = "NETWORK NEEDED",
             title = "Connect this Fire TV",
-            detail = "Open Settings and join the same Wi-Fi or hotspot as your phone or PC. Flint will continue automatically.",
+            detail = "Open Settings and join the same Wi-Fi or hotspot as your phone or PC. " +
+                "Flint will continue automatically.",
             modifier = modifier,
         )
         IdleExperience.ATTENTION -> StatusCard(

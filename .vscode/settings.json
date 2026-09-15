@@ -1,0 +1,18 @@
+{
+  // Kotlin is edited in Android Studio, which opens the root Gradle build. Everything else is here.
+  "dotnet.defaultSolution": "Flint.slnx",
+  "rust-analyzer.linkedProjects": ["apps/windows/engine/Cargo.toml"],
+  "rust-analyzer.check.command": "clippy",
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/build": true,
+    "**/.gradle": true,
+    "**/target": true
+  },
+  "search.exclude": {
+    "**/TestResults": true,
+    "artifacts": true,
+    "dist": true
+  }
+}

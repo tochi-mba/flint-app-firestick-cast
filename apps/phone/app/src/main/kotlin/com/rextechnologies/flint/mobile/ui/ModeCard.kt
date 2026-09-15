@@ -53,14 +53,3 @@ fun ModeCard(verdict: ModeVerdict, modifier: Modifier = Modifier) {
         }
     }
 }
-
-/** A stack of cards, twelve apart, matching the desktop's page grid. */
-@Composable
-fun ModeCards(verdicts: List<ModeVerdict>, modifier: Modifier = Modifier) {
-    androidx.compose.foundation.layout.Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(FlintSpace.CardSpacing),
-    ) {
-        verdicts.forEach { ModeCard(it) }
-    }
-}

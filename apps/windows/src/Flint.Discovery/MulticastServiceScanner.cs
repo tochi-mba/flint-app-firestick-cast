@@ -22,6 +22,7 @@ public static class MulticastServiceScanner
     /// Called for each datagram received. Runs on the receive path, so it must be quick and must
     /// not throw for a packet it cannot parse.
     /// </param>
+    /// <param name="cancellationToken">Ends the listening window early.</param>
     public static async Task QueryAsync(
         string serviceType,
         TimeSpan window,

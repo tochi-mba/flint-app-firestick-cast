@@ -182,8 +182,6 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
     /** Activity attaches/detaches the WebView driver through this coordinator. */
     fun browserCoordinator(): BrowserCoordinator = browserController.coordinator
 
-    fun browserInputRouter(): BrowserInputRouter = browserController.inputRouter
-
     // Some Fire OS builds silently drop an outbound connection this app initiates to a private LAN
     // address, even though the exact same address works perfectly for the connection the host
     // opened to us. When a MediaCommandMessage arrives with no URL, it means the host pushed the
@@ -846,10 +844,6 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
         }
         server?.send(PlaybackStateMessage(PlaybackState.IDLE))
     }
-
-    fun attachBrowserWebView(driver: BrowserWebViewDriver) = browserController.attachWebView(driver)
-
-    fun detachBrowserWebView(driver: BrowserWebViewDriver) = browserController.detachWebView(driver)
 
     fun attachBrowserTabSurface(surface: BrowserTabSurfacePort) = browserController.attachTabSurface(surface)
 

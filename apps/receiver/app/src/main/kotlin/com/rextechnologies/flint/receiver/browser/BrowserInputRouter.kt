@@ -111,7 +111,6 @@ class BrowserInputRouter(
                     else -> BrowserInputMapping.Rejected(BrowserInputRejection.INVALID_IDENTIFIER)
                 }
             }
-            else -> return BrowserInputMapping.Rejected(BrowserInputRejection.INVALID_IDENTIFIER)
         }
     }
 

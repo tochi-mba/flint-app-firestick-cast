@@ -1,6 +1,5 @@
 using Flint.Core;
 using Flint.Protocol;
-using Flint.Session;
 using Shouldly;
 
 namespace Flint.Session.Tests;

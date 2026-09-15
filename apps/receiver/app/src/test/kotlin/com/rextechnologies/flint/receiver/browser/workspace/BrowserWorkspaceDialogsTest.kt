@@ -1,7 +1,15 @@
 package com.rextechnologies.flint.receiver.browser.workspace
 
-import com.rextechnologies.flint.receiver.browser.*
-import kotlin.test.*
+import com.rextechnologies.flint.receiver.browser.BrowserDialogAnswer
+import com.rextechnologies.flint.receiver.browser.BrowserDialogKind
+import com.rextechnologies.flint.receiver.browser.PendingJsDialog
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class BrowserWorkspaceDialogsTest {
     private val dialogs = BrowserWorkspaceDialogs()

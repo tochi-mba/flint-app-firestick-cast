@@ -28,7 +28,6 @@ class BrowserWorkspaceStore(
         private const val FORMAT_VERSION = 1L
         private const val MAX_PANES = 4
         private const val MAX_URL_CHARS = BrowserUrlPolicy.MAX_INPUT_BYTES
-        private const val MAX_TITLE_CHARS = BrowserLibraryStore.MAX_TITLE_CODE_POINTS
     }
 
     @Volatile

@@ -141,6 +141,7 @@ data class BrowserWorkspacePane(
     val media: BrowserWorkspaceMediaState = BrowserWorkspaceMediaState(),
 ) {
     val isSuspended: Boolean get() = rendererResidency == BrowserWorkspaceRendererResidency.SUSPENDED
+    val isFailed: Boolean get() = rendererResidency == BrowserWorkspaceRendererResidency.FAILED
 }
 
 /**
@@ -241,7 +242,6 @@ data class BrowserWorkspaceState(
 ) {
     val focusedPane: BrowserWorkspacePane? get() = panes.firstOrNull { it.id == focusedPaneId }
     val livePaneCount: Int get() = panes.count { it.rendererResidency.hasRenderer }
-    val isLocalProfile: Boolean get() = profile is BrowserWorkspaceProfile.LocalTv
     val paneIdsInSlotOrder: List<Long> get() = panes.sortedBy(BrowserWorkspacePane::slot).map(BrowserWorkspacePane::id)
 
     fun pane(id: Long): BrowserWorkspacePane? = panes.firstOrNull { it.id == id }

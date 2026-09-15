@@ -1,0 +1,6 @@
+# Commits that only change layout. Blame looks through them to the change that last meant something.
+# GitHub's blame view reads this file on its own; locally, run:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Format the receiver and the Kotlin protocol with ktlint
+7e19527f0276bca09cc01dce533cd218a7bc622b

@@ -30,10 +30,7 @@ data class BrowserLibraryProfile(
 data class BrowserLibraryProfilesState(
     val activeProfileId: String,
     val profiles: List<BrowserLibraryProfile>,
-) {
-    val activeProfile: BrowserLibraryProfile
-        get() = profiles.first { it.id == activeProfileId }
-}
+)
 
 data class BrowserSavedTab(val url: String, val title: String = "")
 
@@ -77,7 +74,6 @@ class BrowserLibraryStore(
 
         // The phase-two browser protocol encodes each collection count as an unsigned byte.
         const val MAX_HISTORY = 0xff
-        const val MAX_TITLE_CODE_POINTS = 512
         const val MAX_TITLE_UTF8_BYTES = 512
         const val MAX_PROFILES = 8
         const val MAX_PROFILE_NAME_UTF8_BYTES = 64

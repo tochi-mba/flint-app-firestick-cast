@@ -2,11 +2,13 @@ package com.rextechnologies.flint.mobile.ui
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -122,10 +124,11 @@ fun SettingsScreen(state: MobileUiState, controller: MobileController, activity:
  * computer, so the text on this card is the whole report.
  */
 @Composable
-private fun LastFailureCard(activity: MobileActivity) {
-    var recorded by remember { mutableStateOf(CrashLog.last(activity)) }
+internal fun LastFailureCard(activity: Context) {
+    val failures = remember(activity) { CrashLog.observe(activity) }
+    val recorded by failures.collectAsState(initial = CrashLog.last(activity))
     val text = recorded ?: return
-    var copied by remember { mutableStateOf(false) }
+    var copied by remember(text) { mutableStateOf(false) }
 
     Spacer(Modifier.height(FlintSpace.Small))
     SectionLabel(FailureCopy.SECTION, tone = Tone.Live)
@@ -148,7 +151,6 @@ private fun LastFailureCard(activity: MobileActivity) {
                 text = FailureCopy.CLEAR_ACTION,
                 onClick = {
                     CrashLog.clear(activity)
-                    recorded = null
                 },
                 tone = Tone.Live,
             )

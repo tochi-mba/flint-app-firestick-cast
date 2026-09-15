@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
 using Flint.Protocol;
-using Flint.Session;
 using Shouldly;
 
 namespace Flint.Session.Tests;

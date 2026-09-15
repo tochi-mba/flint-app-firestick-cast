@@ -1,13 +1,10 @@
-using System.Linq;
 using System.Net;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
-using Flint.App.Services;
 using Flint.App.ViewModels;
 using Flint.App.Views;
 using Flint.Core;
-using Flint.Discovery;
 using Shouldly;
 
 namespace Flint.App.Tests;
@@ -122,7 +119,7 @@ public sealed class CastPageComingSoonTests
     /// The text a person would actually read on the page.
     /// </summary>
     /// <remarks>
-    /// Filtered by <see cref="Visual.IsEffectivelyVisible"/>, which is the whole point of this
+    /// Filtered by <c>Visual.IsEffectivelyVisible</c>, which is the whole point of this
     /// helper. A control hidden by <c>IsVisible="false"</c> stays in the visual tree in Avalonia,
     /// so collecting every descendant reports hidden panels as though they were on screen — and an
     /// assertion that a panel is absent would pass no matter what the binding did.

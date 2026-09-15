@@ -1,5 +1,4 @@
 using System.Net;
-using Flint.Core;
 
 namespace Flint.Core.Tests.TestData;
 
@@ -47,6 +46,8 @@ internal static class Build
         new(EncoderVendor.Software, IntegratedLuid, new HashSet<VideoCodec> { VideoCodec.H264 });
 
     /// <summary>A hybrid laptop: integrated GPU drives the display, discrete GPU holds NVENC.</summary>
+    /// <param name="encoders">The hardware encoders the host reports. Defaults to NVENC and Quick Sync.</param>
+    /// <param name="windowsBuild">The Windows build number. Defaults to 26100, Windows 11 24H2.</param>
     /// <param name="captureBackend">
     /// Defaults to a working backend so a test about encoders or the network is not silently
     /// diverted into the capture gate. Pass <see langword="null"/> to exercise that gate.

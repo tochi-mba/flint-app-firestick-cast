@@ -1,0 +1,10 @@
+# Files over the 1,000-line ceiling, each held at its current length until it is decomposed.
+#
+# An entry may only shrink. When a file drops under the ceiling the source check fails until its
+# entry is deleted, so this list cannot outlive the work it records. It is empty when the refactor's
+# decompositions are done, and then this file goes too.
+#
+# lines  path                                                                                  owner of the split
+1565  apps/receiver/app/src/main/kotlin/com/rextechnologies/flint/receiver/ReceiverBrowserController.kt receiver feature modules
+1036  apps/windows/src/Flint.App/ViewModels/BrowserWorkspaceViewModel.cs                              Flint.Browser extraction
+1064  apps/receiver/app/src/main/kotlin/com/rextechnologies/flint/receiver/browser/workspace/BrowserWorkspaceReducer.kt receiver feature modules

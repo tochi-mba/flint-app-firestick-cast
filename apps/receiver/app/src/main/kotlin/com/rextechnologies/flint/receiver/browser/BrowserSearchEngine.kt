@@ -67,8 +67,6 @@ class BrowserSearchEngine private constructor(
             return BrowserSearchEngine(id = "custom", name = "Custom", template = trimmed)
         }
 
-        fun byId(id: String): BrowserSearchEngine? = PRESETS.firstOrNull { it.id == id }
-
         /**
          * Percent-encodes for a query string.
          *

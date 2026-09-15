@@ -97,30 +97,35 @@ class CapabilityCoordinator(
         }
         mutable.update { it.copy(encoderProbeRunning = true) }
 
-        val found = withContext(Dispatchers.Default) { enumerateEncoders() }
-        val codec = CodecChoice.preferred(found)
-        val trip = when {
-            codec == null -> EncoderRoundTrip.Outcome(ProbeOutcome.NOT_PROBED, "")
-            before.virtualDisplayProbe == ProbeOutcome.UNSUPPORTED -> EncoderRoundTrip.Outcome(
-                ProbeOutcome.NOT_PROBED,
-                DISPLAY_REFUSED_DETAIL,
-            )
+        try {
+            val found = withContext(Dispatchers.Default) { enumerateEncoders() }
+            val codec = CodecChoice.preferred(found)
+            val trip = when {
+                codec == null -> EncoderRoundTrip.Outcome(ProbeOutcome.NOT_PROBED, "")
+                before.virtualDisplayProbe == ProbeOutcome.UNSUPPORTED -> EncoderRoundTrip.Outcome(
+                    ProbeOutcome.NOT_PROBED,
+                    DISPLAY_REFUSED_DETAIL,
+                )
 
-            else -> roundTrip(activity, codec)
-        }
+                else -> roundTrip(activity, codec)
+            }
 
-        mutable.update {
-            it.copy(
-                encoders = found,
-                encoderProbe = if (found.isEmpty()) ProbeOutcome.UNSUPPORTED else ProbeOutcome.SUPPORTED,
-                encoderRoundTrip = trip.outcome,
-                roundTripDetail = trip.detail,
-                roundTripCodec = codec,
-                encoderProbeRunning = false,
-            )
+            mutable.update {
+                it.copy(
+                    encoders = found,
+                    encoderProbe = if (found.isEmpty()) ProbeOutcome.UNSUPPORTED else ProbeOutcome.SUPPORTED,
+                    encoderRoundTrip = trip.outcome,
+                    roundTripDetail = trip.detail,
+                    roundTripCodec = codec,
+                )
+            }
+            remember()
+            return EncoderCheck(found, codec, trip.outcome, trip.detail)
+        } finally {
+            // Exceptions go to the controller's failure handler; cancellation stops the action.
+            // Both must release the button so a later attempt can actually run.
+            mutable.update { it.copy(encoderProbeRunning = false) }
         }
-        remember()
-        return EncoderCheck(found, codec, trip.outcome, trip.detail)
     }
 
     /**
@@ -133,10 +138,14 @@ class CapabilityCoordinator(
     suspend fun probeSecondScreen(activity: Activity): ProbeOutcome {
         if (mutable.value.secondScreenProbeRunning) return mutable.value.virtualDisplayProbe
         mutable.update { it.copy(secondScreenProbeRunning = true) }
-        val outcome = probeDisplay(activity)
-        mutable.update { it.copy(virtualDisplayProbe = outcome, secondScreenProbeRunning = false) }
-        remember()
-        return outcome
+        try {
+            val outcome = probeDisplay(activity)
+            mutable.update { it.copy(virtualDisplayProbe = outcome) }
+            remember()
+            return outcome
+        } finally {
+            mutable.update { it.copy(secondScreenProbeRunning = false) }
+        }
     }
 
     /**

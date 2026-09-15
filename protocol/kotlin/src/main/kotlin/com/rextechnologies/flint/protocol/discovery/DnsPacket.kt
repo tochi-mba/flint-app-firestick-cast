@@ -7,7 +7,6 @@ object DnsType {
     const val A: Int = 1
     const val PTR: Int = 12
     const val TXT: Int = 16
-    const val AAAA: Int = 28
     const val SRV: Int = 33
     const val ANY: Int = 255
 }

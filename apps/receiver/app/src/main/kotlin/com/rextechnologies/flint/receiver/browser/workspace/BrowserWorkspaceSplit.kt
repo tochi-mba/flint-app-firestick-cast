@@ -38,9 +38,6 @@ value class BrowserWorkspaceSplitFraction private constructor(val tenThousandths
         const val MINIMUM: Int = 1_500
         const val MAXIMUM: Int = SCALE - MINIMUM
 
-        /** One step of a remote's Left or Right: 5% of the axis. */
-        const val REMOTE_STEP: Int = 500
-
         val Even: BrowserWorkspaceSplitFraction = BrowserWorkspaceSplitFraction(SCALE / 2)
 
         /** Clamps into the allowed range. Out-of-range input is corrected, never rejected. */
@@ -60,10 +57,6 @@ data class BrowserWorkspaceSplit(
     val column: BrowserWorkspaceSplitFraction = BrowserWorkspaceSplitFraction.Even,
     val row: BrowserWorkspaceSplitFraction = BrowserWorkspaceSplitFraction.Even,
 ) {
-    /** True when both dividers are centred, which is what the receiver ships with. */
-    val isEven: Boolean
-        get() = column == BrowserWorkspaceSplitFraction.Even &&
-            row == BrowserWorkspaceSplitFraction.Even
 
     companion object {
         val Even: BrowserWorkspaceSplit = BrowserWorkspaceSplit()

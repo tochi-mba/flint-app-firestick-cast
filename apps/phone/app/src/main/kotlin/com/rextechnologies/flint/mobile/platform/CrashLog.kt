@@ -4,8 +4,12 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
 import com.rextechnologies.flint.mobile.BuildConfig
-import java.io.PrintWriter
-import java.io.StringWriter
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import java.util.Collections
+import java.util.IdentityHashMap
 
 /**
  * What the app has to say about the last time it failed.
@@ -47,6 +51,18 @@ object CrashLog {
             preferences(context.applicationContext).getString(KEY, null)?.takeIf { it.isNotBlank() }
         }.getOrNull()
 
+    /** Includes failures recorded while Settings is already open. */
+    fun observe(context: Context): Flow<String?> = callbackFlow {
+        val application = context.applicationContext
+        val preferences = preferences(application)
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == KEY || key == null) trySend(last(application))
+        }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        trySend(last(application))
+        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.distinctUntilChanged()
+
     fun clear(context: Context) {
         runCatching { preferences(context.applicationContext).edit().remove(KEY).apply() }
     }
@@ -58,13 +74,12 @@ object CrashLog {
         override fun uncaughtException(thread: Thread, failure: Throwable) {
             // Swallowed deliberately. The process is already going down; a recorder that threw on
             // the way would replace the report with its own and leave nothing behind.
-            runCatching { write(context, describe(failure, "the ${thread.name} thread", fatal = true)) }
+            runCatching { write(context, describe(failure, "a Flint thread", fatal = true)) }
             previous?.uncaughtException(thread, failure)
         }
     }
 
     private fun describe(failure: Throwable, where: String, fatal: Boolean): String {
-        val trace = StringWriter().also { failure.printStackTrace(PrintWriter(it)) }.toString()
         val heading = if (fatal) "The app closed on $where." else "A failure on $where was caught."
         return buildString {
             appendLine(heading)
@@ -73,8 +88,22 @@ object CrashLog {
                     "(API ${Build.VERSION.SDK_INT}), ${Build.MANUFACTURER} ${Build.MODEL}.",
             )
             appendLine()
-            append(trace)
+            // Exception messages may contain URLs, tokens, file contents or credentials. Keep
+            // exception types and code locations, including causes, without copying those values.
+            val seen = Collections.newSetFromMap(IdentityHashMap<Throwable, Boolean>())
+            appendFailure(failure, "", seen)
         }.take(MAXIMUM_CHARACTERS)
+    }
+
+    private fun StringBuilder.appendFailure(failure: Throwable, prefix: String, seen: MutableSet<Throwable>) {
+        if (length >= MAXIMUM_CHARACTERS || seen.size >= MAXIMUM_FAILURES || !seen.add(failure)) return
+        append(prefix).appendLine(failure.javaClass.name)
+        for (frame in failure.stackTrace) {
+            if (length >= MAXIMUM_CHARACTERS) return
+            append("    at ").appendLine(frame)
+        }
+        failure.cause?.let { appendFailure(it, "Caused by: ", seen) }
+        for (suppressed in failure.suppressed) appendFailure(suppressed, "Suppressed: ", seen)
     }
 
     /**
@@ -96,4 +125,5 @@ object CrashLog {
 
     /** Long enough for any stack this app can produce, short enough not to stall a dying process. */
     private const val MAXIMUM_CHARACTERS = 16 * 1024
+    private const val MAXIMUM_FAILURES = 32
 }

@@ -100,7 +100,7 @@ jobs:
       # A release must never ship code that does not pass its own gate.
       - name: Build and test
         shell: pwsh
-        run: ./tools/scripts/build.ps1
+        run: ./dev.ps1 check repo engine windows
 
       - name: Package
         shell: pwsh

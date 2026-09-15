@@ -346,19 +346,4 @@ public static class MulticastDnsCodec
 
         private static bool ContainsInvalidUtf8(ReadOnlySpan<byte> bytes) => !IsValidUtf8(bytes);
     }
-
-    /// <summary>
-    /// Reads a TXT record's length-prefixed strings into key-value pairs.
-    /// </summary>
-    /// <remarks>
-    /// An entry without an equals sign is a bare flag and is stored with an empty value, matching
-    /// the DNS-SD convention. Malformed UTF-8 is skipped rather than throwing: one bad attribute
-    /// should not discard a device Flint can otherwise reach.
-    /// </remarks>
-    private static Dictionary<string, string> ReadTextAttributes(ReadOnlySpan<byte> data)
-    {
-        var accumulator = new TextRecordAccumulator();
-        accumulator.Append(data);
-        return new Dictionary<string, string>(accumulator.Attributes, StringComparer.OrdinalIgnoreCase);
-    }
 }

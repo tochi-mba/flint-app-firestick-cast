@@ -3,7 +3,6 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Flint.App.Services;
-using Flint.App.ViewModels;
 using Flint.Protocol;
 using Shouldly;
 

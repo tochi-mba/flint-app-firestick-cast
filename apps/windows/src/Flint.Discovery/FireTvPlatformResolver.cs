@@ -32,6 +32,10 @@ public static class FireTvPlatformResolver
     /// The device's Android API level when it could be read. This is matched only to API ranges
     /// Amazon documents for a Fire OS generation; an undocumented level remains unknown.
     /// </param>
+    /// <param name="buildModel">
+    /// The device's build model when it could be read. A model known to run Vega OS resolves to Vega
+    /// whatever the probe proved.
+    /// </param>
     public static FireTvPlatform Resolve(AdbProbeResult result, int? apiLevel, string? buildModel = null)
     {
         ArgumentNullException.ThrowIfNull(result);

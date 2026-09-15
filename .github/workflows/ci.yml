@@ -1,4 +1,4 @@
-# The same checks tools/scripts/build.ps1 runs locally, so a green local run means a green CI run.
+# The same gate ./dev.ps1 check runs locally, so a green local run means a green CI run.
 name: CI
 
 # The phone app lives in the same repository but shares none of this job's toolchains, so a change
@@ -79,22 +79,15 @@ jobs:
             apps/windows/engine/target
           key: cargo-${{ runner.os }}-${{ hashFiles('apps/windows/engine/Cargo.toml') }}
 
-      - name: Build and test
+      - name: Check the source rules, the engine and the Windows app
         shell: pwsh
-        run: ./tools/scripts/build.ps1
+        run: ./dev.ps1 check repo engine windows
 
-      # The same gate as the local one. Protocol tests and lint were missing, so a wire
-      # change that broke Kotlin, or a lint regression, could pass CI and fail on a television.
-      #
-      # :protocol:check rather than :protocol:test, because the module declares a 95% line and
-      # 85% branch coverage rule that nothing here was running. It had been failing quietly at
-      # 81% ever since the browser codecs landed untested.
-      - name: Test Fire TV receiver
+      # check rather than test. check is where the protocol's coverage floor, lint, ktlint and the
+      # socket guard run, and the floor once failed quietly at 81% for as long as only test ran here.
+      - name: Check the protocol and the Fire TV receiver
         shell: pwsh
-        run: >
-          ./gradlew.bat --no-daemon
-          :protocol:check :receiver:app:testDebugUnitTest :receiver:app:lintDebug
-          --console plain
+        run: ./dev.ps1 check protocol receiver
 
       # Reports are the only way to see which case failed once the runner is gone.
       - name: Upload test reports
@@ -112,4 +105,4 @@ jobs:
 
       - name: Check the site
         shell: pwsh
-        run: python tools/scripts/check-site.py
+        run: ./dev.ps1 check site

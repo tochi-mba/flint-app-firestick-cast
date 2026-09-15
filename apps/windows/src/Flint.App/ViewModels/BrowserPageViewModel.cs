@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -707,18 +706,6 @@ public sealed partial class BrowserPageViewModel
         OnPropertyChanged(nameof(CanSendTouch));
         OnPropertyChanged(nameof(CanInteractWithPreview));
         OnPropertyChanged(nameof(HasOpenBrowserSurface));
-    }
-
-    /// <summary>Re-evaluates every command whose availability follows the session.</summary>
-    private void RaiseSessionCommands()
-    {
-        VerifySecureReceiverCommand.NotifyCanExecuteChanged();
-        NavigateCommand.NotifyCanExecuteChanged();
-        CloseBrowserCommand.NotifyCanExecuteChanged();
-        ReloadCommand.NotifyCanExecuteChanged();
-        StopLoadingCommand.NotifyCanExecuteChanged();
-        GoBackCommand.NotifyCanExecuteChanged();
-        GoForwardCommand.NotifyCanExecuteChanged();
     }
 
     /// <summary>

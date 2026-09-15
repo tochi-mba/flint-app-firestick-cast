@@ -10,6 +10,10 @@
     <!-- The recommended rule set rather than the handful the SDK enables by default. The rules this
          codebase turns off are listed in .editorconfig, each with its reason. -->
     <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <!-- Generated so the build can report unused usings, which the compiler only tracks when it
+         writes documentation. Checked comments must be correct; not every member needs one. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 

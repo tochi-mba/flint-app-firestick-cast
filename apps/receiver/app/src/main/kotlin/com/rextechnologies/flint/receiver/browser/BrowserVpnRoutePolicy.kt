@@ -34,7 +34,8 @@ object BrowserVpnRoutePolicy {
         }
         for (peer in config.peers) {
             if (carveAllowedIps(peer.allowedIps, localNetworks).isEmpty()) {
-                return "This VPN route only covers the TV control network. Use a full-tunnel or internet routes; Flint keeps the local network outside the tunnel"
+                return "This VPN route only covers the TV control network. Use a full-tunnel or internet routes; " +
+                    "Flint keeps the local network outside the tunnel"
             }
         }
         return null

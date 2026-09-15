@@ -115,6 +115,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// Onboarding persistence. Defaults to a store that reports the introduction as already seen,
     /// so a test asking about the shell is not handed the introduction it did not ask for.
     /// </param>
+    /// <param name="addressStore">Recent addresses. Defaults to a store that remembers none.</param>
     public static MainWindowViewModel CreateWith(
         CapabilityProber prober,
         IOnboardingState? onboardingState = null,

@@ -5,7 +5,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.rextechnologies.flint.protocol.wire.BrowserPointerAction
-import com.rextechnologies.flint.receiver.browser.*
+import com.rextechnologies.flint.receiver.browser.BrowserCursorEngine
+import com.rextechnologies.flint.receiver.browser.BrowserKey
+import com.rextechnologies.flint.receiver.browser.BrowserKeyboard
+import com.rextechnologies.flint.receiver.browser.BrowserKeyboardState
+import com.rextechnologies.flint.receiver.browser.BrowserNativeInput
+import com.rextechnologies.flint.receiver.browser.BrowserQueryResolver
+import com.rextechnologies.flint.receiver.browser.BrowserSearchEngine
+import com.rextechnologies.flint.receiver.browser.CursorDirection
+import com.rextechnologies.flint.receiver.browser.CursorState
+import com.rextechnologies.flint.receiver.browser.CursorStep
+import com.rextechnologies.flint.receiver.browser.CursorViewport
+import com.rextechnologies.flint.receiver.browser.ResolvedQuery
 
 /** Transient remote/keyboard state. Page ownership and persistence remain in the workspace session. */
 internal class BrowserWorkspaceTvControls(

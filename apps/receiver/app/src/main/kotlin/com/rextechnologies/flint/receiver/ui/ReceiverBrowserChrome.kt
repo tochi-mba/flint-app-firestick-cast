@@ -107,8 +107,8 @@ internal fun ReceiverBrowserChrome(
     // back rather than leaving it hidden by the previous page's timeout.
     LaunchedEffect(pinned, page.url, page.title) {
         visible = true
-        // `pinned` is true whenever the delay is absent, so reaching here means there is one.
-        if (!pinned && autoHideMillis != null) {
+        // `pinned` covers a missing delay, so an unpinned chrome always has one to wait out.
+        if (!pinned) {
             delay(autoHideMillis)
             visible = false
         }

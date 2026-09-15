@@ -16,7 +16,6 @@
 //! declines everything else. The caller keeps its CPU scaler for the remainder, which is the right
 //! split: the common desktop sizes reduce by exactly 2x or 4x to reach 1080p or 720p.
 
-use windows::core::Interface;
 use windows::Win32::Graphics::Direct3D11::{
     ID3D11Device, ID3D11DeviceContext, ID3D11ShaderResourceView, ID3D11Texture2D,
     D3D11_BIND_RENDER_TARGET, D3D11_BIND_SHADER_RESOURCE, D3D11_RESOURCE_MISC_GENERATE_MIPS,
@@ -175,16 +174,6 @@ impl MipScaler {
 fn platform(error: windows::core::Error) -> CaptureError {
     CaptureError::Platform(error.message())
 }
-
-/// Keeps the `Interface` import used on every build configuration.
-const _: () = {
-    #[allow(dead_code)]
-    fn assert_interface_in_scope(
-        view: &ID3D11ShaderResourceView,
-    ) -> windows::core::Result<ID3D11ShaderResourceView> {
-        view.cast()
-    }
-};
 
 #[cfg(test)]
 mod tests {

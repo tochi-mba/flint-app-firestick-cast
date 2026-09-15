@@ -2,18 +2,35 @@ package com.rextechnologies.flint.receiver.ui
 
 import android.view.KeyEvent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.tv.material3.Button
 import androidx.tv.material3.Text
-import com.rextechnologies.flint.receiver.browser.*
+import com.rextechnologies.flint.receiver.browser.BrowserDialogAnswer
+import com.rextechnologies.flint.receiver.browser.BrowserDialogKind
+import com.rextechnologies.flint.receiver.browser.BrowserKey
+import com.rextechnologies.flint.receiver.browser.BrowserKeyboard
+import com.rextechnologies.flint.receiver.browser.BrowserKeyboardState
+import com.rextechnologies.flint.receiver.browser.CursorDirection
 import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceDialogs
 
 /** A separate modal window prevents page input while a native JavaScript result is pending. */

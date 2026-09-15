@@ -1,7 +1,6 @@
 using System.Net;
 using Flint.App.ViewModels;
 using Flint.Core;
-using Flint.Discovery;
 
 namespace Flint.App.Tests.Snapshots;
 

@@ -49,7 +49,7 @@ Full walkthrough, including the unsigned-build warning Windows will show you, is
 [installation guide](docs/INSTALL.md). To build a package yourself:
 
 ```powershell
-./tools/scripts/package.ps1     # produces dist/Flint-<version>-win-x64.zip
+./dev.ps1 package     # produces dist/Flint-<version>-win-x64.zip
 ```
 
 ## Why this shape
@@ -149,20 +149,21 @@ an unfamiliar level unknown. It does not guess or claim that an untested model w
 
 ## Build
 
-Requirements:
-
-- .NET 10 SDK
-- Rust stable (MSVC toolchain)
-- JDK 17 and Android SDK platform 36, for the receiver only
+Requirements: PowerShell 7, the .NET 10 SDK, Rust with the MSVC build tools (the exact release is
+pinned in `rust-toolchain.toml`), JDK 17 and Android SDK platform 36 for the Android apps, and
+Python 3 for the site. `./dev.ps1 doctor` checks them and prints the command that installs anything
+missing.
 
 ```powershell
-./tools/scripts/build.ps1
+./dev.ps1 doctor    # what this machine is missing, and how to install it
+./dev.ps1 check     # every gate CI runs: formatting, analyzers, tests and source rules
+./dev.ps1 help      # every other task
 ```
 
-This runs Rust formatting, Clippy, tests and a native build, followed by the warning-free .NET build
-and test suite. The .NET run also writes Coverlet reports under `TestResults`; no coverage threshold
-is claimed yet. Rust is required by default and can only be omitted with the explicit `-SkipRust`
-switch.
+`check` takes areas, such as `./dev.ps1 check windows engine`, so a change to one app runs only its
+own gates. The Windows app and the Rust engine build on Windows; the Android apps and the site build
+on any platform. The .NET tests write Coverlet reports under `TestResults`; no .NET coverage floor is
+enforced yet.
 
 ## Privacy
 

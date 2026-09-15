@@ -180,11 +180,10 @@ class BrowserTlsServer(
             val negotiatedVersion = handshake.negotiatedVersion
             val sessionId = nextSessionId.incrementAndGet()
             authenticatedSessionId = sessionId
+            val hostDeviceName = hostHello.deviceName.trim().ifBlank { "Windows device" }
             Log.i(
                 TAG,
-                "Browser TLS authenticated sessionId=$sessionId protocol=v$negotiatedVersion host=${hostHello.deviceName.trim().ifBlank {
-                    "Windows device"
-                }}",
+                "Browser TLS authenticated sessionId=$sessionId protocol=v$negotiatedVersion host=$hostDeviceName",
             )
             writer = BrowserReliableWriter(output, negotiatedVersion).also {
                 activeWriter.set(it)

@@ -1,7 +1,5 @@
 using System.Net;
 using Flint.Core;
-using Flint.Discovery;
-using Flint.Discovery.Browser;
 using Shouldly;
 
 namespace Flint.Discovery.Tests;

@@ -9,7 +9,6 @@ data class QueueItem(
     val title: String,
     val mimeType: String,
     val durationMs: Long = UNKNOWN_DURATION,
-    val subtitleId: String? = null,
 ) {
     init {
         require(id.isNotBlank()) { "Queue item id must not be blank" }

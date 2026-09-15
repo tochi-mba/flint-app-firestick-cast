@@ -93,6 +93,7 @@ internal static class BrowserSecureReceiverPrompt
     internal static bool ShowsPortEntry(bool portWasAdvertised) => !portWasAdvertised;
 
     /// <summary>The next step, naming where it is done — or null when there is nothing to do.</summary>
+    /// <param name="step">Where the person is in connecting to a secure receiver.</param>
     /// <param name="capabilityRemedy">
     /// The capability verdict's own words, used verbatim for a receiver Flint has not accepted, so
     /// the page and diagnostics never give two accounts of the same device.

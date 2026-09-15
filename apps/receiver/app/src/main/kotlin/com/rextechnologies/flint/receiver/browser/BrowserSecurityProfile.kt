@@ -1,5 +1,6 @@
 package com.rextechnologies.flint.receiver.browser
 
+import android.os.Build
 import android.webkit.WebSettings
 import android.webkit.WebView
 import androidx.webkit.WebSettingsCompat
@@ -48,17 +49,14 @@ object BrowserSecurityProfile {
     ): BrowserWebViewCapabilities {
         settings.javaScriptEnabled = true // required for ordinary HTTPS pages; no bridge is added
         settings.domStorageEnabled = true
-        settings.databaseEnabled = false
         settings.allowFileAccess = false
         settings.allowContentAccess = false
-        settings.allowFileAccessFromFileURLs = false
-        settings.allowUniversalAccessFromFileURLs = false
+        disableSavedFormData(settings)
         settings.mediaPlaybackRequiresUserGesture = true
         settings.setSupportMultipleWindows(false)
         settings.javaScriptCanOpenWindowsAutomatically = false
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         settings.cacheMode = WebSettings.LOAD_DEFAULT
-        settings.saveFormData = false
         settings.setGeolocationEnabled(false)
 
         // Flint owns zoom. Pinch controls are both unusable with a D-pad and a second, divergent
@@ -101,6 +99,24 @@ object BrowserSecurityProfile {
         return BrowserWebViewCapabilities(
             algorithmicDarkeningAvailable = darkeningAvailable,
         )
+    }
+
+    /**
+     * Stops the WebView on Fire OS 6 remembering what is typed into forms.
+     *
+     * Saved form data is on by default below API 26. Android 8 handed the job to the autofill
+     * framework and made this setting do nothing, which is why it is deprecated; Fire OS 6 reports
+     * API 25 and has no replacement to call, so the old setting is used there and only there.
+     *
+     * The other switches deprecated with it need no call: Web SQL storage is off by default, and file
+     * URLs reaching other files or origins has been off by default since API 16. [assertHardened]
+     * holds the file URL pair to that.
+     */
+    private fun disableSavedFormData(settings: WebSettings) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            @Suppress("DEPRECATION")
+            settings.saveFormData = false
+        }
     }
 
     fun assertHardened(settings: WebSettings) {

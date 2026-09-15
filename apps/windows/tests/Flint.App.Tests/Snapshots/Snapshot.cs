@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
-using Avalonia.Media.Imaging;
 
 namespace Flint.App.Tests.Snapshots;
 

@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Headless.XUnit;
-using Flint.App.ViewModels;
 using Flint.App.Views;
 
 namespace Flint.App.Tests.Snapshots;
