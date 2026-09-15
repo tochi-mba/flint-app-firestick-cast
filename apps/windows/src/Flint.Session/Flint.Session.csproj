@@ -7,7 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="../Flint.Core/Flint.Core.csproj" />
     <ProjectReference Include="../../../../protocol/dotnet/Flint.Protocol/Flint.Protocol.csproj" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
   </ItemGroup>
 
   <ItemGroup>
