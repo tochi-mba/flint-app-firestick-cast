@@ -28,8 +28,14 @@ function Get-RemainingArguments([object[]]$Arguments, [int]$From) {
 
 function Get-OptionValue([object[]]$Arguments, [string]$Name) {
     $list = @($Arguments)
-    $index = [Array]::IndexOf($list, $Name)
-    if ($index -ge 0 -and $index + 1 -lt $list.Count) { [string]$list[$index + 1] } else { $null }
+    # -eq rather than [Array]::IndexOf, which compares ordinally: --Serial and --serial are the same
+    # option to anyone typing them, and the ordinal match silently ignored one of the two.
+    for ($index = 0; $index -lt $list.Count; $index++) {
+        if ([string]$list[$index] -eq $Name -and $index + 1 -lt $list.Count) {
+            return [string]$list[$index + 1]
+        }
+    }
+    $null
 }
 
 <#
@@ -97,6 +103,16 @@ function Resolve-Cargo {
 
     # rustup's install need not be on PATH in IDE and non-interactive shells.
     $homes = @($env:CARGO_HOME, (Join-Path ([Environment]::GetFolderPath('UserProfile')) '.cargo')) | Where-Object { $_ }
+
+    # Then the checkout's own ancestors. A repository opened under another account's home directory —
+    # a second profile, or a path spelled with a different alias for the same user — has its cargo
+    # under that home rather than under the one this process reports.
+    $directory = [System.IO.DirectoryInfo]::new($script:RepoRoot)
+    while ($null -ne $directory) {
+        $homes += (Join-Path $directory.FullName '.cargo')
+        $directory = $directory.Parent
+    }
+
     foreach ($cargoHome in $homes) {
         $candidate = Join-Path $cargoHome $(if ($IsWindows) { 'bin/cargo.exe' } else { 'bin/cargo' })
         if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }

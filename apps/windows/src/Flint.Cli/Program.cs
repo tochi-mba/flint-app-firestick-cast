@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Flint.App.Services;
 using Flint.Core;
+using Flint.Platform.Windows;
 using Flint.Discovery;
 using Flint.Engine.Interop;
 using Flint.Protocol;
@@ -58,6 +59,24 @@ internal static class Program
         {
             PrintUsage();
             return FlintExitCode.Success;
+        }
+
+        if (options.Verb is CliVerb.Completion)
+        {
+            Console.WriteLine(CliCompletion.PowerShellScript);
+            return FlintExitCode.Success;
+        }
+
+        if (options.Verb is CliVerb.Update)
+        {
+            // Its own deadline: a download is not a probe, and the probe's sixty seconds would stop
+            // a large update halfway through on a slow connection.
+            using var updateTimeout = new CancellationTokenSource(TimeSpan.FromMinutes(30));
+            return await UpdateRunner.RunAsync(
+                    new VelopackUpdateSource(),
+                    Console.Out,
+                    updateTimeout.Token)
+                .ConfigureAwait(false);
         }
 
         // A probe has a deadline; a live session does not — it runs until Ctrl+C.
@@ -196,6 +215,12 @@ internal static class Program
 
     private static void PrintUsage()
     {
+        Console.WriteLine("  Commands:");
+        Console.WriteLine("    flint version                 Print the version and exit");
+        Console.WriteLine("    flint doctor                  Probe this PC and the television (the same as `flint`)");
+        Console.WriteLine("    flint update                  Install a newer Flint, if this copy was installed");
+        Console.WriteLine("    flint completion powershell   Print a completion script for PowerShell");
+        Console.WriteLine();
         Console.WriteLine("  Usage:");
         Console.WriteLine("    flint                         Discover and probe an advertised Fire TV");
         Console.WriteLine("    flint --address <ip>          Probe one address across ADB ports 5555–5585");

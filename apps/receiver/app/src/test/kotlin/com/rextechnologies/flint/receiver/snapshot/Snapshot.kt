@@ -74,9 +74,9 @@ object Snapshot {
         // and makes the captured frame identical every run: an animation sampled at whatever moment
         // the machine happened to reach is the other way a screenshot suite becomes a coin toss.
         //
-        // Frame by frame, not in one jump. The test rule runs effects between frames, so a button that
-        // takes focus when it is composed plays its focus animation out as it would on a television.
-        // Advanced in a single step, the focus landed at the sampled instant with no time to animate.
+        // Frame by frame rather than in one jump, so effects and animations run between frames as
+        // they do on a television instead of being handed the whole interval at once. It reaches the
+        // same instant either way; what differs is how much of the composition has caught up with it.
         val start = rule.mainClock.currentTime
         while (rule.mainClock.currentTime - start < ANIMATION_SAMPLE_MILLIS) {
             rule.mainClock.advanceTimeByFrame()

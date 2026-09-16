@@ -99,17 +99,17 @@
         <h3>Flint for Android</h3>
         <p data-slot="other-note">Android 8.0 or newer. The phone is the host.</p>
         <div class="row">
-          <a class="btn signal" data-slot="other-primary" href="https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest">Download APK</a>
+          <a class="btn signal" data-slot="other-primary" href="https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest-mobile">Download APK</a>
           <a class="btn outline" href="#install-android">How to install</a>
         </div>
       </div>
       <div class="other" data-platform="windows">
-        <span class="pill">No release yet</span>
+        <span class="pill signal">Rolling build</span>
         <h3>Flint for Windows</h3>
-        <p data-slot="other-note">Windows 10 or 11, 64-bit. Build it from source in about two minutes.</p>
+        <p data-slot="other-note">Windows 10 or 11, 64-bit. Installs for your account, with no administrator prompt.</p>
         <div class="row">
-          <a class="btn outline" data-slot="other-primary" href="#install-windows">Build from source</a>
-          <a class="btn outline" href="https://github.com/tochi-mba/flint-app-firestick-cast/releases">Watch releases</a>
+          <a class="btn signal" data-slot="other-primary" href="https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest-windows">Download the installer</a>
+          <a class="btn outline" href="#install-windows">How to install</a>
         </div>
       </div>
       <div class="other" data-platform="firetv">
@@ -249,7 +249,7 @@
             <h4>Download the APK on the phone</h4>
             <p class="muted">
               Use the button at the top of this page, or open the
-              <a href="https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest">latest release</a>
+              <a href="https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest-mobile">latest release</a>
               and pick the <code>Flint-Mobile-*.apk</code> file. It needs Android 8.0 or newer.
             </p>
           </div>
@@ -309,9 +309,17 @@
     <div class="card" data-heading="Windows PC">
       <p class="muted">
         Every merge publishes a fresh build to the
-        <a href="https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest-windows">rolling Windows release</a>:
-        download the zip, extract it and run <code>Flint.App.exe</code>. Building it yourself, below,
-        produces the same program and avoids the unrecognised-publisher warning entirely.
+        <a href="https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest-windows">rolling Windows release</a>.
+        Download <code>Flint-Setup.exe</code> and run it: it installs for your account only, with no
+        administrator prompt, puts Flint in the Start menu, and puts <code>flint</code> on your PATH so
+        the command works in any terminal. Flint then updates itself from that release, and Settings
+        has the switch if you would rather it did not.
+      </p>
+      <p class="muted">
+        The same release carries <code>Flint-&lt;version&gt;-win-x64.zip</code> for anyone who would
+        rather keep a folder they can delete: extract it and run <code>Flint.App.exe</code>. Nothing is
+        installed, and nothing updates itself. Building it yourself, below, produces the same program
+        and avoids the unrecognised-publisher warning entirely.
       </p>
       <ol class="steps">
         <li>
@@ -332,7 +340,8 @@ cd flint-app-firestick-cast
 ./dev.ps1 package</code></pre>
             <p class="muted">
               The result is <code>dist\Flint-&lt;version&gt;-win-x64.zip</code>, a portable folder with
-              everything it needs. There is no .NET runtime to install first and no installer to run.
+              everything it needs, and <code>dist\Flint-Setup.exe</code> beside it if you would rather
+              install it. There is no .NET runtime to install first.
             </p>
           </div>
         </li>

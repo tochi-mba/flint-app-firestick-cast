@@ -11,6 +11,9 @@
 
 [versions]
 # Toolchain
+# The JDK every module compiles against. The workflows install this same version by hand, and that
+# copy is the only one outside this file.
+jdk = "17"
 agp = "9.3.0"
 kotlin = "2.4.10"
 jacoco = "0.8.14"

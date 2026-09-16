@@ -89,6 +89,10 @@ Describe 'Invoke-AreaVerb' {
         Mock Invoke-RepoArea { 'a line the tool printed' }
 
         { Invoke-AreaVerb check @('repo') } | Should -Not -Throw
+
+        # The summary names areas and their status, and never a line the tool happened to print.
+        Should -Invoke Write-Host -ParameterFilter { "$Object" -like '*ok*repo*' }
+        Should -Not -Invoke Write-Host -ParameterFilter { "$Object" -like '*a line the tool printed*' }
     }
 
     It 'runs every area and names the ones that failed' {
@@ -101,8 +105,63 @@ Describe 'Invoke-AreaVerb' {
 
     It 'reports an area that cannot run here as skipped, not failed' {
         Mock Invoke-SiteArea { throw [System.NotSupportedException]::new('not on this machine') }
+        $previous = $env:CI
+        $env:CI = ''
+        try {
+            { Invoke-AreaVerb check @('site') } | Should -Not -Throw
+            Should -Invoke Write-Host -ParameterFilter { "$Object" -like '*skipped*not on this machine*' }
+        }
+        finally {
+            $env:CI = $previous
+        }
+    }
 
-        { Invoke-AreaVerb check @('site') } | Should -Not -Throw
-        Should -Invoke Write-Host -ParameterFilter { "$Object" -like '*skipped*not on this machine*' }
+    It 'fails a CI run for an area that runner cannot build' {
+        Mock Invoke-SiteArea { throw [System.NotSupportedException]::new('no interpreter here') }
+        $previous = $env:CI
+        $env:CI = 'true'
+        try {
+            # Skipping is an answer on a laptop. On a runner it means the job asked for something
+            # that machine cannot do, and exiting 0 having checked nothing would read as a pass.
+            { Invoke-AreaVerb check @('site') } | Should -Throw '*failed in: site*'
+        }
+        finally {
+            $env:CI = $previous
+        }
+    }
+}
+
+Describe 'Invoke-Package' {
+    BeforeAll {
+        Mock Write-Host {}
+        $script:PackageRoot = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path (Join-Path $script:PackageRoot 'tools/scripts') -Force | Out-Null
+        @'
+[CmdletBinding()]
+param([string]$Version, [string]$OutputDirectory, [switch]$Stage, [switch]$Pack)
+[pscustomobject]@{ Version = $Version; OutputDirectory = $OutputDirectory; Stage = [bool]$Stage }
+'@ | Set-Content -LiteralPath (Join-Path $script:PackageRoot 'tools/scripts/package.ps1') -Encoding utf8
+    }
+
+    AfterAll {
+        Remove-Item -LiteralPath $script:PackageRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    It 'binds the words it is given by name, not by position' {
+        # dev.ps1 sets this; the tests dot-source the modules without it.
+        $previousRoot = (Get-Variable -Name RepoRoot -Scope Script -ErrorAction SilentlyContinue)?.Value
+        $script:RepoRoot = $script:PackageRoot
+        try {
+            # Splatted as an array instead, "-Version" became the value of the first parameter and
+            # the version became the output directory, with no error and a wrongly named package.
+            $result = Invoke-Package @('-Version', '1.2.3', '-Stage')
+
+            $result.Version | Should -Be '1.2.3'
+            $result.OutputDirectory | Should -BeNullOrEmpty
+            $result.Stage | Should -BeTrue
+        }
+        finally {
+            $script:RepoRoot = $previousRoot
+        }
     }
 }

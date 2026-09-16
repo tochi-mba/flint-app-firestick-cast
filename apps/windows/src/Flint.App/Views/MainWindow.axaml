@@ -120,7 +120,7 @@
       <views:BrowserPage DataContext="{Binding Browser}"
                          IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsWebSelected}" />
 
-      <views:SettingsPage DataContext="{Binding Cast}"
+      <views:SettingsPage DataContext="{Binding Settings}"
               IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsSettingsSelected}" />
 
       <ScrollViewer IsVisible="{Binding IsPlaceholderSelected}">

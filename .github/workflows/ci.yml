@@ -1,108 +1,233 @@
-# The same gate ./dev.ps1 check runs locally, so a green local run means a green CI run.
+# Every check this repository has, run the way a laptop runs them: ./dev.ps1 check <area>.
+#
+# One workflow rather than several, so there is one place to look for whether a commit is good and
+# one check to require on master. The jobs split by toolchain, not by product: the .NET and Rust
+# halves need a Windows runner, the Android half does not, and a change to one should not pay for
+# the other. What each job runs is the same command a person runs, so a green run here means a green
+# run there and the two cannot drift.
+#
+# Every action is pinned to a commit. A tag can be moved to different code after it is reviewed;
+# Dependabot proposes the moves, and this workflow judges them (.github/dependabot.yml).
 name: CI
 
-# The phone app lives in the same repository but shares none of this job's toolchains, so a change
-# confined to it does not run three toolchains on a Windows runner to prove nothing. Anything the
-# two builds genuinely share -- :protocol, the golden corpus, the Gradle files -- is deliberately
-# absent from this list, so a change there still runs both.
-#
-# If this workflow is ever made a required status check, add the same paths to the branch rule's
-# exemptions: GitHub reports a path-filtered workflow as pending rather than passing, and a
-# mobile-only pull request would wait for a job that is never going to start.
 on:
+  pull_request:
   push:
     branches: [master]
-    paths-ignore:
-      - 'apps/phone/**'
-      - '.github/workflows/mobile.yml'
-      - '.github/workflows/mobile-release.yml'
-  pull_request:
-    # Duplicated rather than shared: GitHub Actions does not resolve YAML anchors.
-    paths-ignore:
-      - 'apps/phone/**'
-      - '.github/workflows/mobile.yml'
-      - '.github/workflows/mobile-release.yml'
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# A second push supersedes the first. Three toolchains on a Windows runner is a slow job, and
-# queueing runs for commits nobody is waiting on wastes the minutes that matter.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer push supersedes a pull request's run. A run on master or a tag is never cancelled: its
+  # result is what the release workflows and the branch rule read.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build:
-    # Windows only: the host probe reads the driver registry and the engine links against Win32.
-    runs-on: windows-latest
-    # Well past a cold run with empty caches; short enough that a hung gradle daemon or a
-    # credential prompt fails visibly instead of burning an hour.
-    timeout-minutes: 45
-
+  # Which halves of the repository a pull request touches. On master, a tag or a dispatch, all of
+  # them: those runs decide what is published, and a filter that guessed wrong there would publish
+  # something nothing had checked.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      windows: ${{ steps.decide.outputs.windows }}
+      android: ${{ steps.decide.outputs.android }}
+      site: ${{ steps.decide.outputs.site }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            # The shared things — the protocol, the version, the build logic and the runner — are
+            # deliberately in every list. A change to any of them can break any half.
+            shared: &shared
+              - 'protocol/**'
+              - 'VERSION'
+              - 'dev.ps1'
+              - 'tools/dev/**'
+              - '.editorconfig'
+              - '.github/workflows/ci.yml'
+            windows:
+              - *shared
+              - 'apps/windows/**'
+              - '*.slnx'
+              - 'Directory.*.props'
+              - 'Directory.Build.targets'
+              - 'NuGet.config'
+              - 'global.json'
+              - '.config/**'
+            android:
+              - *shared
+              - 'apps/phone/**'
+              - 'apps/receiver/**'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'gradlew.bat'
+              - '*.gradle.kts'
+              - 'gradle.properties'
+              - 'tools/build-logic/**'
+              - '.github/actions/android-setup/action.yml'
+            site:
+              - *shared
+              - 'site/**'
+              - 'tools/scripts/check-site.py'
+
+      - id: decide
+        env:
+          IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
+          WINDOWS: ${{ steps.filter.outputs.windows }}
+          ANDROID: ${{ steps.filter.outputs.android }}
+          SITE: ${{ steps.filter.outputs.site }}
+        run: |
+          set -euo pipefail
+          for half in windows android site; do
+            value=true
+            if [ "$IS_PULL_REQUEST" = "true" ]; then
+              case "$half" in
+                windows) value="${WINDOWS:-false}" ;;
+                android) value="${ANDROID:-false}" ;;
+                site) value="${SITE:-false}" ;;
+              esac
+            fi
+            echo "$half=$value" >> "$GITHUB_OUTPUT"
+            echo "$half: $value"
+          done
+
+  # The source rules, the convention plugins, the engine and the .NET solution. Windows because the
+  # host probe reads the driver registry and the engine links against Win32.
+  windows:
+    needs: changes
+    if: needs.changes.outputs.windows == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install the .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: '10.0.x'
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
         with:
           components: clippy, rustfmt
 
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: apps/windows/engine
+
+      # The convention plugins are Kotlin, and the repo area's checks include their own build.
       - name: Install JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: '17'
 
-      # Not the action's default packages: that list names the legacy `tools` package, which Google
-      # has removed, so the default fails before anything builds. See the phone-gate action.
-      - name: Install Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: platform-tools
-      - name: Install Android build tools
+      # Declared rather than assumed. The hosted image happens to ship Pester, and a gate that runs
+      # only because of that is one image update away from silently not running.
+      - name: Install Pester
         shell: pwsh
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+        run: |
+          if (-not (Get-Module -ListAvailable Pester | Where-Object { $_.Version -ge [version]'5.5.0' })) {
+            Install-PSResource Pester -Version '[5.7.1,6.0)' -Scope CurrentUser -TrustRepository
+          }
 
-      - name: Cache cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            apps/windows/engine/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('apps/windows/engine/Cargo.toml') }}
-
-      - name: Check the source rules, the engine and the Windows app
+      - name: Check the source rules, the build logic, the engine and the Windows app
         shell: pwsh
-        run: ./dev.ps1 check repo engine windows
+        run: ./dev.ps1 check repo build-logic engine windows
 
-      # check rather than test. check is where the protocol's coverage floor, lint, ktlint and the
-      # socket guard run, and the floor once failed quietly at 81% for as long as only test ran here.
-      - name: Check the protocol and the Fire TV receiver
-        shell: pwsh
-        run: ./dev.ps1 check protocol receiver
-
-      # Reports are the only way to see which case failed once the runner is gone.
       - name: Upload test reports
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: test-reports
+          name: windows-test-reports
+          path: '**/TestResults/**'
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # The protocol, the phone and the receiver, in one Gradle invocation on a runner that needs no
+  # Windows toolchain at all.
+  android:
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/android-setup
+
+      - name: Check the build logic, the protocol, the phone and the receiver
+        shell: pwsh
+        run: ./dev.ps1 check build-logic protocol phone receiver
+
+      - name: Build the debug APKs
+        run: ./gradlew :phone:app:assembleDebug :receiver:app:assembleDebug --console plain
+
+      # So a reviewer can install the branch on a real phone or television instead of taking the
+      # diff's word for it.
+      - name: Upload the debug APKs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: flint-debug-apks
           path: |
+            apps/phone/app/build/outputs/apk/debug/*.apk
+            apps/receiver/app/build/outputs/apk/debug/*.apk
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Upload test and lint reports
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: android-test-reports
+          path: |
+            apps/phone/*/build/reports/**
+            apps/phone/*/build/test-results/**
             apps/receiver/app/build/reports/**
             apps/receiver/app/build/test-results/**
             protocol/kotlin/build/reports/**
-            **/TestResults/**
           retention-days: 7
           if-no-files-found: ignore
+
+  site:
+    needs: changes
+    if: needs.changes.outputs.site == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Check the site
         shell: pwsh
         run: ./dev.ps1 check site
+
+  # The one check to require on master. A job that was skipped because its half was untouched counts
+  # as passed; a job that failed or was cancelled does not, and `always()` is what makes this run at
+  # all in that case.
+  ci-ok:
+    needs: [changes, windows, android, site]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Report
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$RESULTS"
+          if echo "$RESULTS" | grep -q '"result": *"\(failure\|cancelled\)"'; then
+            echo "At least one check did not pass." >&2
+            exit 1
+          fi
+          echo "Every check that ran passed."

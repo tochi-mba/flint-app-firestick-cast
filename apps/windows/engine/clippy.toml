@@ -1,3 +1,7 @@
 # Names that are words in this crate's prose rather than code to be set in backticks. ".." keeps
 # clippy's own list as well.
 doc-valid-idents = ["WebView", "WireGuard", "PCIe", "DuckDuckGo", ".."]
+
+# The hot path must not allocate; flag the obvious offenders in review. Eight rather than clippy's
+# seven, because a Win32 or Media Foundation wrapper takes the parameters that API takes.
+too-many-arguments-threshold = 8

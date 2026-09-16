@@ -41,26 +41,9 @@ jobs:
     timeout-minutes: 40
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Install JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      # Not the action's default packages: that list names the legacy `tools` package, which Google
-      # has removed, so the default fails before anything builds. See the phone-gate action.
-      - name: Install the Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: platform-tools
-
-      - name: Install Android build tools
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - uses: ./.github/actions/android-setup
 
       # FLINT_UPDATE_SNAPSHOTS is what the harness reads to overwrite rather than assert. Failures
       # are tolerated here on purpose: a test that fails for an unrelated reason should not stop the
@@ -69,7 +52,10 @@ jobs:
         continue-on-error: true
         env:
           FLINT_UPDATE_SNAPSHOTS: '1'
-        run: ./gradlew ${{ inputs.modules }} --console plain
+          # Through the environment rather than interpolated into the script. A dispatch input
+          # pasted into a shell line is executed by it, and this job can write to the branch.
+          MODULES: ${{ inputs.modules }}
+        run: ./gradlew $MODULES --console plain
 
       - name: Collect the images
         run: |
@@ -92,7 +78,7 @@ jobs:
 
       # Downloaded, looked at, and committed by a person. That last part is the point.
       - name: Upload the regenerated images
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: flint-snapshots
           path: regenerated/**
@@ -103,6 +89,10 @@ jobs:
       # A branch nobody dispatched this on is never written to.
       - name: Commit the regenerated images to this branch
         if: ${{ inputs.push == 'true' }}
+        env:
+          MODULES: ${{ inputs.modules }}
+          RUN_ID: ${{ github.run_id }}
+          BRANCH: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           # One directory at a time: `git add` refuses the whole command when any pathspec matches
@@ -118,5 +108,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git diff --cached --stat
-          git commit -m "Regenerate the approved snapshots" -m "Rendered by the Snapshots workflow, run ${{ github.run_id }}, against ${{ inputs.modules }}. The images are here to be looked at in the pull request; this commit approves nothing." 
-          git push origin "HEAD:${{ github.ref_name }}"
+          git commit -m "Regenerate the approved snapshots" -m "Rendered by the Snapshots workflow, run $RUN_ID, against $MODULES. The images are here to be looked at in the pull request; this commit approves nothing."
+          git push origin "HEAD:$BRANCH"

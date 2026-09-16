@@ -1,5 +1,7 @@
 using Avalonia;
 using Flint.App.Services;
+using Flint.Platform.Windows;
+using Velopack;
 
 namespace Flint.App;
 
@@ -16,8 +18,27 @@ internal static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        // Before anything else, including the log. The installer runs this same executable to carry
+        // out its hooks and expects it to do that one job and exit; anything started first would run
+        // during an install, an update and an uninstall as well.
+        VelopackApp.Build()
+            .OnAfterInstallFastCallback(_ => AnnounceIfChanged(
+                PathRegistration.Add(new RegistryUserPathStore(), AppContext.BaseDirectory)))
+            .OnBeforeUninstallFastCallback(_ => AnnounceIfChanged(
+                PathRegistration.Remove(new RegistryUserPathStore(), AppContext.BaseDirectory)))
+            .Run();
+
         DevFileLog.Start();
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    }
+
+    /// <summary>Tells the desktop about a PATH edit, so a terminal opened next sees it.</summary>
+    private static void AnnounceIfChanged(bool changed)
+    {
+        if (changed)
+        {
+            PathRegistration.AnnounceChange();
+        }
     }
 
     /// <summary>

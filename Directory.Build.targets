@@ -3,6 +3,16 @@
   <!-- Here rather than in Directory.Build.props: props are imported before a project's own
        properties, so a condition on IsTestProject there never sees the value the test project
        sets, and the group silently applied to nothing. -->
+  <!--
+    The documentation file exists so the compiler reports unused usings; shipping it would put every
+    internal comment in this codebase inside the download. It is redirected to the intermediate
+    folder here rather than in Directory.Build.props, where $(IntermediateOutputPath) and
+    $(AssemblyName) are both still empty — which wrote a file named ".xml" into every project.
+  -->
+  <PropertyGroup>
+    <DocumentationFile>$(IntermediateOutputPath)$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
     <IsPackable>false</IsPackable>
     <!-- Test names are sentences, and the underscores are what keep them readable in a runner. -->

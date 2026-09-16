@@ -27,13 +27,17 @@ BeforeAll {
             [string]$Cargo = $Version,
             [string]$Lock = $Version,
             [string]$Props = '<Project><PropertyGroup><VersionPrefix>$(FromFile)</VersionPrefix></PropertyGroup></Project>',
-            [string]$GradleProperties = "org.gradle.caching=true`n"
+            [string]$GradleProperties = "org.gradle.caching=true`n",
+            [string]$PhoneBuild = "android {`n    namespace = `"com.example`"`n}`n",
+            [string]$ReceiverBuild = "android {`n    namespace = `"com.example`"`n}`n"
         )
         Write-ScratchFile $Root 'VERSION' "$Version`n"
         Write-ScratchFile $Root 'apps/windows/engine/Cargo.toml' "[package]`nname = `"flint-engine`"`nversion = `"$Cargo`"`n"
         Write-ScratchFile $Root 'apps/windows/engine/Cargo.lock' "[[package]]`nname = `"flint-engine`"`nversion = `"$Lock`"`n"
         Write-ScratchFile $Root 'Directory.Build.props' $Props
         Write-ScratchFile $Root 'gradle.properties' $GradleProperties
+        Write-ScratchFile $Root 'apps/phone/app/build.gradle.kts' $PhoneBuild
+        Write-ScratchFile $Root 'apps/receiver/app/build.gradle.kts' $ReceiverBuild
     }
 
     # Built from two pieces so this file does not trip the rule it tests.

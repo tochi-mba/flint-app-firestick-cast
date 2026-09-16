@@ -4,6 +4,7 @@ using Flint.App.Services;
 using Flint.Core;
 using Flint.Discovery;
 using Flint.Engine.Interop;
+using Flint.Platform.Windows;
 
 namespace Flint.App.ViewModels;
 
@@ -21,12 +22,33 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private NavigationDestination _selected;
 
-    private MainWindowViewModel(CastPageViewModel cast, IOnboardingState onboardingState)
+    private MainWindowViewModel(
+        CastPageViewModel cast,
+        IOnboardingState onboardingState,
+        IUpdateSource? updateSource = null,
+        IUpdatePreference? updatePreference = null)
     {
         Cast = cast;
         Browser = new BrowserPageViewModel(cast);
         _ = new ModeSessionCoordinator(Cast, Browser);
         Onboarding = new OnboardingViewModel(onboardingState);
+
+        // The update panel is told what a live session is rather than working it out: mirroring and
+        // a browser session both end when this process exits, and neither may be cut short by an
+        // update the person did not ask for at that moment.
+        Updates = new UpdatesViewModel(
+            updateSource ?? new UninstalledUpdateSource(),
+            updatePreference ?? new SessionUpdatePreference(),
+            () => Cast.IsSessionConnected || Cast.IsMirroring || Browser.HasLiveSession);
+        Settings = new SettingsPageViewModel(Cast, Updates);
+        Cast.PropertyChanged += (_, changed) =>
+        {
+            if (changed.PropertyName is nameof(CastPageViewModel.IsSessionConnected)
+                or nameof(CastPageViewModel.IsMirroring))
+            {
+                Updates.SessionStateChanged();
+            }
+        };
 
         // Finishing the introduction runs the first probe, so the walkthrough ends on the answer it
         // spent five steps preparing the user for rather than on an empty screen.
@@ -59,6 +81,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>The first-run introduction, shown over the shell until it is completed.</summary>
     public OnboardingViewModel Onboarding { get; }
+
+    /// <summary>Finding and installing a newer Flint, shown on the Settings page.</summary>
+    public UpdatesViewModel Updates { get; }
+
+    /// <summary>The Settings page: what Flint remembers, and how it updates itself.</summary>
+    public SettingsPageViewModel Settings { get; }
 
     /// <summary>The version shown in the rail foot.</summary>
     public static string VersionLabel =>
@@ -99,15 +127,24 @@ public sealed partial class MainWindowViewModel : ObservableObject
         : "LOCAL ONLY - NO CLOUD";
 
     /// <summary>Builds the shell with the real Windows probes wired in.</summary>
-    public static MainWindowViewModel CreateDefault() =>
-        new(
+    public static MainWindowViewModel CreateDefault()
+    {
+        var shell = new MainWindowViewModel(
             new CastPageViewModel(
                 new CapabilityProber(
                     new EngineHostProbe(new WindowsHostProbe()),
                     new FireTvDeviceProbe(),
                     new TcpNetworkProbe()),
                 new FileRecentAddressStore()),
-            new FileOnboardingState());
+            new FileOnboardingState(),
+            new VelopackUpdateSource(),
+            new FileUpdatePreference());
+
+        // In the background and without a prompt. A launch must not wait on GitHub, and the answer
+        // belongs on the Settings page rather than in front of somebody who opened Flint to cast.
+        _ = shell.Updates.CheckAtLaunchAsync();
+        return shell;
+    }
 
     /// <summary>Builds the shell around a supplied prober, for tests and design-time data.</summary>
     /// <param name="prober">The capability probe to drive the Cast page with.</param>
@@ -136,6 +173,34 @@ public sealed partial class MainWindowViewModel : ObservableObject
         public void Reset()
         {
         }
+    }
+
+    /// <summary>
+    /// The update source a shell built for a test or a designer gets: one that offers nothing.
+    /// </summary>
+    /// <remarks>
+    /// A test must not reach GitHub, and a design-time shell has no installation to update. Both
+    /// read as the portable build, which is the honest answer for a copy that cannot update itself.
+    /// </remarks>
+    private sealed class UninstalledUpdateSource : IUpdateSource
+    {
+        public bool IsInstalled => false;
+
+        public Task<string?> CheckForNewVersionAsync(CancellationToken cancellationToken) =>
+            Task.FromResult<string?>(null);
+
+        public Task DownloadAsync(IProgress<int>? progress, CancellationToken cancellationToken) =>
+            Task.CompletedTask;
+
+        public void ApplyAndRestart()
+        {
+        }
+    }
+
+    /// <summary>A preference that lasts as long as the process, for tests and design-time data.</summary>
+    private sealed class SessionUpdatePreference : IUpdatePreference
+    {
+        public bool ChecksAutomatically { get; set; } = true;
     }
 
     private sealed class EmptyRecentAddressStore : IRecentAddressStore

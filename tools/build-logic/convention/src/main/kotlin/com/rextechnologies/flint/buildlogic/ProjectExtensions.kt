@@ -7,9 +7,6 @@ import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.getByType
 
-/** The JDK every Kotlin and Java compilation targets. */
-internal const val JAVA_VERSION = 17
-
 /** gradle/libs.versions.toml, where every version in the build is written. */
 internal val Project.libs: VersionCatalog
     get() = extensions.getByType<VersionCatalogsExtension>().named("libs")
@@ -18,6 +15,15 @@ internal fun VersionCatalog.version(alias: String): String =
     findVersion(alias)
         .orElseThrow { IllegalStateException("gradle/libs.versions.toml has no version named '$alias'.") }
         .requiredVersion
+
+/**
+ * The JDK every Kotlin and Java compilation targets.
+ *
+ * From the catalog rather than a literal here, so the toolchain is written in the same place as
+ * every other version in this build and cannot drift from it.
+ */
+internal val Project.javaVersion: Int
+    get() = libs.version("jdk").toInt()
 
 internal fun VersionCatalog.library(alias: String): Provider<MinimalExternalModuleDependency> =
     findLibrary(alias)

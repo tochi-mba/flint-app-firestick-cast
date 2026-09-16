@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Windows-only: this project is where the registry, Win32 and the shell live, so that nothing
+         else in the solution has to be. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Flint.Platform.Windows</RootNamespace>
+    <Description>Windows platform services: the installer's PATH entry and the update client.</Description>
+    <!-- LibraryImport generates its marshalling code with pointers. The alternative, DllImport, is
+         what the analyzers ask projects to move away from, so the generator is used and its one
+         requirement met here rather than in any project that has no Win32 call of its own. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Velopack" />
+  </ItemGroup>
+
+</Project>

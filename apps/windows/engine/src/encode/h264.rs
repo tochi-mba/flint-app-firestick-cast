@@ -172,7 +172,8 @@ impl H264Encoder {
     }
 
     fn output_media_type(&self) -> Result<IMFMediaType, EncodeError> {
-        // SAFETY: takes no arguments, and returns an owned interface or an error.
+        // SAFETY: Media Foundation is started for the life of the process before any encoder exists
+        // (MediaFoundationPlatform::start, run once), which is this call's one precondition.
         let media_type = unsafe { MFCreateMediaType() }.map_err(platform)?;
         // SAFETY: the type was just created, and each key below matches its documented value type.
         unsafe {
@@ -208,7 +209,8 @@ impl H264Encoder {
     }
 
     fn input_media_type(&self) -> Result<IMFMediaType, EncodeError> {
-        // SAFETY: takes no arguments, and returns an owned interface or an error.
+        // SAFETY: Media Foundation is started for the life of the process before any encoder exists
+        // (MediaFoundationPlatform::start, run once), which is this call's one precondition.
         let media_type = unsafe { MFCreateMediaType() }.map_err(platform)?;
         // SAFETY: the type was just created, and each key below matches its documented value type.
         unsafe {
@@ -248,7 +250,8 @@ impl H264Encoder {
         let length = u32::try_from(self.nv12.len()).map_err(|_| {
             EncodeError::Platform("frame is larger than a Media Foundation buffer".into())
         })?;
-        // SAFETY: takes only a size, and returns an owned interface or an error.
+        // SAFETY: Media Foundation is started for the life of the process
+        // (MediaFoundationPlatform::start); the size is a count of bytes to allocate.
         let buffer = unsafe { MFCreateMemoryBuffer(length) }.map_err(platform)?;
 
         // SAFETY: the buffer was just created with room for `length` bytes, the out-parameters live
@@ -274,7 +277,8 @@ impl H264Encoder {
             buffer.SetCurrentLength(length).map_err(platform)?;
         }
 
-        // SAFETY: takes no arguments, and returns an owned interface or an error.
+        // SAFETY: Media Foundation is started for the life of the process before any encoder exists
+        // (MediaFoundationPlatform::start, run once), which is this call's one precondition.
         let sample = unsafe { MFCreateSample() }.map_err(platform)?;
         // SAFETY: the sample and its buffer were both created above and are live.
         unsafe {
@@ -416,9 +420,11 @@ impl H264Encoder {
             nv12_len(self.config.width, self.config.height) as u32
         };
 
-        // SAFETY: takes only a size, and returns an owned interface or an error.
+        // SAFETY: Media Foundation is started for the life of the process
+        // (MediaFoundationPlatform::start); the size is a count of bytes to allocate.
         let buffer = unsafe { MFCreateMemoryBuffer(size) }.map_err(platform)?;
-        // SAFETY: takes no arguments, and returns an owned interface or an error.
+        // SAFETY: Media Foundation is started for the life of the process before any encoder exists
+        // (MediaFoundationPlatform::start, run once), which is this call's one precondition.
         let sample = unsafe { MFCreateSample() }.map_err(platform)?;
         // SAFETY: both objects were just created and the buffer is empty.
         unsafe { sample.AddBuffer(&buffer) }.map_err(platform)?;

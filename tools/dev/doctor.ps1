@@ -44,6 +44,26 @@ function Test-DotnetSdk {
     New-DoctorFinding '.NET SDK' $ok $(if ($ok) { $version } else { 'no installed SDK satisfies global.json' }) $fix
 }
 
+<#
+.SYNOPSIS
+    The Velopack CLI, which builds the Windows installer.
+.DESCRIPTION
+    Pinned in .config/dotnet-tools.json rather than installed by hand, so the tool that builds an
+    update package is the same version as the library that applies it. Optional: everything except
+    ./dev.ps1 package works without it.
+#>
+function Test-VelopackTool {
+    $fix = 'dotnet tool restore'
+    $dotnet = Find-Command 'dotnet'
+    if ($null -eq $dotnet) {
+        return New-DoctorFinding 'vpk, for the installer' $false 'the .NET SDK is missing' $fix -Optional
+    }
+    Push-Location -LiteralPath $script:RepoRoot
+    try { $version = & $dotnet vpk --version 2>$null; $ok = $LASTEXITCODE -eq 0 } finally { Pop-Location }
+    $detail = if ($ok) { [string](@($version) | Select-Object -First 1) } else { 'not restored' }
+    New-DoctorFinding 'vpk, for the installer' $ok $detail $fix -Optional
+}
+
 function Test-RustToolchain {
     $fix = Select-ForPlatform 'winget install Rustlang.Rustup' 'curl https://sh.rustup.rs -sSf | sh' 'curl https://sh.rustup.rs -sSf | sh'
     $cargo = Resolve-Cargo
@@ -112,7 +132,7 @@ function Invoke-Doctor([string[]]$Areas) {
     if ($IsWindows) { $checks.Add({ Test-GitLongPaths }) }
     if ($Areas -contains 'repo') { $checks.Add({ Test-Pester }) }
     if ($Areas -contains 'engine') { $checks.Add({ Test-RustToolchain }); if ($IsWindows) { $checks.Add({ Test-MsvcBuildTools }) } }
-    if ($Areas -contains 'windows') { $checks.Add({ Test-DotnetSdk }) }
+    if ($Areas -contains 'windows') { $checks.Add({ Test-DotnetSdk }); $checks.Add({ Test-VelopackTool }) }
     if (@($Areas | Where-Object { $_ -in 'protocol', 'phone', 'receiver' }).Count -gt 0) {
         $checks.Add({ Test-Jdk })
         $checks.Add({ Test-AndroidSdk })

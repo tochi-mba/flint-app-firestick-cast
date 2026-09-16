@@ -1,6 +1,8 @@
 using System.Net;
+using Flint.App.Services;
 using Flint.App.ViewModels;
 using Flint.Core;
+using Flint.Platform.Windows;
 
 namespace Flint.App.Tests.Snapshots;
 
@@ -103,6 +105,16 @@ public static class SnapshotFixtures
     public static OnboardingViewModel Onboarding() => new(new UnseenOnboardingState());
 
     /// <summary>
+    /// The Settings page, with an update client that reaches no network and offers nothing.
+    /// </summary>
+    /// <remarks>
+    /// A snapshot must not depend on whether this machine has an installed Flint or can reach
+    /// GitHub, so the source reports what a portable copy reports: that it does not update itself.
+    /// </remarks>
+    public static SettingsPageViewModel Settings() =>
+        new(ViewModel(), new UpdatesViewModel(new OfflineUpdateSource(), new FixedUpdatePreference()));
+
+    /// <summary>
     /// A cast view model that has already probed, so the page renders its populated state.
     /// </summary>
     public static async Task<CastPageViewModel> ProbedViewModel(
@@ -176,6 +188,27 @@ public static class SnapshotFixtures
         {
             // As above.
         }
+    }
+
+    private sealed class OfflineUpdateSource : IUpdateSource
+    {
+        public bool IsInstalled => false;
+
+        public Task<string?> CheckForNewVersionAsync(CancellationToken cancellationToken) =>
+            Task.FromResult<string?>(null);
+
+        public Task DownloadAsync(IProgress<int>? progress, CancellationToken cancellationToken) =>
+            Task.CompletedTask;
+
+        public void ApplyAndRestart()
+        {
+            // A snapshot never restarts anything.
+        }
+    }
+
+    private sealed class FixedUpdatePreference : IUpdatePreference
+    {
+        public bool ChecksAutomatically { get; set; } = true;
     }
 
     private sealed class EmptyRecentAddressStore : IRecentAddressStore

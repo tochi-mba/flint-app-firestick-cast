@@ -132,6 +132,21 @@ function Test-VersionAgreement([string]$Root) {
         $failures.Add('gradle.properties: a version literal is set here; the Gradle build reads VERSION.')
     }
 
+    # The two files the literals were actually deleted from. Nothing else would notice them coming
+    # back: a versionName written here wins over VERSION, and the release only compares its tag
+    # against VERSION, so the APK would ship a version nothing else agrees with.
+    foreach ($module in 'apps/phone/app/build.gradle.kts', 'apps/receiver/app/build.gradle.kts') {
+        $path = Join-Path $Root $module
+        if (-not (Test-Path -LiteralPath $path)) { continue }
+        $text = Get-Content -LiteralPath $path -Raw
+        if ($text -match '(?m)^\s*versionName\s*=') {
+            $failures.Add("${module}: versionName is set here; the flint.android-application convention reads VERSION.")
+        }
+        if ($text -match '(?m)^\s*versionCode\s*=') {
+            $failures.Add("${module}: versionCode is set here; the flint.android-application convention supplies it.")
+        }
+    }
+
     $failures
 }
 

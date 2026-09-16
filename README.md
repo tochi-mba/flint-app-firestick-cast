@@ -37,10 +37,17 @@ boundary, and [Latency Budget](docs/LATENCY_BUDGET.md) for what has and has not 
 
 ## Install
 
-Windows 10 or 11, 64-bit. Download the zip from the
+Windows 10 or 11, 64-bit. Download `Flint-Setup.exe` from the
 [rolling Windows release](https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest-windows),
-which every merge replaces with the newest build, extract it, and run `Flint.App.exe`. Everything it
-needs is included; there is no .NET runtime to install first.
+which every merge replaces with the newest build, and run it. It installs for your account only, with
+no administrator prompt, puts Flint in the Start menu, and puts `flint` on your PATH. Flint updates
+itself from that release afterwards, and Settings has the switch if you would rather it did not.
+
+The same release carries `Flint-<version>-win-x64.zip` for anyone who would rather keep a folder they
+can delete: extract it and run `Flint.App.exe`. Everything it needs is included in both; there is no
+.NET runtime to install first.
+
+The phone app is on the [rolling mobile release](https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest-mobile).
 
 Check your Fire TV before you bother: **Settings → My Fire TV → About**. Fire OS 7 or 8 works.
 Vega OS cannot, and no future version will change that.
@@ -49,7 +56,7 @@ Full walkthrough, including the unsigned-build warning Windows will show you, is
 [installation guide](docs/INSTALL.md). To build a package yourself:
 
 ```powershell
-./dev.ps1 package     # produces dist/Flint-<version>-win-x64.zip
+./dev.ps1 package     # produces dist/Flint-<version>-win-x64.zip and dist/Flint-Setup.exe
 ```
 
 ## Why this shape
