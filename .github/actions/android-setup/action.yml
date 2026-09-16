@@ -28,6 +28,10 @@ runs:
         packages: platform-tools
 
     # AGP 9 builds with build-tools 36.0.0 and ignores any older pin, so that is the only version.
+    #
+    # pwsh, not bash. This action runs on Linux for CI and on Windows for the release, and on a
+    # Windows runner bash is Git Bash, where sdkmanager is a .bat file it cannot find: the first
+    # release after this action was shared failed here with "sdkmanager: command not found".
     - name: Install Android build tools
-      shell: bash
+      shell: pwsh
       run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
