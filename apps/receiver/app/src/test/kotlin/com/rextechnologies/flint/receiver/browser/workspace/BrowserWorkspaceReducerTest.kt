@@ -244,6 +244,9 @@ class BrowserWorkspaceReducerTest {
         val pane = failed.state.pane(1)!!
         assertEquals(BrowserWorkspaceRendererResidency.FAILED, pane.rendererResidency)
         assertEquals(BrowserWorkspaceRendererFailure.RENDERER_PROCESS_GONE, pane.rendererFailure)
+        // Not still loading: a stopped page that says it is loading is what Windows would show.
+        assertFalse(pane.page.loading)
+        assertEquals(0, pane.page.progressPercent)
         assertEquals(BrowserWorkspaceInteractionMode.WORKSPACE_CHROME, failed.state.interactionMode)
         assertIs<BrowserWorkspaceEffect.DestroyPane>(failed.effects.first())
 

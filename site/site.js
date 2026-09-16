@@ -54,7 +54,7 @@
       title: "Flint for Android",
       requirement: "Android 8.0 or newer, and a phone that can run a hotspot. The phone becomes the host and the Fire TV becomes its screen.",
       primaryLabel: "Download the APK",
-      primaryHref: RELEASES + "/tag/latest",
+      primaryHref: RELEASES + "/tag/latest-mobile",
       fine: "A rolling build, replaced on every merge and signed by the release workflow. Android will warn about an unknown developer, because this is not a store listing.",
       install: "android",
     },
@@ -63,9 +63,9 @@
       eyebrow: "Flint for Windows",
       title: "Flint for Windows",
       requirement: "Windows 10 or 11, 64-bit. The PC is the host; the Fire TV is the screen. Screen mirroring and media handoff are proven end to end on a Fire TV Stick.",
-      primaryLabel: "Download for Windows",
+      primaryLabel: "Download the installer",
       primaryHref: RELEASES + "/tag/latest-windows",
-      fine: "A rolling build, replaced on every merge: a zip to extract, then run Flint.App.exe. Windows will warn that it does not recognise the publisher; that warning is true, and building from source avoids it.",
+      fine: "A rolling build, replaced on every merge. The installer is per-user, needs no administrator, puts flint on your PATH, and updates itself afterwards; a portable zip is on the release page for anyone who would rather extract a folder. Windows will warn that it does not recognise the publisher; that warning is true, and building from source avoids it.",
       install: "windows",
     },
     firetv: {
@@ -74,7 +74,7 @@
       title: "Flint on this Fire TV",
       requirement: "The receiver is not downloaded on the television. The phone app installs it over ADB, and the Windows package carries it for sideloading.",
       primaryLabel: "Get the phone app",
-      primaryHref: RELEASES + "/tag/latest",
+      primaryHref: RELEASES + "/tag/latest-mobile",
       fine: "Open this page on an Android phone, install Flint there, and it will offer to put the receiver on this TV, showing exactly what it installs first.",
       install: "firetv",
     },
@@ -223,8 +223,10 @@
     }
     if (key === "windows" && release.windows) {
       href = release.windows.url;
-      label = "Download for Windows";
-      fineText = "A zip: extract it and run Flint.App.exe. Windows will warn that it does not recognise the publisher; that warning is true, and building from source avoids it.";
+      label = release.windows.kind === "installer" ? "Download the installer" : "Download the zip";
+      fineText = release.windows.kind === "installer"
+        ? "Runs without an administrator prompt, installs for your account, puts flint on your PATH, and updates itself afterwards. Windows will warn that it does not recognise the publisher; that warning is true, and building from source avoids it."
+        : "A zip: extract it and run Flint.App.exe. Windows will warn that it does not recognise the publisher; that warning is true, and building from source avoids it.";
     }
     primary.setAttribute("href", href);
     primary.textContent = label;
@@ -313,6 +315,18 @@
     return null;
   }
 
+  // The versioned installer rather than the stable-named copy: the name on disk then says which
+  // build it is, which is the thing a person has to be able to check afterwards.
+  function setupOf(rel) {
+    var assets = (rel && rel.assets) || [];
+    var stable = null;
+    for (var i = 0; i < assets.length; i++) {
+      if (/^Flint-Setup-.+\.exe$/i.test(assets[i].name)) return assets[i];
+      if (/^Flint-Setup\.exe$/i.test(assets[i].name)) stable = assets[i];
+    }
+    return stable;
+  }
+
   function versionFrom(name, fallback) {
     // A rolling phone build is `-<hash>`; a rolling Windows build is `-g<hash>`, because dotnet reads
     // the version strictly and the `g` keeps a hash that happens to be all digits a valid label.
@@ -340,14 +354,14 @@
       }
       if (key === "windows" && release.windows && button) {
         button.setAttribute("href", release.windows.url);
-        button.textContent = "Download zip";
+        button.textContent = release.windows.kind === "installer" ? "Download the installer" : "Download zip";
         if (note) note.textContent = "Version " + release.windows.version + ", " + release.windows.size + ".";
       }
     });
   }
 
   if (typeof fetch === "function") {
-    fetchJson(API + "/releases/tags/latest").then(function (rel) {
+    fetchJson(API + "/releases/tags/latest-mobile").then(function (rel) {
       var apk = apkOf(rel);
       if (!apk) return;
       release.android = {
@@ -361,22 +375,25 @@
 
     // The rolling Windows build first, as the phone's is: every merge replaces it. A tagged stable
     // release is only the fallback, for when the rolling one is missing or has no zip on it.
+    // The installer first, the zip only if a release carries no installer — an older one, or a build
+    // from before there was one.
     fetchJson(API + "/releases/tags/latest-windows").then(function (rel) {
-      var zip = zipOf(rel);
-      if (!zip) throw new Error("The rolling release has no zip.");
-      return { rel: rel, zip: zip };
+      var asset = setupOf(rel) || zipOf(rel);
+      if (!asset) throw new Error("The rolling release has nothing to download.");
+      return { rel: rel, asset: asset };
     }).catch(function () {
       return fetchJson(API + "/releases/latest").then(function (rel) {
         if (!rel || rel.prerelease) return null;
-        var zip = zipOf(rel);
-        return zip ? { rel: rel, zip: zip } : null;
+        var asset = setupOf(rel) || zipOf(rel);
+        return asset ? { rel: rel, asset: asset } : null;
       });
     }).then(function (found) {
       if (!found) return;
       release.windows = {
-        url: found.zip.browser_download_url,
-        version: versionFrom(found.zip.name, found.rel.tag_name),
-        size: formatSize(found.zip.size),
+        url: found.asset.browser_download_url,
+        version: versionFrom(found.asset.name, found.rel.tag_name),
+        size: formatSize(found.asset.size),
+        kind: /\.exe$/i.test(found.asset.name) ? "installer" : "zip",
       };
       applyRelease();
     }).catch(function () { /* Neither is reachable from here; the static link and build steps stand. */ });

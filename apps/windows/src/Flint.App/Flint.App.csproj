@@ -23,6 +23,7 @@
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+    <PackageReference Include="Velopack" />
     <PackageReference Include="Avalonia.Diagnostics" Condition="'$(Configuration)' == 'Debug'" />
   </ItemGroup>
 
@@ -30,6 +31,7 @@
     <ProjectReference Include="../Flint.Core/Flint.Core.csproj" />
     <ProjectReference Include="../Flint.Discovery/Flint.Discovery.csproj" />
     <ProjectReference Include="../Flint.Engine.Interop/Flint.Engine.Interop.csproj" />
+    <ProjectReference Include="../Flint.Platform.Windows/Flint.Platform.Windows.csproj" />
     <ProjectReference Include="../Flint.Session/Flint.Session.csproj" />
   </ItemGroup>
 

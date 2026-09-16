@@ -601,15 +601,15 @@ class BrowserWorkspaceReducer(
         action: BrowserWorkspaceAction.RendererFailed,
     ): BrowserWorkspaceTransition {
         val pane = state.pane(action.paneId) ?: return unchanged(state)
-        if (pane.rendererGeneration != action.rendererGeneration ||
-            !pane.rendererResidency.hasRenderer
-        ) {
-            return unchanged(state)
-        }
+        val stale = pane.rendererGeneration != action.rendererGeneration || !pane.rendererResidency.hasRenderer
+        if (stale) return unchanged(state)
         var next = state.withPane(action.paneId) {
             it.copy(
                 rendererResidency = BrowserWorkspaceRendererResidency.FAILED,
                 rendererFailure = action.reason,
+                // Dying mid-navigation, its last page report is dropped as stale; left alone, Windows
+                // shows a stopped pane as loading at 0% for as long as it stays open.
+                page = it.page.copy(loading = false, progressPercent = 0),
                 media = it.media.copy(
                     muteApplication = if (it.media.desiredMuted) {
                         BrowserWorkspaceMuteApplication.PENDING_RENDERER

@@ -2,6 +2,25 @@ using Flint.Core;
 
 namespace Flint.Cli;
 
+/// <summary>A word that names what to do, where an option would have modified a probe.</summary>
+internal enum CliVerb
+{
+    /// <summary>No verb: probe, which is what `flint` on its own has always meant.</summary>
+    None,
+
+    /// <summary>Print the version.</summary>
+    Version,
+
+    /// <summary>Probe this machine and the television, which is the same as no verb.</summary>
+    Doctor,
+
+    /// <summary>Install a newer Flint, when this copy was installed rather than unpacked.</summary>
+    Update,
+
+    /// <summary>Print a shell completion script.</summary>
+    Completion,
+}
+
 /// <summary>Validated command-line intent for the diagnostics runner.</summary>
 internal sealed record CliOptions(
     bool ScanServices,
@@ -15,7 +34,8 @@ internal sealed record CliOptions(
     bool Mirror = false,
     uint MirrorMaxWidth = 1920,
     string? BrowseUrl = null,
-    int? BrowserPort = null)
+    int? BrowserPort = null,
+    CliVerb Verb = CliVerb.None)
 {
     internal static bool TryParse(
         IReadOnlyList<string> arguments,
@@ -26,9 +46,24 @@ internal sealed record CliOptions(
         options = null;
         error = null;
 
+        // A leading word is a verb, and only the first word can be one: everything after it is
+        // still the options this command has always taken, so `flint --address ...` is untouched.
+        var verb = CliVerb.None;
+        var rest = arguments;
+        if (arguments.Count > 0 && !arguments[0].StartsWith('-'))
+        {
+            if (!TryReadVerb(arguments, out verb, out var shell, out error))
+            {
+                return false;
+            }
+
+            // `completion powershell` carries its shell as a second word rather than an option.
+            rest = arguments.Skip(shell is null ? 1 : 2).ToList();
+        }
+
         var scanServices = false;
         var showHelp = false;
-        var showVersion = false;
+        var showVersion = verb is CliVerb.Version;
         var json = false;
         string? address = null;
         string? port = null;
@@ -41,9 +76,9 @@ internal sealed record CliOptions(
         string? browseUrl = null;
         int? browserPort = null;
 
-        for (var index = 0; index < arguments.Count; index++)
+        for (var index = 0; index < rest.Count; index++)
         {
-            var argument = arguments[index];
+            var argument = rest[index];
             if (argument.Equals("--services", StringComparison.OrdinalIgnoreCase))
             {
                 scanServices = true;
@@ -65,7 +100,7 @@ internal sealed record CliOptions(
             }
             else if (argument.Equals("--address", StringComparison.OrdinalIgnoreCase))
             {
-                if (address is not null || !TryReadValue(arguments, ref index, out address))
+                if (address is not null || !TryReadValue(rest, ref index, out address))
                 {
                     error = "--address must be followed by one IP address and may appear only once.";
                     return false;
@@ -73,7 +108,7 @@ internal sealed record CliOptions(
             }
             else if (argument.Equals("--port", StringComparison.OrdinalIgnoreCase))
             {
-                if (port is not null || !TryReadValue(arguments, ref index, out port))
+                if (port is not null || !TryReadValue(rest, ref index, out port))
                 {
                     error = "--port must be followed by one port and may appear only once.";
                     return false;
@@ -81,7 +116,7 @@ internal sealed record CliOptions(
             }
             else if (argument.Equals("--pairing-code", StringComparison.OrdinalIgnoreCase))
             {
-                if (pairingCode is not null || !TryReadValue(arguments, ref index, out pairingCode))
+                if (pairingCode is not null || !TryReadValue(rest, ref index, out pairingCode))
                 {
                     error = "--pairing-code must be followed by the six-digit TV code.";
                     return false;
@@ -89,7 +124,7 @@ internal sealed record CliOptions(
             }
             else if (argument.Equals("--receiver-port", StringComparison.OrdinalIgnoreCase))
             {
-                if (!TryReadValue(arguments, ref index, out var receiverPortText)
+                if (!TryReadValue(rest, ref index, out var receiverPortText)
                     || !int.TryParse(receiverPortText, out receiverPort)
                     || receiverPort is < 1 or > 65535)
                 {
@@ -101,7 +136,7 @@ internal sealed record CliOptions(
             }
             else if (argument.Equals("--media", StringComparison.OrdinalIgnoreCase))
             {
-                if (mediaPath is not null || !TryReadValue(arguments, ref index, out mediaPath))
+                if (mediaPath is not null || !TryReadValue(rest, ref index, out mediaPath))
                 {
                     error = "--media must be followed by one local media file and may appear only once.";
                     return false;
@@ -114,7 +149,7 @@ internal sealed record CliOptions(
             else if (argument.Equals("--browser-port", StringComparison.OrdinalIgnoreCase))
             {
                 if (browserPort is not null
-                    || !TryReadValue(arguments, ref index, out var browserPortText)
+                    || !TryReadValue(rest, ref index, out var browserPortText)
                     || !int.TryParse(browserPortText, out var parsedBrowserPort)
                     || parsedBrowserPort is < 1 or > 65535)
                 {
@@ -126,7 +161,7 @@ internal sealed record CliOptions(
             }
             else if (argument.Equals("--browse", StringComparison.OrdinalIgnoreCase))
             {
-                if (browseUrl is not null || !TryReadValue(arguments, ref index, out browseUrl))
+                if (browseUrl is not null || !TryReadValue(rest, ref index, out browseUrl))
                 {
                     error = "--browse must be followed by one https:// address and may appear only once.";
                     return false;
@@ -134,7 +169,7 @@ internal sealed record CliOptions(
             }
             else if (argument.Equals("--mirror-width", StringComparison.OrdinalIgnoreCase))
             {
-                if (!TryReadValue(arguments, ref index, out var widthText)
+                if (!TryReadValue(rest, ref index, out var widthText)
                     || !uint.TryParse(widthText, out mirrorMaxWidth)
                     || mirrorMaxWidth is < 320 or > 7680)
                 {
@@ -154,7 +189,21 @@ internal sealed record CliOptions(
         if (showHelp || showVersion)
         {
             options = new CliOptions(
-                false, showHelp, showVersion, json, null, null, null, receiverPort);
+                false, showHelp, showVersion, json, null, null, null, receiverPort, Verb: verb);
+            return true;
+        }
+
+        // update and completion do their own job and take none of the probe's options.
+        if (verb is CliVerb.Update or CliVerb.Completion)
+        {
+            if (rest.Count > 0)
+            {
+                error = $"'{arguments[0]}' takes no other options.";
+                return false;
+            }
+
+            options = new CliOptions(
+                false, false, false, json, null, null, null, receiverPort, Verb: verb);
             return true;
         }
 
@@ -264,8 +313,49 @@ internal sealed record CliOptions(
             mirror,
             mirrorMaxWidth,
             browseUrl,
-            browserPort);
+            browserPort,
+            verb);
         return true;
+    }
+
+    /// <summary>Reads the leading word, and the shell name <c>completion</c> takes after it.</summary>
+    private static bool TryReadVerb(
+        IReadOnlyList<string> arguments,
+        out CliVerb verb,
+        out string? shell,
+        out string? error)
+    {
+        verb = CliVerb.None;
+        shell = null;
+        error = null;
+
+        switch (arguments[0].ToLowerInvariant())
+        {
+            case "version":
+                verb = CliVerb.Version;
+                return true;
+            case "doctor":
+                verb = CliVerb.Doctor;
+                return true;
+            case "update":
+                verb = CliVerb.Update;
+                return true;
+            case "completion":
+                verb = CliVerb.Completion;
+                // Only the shell Flint ships a script for. Naming the others would promise something
+                // that is not there.
+                if (arguments.Count < 2 || !arguments[1].Equals("powershell", StringComparison.OrdinalIgnoreCase))
+                {
+                    error = "completion takes one shell, and the only one supported is powershell.";
+                    return false;
+                }
+
+                shell = arguments[1];
+                return true;
+            default:
+                error = $"Unknown command '{arguments[0]}'. Try version, doctor, update or completion.";
+                return false;
+        }
     }
 
     private static bool TryReadValue(

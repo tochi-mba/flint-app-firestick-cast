@@ -163,7 +163,7 @@ public sealed class PageSnapshotTests
     [AvaloniaFact]
     public void SettingsPage()
     {
-        var page = new SettingsPage { DataContext = SnapshotFixtures.ViewModel() };
+        var page = new SettingsPage { DataContext = SnapshotFixtures.Settings() };
 
         Snapshot.Matches("settings-page", page);
     }

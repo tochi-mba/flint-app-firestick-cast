@@ -5,11 +5,14 @@ plugins {
     id("flint.compose")
 }
 
-val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("keystore.properties")
-if (keystorePropertiesFile.exists()) {
-    keystorePropertiesFile.inputStream().use(keystoreProperties::load)
-}
+// Read through a provider rather than by opening the file. A file opened during configuration is an
+// input the configuration cache cannot see, so a change to it would be missed; read this way it is
+// tracked, and an absent file is simply an absent value rather than a branch on the file system.
+val keystoreProperties: Properties? =
+    providers.fileContents(rootProject.layout.projectDirectory.file("keystore.properties"))
+        .asText
+        .map { text -> Properties().apply { load(text.reader()) } }
+        .orNull
 
 android {
     namespace = "com.rextechnologies.flint.receiver"
@@ -21,19 +24,19 @@ android {
     }
 
     signingConfigs {
-        if (keystorePropertiesFile.exists()) {
+        keystoreProperties?.let { properties ->
             create("release") {
-                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = rootProject.file(properties.getProperty("storeFile"))
+                storePassword = properties.getProperty("storePassword")
+                keyAlias = properties.getProperty("keyAlias")
+                keyPassword = properties.getProperty("keyPassword")
             }
         }
     }
 
     buildTypes {
         release {
-            if (keystorePropertiesFile.exists()) {
+            if (keystoreProperties != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }

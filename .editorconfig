@@ -9,7 +9,7 @@ trim_trailing_whitespace = true
 # CRLF is the convention of the Windows projects and nothing else. Set repository-wide, as it was,
 # it told `ktlint --format` on Linux to rewrite every Kotlin file's line endings, and git to report a
 # change on every line of every file it touched.
-[*.{cs,csproj,props,targets,axaml,xaml,ps1,sln}]
+[*.{cs,csproj,props,targets,axaml,xaml,ps1,sln,slnx}]
 end_of_line = crlf
 
 [*.{cs,csproj,props,targets}]

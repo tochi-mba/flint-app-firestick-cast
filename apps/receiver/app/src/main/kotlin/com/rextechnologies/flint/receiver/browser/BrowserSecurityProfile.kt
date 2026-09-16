@@ -123,9 +123,12 @@ object BrowserSecurityProfile {
      * Android 8 handed the job to the autofill framework and made this setting do nothing, which is
      * why it is deprecated; Fire OS 6 reports API 25 and has no replacement to call, so the old
      * setting is used there and only there.
+     *
+     * [apiLevel] is a parameter so a test can exercise both sides of that line at whatever SDK the
+     * suite runs on, rather than making Robolectric fetch a framework no other test needs.
      */
-    private fun disableSavedFormData(settings: WebSettings) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    internal fun disableSavedFormData(settings: WebSettings, apiLevel: Int = Build.VERSION.SDK_INT) {
+        if (apiLevel < Build.VERSION_CODES.O) {
             @Suppress("DEPRECATION")
             settings.saveFormData = false
         }

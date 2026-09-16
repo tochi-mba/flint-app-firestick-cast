@@ -1,0 +1,33 @@
+# The Android toolchain, and nothing else.
+#
+# Setup only, deliberately. This action used to run the phone's checks as well, which meant two
+# workflows shared a toolchain and a gate through the same file and could not vary one without the
+# other. What to check is now said in the workflow, in the same words a laptop uses: ./dev.ps1 check.
+name: Android setup
+description: Installs the JDK, Gradle and the Android SDK this repository builds against.
+
+runs:
+  using: composite
+  steps:
+    - name: Install JDK 17
+      uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      with:
+        distribution: temurin
+        java-version: '17'
+
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+
+    # `packages` is set because the action's default is `tools platform-tools`, and Google has since
+    # removed the legacy `tools` package from the SDK repository: the default now fails with "Failed
+    # to find package 'tools'" before anything is built. platform-tools is the half that still
+    # exists; the platforms and build tools the modules need are installed by name below.
+    - name: Install the Android SDK
+      uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+      with:
+        packages: platform-tools
+
+    # AGP 9 builds with build-tools 36.0.0 and ignores any older pin, so that is the only version.
+    - name: Install Android build tools
+      shell: bash
+      run: sdkmanager "platforms;android-36" "build-tools;36.0.0"

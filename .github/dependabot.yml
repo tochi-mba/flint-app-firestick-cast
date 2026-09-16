@@ -1,0 +1,64 @@
+# Dependency updates, proposed as pull requests rather than taken silently.
+#
+# Every action in .github/workflows is pinned to a commit rather than a tag, because a tag can be
+# moved to different code after it is reviewed. A pin that nobody updates is how a project ends up
+# three majors behind on a deprecated runtime, so Dependabot proposes the moves and CI judges them.
+#
+# Grouped, because fifteen separate pull requests a week is how people learn to merge them without
+# reading. Weekly, on Monday, so a week's updates arrive together and are reviewed once.
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: 'CI'
+
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      # Avalonia ships its packages as one set, and a build that mixes two of their versions fails
+      # in ways that do not name the cause.
+      avalonia:
+        patterns: ['Avalonia*']
+      test:
+        patterns: ['xunit*', 'Microsoft.NET.Test.Sdk', 'coverlet*', 'Shouldly', 'FlaUI*']
+      other:
+        patterns: ['*']
+        exclude-patterns: ['Avalonia*', 'xunit*', 'Microsoft.NET.Test.Sdk', 'coverlet*', 'Shouldly', 'FlaUI*']
+
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      # Compose's artifacts are released together through the BOM, and AndroidX libraries expect
+      # matching versions of one another.
+      androidx:
+        patterns: ['androidx*', 'com.google.android*']
+      other:
+        patterns: ['*']
+        exclude-patterns: ['androidx*', 'com.google.android*']
+
+  - package-ecosystem: cargo
+    directory: /apps/windows/engine
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      crates:
+        patterns: ['*']

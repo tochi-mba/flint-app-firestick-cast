@@ -12,6 +12,7 @@
     <ProjectReference Include="../Flint.Core/Flint.Core.csproj" />
     <ProjectReference Include="../Flint.Discovery/Flint.Discovery.csproj" />
     <ProjectReference Include="../Flint.Engine.Interop/Flint.Engine.Interop.csproj" />
+    <ProjectReference Include="../Flint.Platform.Windows/Flint.Platform.Windows.csproj" />
     <ProjectReference Include="../Flint.App/Flint.App.csproj" />
   </ItemGroup>
 

@@ -3,7 +3,7 @@
              xmlns:vm="using:Flint.App.ViewModels"
              xmlns:controls="using:Flint.App.Controls"
              x:Class="Flint.App.Views.SettingsPage"
-             x:DataType="vm:CastPageViewModel">
+             x:DataType="vm:SettingsPageViewModel">
   <ScrollViewer>
     <StackPanel Margin="{StaticResource PageMargin}" Spacing="12" MaxWidth="820" HorizontalAlignment="Left">
       <controls:PageHeading Eyebrow="Local preferences" Title="Settings" Trailing="" TrailingTone="Neutral" />
@@ -19,6 +19,31 @@
           </ItemsControl>
           <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}" Text="Direct addresses are retained only on this PC." />
           <Button Theme="{StaticResource OutlineAction}" HorizontalAlignment="Left" Command="{Binding ClearRecentAddressesCommand}" Content="CLEAR REMEMBERED TVS" />
+        </StackPanel>
+      </controls:InfoCard>
+      <controls:InfoCard>
+        <StackPanel Spacing="12">
+          <TextBlock Theme="{StaticResource TitleMedium}" Text="Updates" />
+          <TextBlock Theme="{StaticResource BodyMedium}"
+                     TextWrapping="Wrap"
+                     Text="{Binding Updates.Status}" />
+          <!-- Only on an installed copy: on the portable zip these would be controls that do nothing. -->
+          <CheckBox IsVisible="{Binding Updates.IsInstalled}"
+                    IsChecked="{Binding Updates.ChecksAutomatically, Mode=TwoWay}"
+                    Content="Check for updates when Flint starts" />
+          <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding Updates.IsInstalled}">
+            <Button Theme="{StaticResource OutlineAction}"
+                    Command="{Binding Updates.CheckCommand}"
+                    IsEnabled="{Binding Updates.CanCheck}"
+                    Content="CHECK NOW" />
+            <Button Theme="{StaticResource OutlineAction}"
+                    Command="{Binding Updates.RestartCommand}"
+                    Content="RESTART TO UPDATE" />
+          </StackPanel>
+          <TextBlock Theme="{StaticResource BodySmall}"
+                     Foreground="{StaticResource MutedBrush}"
+                     TextWrapping="Wrap"
+                     Text="Updates come from this project's GitHub releases. Flint never restarts while a session is running." />
         </StackPanel>
       </controls:InfoCard>
     </StackPanel>

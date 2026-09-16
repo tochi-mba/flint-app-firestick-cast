@@ -161,7 +161,7 @@ fn hardware_encoder_names(subtype: GUID, adapter_luid: i64) -> Vec<String> {
         return Vec::new();
     }
 
-    // SAFETY: MFTEnumEx guarantees `activates` points to `count` initialised entries.
+    // SAFETY: MFTEnum2 guarantees `activates` points to `count` initialised entries.
     let slice = unsafe { std::slice::from_raw_parts(activates, count as usize) };
     let names = slice
         .iter()

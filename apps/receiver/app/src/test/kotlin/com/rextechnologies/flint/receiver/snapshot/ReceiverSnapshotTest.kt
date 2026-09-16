@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.rextechnologies.flint.receiver.snapshot
 
 import androidx.activity.ComponentActivity
@@ -45,6 +43,14 @@ import org.robolectric.annotation.Config
 // so this renders the configuration a Fire TV actually reports rather than an approximation of it.
 @Config(qualifiers = "w960dp-h540dp-television-xhdpi")
 class ReceiverSnapshotTest {
+    // The one deprecated call left in this repository, and the narrowest form of keeping it: this
+    // declaration, not the file. Every other Compose test here has moved to junit4.v2. Under that
+    // rule the components on four of these screens never take focus at all — the focused button
+    // renders with an unfocused fill under its focus ring, differing from the approved image by the
+    // same pixel count however far the clock is advanced, so it is not a matter of waiting longer.
+    // Approving those frames would retire the one thing this suite exists to prove: that focus is
+    // visible from across a room. Revisit when the v2 rule delivers focus, and re-approve then.
+    @Suppress("DEPRECATION")
     @get:Rule
     val compose = createAndroidComposeRule<ComponentActivity>()
 

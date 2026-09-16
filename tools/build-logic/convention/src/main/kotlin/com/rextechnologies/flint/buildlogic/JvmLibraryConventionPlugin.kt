@@ -15,7 +15,7 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
             pluginManager.apply(QualityConventionPlugin::class.java)
 
             extensions.configure<KotlinJvmProjectExtension> {
-                jvmToolchain(JAVA_VERSION)
+                jvmToolchain(javaVersion)
                 compilerOptions.allWarningsAsErrors.set(true)
             }
             tasks.withType<Test>().configureEach {

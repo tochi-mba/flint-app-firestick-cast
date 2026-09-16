@@ -7,9 +7,10 @@
     and the working copy disagreeing, which is a worse surprise than being told to run
     ./dev.ps1 format.
 
-    It covers what is fast enough for every commit: the source rules, and the layout of staged C# and
-    Rust files as they are on disk. Kotlin layout needs Gradle, which is too slow to start on every
-    commit, so ./dev.ps1 check and CI hold that one.
+    It covers what is fast enough for every commit: the repository's source rules, which are cheap
+    enough to run whole, and the layout of the staged C# and Rust files as they are on disk. Kotlin
+    layout needs Gradle, which is too slow to start on every commit, so ./dev.ps1 check and CI hold
+    that one.
 #>
 
 Set-StrictMode -Version Latest
@@ -61,6 +62,9 @@ function Uninstall-DevHook {
 
 function Invoke-PreCommit {
     $staged = @(git -C $script:RepoRoot diff --cached --name-only --diff-filter=ACMR)
+    # An unchecked git failure here reads as "nothing is staged", and the hook would then wave
+    # through the very commit it exists to look at.
+    if ($LASTEXITCODE -ne 0) { throw 'git could not list the staged files, so nothing was checked.' }
     if ($staged.Count -eq 0) { return }
 
     Invoke-SourceCheck $script:RepoRoot

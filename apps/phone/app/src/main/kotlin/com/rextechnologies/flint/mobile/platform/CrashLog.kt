@@ -74,7 +74,10 @@ object CrashLog {
         override fun uncaughtException(thread: Thread, failure: Throwable) {
             // Swallowed deliberately. The process is already going down; a recorder that threw on
             // the way would replace the report with its own and leave nothing behind.
-            runCatching { write(context, describe(failure, "a Flint thread", fatal = true)) }
+            // The thread's name is kept where the exception's message is not: it names main, a
+            // capture thread or a pool, which is often the most useful line in a report from a
+            // phone nobody can reach, and it carries nothing of the person's own.
+            runCatching { write(context, describe(failure, "the ${thread.name} thread", fatal = true)) }
             previous?.uncaughtException(thread, failure)
         }
     }

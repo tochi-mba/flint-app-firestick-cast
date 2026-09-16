@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 40
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -100,9 +100,14 @@ jobs:
             -alias "$KEY_ALIAS" >/dev/null
           echo "signed=true" >> "$GITHUB_OUTPUT"
 
-      # Exactly the checks a pull request runs, from the same composite action. A release must never
-      # ship code that would have been rejected on review.
-      - uses: ./.github/actions/phone-gate
+      # Exactly the checks a pull request runs, in the same words. A release must never ship code
+      # that would have been rejected on review, and the source rules and the convention plugins are
+      # part of that: they are what decides what the phone's own check means.
+      - uses: ./.github/actions/android-setup
+
+      - name: Check the source rules, the build logic, the protocol and the phone
+        shell: pwsh
+        run: ./dev.ps1 check repo build-logic protocol phone
 
       # The Fire TV package the phone can install over ADB. It is built from this same commit, so the
       # version the phone offers to install is never a mystery. Debug rather than release on purpose:
@@ -181,9 +186,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if gh release view latest >/dev/null 2>&1; then
-            gh release view latest --json assets --jq '.assets[].name' | while IFS= read -r asset; do
-              [ -z "$asset" ] || gh release delete-asset latest "$asset" --yes
+          if gh release view latest-mobile >/dev/null 2>&1; then
+            gh release view latest-mobile --json assets --jq '.assets[].name' | while IFS= read -r asset; do
+              [ -z "$asset" ] || gh release delete-asset latest-mobile "$asset" --yes
             done
           fi
 
@@ -191,9 +196,9 @@ jobs:
         # Also guarded on the branch. A workflow_dispatch from any branch would otherwise move
         # `latest` -- the tag every download link on every phone points at -- to a branch build.
         if: steps.version.outputs.tagged == 'false' && github.ref == 'refs/heads/master'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
-          tag_name: latest
+          tag_name: latest-mobile
           name: Flint Mobile (rolling)
           prerelease: true
           make_latest: false
@@ -219,12 +224,28 @@ jobs:
         if: steps.version.outputs.tagged == 'false' && github.ref == 'refs/heads/master'
         run: |
           set -euo pipefail
-          git tag -f latest "${GITHUB_SHA}"
-          git push -f origin refs/tags/latest
+          git tag -f latest-mobile "${GITHUB_SHA}"
+          git push -f origin refs/tags/latest-mobile
+
+      # One-shot, and deleted from this workflow in the pull request after it has run. `latest` was
+      # the phone's rolling tag before the Windows one existed; keeping both would leave a download
+      # link that still resolves and never moves again, which is worse than a dead link.
+      - name: Retire the old rolling tag
+        if: steps.version.outputs.tagged == 'false' && github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view latest >/dev/null 2>&1; then
+            gh release delete latest --yes --cleanup-tag
+            echo "Deleted the superseded 'latest' release and its tag."
+          else
+            echo "No 'latest' release remains; nothing to retire."
+          fi
 
       - name: Publish the tagged release
         if: steps.version.outputs.tagged == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: dist/*
           generate_release_notes: true

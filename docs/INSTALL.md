@@ -28,17 +28,25 @@ Devices known to ship with it are the **Fire TV Stick 4K Select** (October 2025)
 
 ## Install
 
-1. Download `Flint-<version>-win-x64.zip` from the
+1. Download `Flint-Setup.exe` from the
    [rolling Windows release](https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest-windows),
    which every merge replaces with the newest build. For one that will never change under you, take
    a `v*` release from the [releases page](https://github.com/tochi-mba/flint-app-firestick-cast/releases).
-2. Right-click the zip, choose **Extract All**, and pick somewhere you can find again —
-   `C:\Program Files` is not required and not recommended, because Flint does not need it.
-3. Open the extracted folder and run **Flint.App.exe**.
+2. Run it. The install is for your account only: there is no administrator prompt, and nothing is
+   written to `C:\Program Files`. Flint lands in the Start menu and in **Settings → Apps → Installed
+   apps**, and its folder goes on your PATH, so `flint` works in any terminal you open afterwards.
+3. Flint looks for updates when it starts and fetches them in the background. **Settings → Updates**
+   holds the switch that turns that off, and a button to check on demand. It never restarts itself
+   while a cast or browser session is running.
 
-There is no installer. Flint is a portable folder: it writes nothing outside its own directory
-except one marker file recording that you have seen the introduction, under
-`%LOCALAPPDATA%\REX Technologies\Flint`. To uninstall, delete the folder.
+**Or keep a folder you can delete.** The same release carries `Flint-<version>-win-x64.zip`:
+extract it anywhere and run **Flint.App.exe**. Nothing is installed, nothing goes on the PATH, and
+nothing updates itself.
+
+Either way, what Flint remembers about you — that you have seen the introduction, the televisions
+you have typed in, the browser trust store — lives under `%LOCALAPPDATA%\REX Technologies\Flint`.
+The installed program itself lives under `%LOCALAPPDATA%\Flint`; uninstalling removes that folder
+and takes the PATH entry with it.
 
 The download includes `Flint.Receiver.apk`. Install it on the Fire TV once using your normal
 sideloading method. After the television authorises Flint over ADB, `OPEN RECEIVER ON TV` and
@@ -126,7 +134,7 @@ future version of Flint will change that. Nothing below will help on a Vega devi
 
 **You need Android 8.0 or newer**, and a phone that can run a hotspot.
 
-1. On the phone, open the [latest release](https://github.com/tochi-mba/flint-app-firestick-cast/releases)
+1. On the phone, open the [rolling mobile release](https://github.com/tochi-mba/flint-app-firestick-cast/releases/tag/latest-mobile)
    and download the `Flint-Mobile-*.apk` file.
 2. Open it. Android will ask whether to allow installing apps from your browser; allow it, and then
    turn the permission off again afterwards if you would rather.

@@ -5,6 +5,7 @@
     <Project Path="apps/windows/src/Flint.Core/Flint.Core.csproj" />
     <Project Path="apps/windows/src/Flint.Discovery/Flint.Discovery.csproj" />
     <Project Path="apps/windows/src/Flint.Engine.Interop/Flint.Engine.Interop.csproj" />
+    <Project Path="apps/windows/src/Flint.Platform.Windows/Flint.Platform.Windows.csproj" />
     <Project Path="apps/windows/src/Flint.Session/Flint.Session.csproj" />
   </Folder>
   <Folder Name="/windows-tests/">
@@ -14,6 +15,7 @@
     <Project Path="apps/windows/tests/Flint.Discovery.Tests/Flint.Discovery.Tests.csproj" />
     <Project Path="apps/windows/tests/Flint.Engine.Interop.Tests/Flint.Engine.Interop.Tests.csproj" />
     <Project Path="apps/windows/tests/Flint.Hardware.E2E/Flint.Hardware.E2E.csproj" />
+    <Project Path="apps/windows/tests/Flint.Platform.Windows.Tests/Flint.Platform.Windows.Tests.csproj" />
     <Project Path="apps/windows/tests/Flint.Session.Tests/Flint.Session.Tests.csproj" />
   </Folder>
   <Folder Name="/protocol/">

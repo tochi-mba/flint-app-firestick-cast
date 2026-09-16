@@ -41,8 +41,8 @@ $script:DevTasks = [ordered]@{
     test     = @{ Usage = 'test [area...]'; Summary = 'Run the tests of areas.'; Run = { Invoke-AreaVerb 'test' (Resolve-Areas $script:TaskArguments) } }
     check    = @{ Usage = 'check [area...]'; Summary = 'Run the gate CI runs: formatting, analyzers, tests and source rules.'; Run = { Invoke-AreaVerb 'check' (Resolve-Areas $script:TaskArguments) } }
     format   = @{ Usage = 'format [area...]'; Summary = 'Apply every formatter, so that check has nothing to say about layout.'; Run = { Invoke-AreaVerb 'format' (Resolve-Areas $script:TaskArguments) } }
-    package  = @{ Usage = 'package [-Version x.y.z]'; Summary = 'Build the portable Windows package into dist/.'; Run = { Invoke-Package $script:TaskArguments } }
-    hooks    = @{ Usage = 'hooks install|uninstall'; Summary = 'Check layout and source rules on staged files before each commit.'; Run = { Invoke-Hooks $script:TaskArguments } }
+    package  = @{ Usage = 'package [-Stage|-Pack] [-Version x.y.z]'; Summary = 'Build the Windows zip and installer into dist/.'; Run = { Invoke-Package $script:TaskArguments } }
+    hooks    = @{ Usage = 'hooks install|uninstall'; Summary = 'Check the source rules, and staged files'' layout, before each commit.'; Run = { Invoke-Hooks $script:TaskArguments } }
     run      = @{ Usage = 'run windows|phone|receiver [--serial host:port]'; Summary = 'Build one app and launch it for development.'; Run = { Invoke-RunApp $script:TaskArguments } }
     receiver = @{ Usage = 'receiver install|remove [--serial host:port]'; Summary = 'Install or remove the debug Fire TV receiver over ADB.'; Run = { Invoke-Receiver $script:TaskArguments } }
     logs     = @{ Usage = 'logs pull|watch [options]'; Summary = 'Collect Fire TV and Windows logs into artifacts/logs.'; Run = { Invoke-Logs $script:TaskArguments } }

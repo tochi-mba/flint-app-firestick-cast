@@ -15,8 +15,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 internal fun Project.configureAndroid(android: CommonExtension) {
     android.compileSdk = libs.version("compile-sdk").toInt()
     android.defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    android.compileOptions.sourceCompatibility = JavaVersion.toVersion(JAVA_VERSION)
-    android.compileOptions.targetCompatibility = JavaVersion.toVersion(JAVA_VERSION)
+    android.compileOptions.sourceCompatibility = JavaVersion.toVersion(javaVersion)
+    android.compileOptions.targetCompatibility = JavaVersion.toVersion(javaVersion)
 
     // Off unless a module turns it on. Generating BuildConfig adds a Javac task for no source, and
     // that task's JDK classpath cleanup is unreliable on Windows.

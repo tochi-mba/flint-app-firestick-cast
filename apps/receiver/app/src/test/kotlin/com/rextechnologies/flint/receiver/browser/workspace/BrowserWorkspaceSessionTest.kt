@@ -13,6 +13,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -205,6 +206,9 @@ class BrowserWorkspaceSessionTest {
         val failed = assertNotNull(session.state.pane(id))
         assertEquals(BrowserWorkspaceRendererResidency.FAILED, failed.rendererResidency)
         assertEquals(BrowserWorkspaceRendererFailure.RENDERER_PROCESS_GONE, failed.rendererFailure)
+        // The driver's failure carried the navigation before this one, so the page report was
+        // dropped as stale. The pane must still stop reporting itself as loading.
+        assertFalse(failed.page.loading)
         assertNull(host.tokens[id])
         assertEquals(listOf<BrowserDialogAnswer>(BrowserDialogAnswer.Cancel), answers)
 

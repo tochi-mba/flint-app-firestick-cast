@@ -6,6 +6,7 @@
     An area is one toolchain's slice of the repository:
 
       repo       the source rules no single toolchain holds (source-check.ps1)
+      build-logic the Gradle convention plugins, which decide every other module's gates
       engine     the Rust engine; Windows only, because it captures through DXGI
       windows    the .NET solution: the Windows app, its CLI, and the .NET protocol
       protocol   the Kotlin protocol and its golden-vector tests
@@ -23,7 +24,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:AreaNames = 'repo', 'engine', 'windows', 'protocol', 'phone', 'receiver', 'site'
+$script:AreaNames = 'repo', 'build-logic', 'engine', 'windows', 'protocol', 'phone', 'receiver', 'site'
 
 $script:GradleTasks = @{
     protocol = @{
@@ -75,6 +76,7 @@ function Invoke-AreaVerb([string]$Verb, [string[]]$Areas) {
             & {
                 switch ($step) {
                     'repo' { Invoke-RepoArea $Verb }
+                    'build-logic' { Invoke-BuildLogicArea $Verb }
                     'engine' { Invoke-EngineArea $Verb }
                     'windows' { Invoke-WindowsArea $Verb }
                     'site' { Invoke-SiteArea $Verb }
@@ -83,9 +85,12 @@ function Invoke-AreaVerb([string]$Verb, [string[]]$Areas) {
             } | Out-Host
         }
         catch [System.NotSupportedException] {
-            $status = 'skipped'
+            # Skipping is an answer on a laptop and a failure on a runner. A CI job that asked for an
+            # area this machine cannot build has the wrong runner, and exiting 0 having checked
+            # nothing is the one outcome that must not read as a pass.
+            $status = if ($env:CI) { 'FAILED' } else { 'skipped' }
             $detail = $_.Exception.Message
-            Write-DevNote $detail DarkYellow
+            Write-DevNote $detail $(if ($env:CI) { 'Red' } else { 'DarkYellow' })
         }
         catch {
             $status = 'FAILED'
@@ -136,6 +141,25 @@ function Invoke-DevToolTests {
     $configuration.Output.Verbosity = 'Normal'
     $result = Invoke-Pester -Configuration $configuration
     if ($result.FailedCount -gt 0) { throw "$($result.FailedCount) dev.ps1 test(s) failed." }
+}
+
+<#
+.SYNOPSIS
+    The convention plugins' own build.
+.DESCRIPTION
+    An included build, so the root project cannot reach its tasks: it is invoked in its own directory.
+    It is checked like anything else because it decides what every other module's check means.
+#>
+function Invoke-BuildLogicArea([string]$Verb) {
+    if ($null -eq (Find-Command 'java') -and -not $env:JAVA_HOME) {
+        throw [System.NotSupportedException]::new('The convention plugins are Kotlin, and no JDK was found.')
+    }
+    $task = switch ($Verb) {
+        'build' { 'assemble' }
+        'format' { 'ktlintFormat' }
+        default { 'check' }
+    }
+    Invoke-Tool (Get-GradleWrapper) @('-p', 'tools/build-logic', $task, '--console', 'plain')
 }
 
 function Invoke-EngineArea([string]$Verb) {
@@ -199,5 +223,9 @@ function Invoke-GradleArea([string]$Verb, [string[]]$Areas) {
 }
 
 function Invoke-Package([string[]]$Arguments) {
-    & (Join-Path $script:RepoRoot 'tools/scripts/package.ps1') @Arguments
+    # Bound by name. Splatting the array instead binds by position, so `package -Version 1.2.3` put
+    # "-Version" in $Version and "1.2.3" in $OutputDirectory, and built a package named after the
+    # option rather than the version, without an error.
+    $options = ConvertTo-ParameterSplat $Arguments
+    & (Join-Path $script:RepoRoot 'tools/scripts/package.ps1') @options
 }
