@@ -33,7 +33,7 @@ public partial class BrowserPage : UserControl
             OnPreviewPointerWheelChanged,
             RoutingStrategies.Tunnel);
         PreviewSurface.AddHandler(
-            InputElement.ScrollGestureEvent,
+            Gestures.ScrollGestureEvent,
             OnPreviewScrollGesture,
             RoutingStrategies.Bubble);
     }
