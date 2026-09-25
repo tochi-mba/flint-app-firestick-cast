@@ -14,9 +14,10 @@
 # The JDK every module compiles against. The workflows install this same version by hand, and that
 # copy is the only one outside this file.
 jdk = "17"
-agp = "9.3.0"
-kotlin = "2.4.10"
+agp = "9.4.1"
+kotlin = "2.4.20"
 jacoco = "0.8.14"
+# ktlint 1.8 introduces a repository-wide formatting migration; keep it separate from runtime updates.
 ktlint = "1.7.1"
 
 # Android platform
@@ -29,6 +30,7 @@ mobile-min-sdk = "26"
 receiver-min-sdk = "25"
 
 # AndroidX
+# Core 1.19 and Compose BOM 2026.09 require a verified compileSdk 37 upgrade first.
 androidx-core = "1.16.0"
 androidx-activity-compose = "1.13.0"
 # A floor rather than the resolved version: activity-compose already brings lifecycle in, and naming
@@ -41,18 +43,18 @@ androidx-savedstate = "1.3.0"
 compose-bom = "2026.05.00"
 androidx-tv-material = "1.1.0"
 androidx-webkit = "1.12.1"
-media3 = "1.10.1"
+media3 = "1.11.1"
 
 # Third party
 coroutines = "1.11.0"
-zxing = "3.5.3"
-bouncycastle = "1.81"
+zxing = "3.5.4"
+bouncycastle = "1.86"
 wireguard = "1.0.20260102"
 desugar = "2.1.5"
 
 # Test
 junit = "4.13.2"
-robolectric = "4.16.1"
+robolectric = "4.17"
 androidx-test-core = "1.7.0"
 androidx-test-ext-junit = "1.3.0"
 androidx-test-runner = "1.7.0"
