@@ -21,6 +21,12 @@
          exist yet here. -->
     <!-- Referenced projects' and packages' documentation stays out of the output too. -->
     <AllowedReferenceRelatedFileExtensions>.pdb</AllowedReferenceRelatedFileExtensions>
+    <!-- And a published project's own. The SDK copies that one to the output and the publish folder
+         wherever it was generated, which put Flint.App.xml and flint.xml in the first package built
+         with the file redirected. -->
+    <CopyDocumentationFileToOutputDirectory>false</CopyDocumentationFileToOutputDirectory>
+    <PublishDocumentationFile>false</PublishDocumentationFile>
+    <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
