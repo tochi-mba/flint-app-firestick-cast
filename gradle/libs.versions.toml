@@ -30,7 +30,7 @@ mobile-min-sdk = "26"
 receiver-min-sdk = "25"
 
 # AndroidX
-# Core 1.19 and Compose BOM 2026.09 require SDK 37, unavailable in the current SDK feed.
+# Core 1.19 and Compose BOM 2026.09 require a verified compileSdk 37 upgrade first.
 androidx-core = "1.16.0"
 androidx-activity-compose = "1.13.0"
 # A floor rather than the resolved version: activity-compose already brings lifecycle in, and naming
