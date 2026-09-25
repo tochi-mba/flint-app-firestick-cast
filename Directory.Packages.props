@@ -36,8 +36,7 @@
 
   <ItemGroup Label="Tests">
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.22" />
-    <!-- 10.0.1 is not discovered by the current VSTest coverage command; retain verified reports. -->
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
     <PackageVersion Include="FlaUI.UIA3" Version="5.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
