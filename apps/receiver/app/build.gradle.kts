@@ -46,6 +46,13 @@ android {
         // The WireGuard tunnel uses newer JDK APIs; its embedding notes require desugaring.
         isCoreLibraryDesugaringEnabled = true
     }
+
+    packaging {
+        resources {
+            // Bouncy Castle's three jars carry this resource; preserve their license text in the APK.
+            merges += "META-INF/LICENSE.md"
+        }
+    }
 }
 
 dependencies {
