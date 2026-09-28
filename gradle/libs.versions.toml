@@ -18,7 +18,7 @@ agp = "9.4.1"
 kotlin = "2.4.20"
 jacoco = "0.8.14"
 # ktlint 1.8 introduces a repository-wide formatting migration; keep it separate from runtime updates.
-ktlint = "1.7.1"
+ktlint = "1.8.0"
 
 # Android platform
 compile-sdk = "36"
