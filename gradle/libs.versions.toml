@@ -31,7 +31,7 @@ receiver-min-sdk = "25"
 
 # AndroidX
 # Core 1.19 and Compose BOM 2026.09 require a verified compileSdk 37 upgrade first.
-androidx-core = "1.16.0"
+androidx-core = "1.19.1"
 androidx-activity-compose = "1.13.0"
 # A floor rather than the resolved version: activity-compose already brings lifecycle in, and naming
 # it here is about the phone app using it directly rather than by accident through somebody else's
@@ -40,7 +40,7 @@ androidx-lifecycle = "2.8.0"
 # 1.3 is where savedstate-ktx became an empty shim and setViewTreeSavedStateRegistryOwner moved into
 # the main artifact, which is the function the second screen's Presentation needs.
 androidx-savedstate = "1.3.0"
-compose-bom = "2026.05.00"
+compose-bom = "2026.09.00"
 androidx-tv-material = "1.1.0"
 androidx-webkit = "1.12.1"
 media3 = "1.11.1"
