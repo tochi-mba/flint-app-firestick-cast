@@ -8,9 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Avalonia 12 headless tests use the same xUnit v3 runner as the other suites. -->
+    <!-- Avalonia 12.1.3's headless adapter is compiled against the xUnit v3 3.2.2 API. -->
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="xunit.v3.mtp-off" />
+    <PackageReference Include="xunit.v3.mtp-off" VersionOverride="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Avalonia.Headless.XUnit" />
     <PackageReference Include="Shouldly" />
