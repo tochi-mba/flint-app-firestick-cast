@@ -201,7 +201,9 @@ private fun ReceiverPrimaryCard(
 ) {
     when (state.idleExperience()) {
         IdleExperience.READY -> PairingCard(state, onRefreshCode, onBrowse, modifier)
+
         IdleExperience.CONNECTED -> ConnectedCard(state, onBrowse, onRefreshCode, modifier)
+
         IdleExperience.STARTING -> StatusCard(
             eyebrow = "NETWORK CHECK",
             title = "Finding this TV's address",

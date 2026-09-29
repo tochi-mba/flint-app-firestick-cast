@@ -348,16 +348,21 @@ object ReceiverSetup {
             updateAvailable ->
                 "Version ${installedVersion ?: "unknown"} is installed. " +
                     "This phone carries ${bundled.versionName} (${bundled.versionCode}), so it can update the TV in place."
+
             newerInstalled ->
                 "Version ${installedVersion ?: "unknown"} is installed. It is newer than the " +
                     "${bundled.versionName} (${bundled.versionCode}) package carried by this phone, so Flint will not downgrade it."
+
             samePackage && installed.versionCode == bundled.versionCode ->
                 "Version ${installedVersion ?: bundled.versionName} is installed and matches this phone."
+
             installed != null && bundled != null && installed.packageName != bundled.packageName ->
                 "${installed.packageName} ${installedVersion ?: "(version unknown)"} is installed. " +
                     "This phone carries ${bundled.packageName}, which is a different package, so it cannot replace it as an update."
+
             installed != null ->
                 "${installed.packageName} ${installedVersion ?: "(version unknown)"} is installed."
+
             else ->
                 "The receiver is installed and answering, but the TV did not report enough version information to compare builds."
         }
