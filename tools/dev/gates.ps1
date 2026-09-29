@@ -199,8 +199,47 @@ function Invoke-WindowsArea([string]$Verb) {
         'check' {
             Invoke-Tool dotnet @('build', $solution, '--nologo')
             Invoke-Tool dotnet @('format', $solution, '--verify-no-changes', '--no-restore')
-            Invoke-Tool dotnet @('test', $solution, '--nologo', '--no-build', '--collect', 'XPlat Code Coverage', '--results-directory', 'TestResults')
+            Invoke-WindowsCheckTests
         }
+    }
+}
+
+<#
+.SYNOPSIS
+    Runs each Windows test project in its own bounded process.
+.DESCRIPTION
+    UI test hosts and ordinary unit-test hosts should not compete inside one solution-wide test
+    invocation. Running projects sequentially also makes a stuck assembly identifiable in the log.
+    The hang timeout collects diagnostics and ends the process rather than consuming CI's entire
+    job timeout. Coverage is requested only from projects that actually reference its collector.
+#>
+function Invoke-WindowsCheckTests {
+    $searchRoots = @(
+        (Join-Path $script:RepoRoot 'apps/windows/tests'),
+        (Join-Path $script:RepoRoot 'protocol/dotnet')
+    )
+    $projects = @(
+        Get-ChildItem -LiteralPath $searchRoots -Filter '*.csproj' -File -Recurse |
+            Where-Object { Select-String -LiteralPath $_.FullName -SimpleMatch '<IsTestProject>true</IsTestProject>' -Quiet } |
+            Sort-Object FullName
+    )
+    if ($projects.Count -eq 0) { throw 'No Windows test projects were found.' }
+
+    foreach ($project in $projects) {
+        $arguments = @(
+            'test',
+            $project.FullName,
+            '--nologo',
+            '--no-build',
+            '--blame-hang-timeout',
+            '5m',
+            '--results-directory',
+            (Join-Path $script:RepoRoot 'TestResults')
+        )
+        if (Select-String -LiteralPath $project.FullName -SimpleMatch 'Include="coverlet.collector"' -Quiet) {
+            $arguments += @('--collect', 'XPlat Code Coverage')
+        }
+        Invoke-Tool dotnet $arguments
     }
 }
 
