@@ -8,6 +8,7 @@ import com.rextechnologies.flint.castcore.capability.ReceiverPlatform
 import com.rextechnologies.flint.castcore.setup.BundledReceiver
 import com.rextechnologies.flint.castcore.setup.InstallEvent
 import com.rextechnologies.flint.castcore.setup.InstallFlow
+import com.rextechnologies.flint.castcore.setup.InstalledReceiver
 import com.rextechnologies.flint.castcore.setup.ReceiverInstallStage
 import com.rextechnologies.flint.mobile.net.AdbAnswer
 import com.rextechnologies.flint.mobile.net.ReceiverInstaller
@@ -26,11 +27,14 @@ data class ReceiverSetupState(
     val stage: ReceiverInstallStage = ReceiverInstallStage.Unknown,
     /** The television [stage] is about, or `null` before any has been asked. */
     val address: String? = null,
-    /** The receiver package the television listed when last asked, or `null`. */
-    val installedPackage: String? = null,
+    /** The receiver package and version the television reported when last asked, or `null`. */
+    val installed: InstalledReceiver? = null,
     /** Whether the phone is talking to the television right now. One conversation at a time. */
     val busy: Boolean = false,
 )
+
+val ReceiverSetupState.installedPackage: String?
+    get() = installed?.packageName
 
 /** What one look at a television produced: the device as it is now known, and the raw answer. */
 data class Identification(val device: ReceiverDevice, val answer: AdbAnswer)
@@ -93,7 +97,7 @@ class ReceiverSetupCoordinator(
             val answer = installer.identify(network, device.address, device.adbPort, packagesToAskFor())
             val updated = device.updatedBy(answer)
             reduce(eventFor(answer))
-            if (answer is AdbAnswer.Identified) mutable.update { it.copy(installedPackage = answer.installedPackage) }
+            if (answer is AdbAnswer.Identified) mutable.update { it.copy(installed = answer.installedReceiver) }
             return Identification(updated, answer)
         } finally {
             end()
@@ -115,7 +119,15 @@ class ReceiverSetupCoordinator(
             if (event ==
                 InstallEvent.InstallSucceeded
             ) {
-                mutable.update { it.copy(installedPackage = bundled.packageName) }
+                mutable.update {
+                    it.copy(
+                        installed = InstalledReceiver(
+                            bundled.packageName,
+                            bundled.versionName,
+                            bundled.versionCode,
+                        ),
+                    )
+                }
             }
             return reduce(event)
         } finally {
@@ -132,7 +144,7 @@ class ReceiverSetupCoordinator(
         if (!begin(device)) return InstallEvent.RemoveFailed(BUSY)
         try {
             val event = installer.remove(network, device.address, device.adbPort, packageName)
-            if (event == InstallEvent.RemoveSucceeded) mutable.update { it.copy(installedPackage = null) }
+            if (event == InstallEvent.RemoveSucceeded) mutable.update { it.copy(installed = null) }
             return reduce(event)
         } finally {
             end()
@@ -148,8 +160,8 @@ class ReceiverSetupCoordinator(
             // A different television is a different question. What was known about the last one
             // is not evidence about this one.
             val stage = if (current.address == device.address) current.stage else ReceiverInstallStage.Unknown
-            val installed = if (current.address == device.address) current.installedPackage else null
-            current.copy(busy = true, address = device.address, stage = stage, installedPackage = installed)
+            val installed = if (current.address == device.address) current.installed else null
+            current.copy(busy = true, address = device.address, stage = stage, installed = installed)
         }
         return claimed
     }

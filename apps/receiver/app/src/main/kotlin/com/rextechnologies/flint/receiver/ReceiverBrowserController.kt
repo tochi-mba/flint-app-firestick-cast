@@ -607,6 +607,8 @@ class ReceiverBrowserController(
         hostBridge.bindPreviewPublisher(null)
     }
 
+    fun disconnectHostSession(): Boolean = server?.disconnectActiveSession() == true
+
     /**
      * Tells the viewer about something the browser refused to do.
      *

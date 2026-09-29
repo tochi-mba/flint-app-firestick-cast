@@ -85,6 +85,8 @@ class AdbClientTest {
         assertEquals(30, identified.apiLevel)
         assertEquals(ReceiverPlatform.FIRE_OS_8, identified.platform)
         assertEquals(BundledReceiver.DEBUG_PACKAGE, identified.installedPackage)
+        assertEquals("0.7.0", identified.installedVersionName)
+        assertEquals(7, identified.installedVersionCode)
         assertTrue(identified.receiverInstalled)
         assertTrue(device.commands.any { it == "shell:getprop ro.build.version.sdk" }, device.commands.toString())
     }
@@ -287,6 +289,9 @@ class AdbClientTest {
 
             destination.startsWith("shell:pm list packages") ->
                 packages.joinToString("") { "package:$it\n" }
+
+            destination.startsWith("shell:dumpsys package ") ->
+                "  versionCode=7 minSdk=21 targetSdk=35\n  versionName=0.7.0\n"
 
             destination.startsWith("shell:pm uninstall ") -> {
                 if (uninstallReply.startsWith("Success")) packages -= destination.removePrefix("shell:pm uninstall ")

@@ -99,6 +99,8 @@ class ReceiverSetupCoordinatorTest {
                 30,
                 ReceiverPlatform.FIRE_OS_8,
                 BundledReceiver.DEBUG_PACKAGE,
+                "0.2.0",
+                2,
             ),
         )
         val coordinator = coordinator(installer)
@@ -119,6 +121,8 @@ class ReceiverSetupCoordinatorTest {
         assertEquals(ReceiverInstallStage.Installed, state.stage)
         assertEquals(stick.address, state.address)
         assertEquals(BundledReceiver.DEBUG_PACKAGE, state.installedPackage)
+        assertEquals("0.2.0", state.installed?.versionName)
+        assertEquals(2, state.installed?.versionCode)
         assertTrue(!state.busy)
     }
 
@@ -169,6 +173,8 @@ class ReceiverSetupCoordinatorTest {
         assertEquals(BundledReceiver.DEBUG_PACKAGE, name)
         assertEquals(ReceiverInstallStage.Installed, coordinator.state.value.stage)
         assertEquals(BundledReceiver.DEBUG_PACKAGE, coordinator.state.value.installedPackage)
+        assertEquals(bundle.versionName, coordinator.state.value.installed?.versionName)
+        assertEquals(bundle.versionCode, coordinator.state.value.installed?.versionCode)
     }
 
     @Test

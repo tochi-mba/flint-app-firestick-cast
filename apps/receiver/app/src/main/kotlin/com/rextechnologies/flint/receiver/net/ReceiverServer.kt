@@ -86,7 +86,7 @@ class ReceiverServer(
     private val listener: ReceiverSessionListener,
     requestedPort: Int = DEFAULT_PORT,
     private val pairingCodeProvider: () -> PairingCode,
-    private val sessionToken: SessionToken = SessionToken.generate(),
+    sessionToken: SessionToken = SessionToken.generate(),
     private val displayMetrics: () -> Triple<Int, Int, Int> = { Triple(1920, 1080, 320) },
     private val browserPortProvider: () -> Int = { 0 },
 ) : Closeable {
@@ -95,6 +95,11 @@ class ReceiverServer(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val activeSessions = AtomicInteger(0)
+    private val clientsLock = Any()
+    private val clients = mutableSetOf<Socket>()
+
+    @Volatile
+    private var sessionToken = sessionToken
     private var server: ServerSocket? = null
 
     @Volatile
@@ -129,7 +134,15 @@ class ReceiverServer(
                 // television's listener ending. This launch is a child of the accept loop, so
                 // anything thrown here used to cancel the loop and leave the TV unreachable
                 // until the service restarted.
-                launch { runCatching { serve(client) } }
+                synchronized(clientsLock) { clients.add(client) }
+                launch {
+                    try {
+                        runCatching { serve(client) }
+                    } finally {
+                        synchronized(clientsLock) { clients.remove(client) }
+                        runCatching { client.close() }
+                    }
+                }
             }
         }
         Unit
@@ -180,6 +193,8 @@ class ReceiverServer(
             try {
                 while (true) {
                     val frame = WireCodec.readFrom(input) ?: break
+                    // Closing the socket does not discard bytes already in BufferedInputStream.
+                    if (socket.isClosed) break
                     if (!established) {
                         when (val outcome = handshake.onMessage(frame.message)) {
                             is HandshakeOutcome.Continue -> frames.send(outcome.reply)
@@ -232,6 +247,15 @@ class ReceiverServer(
                 }
             }
         }
+    }
+
+    /** Revokes remembered cast access and ends the controller, leaving the listener ready to pair. */
+    fun revokeControllerAccess(): Boolean = synchronized(clientsLock) {
+        sessionToken = SessionToken.generate()
+        // Pending HELLO/AUTH handshakes captured the previous token and pairing code too.
+        val hadClients = clients.any { !it.isClosed }
+        clients.forEach { runCatching { it.close() } }
+        hadClients
     }
 
     /** Returns false when the session should end. */
@@ -293,6 +317,7 @@ class ReceiverServer(
     override fun close() {
         runCatching { server?.close() }
         server = null
+        revokeControllerAccess()
         sender = null
         scope.cancel()
     }

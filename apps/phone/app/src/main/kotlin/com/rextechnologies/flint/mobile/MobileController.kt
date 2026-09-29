@@ -197,7 +197,7 @@ class MobileController(
             // a device nothing has asked.
             installStage = receiverSetup.stage.takeIf { receiverSetup.address == discovered.selected?.address }
                 ?: ReceiverInstallStage.Unknown,
-            installedReceiverPackage = receiverSetup.installedPackage
+            installedReceiver = receiverSetup.installed
                 .takeIf { receiverSetup.address == discovered.selected?.address },
             setupBusy = receiverSetup.busy,
             notice = nav.notice,

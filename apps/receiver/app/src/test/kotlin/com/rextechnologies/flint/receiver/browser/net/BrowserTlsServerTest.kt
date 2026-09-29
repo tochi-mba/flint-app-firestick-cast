@@ -65,6 +65,17 @@ class BrowserTlsServerTest {
     private val endedSessions = CopyOnWriteArrayList<Long>()
     private val ended = AtomicReference<CountDownLatch>()
 
+    @Test
+    fun `the TV can disconnect the authenticated browser controller without stopping the listener`() {
+        openSession().use {
+            assertTrue(waitUntil { authenticated.isNotEmpty() })
+            assertTrue(server.disconnectActiveSession())
+            assertTrue(ended.get().await(2, TimeUnit.SECONDS))
+            assertTrue(server.listening.value)
+            assertTrue(!server.disconnectActiveSession())
+        }
+    }
+
     @Before
     fun setUp() {
         val identity = InMemoryReceiverIdentityProvider().obtain("browser-tls-test")

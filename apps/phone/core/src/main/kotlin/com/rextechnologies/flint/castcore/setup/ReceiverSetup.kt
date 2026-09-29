@@ -92,6 +92,19 @@ data class BundledReceiver(
     }
 }
 
+/** The receiver package the television itself reported. Missing version fields stay unknown. */
+data class InstalledReceiver(
+    val packageName: String,
+    val versionName: String? = null,
+    val versionCode: Long? = null,
+) {
+    init {
+        require(packageName.isNotBlank())
+        require(versionName == null || versionName.isNotBlank())
+        require(versionCode == null || versionCode >= 0)
+    }
+}
+
 /**
  * What the receiver-setup screen says and offers.
  *
@@ -130,6 +143,7 @@ data class ReceiverSetupPlan(
 /** Builds the setup screen's contents from what is actually known. */
 object ReceiverSetup {
     const val INSTALL_ACTION: String = "Install on this TV"
+    const val UPDATE_ACTION: String = "Update on this TV"
     const val REMOVE_ACTION: String = "Remove from this TV"
     const val RETRY_ACTION: String = "Try again"
     const val IDENTIFY_ACTION: String = "Identify this TV"
@@ -188,6 +202,7 @@ object ReceiverSetup {
         stage: ReceiverInstallStage,
         bundled: BundledReceiver?,
         deviceName: String,
+        installed: InstalledReceiver? = null,
     ): ReceiverSetupPlan {
         if (platform == ReceiverPlatform.VEGA) {
             return ReceiverSetupPlan(
@@ -260,15 +275,7 @@ object ReceiverSetup {
                     "and the TV may go dark while it happens.",
             )
 
-            ReceiverInstallStage.Installed -> ReceiverSetupPlan(
-                stage = stage,
-                headline = "Flint is installed on $deviceName",
-                body = bundled?.let { installedBody(it) }
-                    ?: "The receiver is installed and answering.",
-                disclosure = bundled?.let { disclosureFor(it) }.orEmpty(),
-                removeAction = REMOVE_ACTION,
-                identifyAction = RECHECK_ACTION,
-            )
+            ReceiverInstallStage.Installed -> installed(installed, bundled, deviceName)
 
             is ReceiverInstallStage.Failed -> ReceiverSetupPlan(
                 stage = stage,
@@ -323,15 +330,56 @@ object ReceiverSetup {
         )
     }
 
-    private fun installedBody(bundled: BundledReceiver): String = buildString {
-        append("Version ${bundled.versionName} is installed.")
-        if (bundled.isDebugPackage) {
-            append(
-                " It is the debug build, whose package name ends in .debug — that is what the phone " +
-                    "is able to install, because a TV refuses an unsigned package and the release " +
-                    "signing key is not inside this app.",
-            )
+    private fun installed(
+        installed: InstalledReceiver?,
+        bundled: BundledReceiver?,
+        deviceName: String,
+    ): ReceiverSetupPlan {
+        val installedVersion = installed?.versionName?.let { name ->
+            installed.versionCode?.let { "$name ($it)" } ?: name
+        } ?: installed?.versionCode?.let { "build $it" }
+        val samePackage = installed != null && bundled != null && installed.packageName == bundled.packageName
+        val updateAvailable = samePackage && installed.versionCode != null &&
+            installed.versionCode < bundled.versionCode
+        val newerInstalled = samePackage && installed.versionCode != null &&
+            installed.versionCode > bundled.versionCode
+
+        val status = when {
+            updateAvailable ->
+                "Version ${installedVersion ?: "unknown"} is installed. " +
+                    "This phone carries ${bundled.versionName} (${bundled.versionCode}), so it can update the TV in place."
+            newerInstalled ->
+                "Version ${installedVersion ?: "unknown"} is installed. It is newer than the " +
+                    "${bundled.versionName} (${bundled.versionCode}) package carried by this phone, so Flint will not downgrade it."
+            samePackage && installed.versionCode == bundled.versionCode ->
+                "Version ${installedVersion ?: bundled.versionName} is installed and matches this phone."
+            installed != null && bundled != null && installed.packageName != bundled.packageName ->
+                "${installed.packageName} ${installedVersion ?: "(version unknown)"} is installed. " +
+                    "This phone carries ${bundled.packageName}, which is a different package, so it cannot replace it as an update."
+            installed != null ->
+                "${installed.packageName} ${installedVersion ?: "(version unknown)"} is installed."
+            else ->
+                "The receiver is installed and answering, but the TV did not report enough version information to compare builds."
         }
+        val body = if (installed?.packageName?.endsWith(".debug") == true) {
+            "$status Its package name ends in .debug, so this is a development build."
+        } else {
+            status
+        }
+
+        return ReceiverSetupPlan(
+            stage = ReceiverInstallStage.Installed,
+            headline = if (updateAvailable) {
+                "An update is available for $deviceName"
+            } else {
+                "Flint is installed on $deviceName"
+            },
+            body = body,
+            disclosure = if (updateAvailable) disclosureFor(bundled) else emptyList(),
+            installAction = if (updateAvailable) UPDATE_ACTION else null,
+            removeAction = REMOVE_ACTION,
+            identifyAction = RECHECK_ACTION,
+        )
     }
 
     /**

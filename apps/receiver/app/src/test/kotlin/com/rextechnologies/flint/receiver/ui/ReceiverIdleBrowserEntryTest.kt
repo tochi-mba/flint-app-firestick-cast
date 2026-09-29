@@ -6,7 +6,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -56,6 +55,29 @@ class ReceiverIdleBrowserEntryTest {
         compose.waitForIdle()
 
         compose.onNodeWithTag(ReceiverTags.BROWSER_ENTRY).assertIsDisplayed().assertIsFocused()
+    }
+
+    @Test
+    fun `a connected TV can disconnect its controller and request a new code`() {
+        var refreshes = 0
+        compose.setContent {
+            ReceiverTheme {
+                ReceiverSurface(
+                    state = readyState().copy(peerName = "Living room laptop"),
+                    onRefreshCode = { refreshes += 1 },
+                )
+            }
+        }
+
+        compose.waitForIdle()
+        compose.onNodeWithTag(ReceiverTags.BROWSER_ENTRY)
+            .assertIsFocused()
+            .performKeyInput { pressKey(Key.DirectionRight) }
+        compose.onNodeWithTag(ReceiverTags.PRIMARY_ACTION)
+            .assertIsDisplayed()
+            .assertIsFocused()
+            .performKeyInput { pressKey(Key.DirectionCenter) }
+        compose.runOnIdle { assertEquals(1, refreshes) }
     }
 
     private fun readyState() = ReceiverUiState(
