@@ -59,7 +59,7 @@ impl DesktopDuplication {
             D3D11CreateDevice(
                 &adapter,
                 D3D_DRIVER_TYPE_UNKNOWN,
-                None,
+                windows::Win32::Foundation::HMODULE::default(),
                 // BGRA support is what lets the duplicated surface be shared with the video
                 // processor without an intermediate copy. Video support is what lets that
                 // processor exist at all: without it the device still exposes ID3D11VideoDevice,

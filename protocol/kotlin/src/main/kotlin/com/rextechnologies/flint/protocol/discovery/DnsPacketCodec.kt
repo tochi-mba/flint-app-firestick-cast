@@ -159,6 +159,7 @@ object DnsPacketCodec {
                 }
 
                 length and 0xc0 != 0 -> throw DnsFormatException("Unsupported DNS label encoding")
+
                 else -> {
                     if (length > 63 || position + 1 + length > packet.size) {
                         throw DnsFormatException("Invalid DNS label length")
@@ -257,7 +258,9 @@ private class DnsWriter {
         val data = DnsWriter()
         when (record) {
             is ARecord -> data.output.write(record.address.address)
+
             is PtrRecord -> data.name(record.target)
+
             is SrvRecord -> {
                 data.u16(record.priority)
                 data.u16(record.weight)

@@ -140,7 +140,9 @@ internal fun ReceiverBrowserSurface(
                             controller.onKeyDown(keyCode)
                         }
                     }
+
                     KeyEventType.KeyUp -> controller.onKeyUp(event.nativeKeyEvent.keyCode)
+
                     else -> false
                 }
             },

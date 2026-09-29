@@ -22,7 +22,7 @@ class BinaryData private constructor(private val value: ByteArray) {
     internal fun <T> withBytes(block: (ByteArray) -> T): T = block(value)
 
     override fun equals(other: Any?): Boolean =
-        this === other || other is BinaryData && value.contentEquals(other.value)
+        this === other || (other is BinaryData && value.contentEquals(other.value))
 
     override fun hashCode(): Int = value.contentHashCode()
 

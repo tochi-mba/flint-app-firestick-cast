@@ -140,15 +140,20 @@ class BrowserTvInputModel {
             KeyEvent.KEYCODE_SEARCH -> TvKeyOutcome.OpenOverlay(BrowserOverlay.OMNIBOX)
 
             KeyEvent.KEYCODE_DPAD_UP -> directionUp(state)
+
             KeyEvent.KEYCODE_DPAD_DOWN -> direction(state, CursorDirection.DOWN)
+
             KeyEvent.KEYCODE_DPAD_LEFT -> direction(state, CursorDirection.LEFT)
+
             KeyEvent.KEYCODE_DPAD_RIGHT -> direction(state, CursorDirection.RIGHT)
 
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> when {
                 // Typing wins over both interaction modes. A field has focus, the keyboard is up,
                 // and the only thing Select can sensibly mean is "done".
                 state.editingFocused -> TvKeyOutcome.CommitText
+
                 state.mode == BrowserInteractionMode.CURSOR -> TvKeyOutcome.ClickCursor
+
                 else -> TvKeyOutcome.SendKey(BrowserSemanticKey.SELECT)
             }
 
@@ -161,8 +166,11 @@ class BrowserTvInputModel {
             -> TvKeyOutcome.SendKey(BrowserSemanticKey.SELECT)
 
             KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> TvKeyOutcome.SendKey(BrowserSemanticKey.PAGE_DOWN)
+
             KeyEvent.KEYCODE_MEDIA_REWIND -> TvKeyOutcome.SendKey(BrowserSemanticKey.PAGE_UP)
+
             KeyEvent.KEYCODE_PAGE_DOWN -> TvKeyOutcome.SendKey(BrowserSemanticKey.PAGE_DOWN)
+
             KeyEvent.KEYCODE_PAGE_UP -> TvKeyOutcome.SendKey(BrowserSemanticKey.PAGE_UP)
 
             else -> TvKeyOutcome.PassThrough
@@ -184,7 +192,9 @@ class BrowserTvInputModel {
         return when (keyCode) {
             // The mode switch lives on the button people already hold while browsing the page.
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> TvKeyOutcome.ToggleMode
+
             KeyEvent.KEYCODE_BACK -> TvKeyOutcome.OpenOverlay(BrowserOverlay.TABS)
+
             else -> TvKeyOutcome.PassThrough
         }
     }
@@ -219,11 +229,15 @@ class BrowserTvInputModel {
     private fun direction(state: BrowserTvState, direction: CursorDirection): TvKeyOutcome =
         when (state.mode) {
             BrowserInteractionMode.CURSOR -> TvKeyOutcome.MoveCursor(direction)
+
             BrowserInteractionMode.FOCUS -> when (direction) {
                 CursorDirection.LEFT -> TvKeyOutcome.SendKey(BrowserSemanticKey.SHIFT_TAB)
+
                 CursorDirection.RIGHT -> TvKeyOutcome.SendKey(BrowserSemanticKey.TAB)
+
                 // Same Avalonia/host convention as edge scroll: positive Y scrolls up.
                 CursorDirection.UP -> TvKeyOutcome.ScrollPage(0, SCROLL_STEP_PIXELS)
+
                 CursorDirection.DOWN -> TvKeyOutcome.ScrollPage(0, -SCROLL_STEP_PIXELS)
             }
         }
@@ -241,6 +255,7 @@ class BrowserTvInputModel {
         KeyEvent.KEYCODE_VOLUME_MUTE,
         KeyEvent.KEYCODE_POWER,
         -> true
+
         else -> false
     }
 }

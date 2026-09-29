@@ -140,6 +140,7 @@ class BrowserCoordinator(
                 publish(pageState)
                 return BrowserCommandEffect.Rejected(BrowserCommandRejection.INVALID_IDENTIFIER)
             }
+
             is BrowserUrlResult.Accepted -> evaluated.url
         }
         val transition = commandReducer.reduce(commandState, BrowserCommand.Open(epoch, commandId, address))
@@ -157,6 +158,7 @@ class BrowserCoordinator(
                 publish(pageState)
                 return BrowserCommandEffect.Rejected(BrowserCommandRejection.INVALID_IDENTIFIER)
             }
+
             is BrowserUrlResult.Accepted -> evaluated.url
         }
         val transition = commandReducer.reduce(commandState, BrowserCommand.Navigate(epoch, commandId, address))
@@ -271,6 +273,7 @@ class BrowserCoordinator(
                     pendingNavigation = Triple(effect.epoch, effect.commandId, effect.address)
                 }
             }
+
             is BrowserCommandEffect.Navigate -> {
                 pageState = stateReducer.reduce(
                     pageState,
@@ -286,6 +289,7 @@ class BrowserCoordinator(
                     pendingNavigation = Triple(effect.epoch, effect.commandId, effect.address)
                 }
             }
+
             is BrowserCommandEffect.Close -> {
                 pageState = stateReducer.reduce(
                     pageState,
@@ -294,6 +298,7 @@ class BrowserCoordinator(
                 publish(pageState)
                 port?.close(effect.epoch, effect.commandId)
             }
+
             is BrowserCommandEffect.OpenBlank -> {
                 pendingNavigation = null
                 pageState = stateReducer.reduce(
@@ -302,7 +307,9 @@ class BrowserCoordinator(
                 )
                 publish(pageState)
             }
+
             is BrowserCommandEffect.Control -> Unit
+
             is BrowserCommandEffect.ResetBlank -> {
                 pendingNavigation = null
                 pageState = stateReducer.reduce(
@@ -311,6 +318,7 @@ class BrowserCoordinator(
                 )
                 publish(pageState)
             }
+
             else -> publish(pageState)
         }
         return effect

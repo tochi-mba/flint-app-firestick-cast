@@ -128,7 +128,9 @@ class ReceiverHandshake(
 
         val accepted = when (auth.method) {
             AuthMethod.PAIRING_CODE -> pairingCode.constantTimeMatches(presented)
+
             AuthMethod.SESSION_TOKEN -> sessionToken.constantTimeMatches(presented)
+
             AuthMethod.PUBLIC_KEY_PROOF ->
                 auth.publicKeyFingerprint in trustedFingerprints &&
                     sessionToken.constantTimeMatches(presented)

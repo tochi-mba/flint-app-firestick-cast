@@ -75,6 +75,7 @@ class BrowserWebViewDriver(
                 val url = request.url?.toString().orEmpty()
                 return when (urlPolicy.evaluate(url)) {
                     is BrowserUrlResult.Accepted -> false
+
                     is BrowserUrlResult.Rejected -> {
                         // Reported, not just refused. A blocked link previously produced no
                         // feedback whatsoever: the page simply did not move, which reads as a
@@ -413,12 +414,14 @@ class BrowserWebViewDriver(
                 gestureDownTime = now
                 now
             }
+
             BrowserPointerAction.MOVE -> {
                 if (gestureDownTime == 0L) {
                     gestureDownTime = now
                 }
                 gestureDownTime
             }
+
             BrowserPointerAction.UP, BrowserPointerAction.CANCEL -> {
                 val started = if (gestureDownTime == 0L) now else gestureDownTime
                 gestureDownTime = 0L

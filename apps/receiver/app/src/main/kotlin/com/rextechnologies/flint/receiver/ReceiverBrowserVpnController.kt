@@ -174,6 +174,7 @@ internal class ReceiverBrowserVpnController(
         if (!settingsForActiveProfile().requiresVpnBeforeBrowse) return true
         return when (val session = vpn.state.value) {
             BrowserVpnState.Connected -> true
+
             BrowserVpnState.Connecting,
             BrowserVpnState.TunnelUpUnverified,
             BrowserVpnState.NeedsConsent,
@@ -181,14 +182,17 @@ internal class ReceiverBrowserVpnController(
                 showNotice("Waiting for VPN before pages load.")
                 false
             }
+
             is BrowserVpnState.Failed -> {
                 showNotice("VPN required — pages stay blocked. ${session.message}")
                 false
             }
+
             BrowserVpnState.Unavailable -> {
                 showNotice("VPN required but unavailable on this TV — pages stay blocked.")
                 false
             }
+
             BrowserVpnState.Idle -> {
                 showNotice("VPN required — connect VPN before browsing.")
                 false

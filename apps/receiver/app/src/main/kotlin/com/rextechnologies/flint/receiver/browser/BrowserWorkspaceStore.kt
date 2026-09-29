@@ -80,6 +80,7 @@ class BrowserWorkspaceStore(
             val url = pane.page.url.trim()
             val acceptedUrl = when {
                 url.isEmpty() -> ""
+
                 else -> when (val result = urlPolicy.evaluate(url)) {
                     is BrowserUrlResult.Accepted -> result.url.canonicalUrl
                     is BrowserUrlResult.Rejected -> return null
@@ -243,12 +244,19 @@ class BrowserWorkspaceStore(
             value.forEach { character ->
                 when (character) {
                     '"' -> append("\\\"")
+
                     '\\' -> append("\\\\")
+
                     '\b' -> append("\\b")
+
                     '\u000C' -> append("\\f")
+
                     '\n' -> append("\\n")
+
                     '\r' -> append("\\r")
+
                     '\t' -> append("\\t")
+
                     else -> if (character.code < 0x20) {
                         append("\\u").append(character.code.toString(16).padStart(4, '0'))
                     } else {
@@ -305,10 +313,12 @@ class BrowserWorkspaceStore(
                     skipWhitespace()
                     when {
                         peek(',') -> index++
+
                         peek('}') -> {
                             index++
                             return out
                         }
+
                         else -> return null
                     }
                 }
@@ -329,10 +339,12 @@ class BrowserWorkspaceStore(
                     skipWhitespace()
                     when {
                         peek(',') -> index++
+
                         peek(']') -> {
                             index++
                             return out
                         }
+
                         else -> return null
                     }
                 }
@@ -346,24 +358,33 @@ class BrowserWorkspaceStore(
                 while (index < text.length) {
                     when (val character = text[index++]) {
                         '"' -> return out.toString()
+
                         '\\' -> {
                             if (index >= text.length) return null
                             when (val escaped = text[index++]) {
                                 '"', '\\', '/' -> out.append(escaped)
+
                                 'b' -> out.append('\b')
+
                                 'f' -> out.append('\u000C')
+
                                 'n' -> out.append('\n')
+
                                 'r' -> out.append('\r')
+
                                 't' -> out.append('\t')
+
                                 'u' -> {
                                     if (index + 4 > text.length) return null
                                     val hex = text.substring(index, index + 4)
                                     out.append(hex.toIntOrNull(16)?.toChar() ?: return null)
                                     index += 4
                                 }
+
                                 else -> return null
                             }
                         }
+
                         else -> {
                             if (character.code < 0x20) return null
                             out.append(character)

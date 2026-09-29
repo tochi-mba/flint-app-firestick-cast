@@ -139,16 +139,22 @@ internal fun ReceiverBrowserNetworkSheet(
 internal fun ReceiverVpnBanner(state: BrowserVpnState, requireVpn: Boolean = false) {
     val message = when (state) {
         BrowserVpnState.Idle -> return
+
         BrowserVpnState.NeedsConsent -> "VPN needs system permission — confirm on the next screen."
+
         BrowserVpnState.Connecting -> "Connecting VPN…"
+
         BrowserVpnState.TunnelUpUnverified ->
             "VPN tunnel is up; checking that traffic is actually protected…"
+
         BrowserVpnState.Connected -> "VPN connected for this browser session."
+
         is BrowserVpnState.Failed -> if (requireVpn) {
             "VPN did not connect — pages stay blocked until it does. ${state.message}"
         } else {
             "VPN did not connect — browsing uses the normal network. ${state.message}"
         }
+
         BrowserVpnState.Unavailable -> if (requireVpn) {
             "VPN unavailable on this TV — pages stay blocked."
         } else {

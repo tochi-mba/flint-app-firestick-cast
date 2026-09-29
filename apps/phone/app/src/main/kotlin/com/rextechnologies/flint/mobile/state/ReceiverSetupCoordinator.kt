@@ -177,8 +177,11 @@ class ReceiverSetupCoordinator(
                 }
 
             is AdbAnswer.Unauthorised -> InstallEvent.AuthorisationRequired
+
             is AdbAnswer.Refused -> InstallEvent.Unreachable(answer.detail)
+
             is AdbAnswer.Silent -> InstallEvent.Unreachable(answer.detail)
+
             is AdbAnswer.Failed -> InstallEvent.Unreachable(answer.detail)
         }
 
@@ -194,8 +197,11 @@ class ReceiverSetupCoordinator(
             )
 
             is AdbAnswer.Unauthorised -> copy(adbState = AdbConnectionState.UNAUTHORIZED, adbPort = answer.port)
+
             is AdbAnswer.Refused -> copy(adbState = AdbConnectionState.REFUSED)
+
             is AdbAnswer.Silent -> copy(adbState = AdbConnectionState.TIMED_OUT)
+
             is AdbAnswer.Failed -> copy(adbState = AdbConnectionState.NOT_PROBED, adbPort = answer.port)
         }
     }

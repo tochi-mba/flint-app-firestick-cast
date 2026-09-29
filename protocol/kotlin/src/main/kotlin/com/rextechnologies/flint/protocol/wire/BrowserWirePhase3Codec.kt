@@ -14,6 +14,7 @@ internal object BrowserWirePhase3Codec {
                 writer.u16(message.row)
                 writer.u8(message.mode)
             }
+
             is BrowserWorkspaceGeometryMessage -> {
                 writer.i64(message.epoch)
                 writer.i64(message.revision)
@@ -21,6 +22,7 @@ internal object BrowserWirePhase3Codec {
                 writer.u16(message.row)
                 writer.u8(message.mode)
             }
+
             is BrowserWorkspaceCommandMessage -> {
                 writer.i64(message.epoch)
                 writer.i64(message.commandId)
@@ -54,6 +56,7 @@ internal object BrowserWirePhase3Codec {
                 when (message.kind) {
                     BrowserWorkspaceInputKind.KEY ->
                         writer.u8(message.key?.id ?: unknown("browser workspace input key"))
+
                     BrowserWorkspaceInputKind.TEXT ->
                         writer.utf8U16(message.text, BrowserWireLimits.MAX_TEXT_BYTES)
                 }
@@ -77,6 +80,7 @@ internal object BrowserWirePhase3Codec {
                 reader.u16("row split"),
                 reader.u8("mode"),
             )
+
             WireMessageType.BROWSER_WORKSPACE_GEOMETRY -> BrowserWorkspaceGeometryMessage(
                 reader.i64("epoch"),
                 reader.i64("revision"),
@@ -84,6 +88,7 @@ internal object BrowserWirePhase3Codec {
                 reader.u16("row split"),
                 reader.u8("mode"),
             )
+
             WireMessageType.BROWSER_WORKSPACE_COMMAND -> BrowserWorkspaceCommandMessage(
                 epoch = reader.i64("browser workspace command epoch"),
                 commandId = reader.i64("browser workspace command ID"),
@@ -96,7 +101,9 @@ internal object BrowserWirePhase3Codec {
             )
 
             WireMessageType.BROWSER_WORKSPACE_STATE -> decodeState(reader)
+
             WireMessageType.BROWSER_WORKSPACE_INPUT -> decodeInput(reader)
+
             else -> throw WireFormatException("Unhandled phase-three browser message type: ${type.id}")
         }
         validate(message)
@@ -211,6 +218,7 @@ internal object BrowserWirePhase3Codec {
                 validateGeometry(message.epoch, message.expectedRevision, message.column, message.row, message.mode)
                 if (message.commandId <= 0) throw WireFormatException("Resize command ID must be positive")
             }
+
             is BrowserWorkspaceGeometryMessage -> validateGeometry(
                 message.epoch,
                 message.revision,
@@ -218,9 +226,13 @@ internal object BrowserWirePhase3Codec {
                 message.row,
                 message.mode,
             )
+
             is BrowserWorkspaceCommandMessage -> validate(message)
+
             is BrowserWorkspaceStateMessage -> validate(message)
+
             is BrowserWorkspaceInputMessage -> validate(message)
+
             else -> throw WireFormatException(
                 "Unhandled phase-three browser message type: ${message::class.simpleName}",
             )

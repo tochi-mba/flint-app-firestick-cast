@@ -43,10 +43,12 @@ class BrowserInputRouter(
                 val input = BrowserInput.Semantic(message.epoch, message.sequence, event.key)
                 return reduceAccepted(input)
             }
+
             is BrowserTextInput -> {
                 val input = BrowserInput.Text(message.epoch, message.sequence, event.text)
                 return reduceAccepted(input)
             }
+
             is BrowserPointerInput -> {
                 if (!state.remoteInputEnabled || state.surface != BrowserSurfaceOwner.BROWSER) {
                     return BrowserInputMapping.Rejected(BrowserInputRejection.REMOTE_INPUT_DISABLED)
@@ -74,11 +76,14 @@ class BrowserInputRouter(
                         BrowserInputMapping.Accepted(
                             BrowserNativeInput.Pointer(mapped.action, mapped.x, mapped.y, mapped.buttons),
                         ).also { accepted -> onAccepted(accepted.input) }
+
                     is PreviewMappedInput.Rejected ->
                         BrowserInputMapping.Rejected(BrowserInputRejection.INVALID_IDENTIFIER)
+
                     else -> BrowserInputMapping.Rejected(BrowserInputRejection.INVALID_IDENTIFIER)
                 }
             }
+
             is BrowserScrollInput -> {
                 if (!state.remoteInputEnabled || state.surface != BrowserSurfaceOwner.BROWSER) {
                     return BrowserInputMapping.Rejected(BrowserInputRejection.REMOTE_INPUT_DISABLED)
@@ -106,8 +111,10 @@ class BrowserInputRouter(
                         BrowserInputMapping.Accepted(
                             BrowserNativeInput.Scroll(mapped.x, mapped.y, mapped.deltaX, mapped.deltaY),
                         ).also { accepted -> onAccepted(accepted.input) }
+
                     is PreviewMappedInput.Rejected ->
                         BrowserInputMapping.Rejected(BrowserInputRejection.INVALID_IDENTIFIER)
+
                     else -> BrowserInputMapping.Rejected(BrowserInputRejection.INVALID_IDENTIFIER)
                 }
             }

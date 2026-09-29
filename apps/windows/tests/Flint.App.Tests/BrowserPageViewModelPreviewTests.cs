@@ -176,7 +176,7 @@ public sealed class BrowserPageViewModelPreviewTests
         remote.Commands.Clear();
 
         remote.PublishState(AdoptedState(BrowserPreviewState.Enabled));
-        await Task.Delay(80);
+        await Task.Delay(80, TestContext.Current.CancellationToken);
 
         remote.Commands.ShouldNotContain(command =>
             command.Action == BrowserCommandAction.SetPreviewEnabled);
@@ -193,7 +193,7 @@ public sealed class BrowserPageViewModelPreviewTests
         remote.Commands.Clear();
 
         remote.PublishState(AdoptedState(BrowserPreviewState.Disabled));
-        await Task.Delay(80);
+        await Task.Delay(80, TestContext.Current.CancellationToken);
 
         remote.Commands.ShouldNotContain(command =>
             command.Action == BrowserCommandAction.SetPreviewEnabled);
@@ -209,7 +209,7 @@ public sealed class BrowserPageViewModelPreviewTests
         remote.PublishState(AdoptedState(BrowserPreviewState.Disabled));
         await AwaitPreviewCommandAsync(remote);
         remote.PublishState(AdoptedState(BrowserPreviewState.Disabled) with { Revision = 2 });
-        await Task.Delay(80);
+        await Task.Delay(80, TestContext.Current.CancellationToken);
 
         remote.Commands.Count(command =>
                 command.Action == BrowserCommandAction.SetPreviewEnabled &&

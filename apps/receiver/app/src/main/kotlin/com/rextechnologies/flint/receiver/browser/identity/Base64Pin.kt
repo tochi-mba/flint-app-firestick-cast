@@ -61,6 +61,7 @@ internal object Base64Pin {
                 out.append(PAD)
                 out.append(PAD)
             }
+
             2 -> {
                 val chunk = (bytes[index].toInt() and 0xFF shl 16) or
                     (bytes[index + 1].toInt() and 0xFF shl 8)

@@ -238,7 +238,9 @@ class ScreenEncoder(
 
             when {
                 index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> publishConfig(active, active.outputFormat)
+
                 index < 0 -> Unit
+
                 else -> {
                     val buffer = active.getOutputBuffer(index)
                     if (buffer != null) emit(buffer)

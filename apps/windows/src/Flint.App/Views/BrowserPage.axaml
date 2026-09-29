@@ -130,7 +130,7 @@
             <TextBlock Theme="{StaticResource BodyMedium}" TextWrapping="Wrap"
                        Text="{Binding SecureReceiverInstructions}" />
             <TextBox IsVisible="{Binding ShowBrowserPortEntry}"
-                     Watermark="Browser port from TV" Text="{Binding ManualBrowserPort}"
+                     PlaceholderText="Browser port from TV" Text="{Binding ManualBrowserPort}"
                      AutomationProperties.Name="Browser port from TV"
                      AutomationProperties.HelpText="Dedicated TLS browser listener port shown on the Flint Receiver pairing screen." />
             <Button Content="{Binding SecureReceiverActionLabel}" Command="{Binding VerifySecureReceiverCommand}"
@@ -175,7 +175,7 @@
                     IsVisible="{Binding !IsLoading}" AutomationProperties.Name="Reload the TV page" />
             <Button Grid.Column="2" Content="■" Theme="{StaticResource OutlineAction}" Command="{Binding StopLoadingCommand}"
                     IsVisible="{Binding IsLoading}" AutomationProperties.Name="Stop loading" />
-            <TextBox Grid.Column="3" Watermark="Search or type a site, then Enter"
+            <TextBox Grid.Column="3" PlaceholderText="Search or type a site, then Enter"
                      Text="{Binding Address}" KeyDown="OnAddressKeyDown"
                      AutomationProperties.Name="TV address"
                      AutomationProperties.HelpText="Type a search or an https site for the Fire TV WebView. Press Enter to open." />
@@ -325,7 +325,7 @@
                   </ComboBox.ItemTemplate>
                 </ComboBox>
                 <Button Content="USE PROFILE" Theme="{StaticResource OutlineAction}" Command="{Binding UseDeviceProfileCommand}" />
-                <TextBox Text="{Binding NewDeviceProfileName}" Watermark="New profile name" MaxLength="32" MinWidth="180" />
+                <TextBox Text="{Binding NewDeviceProfileName}" PlaceholderText="New profile name" MaxLength="32" MinWidth="180" />
                 <Button Content="CREATE PROFILE" Theme="{StaticResource OutlineAction}" Command="{Binding CreateDeviceProfileCommand}" />
               </WrapPanel>
               <TextBlock Text="Each profile keeps its own tabs, workspace, bookmarks and history on this Windows device."
@@ -490,7 +490,7 @@
                 <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8"
                       DataContext="{Binding FocusedPane}">
                   <TextBox Grid.Column="0" Text="{Binding DraftAddress}"
-                           Watermark="Search or type a site for this pane"
+                           PlaceholderText="Search or type a site for this pane"
                            AutomationProperties.Name="Focused workspace pane address" />
                   <Button Grid.Column="1" Content="GO" Theme="{StaticResource SignalButton}"
                           Command="{Binding NavigateCommand}"
@@ -504,7 +504,7 @@
                 </Grid>
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                   <TextBox Grid.Column="0" Text="{Binding DraftInputText}"
-                           Watermark="Text for the TV-confirmed focused pane…"
+                           PlaceholderText="Text for the TV-confirmed focused pane…"
                            AutomationProperties.Name="Workspace pane input" />
                   <Button Grid.Column="1" Content="SEND" Theme="{StaticResource SignalButton}"
                           Command="{Binding SendTextCommand}"
@@ -555,7 +555,7 @@
           </StackPanel>
 
           <TextBox Grid.Column="2" Text="{Binding ComposedText}" VerticalAlignment="Center"
-                   Watermark="Type into the focused field on the TV…"
+                   PlaceholderText="Type into the focused field on the TV…"
                    AutomationProperties.Name="Text to send to the TV"
                    AutomationProperties.HelpText="Sent to whatever the page on the TV has focused." />
           <Button Grid.Column="3" Content="SEND" Theme="{StaticResource OutlineAction}" VerticalAlignment="Center"
@@ -591,7 +591,7 @@
                            Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
                            Text="Find, zoom and display controls need a newer receiver build." />
                 <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" IsVisible="{Binding ViewControls.IsAvailable}" ColumnSpacing="6">
-                  <TextBox Grid.Column="0" Text="{Binding FindText}" Watermark="Find…"
+                  <TextBox Grid.Column="0" Text="{Binding FindText}" PlaceholderText="Find…"
                            AutomationProperties.Name="Find text" />
                   <Button Grid.Column="1" Content="FIND" Theme="{StaticResource SignalButton}"
                           Command="{Binding ViewControls.StartFindCommand}" CommandParameter="{Binding FindText}"
@@ -678,7 +678,7 @@
                             AutomationProperties.Name="Require VPN before browsing" />
                   <TextBox AcceptsReturn="True" TextWrapping="Wrap" MinHeight="100"
                            Text="{Binding ConfigText}"
-                           Watermark="Paste WireGuard config"
+                           PlaceholderText="Paste WireGuard config"
                            IsEnabled="{Binding CanEdit}"
                            AutomationProperties.Name="WireGuard configuration" />
                   <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"

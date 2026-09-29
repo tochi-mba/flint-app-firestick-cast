@@ -43,6 +43,7 @@ class CastService : Service() {
             }
 
             ACTION_START -> startOutput(intent)
+
             else -> stopSelfSafely()
         }
         return START_NOT_STICKY
@@ -121,6 +122,7 @@ class CastService : Service() {
          */
         internal fun foregroundTypeFor(mode: OutputMode): Int = when (mode) {
             OutputMode.MIRROR -> ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+
             OutputMode.SECOND_SCREEN, OutputMode.NONE ->
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
         }

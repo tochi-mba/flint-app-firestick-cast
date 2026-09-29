@@ -391,6 +391,7 @@ object EncoderRoundTrip {
                         "pattern being drawn."
 
                 recorded.config == null -> "The encoder produced frames but never a VIDEO_CONFIG."
+
                 recorded.packets.none { it.keyFrame } ->
                     "The encoder produced ${recorded.packets.size} frames and none of them was a key frame."
 

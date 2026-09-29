@@ -107,7 +107,9 @@ internal fun ReceiverBrowserOverlayHost(
             onNetwork = { controller.openOverlay(BrowserOverlay.NETWORK) },
         )
 
-        BrowserOverlay.WORKSPACE -> Unit // The root switches surfaces; never mount two browser hosts.
+        BrowserOverlay.WORKSPACE -> Unit
+
+        // The root switches surfaces; never mount two browser hosts.
 
         BrowserOverlay.NETWORK -> NetworkOverlay(service = service, controller = controller)
 

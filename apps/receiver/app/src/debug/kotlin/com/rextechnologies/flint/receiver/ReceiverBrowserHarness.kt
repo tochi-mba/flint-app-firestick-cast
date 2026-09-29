@@ -135,12 +135,15 @@ internal fun ReceiverBrowserHarness(
     LaunchedEffect(controller.chromeVisible, controller.overlay, controller.leaveConfirmVisible) {
         when {
             controller.leaveConfirmVisible -> Unit
+
             controller.overlay != BrowserOverlay.NONE -> Unit
+
             controller.chromeVisible -> {
                 controller.chromeFocused = true
                 withFrameNanos { }
                 runCatching { chromeFocus.requestFocus() }
             }
+
             else -> {
                 controller.chromeFocused = false
                 runCatching { surfaceFocus.requestFocus() }
@@ -169,7 +172,9 @@ internal fun ReceiverBrowserHarness(
                             controller.onKeyDown(keyCode)
                         }
                     }
+
                     KeyEventType.KeyUp -> controller.onKeyUp(event.nativeKeyEvent.keyCode)
+
                     else -> false
                 }
             },
@@ -229,6 +234,7 @@ internal fun ReceiverBrowserHarness(
 
         when (controller.overlay) {
             BrowserOverlay.NONE -> Unit
+
             BrowserOverlay.OMNIBOX -> ReceiverBrowserOmnibox(
                 state = controller.keyboardState,
                 keyboard = remember { BrowserKeyboard() },
@@ -236,6 +242,7 @@ internal fun ReceiverBrowserHarness(
                 selectedSuggestion = null,
                 desktopTypingAvailable = false,
             )
+
             BrowserOverlay.FIND -> ReceiverBrowserOmnibox(
                 state = controller.keyboardState,
                 keyboard = remember { BrowserKeyboard() },
@@ -247,6 +254,7 @@ internal fun ReceiverBrowserHarness(
                 placeholder = "Type a word or phrase",
                 submitLabel = "find",
             )
+
             BrowserOverlay.MENU -> ReceiverBrowserMenuSheet(
                 view = view,
                 bookmarkCount = bookmarks.size,
@@ -268,6 +276,7 @@ internal fun ReceiverBrowserHarness(
                 onWorkspace = { controller.openOverlay(BrowserOverlay.WORKSPACE) },
                 onNetwork = { controller.openOverlay(BrowserOverlay.NETWORK) },
             )
+
             BrowserOverlay.TABS -> ReceiverBrowserTabSwitcher(
                 tabs = tabs,
                 activeId = 1L,
@@ -275,22 +284,26 @@ internal fun ReceiverBrowserHarness(
                 onClose = { controller.dismissOverlays() },
                 onNew = controller::newTab,
             )
+
             BrowserOverlay.BOOKMARKS -> ReceiverBrowserLibrarySheet(
                 title = "Bookmarks · ${profiles.activeName}",
                 entries = bookmarks,
                 onOpen = { controller.dismissOverlays() },
                 onRemove = {},
             )
+
             BrowserOverlay.HISTORY -> ReceiverBrowserLibrarySheet(
                 title = "History · ${profiles.activeName}",
                 entries = history,
                 onOpen = { controller.dismissOverlays() },
             )
+
             BrowserOverlay.CLEAR_DATA -> ReceiverBrowserClearDataPrompt(
                 profiles = profiles,
                 onCancel = { controller.openOverlay(BrowserOverlay.MENU) },
                 onClear = { controller.dismissOverlays() },
             )
+
             BrowserOverlay.PROFILES -> ReceiverBrowserProfilesSheet(
                 profiles = profiles,
                 onSelectTv = { controller.dismissOverlays() },
@@ -299,12 +312,14 @@ internal fun ReceiverBrowserHarness(
                 onRename = {},
                 onDelete = {},
             )
+
             BrowserOverlay.WORKSPACE -> Text(
                 text = "BROWSER WORKSPACE",
                 style = ReceiverType.Body,
                 color = ReceiverColors.Text,
                 modifier = Modifier.testTag(ReceiverTags.BROWSER_WORKSPACE),
             )
+
             BrowserOverlay.NETWORK -> ReceiverBrowserNetworkSheet(
                 settings = ProfileNetworkSettings(),
                 capability = VpnCapability(preparable = false, reason = "Harness"),
@@ -316,6 +331,7 @@ internal fun ReceiverBrowserHarness(
                 onClear = {},
                 onClose = { controller.openOverlay(BrowserOverlay.MENU) },
             )
+
             BrowserOverlay.PROFILE_NAME,
             BrowserOverlay.PROFILE_DELETE,
             -> Unit
@@ -333,39 +349,49 @@ internal fun ReceiverBrowserHarness(
 private fun applyHarnessStart(surface: BrowserSurfaceController, start: BrowserHarnessStart) {
     when (start) {
         BrowserHarnessStart.PAGE -> Unit
+
         BrowserHarnessStart.CHROME -> {
             surface.showChrome()
             surface.chromeFocused = true
         }
+
         BrowserHarnessStart.MENU -> {
             surface.showChrome()
             surface.openOverlay(BrowserOverlay.MENU)
         }
+
         BrowserHarnessStart.TABS -> {
             surface.showChrome()
             surface.openOverlay(BrowserOverlay.TABS)
         }
+
         BrowserHarnessStart.LEAVE -> surface.showLeaveConfirm()
+
         BrowserHarnessStart.OMNIBOX -> {
             surface.showChrome()
             surface.openOverlay(BrowserOverlay.OMNIBOX)
         }
+
         BrowserHarnessStart.FIND -> {
             surface.showChrome()
             surface.openOverlay(BrowserOverlay.FIND)
         }
+
         BrowserHarnessStart.BOOKMARKS -> {
             surface.showChrome()
             surface.openOverlay(BrowserOverlay.BOOKMARKS)
         }
+
         BrowserHarnessStart.HISTORY -> {
             surface.showChrome()
             surface.openOverlay(BrowserOverlay.HISTORY)
         }
+
         BrowserHarnessStart.CLEAR_DATA -> {
             surface.showChrome()
             surface.openOverlay(BrowserOverlay.CLEAR_DATA)
         }
+
         BrowserHarnessStart.PROFILES -> {
             surface.showChrome()
             surface.openOverlay(BrowserOverlay.PROFILES)

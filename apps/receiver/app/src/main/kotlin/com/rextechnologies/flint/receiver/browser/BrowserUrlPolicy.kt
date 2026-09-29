@@ -186,7 +186,9 @@ class BrowserUrlPolicy(
                     }
                     index += 2
                 }
+
                 Character.isLowSurrogate(value[index]) -> return true
+
                 else -> index += 1
             }
         }

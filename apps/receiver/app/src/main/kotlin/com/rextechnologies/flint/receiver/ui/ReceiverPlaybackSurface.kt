@@ -66,8 +66,10 @@ internal fun ReceiverPlaybackSurface(
                 instruction = "Press BACK to close playback",
                 tag = ReceiverTags.PLAYBACK_ERROR,
             )
+
             state.playbackState == PlaybackState.BUFFERING || state.playbackState == PlaybackState.IDLE ->
                 PlaybackLoadingOverlay(state)
+
             else -> PlaybackHud(state, hudAutoHideMillis, onTogglePlayPause, onClose)
         }
     }

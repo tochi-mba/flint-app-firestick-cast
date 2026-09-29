@@ -191,8 +191,8 @@ public sealed class BrowserLibraryProfileViewModelTests
             "https://visited.example/page", "Visited", 100, false, false, 1920, 1080,
             BrowserPreviewState.Disabled);
 
-        await viewModel.ObservePageAsync(state);
-        await viewModel.ObservePageAsync(state with { Revision = 4 });
+        await viewModel.ObservePageAsync(state, TestContext.Current.CancellationToken);
+        await viewModel.ObservePageAsync(state with { Revision = 4 }, TestContext.Current.CancellationToken);
 
         store.Snapshot(DeviceProfile).History.ShouldHaveSingleItem();
         remote.DeviceLibrarySnapshots.Last().Entries.Count(item => item.Kind == BrowserLibraryItemKind.History)

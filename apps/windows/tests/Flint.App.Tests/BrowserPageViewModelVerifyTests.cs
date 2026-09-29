@@ -64,8 +64,7 @@ public sealed class BrowserPageViewModelVerifyTests
         var trust = new InMemoryBrowserTrustStore();
         var endpoint = BrowserEndpointResolver.TryResolve(shell.Cast.Report!.Device!, null)!;
         var identity = BrowserFixtures.Identity(endpoint);
-        await trust.SaveAsync(
-            new BrowserTrustedReceiver(endpoint.ReceiverIdentity, identity.Fingerprint, DateTimeOffset.UtcNow));
+        await trust.SaveAsync(new BrowserTrustedReceiver(endpoint.ReceiverIdentity, identity.Fingerprint, DateTimeOffset.UtcNow), TestContext.Current.CancellationToken);
 
         var connector = new RecordingBrowserSessionConnector(new RecordingBrowserRemote());
         using var browser = new BrowserPageViewModel(shell.Cast, connector, trust);

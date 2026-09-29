@@ -58,7 +58,9 @@ object BrowserTextPolicy {
                     if (index + 1 == value.length || !Character.isLowSurrogate(value[index + 1])) return true
                     index += 2
                 }
+
                 Character.isLowSurrogate(value[index]) -> return true
+
                 else -> index += 1
             }
         }
@@ -190,10 +192,12 @@ class BrowserInputMapper {
                 shift = input.key == BrowserSemanticKey.SHIFT_TAB,
             ),
         )
+
         is BrowserInput.Text -> when (val validation = BrowserTextPolicy.validate(input.text)) {
             is BrowserTextValidation.Accepted -> BrowserInputMapping.Accepted(
                 BrowserNativeInput.ComposedText(validation.text),
             )
+
             is BrowserTextValidation.Rejected -> BrowserInputMapping.Rejected(BrowserInputRejection.INVALID_TEXT)
         }
     }
@@ -233,11 +237,16 @@ class BrowserInputReducer(
         input: BrowserInput,
     ): BrowserInputRejection? = when {
         input.epoch <= 0 || input.sequence <= 0 -> BrowserInputRejection.INVALID_IDENTIFIER
+
         state.surface != BrowserSurfaceOwner.BROWSER -> BrowserInputRejection.BROWSER_SURFACE_INACTIVE
+
         !state.remoteInputEnabled -> BrowserInputRejection.REMOTE_INPUT_DISABLED
+
         input.epoch != state.epoch -> BrowserInputRejection.STALE_EPOCH
+
         state.lastSequence == Long.MAX_VALUE || input.sequence != state.lastSequence + 1 ->
             BrowserInputRejection.STALE_SEQUENCE
+
         else -> null
     }
 }

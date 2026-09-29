@@ -431,30 +431,37 @@ internal class BrowserSurfaceController(
             showChrome()
             true
         }
+
         TvKeyOutcome.HideChrome -> {
             hideChrome()
             true
         }
+
         is TvKeyOutcome.OpenOverlay -> {
             openOverlay(outcome.overlay)
             true
         }
+
         TvKeyOutcome.CloseOverlay -> {
             closeOverlay()
             true
         }
+
         TvKeyOutcome.ExitFullscreen -> {
             actions.exitFullscreen()
             true
         }
+
         TvKeyOutcome.DismissNotice -> {
             actions.dismissNotice()
             true
         }
+
         TvKeyOutcome.CancelDialog -> {
             actions.cancelDialog()
             true
         }
+
         TvKeyOutcome.GoBack -> {
             actions.goBack()
             true
@@ -469,11 +476,13 @@ internal class BrowserSurfaceController(
             leaveConfirmVisible = true
             true
         }
+
         TvKeyOutcome.CloseBrowser -> {
             leaveConfirmVisible = false
             actions.closeBrowser()
             true
         }
+
         TvKeyOutcome.PassThrough -> false
     }
 
@@ -535,11 +544,13 @@ internal class BrowserSurfaceController(
                 hideChrome()
                 actions.navigate(resolved.url)
             }
+
             is ResolvedQuery.Search -> {
                 closeOverlay()
                 hideChrome()
                 actions.navigate(resolved.url)
             }
+
             ResolvedQuery.Empty -> closeOverlay()
         }
     }

@@ -14,7 +14,7 @@ public sealed class UpdatesViewModelTests
         var source = new FakeUpdateSource { IsInstalled = false, NewVersion = "0.2.0" };
         var updates = new UpdatesViewModel(source, new FakePreference());
 
-        await updates.CheckAsync();
+        await updates.CheckAsync(TestContext.Current.CancellationToken);
 
         updates.Status.ShouldContain("portable");
         updates.CanCheck.ShouldBeFalse();
@@ -27,7 +27,7 @@ public sealed class UpdatesViewModelTests
         var source = new FakeUpdateSource { IsInstalled = true, NewVersion = null };
         var updates = new UpdatesViewModel(source, new FakePreference());
 
-        await updates.CheckAsync();
+        await updates.CheckAsync(TestContext.Current.CancellationToken);
 
         updates.Status.ShouldBe("Flint is up to date.");
         updates.ReadyVersion.ShouldBeNull();
@@ -40,7 +40,7 @@ public sealed class UpdatesViewModelTests
         var source = new FakeUpdateSource { IsInstalled = true, NewVersion = "0.2.0" };
         var updates = new UpdatesViewModel(source, new FakePreference());
 
-        await updates.CheckAsync();
+        await updates.CheckAsync(TestContext.Current.CancellationToken);
 
         updates.ReadyVersion.ShouldBe("0.2.0");
         updates.DownloadedPercent.ShouldBe(100);
@@ -55,7 +55,7 @@ public sealed class UpdatesViewModelTests
         var source = new FakeUpdateSource { IsInstalled = true, NewVersion = "0.2.0" };
         var updates = new UpdatesViewModel(source, new FakePreference(), () => live);
 
-        await updates.CheckAsync();
+        await updates.CheckAsync(TestContext.Current.CancellationToken);
 
         updates.CanRestart.ShouldBeFalse();
         updates.Status.ShouldContain("after this session");
@@ -77,7 +77,7 @@ public sealed class UpdatesViewModelTests
         var source = new FakeUpdateSource { IsInstalled = true, Failure = new HttpRequestException("no route to host") };
         var updates = new UpdatesViewModel(source, new FakePreference());
 
-        await updates.CheckAsync();
+        await updates.CheckAsync(TestContext.Current.CancellationToken);
 
         updates.Status.ShouldContain("no route to host");
         updates.CanCheck.ShouldBeTrue();
@@ -90,7 +90,7 @@ public sealed class UpdatesViewModelTests
         var source = new FakeUpdateSource { IsInstalled = true, NewVersion = "0.2.0" };
         var updates = new UpdatesViewModel(source, preference);
 
-        await updates.CheckAtLaunchAsync();
+        await updates.CheckAtLaunchAsync(TestContext.Current.CancellationToken);
 
         source.Checks.ShouldBe(0);
         updates.ReadyVersion.ShouldBeNull();

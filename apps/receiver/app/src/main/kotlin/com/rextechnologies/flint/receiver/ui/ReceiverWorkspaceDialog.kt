@@ -70,7 +70,9 @@ internal fun ReceiverWorkspaceDialog(
                         direction != null ->
                             input =
                                 input.copy(cursor = keyboard.move(input.cursor, direction, input.page))
+
                         key == KeyEvent.KEYCODE_BACK -> editing = false
+
                         (key == KeyEvent.KEYCODE_DPAD_CENTER || key == KeyEvent.KEYCODE_ENTER) &&
                             event.nativeKeyEvent.repeatCount == 0 -> {
                             val selected = keyboard.keyAt(input.cursor, input.page)

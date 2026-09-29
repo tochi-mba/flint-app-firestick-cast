@@ -172,12 +172,14 @@ class CastSessionMachine(
             )
 
             is CastSessionState.AwaitingHello -> onHello(message)
+
             is CastSessionState.AwaitingAuth -> onAuth(message)
 
             // Everything past the handshake belongs to the caller: stats, playback state, and any
             // message a future receiver sends that this build does not model. Swallowing them here
             // would put the routing table in two places.
             is CastSessionState.Ready -> emptyList()
+
             is CastSessionState.Ended -> emptyList()
         }
     }

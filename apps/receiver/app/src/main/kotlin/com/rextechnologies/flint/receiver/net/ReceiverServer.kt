@@ -183,10 +183,12 @@ class ReceiverServer(
                     if (!established) {
                         when (val outcome = handshake.onMessage(frame.message)) {
                             is HandshakeOutcome.Continue -> frames.send(outcome.reply)
+
                             is HandshakeOutcome.Rejected -> {
                                 frames.send(outcome.bye)
                                 return
                             }
+
                             is HandshakeOutcome.Established -> {
                                 if (activeSessions.compareAndSet(0, 1)) {
                                     // HELLO/negative replies deliberately use the oldest supported
@@ -239,14 +241,23 @@ class ReceiverServer(
                 Log.i(TAG, "Received media command")
                 listener.onMedia(message)
             }
+
             is MediaDataMessage -> listener.onMediaData(message)
+
             is SurfaceMessage -> listener.onSurface(message)
+
             is ControlMessage -> listener.onControl(message)
+
             is VideoConfigMessage -> listener.onVideoConfig(message)
+
             is VideoPacket -> listener.onVideoPacket(message)
+
             is AudioConfigMessage -> listener.onAudioConfig(message)
+
             is AudioPacket -> listener.onAudioPacket(message)
+
             is ByeMessage -> return false
+
             // Anything else is either a future message type or traffic that
             // belongs to the phone side; ignoring it keeps old receivers usable.
             else -> Unit

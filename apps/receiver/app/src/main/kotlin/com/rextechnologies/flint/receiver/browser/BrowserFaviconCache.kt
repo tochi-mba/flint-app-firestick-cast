@@ -112,11 +112,15 @@ class BrowserFaviconCache(
     private fun validate(width: Int, height: Int, bytes: ByteArray): BrowserFaviconRejection? = when {
         width !in 1..MAX_WIDTH || height !in 1..MAX_HEIGHT ->
             BrowserFaviconRejection.INVALID_DIMENSIONS
+
         bytes.isEmpty() -> BrowserFaviconRejection.EMPTY_PAYLOAD
+
         bytes.size > MAX_PNG_BYTES -> BrowserFaviconRejection.PAYLOAD_TOO_LARGE
+
         bytes.size < PNG_SIGNATURE.size ||
             !bytes.copyOfRange(0, PNG_SIGNATURE.size).contentEquals(PNG_SIGNATURE) ->
             BrowserFaviconRejection.NOT_PNG
+
         else -> null
     }
 

@@ -264,6 +264,7 @@ class BrowserWorkspaceReducer(
             } else {
                 BrowserWorkspaceState(profile = profile)
             }
+
             is BrowserWorkspaceProfile.ConnectedDevice -> BrowserWorkspaceState(profile = profile)
         } ?: return refuse(
             state,
@@ -997,9 +998,11 @@ class BrowserWorkspaceReducer(
             is BrowserWorkspaceProfile.LocalTv -> state.snapshotForPersistence()?.let { snapshot ->
                 effects += BrowserWorkspaceEffect.PersistLocalWorkspace(profile.profileId, snapshot)
             }
+
             is BrowserWorkspaceProfile.ConnectedDevice -> {
                 effects += BrowserWorkspaceEffect.DiscardEphemeralWorkspace(profile.connectionId)
             }
+
             null -> Unit
         }
         return effects
@@ -1007,12 +1010,15 @@ class BrowserWorkspaceReducer(
 
     private fun layoutForCount(count: Int, prior: BrowserWorkspaceLayout): BrowserWorkspaceLayout = when (count) {
         0, 1 -> BrowserWorkspaceLayout.SINGLE
+
         2 -> if (prior == BrowserWorkspaceLayout.SPLIT_VERTICAL) {
             BrowserWorkspaceLayout.SPLIT_VERTICAL
         } else {
             BrowserWorkspaceLayout.SPLIT_HORIZONTAL
         }
+
         3, 4 -> BrowserWorkspaceLayout.GRID_2X2
+
         else -> error("capacity guarantees no more than four panes")
     }
 

@@ -276,7 +276,9 @@ class BrowserCommandReducer {
     ): BrowserCommandRejection? = when {
         state.surface != BrowserSurfaceOwner.BROWSER || state.activeEpoch == null ->
             BrowserCommandRejection.NO_ACTIVE_BROWSER
+
         state.activeEpoch != epoch -> BrowserCommandRejection.STALE_EPOCH
+
         else -> null
     }
 

@@ -150,8 +150,10 @@ object WireMessageCodec {
             return when {
                 message.typeId >= WireMessageType.BROWSER_WORKSPACE_COMMAND.id ->
                     BrowserWirePhase3Codec.encode(message)
+
                 message.typeId >= WireMessageType.BROWSER_TAB_COMMAND.id ->
                     BrowserWirePhase2Codec.encode(message)
+
                 else -> BrowserWireCodec.encode(message)
             }
         }
@@ -202,6 +204,7 @@ object WireMessageCodec {
             }
 
             is ControlMessage -> encodeControl(writer, message)
+
             is StatsMessage -> {
                 writer.i32(message.receiverQueueDepth)
                 writer.i64(message.decodeLatencyUs)
@@ -245,6 +248,7 @@ object WireMessageCodec {
             }
 
             is UnknownMessage -> error("Handled above")
+
             is BrowserCapabilityMessage,
             is BrowserCommandMessage,
             is BrowserInputMessage,
@@ -289,8 +293,10 @@ object WireMessageCodec {
             return when {
                 typeId >= WireMessageType.BROWSER_WORKSPACE_COMMAND.id ->
                     BrowserWirePhase3Codec.decode(type, payload)
+
                 typeId >= WireMessageType.BROWSER_TAB_COMMAND.id ->
                     BrowserWirePhase2Codec.decode(type, payload)
+
                 else -> BrowserWireCodec.decode(type, payload)
             }
         }
@@ -353,6 +359,7 @@ object WireMessageCodec {
                 )
 
                 WireMessageType.CONTROL -> decodeControl(reader)
+
                 WireMessageType.STATS -> StatsMessage(
                     receiverQueueDepth = reader.i32("receiver queue depth"),
                     decodeLatencyUs = reader.i64("decode latency"),
@@ -448,6 +455,7 @@ object WireMessageCodec {
             }
 
             is TextControl -> writer.utf8I32(event.text, MAX_TEXT_CONTROL_BYTES)
+
             is VolumeControl -> writer.f32(event.level)
         }
     }
@@ -476,7 +484,9 @@ object WireMessageCodec {
             )
 
             4 -> TextControl(reader.utf8I32(MAX_TEXT_CONTROL_BYTES, "text input"))
+
             5 -> VolumeControl(reader.f32("volume"))
+
             else -> throw WireFormatException("Unknown control event type: $eventId")
         }
         return ControlMessage(sequence, event)

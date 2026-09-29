@@ -291,6 +291,7 @@ class BrowserCockpitPublisher(
         when (this) {
             BrowserWorkspaceInteractionMode.WORKSPACE_CHROME ->
                 BrowserWorkspaceWireInteractionMode.WORKSPACE_CHROME
+
             BrowserWorkspaceInteractionMode.PAGE -> BrowserWorkspaceWireInteractionMode.PAGE
         }
 
@@ -304,12 +305,17 @@ class BrowserCockpitPublisher(
     private fun BrowserWorkspaceMuteApplication.toWireMuteApplication(): BrowserWorkspaceWireMuteApplication =
         when (this) {
             BrowserWorkspaceMuteApplication.NOT_REQUESTED -> BrowserWorkspaceWireMuteApplication.NOT_REQUESTED
+
             BrowserWorkspaceMuteApplication.PENDING_RENDERER ->
                 BrowserWorkspaceWireMuteApplication.PENDING_RENDERER
+
             BrowserWorkspaceMuteApplication.REQUESTED -> BrowserWorkspaceWireMuteApplication.REQUESTED
+
             BrowserWorkspaceMuteApplication.APPLIED_TO_RENDERER ->
                 BrowserWorkspaceWireMuteApplication.APPLIED_TO_RENDERER
+
             BrowserWorkspaceMuteApplication.UNSUPPORTED -> BrowserWorkspaceWireMuteApplication.UNSUPPORTED
+
             BrowserWorkspaceMuteApplication.FAILED -> BrowserWorkspaceWireMuteApplication.FAILED
         }
 

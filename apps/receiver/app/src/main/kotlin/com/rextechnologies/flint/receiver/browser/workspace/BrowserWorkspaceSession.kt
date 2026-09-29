@@ -215,6 +215,7 @@ class BrowserWorkspaceSession(
                 progressPercent = 0,
                 navigationId = event.commandId,
             )
+
             is BrowserStateEvent.BlankOpened -> current.copy(
                 url = "",
                 title = "",
@@ -222,21 +223,25 @@ class BrowserWorkspaceSession(
                 progressPercent = 100,
                 navigationId = event.commandId,
             )
+
             is BrowserStateEvent.NavigationAccepted -> current.copy(
                 url = event.address.canonicalUrl,
                 loading = true,
                 progressPercent = 0,
                 navigationId = event.commandId,
             )
+
             is BrowserStateEvent.Progress -> current.copy(
                 navigationId = event.navigationId,
                 loading = event.percent < 100,
                 progressPercent = event.percent,
             )
+
             is BrowserStateEvent.Title -> current.copy(
                 navigationId = event.navigationId,
                 title = event.title,
             )
+
             is BrowserStateEvent.PageFinished -> current.copy(
                 navigationId = event.navigationId,
                 loading = false,
@@ -244,10 +249,12 @@ class BrowserWorkspaceSession(
                 canGoBack = event.canGoBack,
                 canGoForward = event.canGoForward,
             )
+
             is BrowserStateEvent.Failed -> current.copy(
                 navigationId = event.navigationId,
                 loading = false,
             )
+
             else -> return
         }
         if (next.navigationId < maxOf(current.navigationId, state.pane(paneId)?.page?.navigationId ?: 0)) return
@@ -355,18 +362,24 @@ class BrowserWorkspaceSession(
                 is BrowserWorkspaceEffect.PersistLocalWorkspace -> {
                     workspaceStore?.put(effect.profileId, effect.snapshot)
                 }
+
                 is BrowserWorkspaceEffect.DiscardEphemeralWorkspace -> Unit
+
                 is BrowserWorkspaceEffect.RendererFailureObserved -> Unit
+
                 is BrowserWorkspaceEffect.Refused -> notice(refusalMessage(effect.reason))
+
                 is BrowserWorkspaceEffect.FocusChanged,
                 is BrowserWorkspaceEffect.LayoutChanged,
                 is BrowserWorkspaceEffect.InteractionModeChanged,
                 is BrowserWorkspaceEffect.TheaterModeChanged,
                 is BrowserWorkspaceEffect.ProfileChanged,
                 -> Unit
+
                 is BrowserWorkspaceEffect.PageFullscreenChanged -> {
                     if (!effect.active) host?.exitFullscreen(effect.paneId)
                 }
+
                 else -> applyHostEffect(effect)
             }
         }
@@ -391,6 +404,7 @@ class BrowserWorkspaceSession(
                     }
                 }
             }
+
             is BrowserWorkspaceEffect.RestoreRenderer -> {
                 generations[effect.paneId] = effect.rendererGeneration
                 runOnUi {
@@ -406,37 +420,44 @@ class BrowserWorkspaceSession(
                     }
                 }
             }
+
             is BrowserWorkspaceEffect.FreezeRenderer -> {
                 rendererTokens.remove(effect.paneId)
                 runOnUi { binding.freeze(effect.paneId) }
             }
+
             is BrowserWorkspaceEffect.DestroyPane -> {
                 generations.remove(effect.paneId)
                 rendererTokens.remove(effect.paneId)
                 pages.remove(effect.paneId)
                 runOnUi { binding.destroy(effect.paneId) }
             }
+
             is BrowserWorkspaceEffect.NavigateRenderer -> {
                 navigateDriver(effect.paneId, effect.rendererGeneration, effect.url, effect.navigationId)
             }
+
             is BrowserWorkspaceEffect.ReloadRenderer -> {
                 runOnUi {
                     resumeDriver(effect.paneId, effect.navigationId)
                     binding.driverFor(effect.paneId)?.reload()
                 }
             }
+
             is BrowserWorkspaceEffect.GoBackRenderer -> {
                 runOnUi {
                     resumeDriver(effect.paneId, effect.navigationId)
                     binding.driverFor(effect.paneId)?.goBack()
                 }
             }
+
             is BrowserWorkspaceEffect.GoForwardRenderer -> {
                 runOnUi {
                     resumeDriver(effect.paneId, effect.navigationId)
                     binding.driverFor(effect.paneId)?.goForward()
                 }
             }
+
             is BrowserWorkspaceEffect.RequestMediaPlayPause -> {
                 runOnUi {
                     val result = binding.driverFor(effect.paneId)?.let { driver ->
@@ -453,6 +474,7 @@ class BrowserWorkspaceSession(
                     )
                 }
             }
+
             is BrowserWorkspaceEffect.ApplyPaneMute -> {
                 runOnUi {
                     val driver = binding.driverFor(effect.paneId)
@@ -484,6 +506,7 @@ class BrowserWorkspaceSession(
                     }
                 }
             }
+
             else -> Unit
         }
     }
@@ -497,6 +520,7 @@ class BrowserWorkspaceSession(
         if (generations[paneId] != generation) return
         val address = when (val result = BrowserUrlPolicy().evaluate(url)) {
             is BrowserUrlResult.Accepted -> result.url
+
             is BrowserUrlResult.Rejected -> {
                 Log.w(TAG, "workspace navigate rejected for pane $paneId")
                 return
@@ -532,24 +556,35 @@ class BrowserWorkspaceSession(
 
     private fun refusalMessage(reason: BrowserWorkspaceRefusal): String = when (reason) {
         BrowserWorkspaceRefusal.INVALID_URL -> "Enter a valid secure https address."
+
         BrowserWorkspaceRefusal.PANE_CAPACITY_REACHED,
         BrowserWorkspaceRefusal.RENDERER_CAPACITY_BLOCKED,
         -> "This TV already has as many live pages as it can keep open."
+
         BrowserWorkspaceRefusal.LAYOUT_NOT_AVAILABLE ->
             "That layout is not available on this television."
+
         BrowserWorkspaceRefusal.LAYOUT_DOES_NOT_FIT_PANES ->
             "That layout needs a different number of open pages. Add or close a pane first."
+
         BrowserWorkspaceRefusal.UNKNOWN_PANE -> "That page is no longer open."
+
         BrowserWorkspaceRefusal.NO_ACTIVE_PROFILE -> "Choose a TV profile before opening a workspace."
+
         BrowserWorkspaceRefusal.DEVICE_PROFILE_CANNOT_RESTORE_SNAPSHOT ->
             "A Windows-device profile cannot restore a saved TV workspace."
+
         BrowserWorkspaceRefusal.EXCLUSIVE_PRESENTATION_ACTIVE ->
             "Finish fullscreen or theater mode first."
+
         BrowserWorkspaceRefusal.RENDERER_NOT_RESIDENT -> "That page is not loaded — select it to load it again."
+
         BrowserWorkspaceRefusal.INVALID_SLOT -> "That page slot is not available."
+
         BrowserWorkspaceRefusal.PANE_ID_EXHAUSTED,
         BrowserWorkspaceRefusal.MEDIA_REQUEST_ID_EXHAUSTED,
         -> "The workspace ran out of internal identifiers."
+
         BrowserWorkspaceRefusal.INVALID_SNAPSHOT,
         BrowserWorkspaceRefusal.SNAPSHOT_EXCEEDS_CAPACITY,
         -> "The saved workspace could not be restored."

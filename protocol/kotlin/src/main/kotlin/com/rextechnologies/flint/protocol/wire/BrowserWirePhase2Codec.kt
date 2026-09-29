@@ -137,7 +137,9 @@ internal object BrowserWirePhase2Codec {
             )
 
             WireMessageType.BROWSER_TAB_STATE -> decodeTabState(reader)
+
             WireMessageType.BROWSER_VIEW_COMMAND -> decodeViewCommand(reader)
+
             WireMessageType.BROWSER_VIEW_STATE -> BrowserViewStateMessage(
                 epoch = reader.i64("browser view state epoch"),
                 revision = reader.i64("browser view state revision"),
@@ -176,6 +178,7 @@ internal object BrowserWirePhase2Codec {
             )
 
             WireMessageType.BROWSER_LIBRARY_STATE -> decodeLibraryState(reader)
+
             WireMessageType.BROWSER_PROFILE_COMMAND -> BrowserProfileCommandMessage(
                 epoch = reader.i64("browser profile command epoch"),
                 commandId = reader.i64("browser profile command ID"),
@@ -190,7 +193,9 @@ internal object BrowserWirePhase2Codec {
                     "browser profile command name",
                 ),
             )
+
             WireMessageType.BROWSER_PROFILE_STATE -> decodeProfileState(reader)
+
             WireMessageType.BROWSER_NETWORK_COMMAND -> BrowserNetworkCommandMessage(
                 epoch = reader.i64("browser network command epoch"),
                 commandId = reader.i64("browser network command ID"),
@@ -210,6 +215,7 @@ internal object BrowserWirePhase2Codec {
                     "browser network command config",
                 ),
             )
+
             WireMessageType.BROWSER_NETWORK_STATE -> BrowserNetworkStateMessage(
                 epoch = reader.i64("browser network state epoch"),
                 revision = reader.i64("browser network state revision"),
@@ -235,6 +241,7 @@ internal object BrowserWirePhase2Codec {
                     "browser network session detail",
                 ),
             )
+
             else -> throw WireFormatException("Unhandled phase-two browser message type: ${type.id}")
         }
         validate(message)
@@ -520,6 +527,7 @@ internal object BrowserWirePhase2Codec {
         requireTextLength(message.title, BrowserWireLimits.MAX_TITLE_BYTES, "Browser library command title")
         when (message.action) {
             BrowserLibraryAction.ADD_BOOKMARK -> requireWire(message.url.isNotBlank(), "Add-bookmark URL is blank")
+
             BrowserLibraryAction.REMOVE_BOOKMARK -> {
                 requireWire(message.url.isNotBlank(), "Remove-bookmark URL is blank")
                 requireWire(message.title.isEmpty(), "Remove-bookmark command carries a title")

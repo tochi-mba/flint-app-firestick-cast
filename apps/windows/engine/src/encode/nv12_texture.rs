@@ -282,7 +282,7 @@ mod tests {
             D3D11CreateDevice(
                 None,
                 D3D_DRIVER_TYPE_HARDWARE,
-                None,
+                windows::Win32::Foundation::HMODULE::default(),
                 D3D11_CREATE_DEVICE_VIDEO_SUPPORT,
                 Some(&[D3D_FEATURE_LEVEL_11_0]),
                 D3D11_SDK_VERSION,

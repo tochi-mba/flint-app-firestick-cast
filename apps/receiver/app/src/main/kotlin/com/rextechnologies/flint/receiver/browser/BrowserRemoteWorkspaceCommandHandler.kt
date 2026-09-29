@@ -36,42 +36,56 @@ class BrowserRemoteWorkspaceCommandHandler(
         when (command.action) {
             BrowserWorkspaceCommandAction.FOCUS ->
                 workspaceSession.dispatch(BrowserWorkspaceAction.FocusPane(command.paneId))
+
             BrowserWorkspaceCommandAction.OPEN_PANE ->
                 workspaceSession.dispatch(
                     BrowserWorkspaceAction.OpenPane(command.url.takeIf { it.isNotBlank() }),
                 )
+
             BrowserWorkspaceCommandAction.CLOSE_PANE ->
                 workspaceSession.dispatch(BrowserWorkspaceAction.ClosePane(command.paneId))
+
             BrowserWorkspaceCommandAction.MOVE_PANE ->
                 workspaceSession.dispatch(BrowserWorkspaceAction.MovePane(command.paneId, command.value))
+
             BrowserWorkspaceCommandAction.SET_LAYOUT -> {
                 val layout = wireLayout(command.value) ?: return
                 workspaceSession.dispatch(BrowserWorkspaceAction.SetLayout(layout))
             }
+
             BrowserWorkspaceCommandAction.NAVIGATE ->
                 workspaceSession.dispatch(
                     BrowserWorkspaceAction.NavigatePane(command.paneId, command.url),
                 )
+
             BrowserWorkspaceCommandAction.RELOAD ->
                 workspaceSession.dispatch(BrowserWorkspaceAction.ReloadPane(command.paneId))
+
             BrowserWorkspaceCommandAction.BACK ->
                 workspaceSession.dispatch(BrowserWorkspaceAction.GoBack(command.paneId))
+
             BrowserWorkspaceCommandAction.FORWARD ->
                 workspaceSession.dispatch(BrowserWorkspaceAction.GoForward(command.paneId))
+
             BrowserWorkspaceCommandAction.SET_MUTE ->
                 workspaceSession.dispatch(
                     BrowserWorkspaceAction.SetPaneMuted(command.paneId, command.value == 1),
                 )
+
             BrowserWorkspaceCommandAction.PLAY_PAUSE ->
                 workspaceSession.dispatch(BrowserWorkspaceAction.RequestMediaPlayPause(command.paneId))
+
             BrowserWorkspaceCommandAction.SET_INTERACTION -> {
                 val mode = wireInteractionMode(command.value) ?: return
                 workspaceSession.dispatch(BrowserWorkspaceAction.SetInteractionMode(mode))
             }
+
             BrowserWorkspaceCommandAction.ENTER_THEATER ->
                 workspaceSession.dispatch(BrowserWorkspaceAction.EnterTheaterMode(command.paneId))
+
             BrowserWorkspaceCommandAction.EXIT_THEATER ->
                 workspaceSession.dispatch(BrowserWorkspaceAction.ExitTheaterMode)
+
             BrowserWorkspaceCommandAction.REQUEST_SNAPSHOT -> publishWorkspace()
         }
     }
@@ -104,6 +118,7 @@ class BrowserRemoteWorkspaceCommandHandler(
         when (input.kind) {
             BrowserWorkspaceInputKind.TEXT ->
                 workspaceSession.dispatchRemoteText(input.paneId, input.text)
+
             BrowserWorkspaceInputKind.KEY -> {
                 val key = input.key ?: return
                 workspaceSession.dispatchRemoteKey(input.paneId, key)
@@ -115,9 +130,13 @@ class BrowserRemoteWorkspaceCommandHandler(
         BrowserWorkspaceWireLayout.fromId(value)
     ) {
         BrowserWorkspaceWireLayout.SINGLE -> BrowserWorkspaceLayout.SINGLE
+
         BrowserWorkspaceWireLayout.TWO_COLUMNS -> BrowserWorkspaceLayout.SPLIT_HORIZONTAL
+
         BrowserWorkspaceWireLayout.TWO_ROWS -> BrowserWorkspaceLayout.SPLIT_VERTICAL
+
         BrowserWorkspaceWireLayout.FOUR_GRID -> BrowserWorkspaceLayout.GRID_2X2
+
         null -> {
             Log.w(TAG, "Browser workspace layout rejected at wire value $value")
             null
@@ -129,7 +148,9 @@ class BrowserRemoteWorkspaceCommandHandler(
     ) {
         BrowserWorkspaceWireInteractionMode.WORKSPACE_CHROME ->
             BrowserWorkspaceInteractionMode.WORKSPACE_CHROME
+
         BrowserWorkspaceWireInteractionMode.PAGE -> BrowserWorkspaceInteractionMode.PAGE
+
         null -> {
             Log.w(TAG, "Browser workspace interaction mode rejected at wire value $value")
             null

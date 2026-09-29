@@ -144,6 +144,7 @@ class BrowserHostBridge(
                     ),
                 )
             }
+
             else -> pending.resolve(BrowserDialogAnswer.Cancel)
         }
     }
@@ -233,6 +234,7 @@ class BrowserHostBridge(
                 pendingJsResolve = null
                 publishDialog(null)
             }
+
             else -> Unit
         }
     }
@@ -249,6 +251,7 @@ class BrowserHostBridge(
         val candidate = raw.ifBlank { "https://example.com/" }
         return when (val evaluated = BrowserUrlPolicy().evaluate(candidate)) {
             is BrowserUrlResult.Accepted -> evaluated.url
+
             is BrowserUrlResult.Rejected -> when (val fallback = BrowserUrlPolicy().evaluate("https://example.com/")) {
                 is BrowserUrlResult.Accepted -> fallback.url
                 is BrowserUrlResult.Rejected -> null

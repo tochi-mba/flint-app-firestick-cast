@@ -69,8 +69,11 @@ data class SurfaceTransition(val next: ActiveSurface, val effects: List<SurfaceE
 object SurfaceReducer {
     fun transition(current: ActiveSurface, request: SurfaceRequest): SurfaceTransition = when (request) {
         SurfaceRequest.StartPresentation -> startScreen(current, ActiveSurface.Presentation)
+
         SurfaceRequest.StartMirror -> startScreen(current, ActiveSurface.Mirror)
+
         SurfaceRequest.StartMedia -> startMedia(current)
+
         SurfaceRequest.StopOutput -> when (current) {
             ActiveSurface.Presentation, ActiveSurface.Mirror -> SurfaceTransition(ActiveSurface.Idle, emptyList())
             ActiveSurface.Idle, is ActiveSurface.Media -> unchanged(current)
@@ -97,7 +100,9 @@ object SurfaceReducer {
 
     private fun startMedia(current: ActiveSurface): SurfaceTransition = when (current) {
         ActiveSurface.Idle -> SurfaceTransition(ActiveSurface.Media(), emptyList())
+
         is ActiveSurface.Media -> unchanged(current)
+
         ActiveSurface.Presentation -> SurfaceTransition(
             ActiveSurface.Media(ActiveSurface.Displaced.PRESENTATION),
             listOf(SurfaceEffect.StopOutput, SurfaceEffect.Say(MediaCopy.REPLACED_SECOND_SCREEN)),

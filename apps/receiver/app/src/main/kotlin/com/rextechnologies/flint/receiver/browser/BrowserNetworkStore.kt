@@ -153,8 +153,10 @@ class BrowserNetworkStore(
                 ?: return LoadResult(emptyMap(), rewriteRequired = true)
             when (root["version"] as? Long) {
                 FORMAT_VERSION -> decodeV2(root)
+
                 // Never decrypt, import or preserve the older configText schema. It was plaintext.
                 LEGACY_PLAINTEXT_FORMAT_VERSION -> LoadResult(emptyMap(), rewriteRequired = true)
+
                 else -> LoadResult(emptyMap(), rewriteRequired = true)
             }
         } catch (_: Exception) {
@@ -361,12 +363,19 @@ class BrowserNetworkStore(
             value.forEach { character ->
                 when (character) {
                     '"' -> append("\\\"")
+
                     '\\' -> append("\\\\")
+
                     '\b' -> append("\\b")
+
                     '\u000C' -> append("\\f")
+
                     '\n' -> append("\\n")
+
                     '\r' -> append("\\r")
+
                     '\t' -> append("\\t")
+
                     else -> if (character.code < 0x20) {
                         append("\\u").append(character.code.toString(16).padStart(4, '0'))
                     } else {
@@ -423,10 +432,12 @@ class BrowserNetworkStore(
                             expect(',')
                             skipWhitespace()
                         }
+
                         peek('}') -> {
                             expect('}')
                             return result
                         }
+
                         else -> throw IllegalArgumentException("Invalid JSON object")
                     }
                 }
@@ -439,24 +450,33 @@ class BrowserNetworkStore(
                     require(out.length < MAX_JSON_STRING_CODE_UNITS) { "JSON string too long" }
                     when (val character = source[index++]) {
                         '"' -> return out.toString()
+
                         '\\' -> {
                             require(index < source.length) { "Truncated escape" }
                             when (val escaped = source[index++]) {
                                 '"', '\\', '/' -> out.append(escaped)
+
                                 'b' -> out.append('\b')
+
                                 'f' -> out.append('\u000C')
+
                                 'n' -> out.append('\n')
+
                                 'r' -> out.append('\r')
+
                                 't' -> out.append('\t')
+
                                 'u' -> {
                                     require(index + 4 <= source.length) { "Truncated unicode escape" }
                                     val hex = source.substring(index, index + 4)
                                     out.append(hex.toInt(16).toChar())
                                     index += 4
                                 }
+
                                 else -> throw IllegalArgumentException("Invalid escape")
                             }
                         }
+
                         else -> {
                             require(character.code >= 0x20) { "Unescaped control character" }
                             out.append(character)

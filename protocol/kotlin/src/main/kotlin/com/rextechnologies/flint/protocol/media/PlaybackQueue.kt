@@ -73,7 +73,9 @@ data class PlaybackQueue(
         val newOrder = order.filter { it != index }.map { if (it > index) it - 1 else it }
         val newCursor = when {
             currentIndex < index -> currentIndex
+
             currentIndex > index -> currentIndex - 1
+
             // Removing the playing item advances to whatever slid into its slot.
             else -> index.coerceAtMost(remaining.lastIndex)
         }

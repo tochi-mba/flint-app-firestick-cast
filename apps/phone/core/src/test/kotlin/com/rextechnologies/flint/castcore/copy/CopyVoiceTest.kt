@@ -63,6 +63,7 @@ private val everyCopyConstant: List<Pair<String, String>> = buildList {
                 field.isAccessible = true
                 when (val value = field.get(surface)) {
                     is String -> add("$name.${field.name}", value)
+
                     is EmptyStateCopy -> {
                         add("$name.${field.name}.title", value.title)
                         add("$name.${field.name}.body", value.body)

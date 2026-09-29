@@ -17,10 +17,12 @@ internal class BrowserWorkspacePointerRouter(private val send: (Long, BrowserNat
                 cancel()
                 active = paneId to input
             }
+
             BrowserPointerAction.UP, BrowserPointerAction.CANCEL -> {
                 if (active?.first != paneId) return
                 active = null
             }
+
             BrowserPointerAction.MOVE -> {
                 if (input.buttons != 0 && active?.first != paneId) return
                 if (active?.first == paneId) active = paneId to input
