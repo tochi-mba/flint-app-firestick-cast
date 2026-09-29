@@ -79,7 +79,6 @@ class GoldenVectorTest {
             is HelloMessage -> payload.copy(
                 codecCapabilities = payload.codecCapabilities.toSortedSet(compareBy { it.value }),
             )
-
             else -> payload
         }
         return frame.copy(message = message)

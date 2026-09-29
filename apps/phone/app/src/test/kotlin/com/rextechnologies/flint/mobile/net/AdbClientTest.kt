@@ -282,11 +282,8 @@ class AdbClientTest {
 
         private fun reply(destination: String): String = when {
             destination == "shell:getprop ro.build.version.sdk" -> "30\n"
-
             destination == "shell:getprop ro.build.version.release" -> "11\n"
-
             destination == "shell:getprop ro.product.model" -> "AFTKA\n"
-
             destination.startsWith("shell:pm list packages") ->
                 packages.joinToString("") { "package:$it\n" }
 
@@ -299,9 +296,7 @@ class AdbClientTest {
             }
 
             destination.startsWith("exec:cmd package install") -> "$installReply\n"
-
             destination.startsWith("shell:am start") -> "Starting: Intent\n"
-
             else -> ""
         }
 

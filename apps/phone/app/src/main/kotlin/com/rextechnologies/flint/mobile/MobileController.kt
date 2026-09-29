@@ -473,7 +473,6 @@ class MobileController(
         return when (val answer = look.answer) {
             is AdbAnswer.Identified -> when {
                 answer.platform == ReceiverPlatform.VEGA -> ReceiverSetup.notAndroid(name)
-
                 // Android and too old. Reported as its own refusal rather than as a television
                 // that merely has no receiver on it yet.
                 answer.platform.isTooOldForReceiver() && !answer.receiverInstalled ->
@@ -483,11 +482,8 @@ class MobileController(
             }
 
             is AdbAnswer.Unauthorised -> ReceiverSetup.unauthorised(name)
-
             is AdbAnswer.Refused -> ReceiverSetup.failed(answer.detail)
-
             is AdbAnswer.Silent -> ReceiverSetup.failed(answer.detail)
-
             is AdbAnswer.Failed -> ReceiverSetup.failed(answer.detail)
         }
     }
@@ -558,7 +554,6 @@ class MobileController(
             PairingCopy.paired(settled.device.displayName)
 
         is LinkState.Closed -> settled.failure?.sentence
-
         else -> PairingCopy.CONNECTING
     }
 

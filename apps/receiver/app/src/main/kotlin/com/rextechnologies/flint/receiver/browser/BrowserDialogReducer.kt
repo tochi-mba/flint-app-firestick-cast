@@ -45,17 +45,14 @@ class BrowserDialogText private constructor(
                             index += 1
                         }
                     }
-
                     Character.isLowSurrogate(character) -> {
                         result.append('\uFFFD')
                         index += 1
                     }
-
                     Character.isISOControl(character) -> {
                         result.append(' ')
                         index += 1
                     }
-
                     else -> {
                         result.append(character)
                         index += 1
@@ -224,7 +221,6 @@ class BrowserDialogReducer {
                 accepted = true,
                 text = BrowserDialogText.fromValidatedReply(text.text.value),
             )
-
             is BrowserTextValidation.Rejected -> DialogResolution(
                 rejection = BrowserDialogReplyRejection.INVALID_PROMPT,
             )

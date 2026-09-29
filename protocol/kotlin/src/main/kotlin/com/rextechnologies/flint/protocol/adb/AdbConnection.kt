@@ -84,7 +84,6 @@ class AdbConnection(
                 }
 
                 AdbCommands.CLSE -> throw AdbFormatException("Device closed the ADB connection")
-
                 else -> throw AdbFormatException("Unexpected ADB command: ${message.command}")
             }
         }
@@ -106,10 +105,8 @@ class AdbConnection(
             }
             when (message.command) {
                 AdbCommands.CNXN -> return acceptBanner(message)
-
                 // The device repeats AUTH while its prompt is still on screen.
                 AdbCommands.AUTH -> continue
-
                 else -> throw AdbAuthorizationRequiredException(AUTHORIZE_ON_TV)
             }
         }

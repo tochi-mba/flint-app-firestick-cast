@@ -140,31 +140,25 @@ internal fun receiverPreviewState(name: String): ReceiverUiState {
             pairingCode = "004283",
             detail = "Connect this TV and your PC to the same network",
         )
-
         ReceiverPreviewActivity.PREVIEW_READY -> ready
-
         ReceiverPreviewActivity.PREVIEW_READY_WIDE -> ready.copy(
             pairingCode = "888888",
             address = "255.255.255.255",
             port = 65535,
         )
-
         ReceiverPreviewActivity.PREVIEW_CONNECTED -> connected.copy(
             peerName = "A VERY LONG WINDOWS COMPUTER NAME THAT MUST NEVER BREAK THIS TELEVISION LAYOUT",
         )
-
         ReceiverPreviewActivity.PREVIEW_ATTENTION -> ready.copy(
             error = RECEIVER_START_FAILURE_MESSAGE,
             detail = RECEIVER_START_FAILURE_MESSAGE,
         )
-
         ReceiverPreviewActivity.PREVIEW_BUFFERING -> connected.copy(
             surfaceMode = SurfaceMode.PLAYER,
             title = "new_Adobe 2026_VPro_blade3_1160x870.mp4",
             playbackState = PlaybackState.BUFFERING,
             detail = "Buffering",
         )
-
         ReceiverPreviewActivity.PREVIEW_PLAYING -> connected.copy(
             surfaceMode = SurfaceMode.PLAYER,
             title = "A deliberately long movie title that must remain inside the television safe area.mp4",
@@ -173,7 +167,6 @@ internal fun receiverPreviewState(name: String): ReceiverUiState {
             durationMs = 7_508_000,
             detail = "Playing on this TV",
         )
-
         ReceiverPreviewActivity.PREVIEW_PAUSED -> connected.copy(
             surfaceMode = SurfaceMode.PLAYER,
             title = "Paused media",
@@ -182,14 +175,12 @@ internal fun receiverPreviewState(name: String): ReceiverUiState {
             durationMs = 125_000,
             detail = "Paused",
         )
-
         ReceiverPreviewActivity.PREVIEW_PLAYBACK_ERROR -> connected.copy(
             surfaceMode = SurfaceMode.PLAYER,
             title = "Media that could not be played",
             playbackState = PlaybackState.ERROR,
             error = friendlyPlaybackError("ERROR_CODE_IO_NETWORK_CONNECTION_FAILED"),
         )
-
         ReceiverPreviewActivity.PREVIEW_MIRROR_WAITING -> connected.copy(
             surfaceMode = SurfaceMode.MIRROR,
             title = "Laptop display",
@@ -197,7 +188,6 @@ internal fun receiverPreviewState(name: String): ReceiverUiState {
             mirrorHeight = 1600,
             mirrorFrameReceived = false,
         )
-
         ReceiverPreviewActivity.PREVIEW_MIRROR_ACTIVE -> connected.copy(
             surfaceMode = SurfaceMode.MIRROR,
             title = "Laptop display",
@@ -205,20 +195,17 @@ internal fun receiverPreviewState(name: String): ReceiverUiState {
             mirrorHeight = 1600,
             mirrorFrameReceived = true,
         )
-
         ReceiverPreviewActivity.PREVIEW_MIRROR_ERROR -> connected.copy(
             surfaceMode = SurfaceMode.MIRROR,
             title = "Laptop display",
             error = "The incoming video stream stopped. Try screen mirroring again from Flint.",
         )
-
         ReceiverPreviewActivity.PREVIEW_PRESENTATION -> connected.copy(
             surfaceMode = SurfaceMode.PRESENTATION,
             title = "Extended desktop",
             mirrorWidth = 1920,
             mirrorHeight = 1080,
         )
-
         ReceiverPreviewActivity.PREVIEW_PRESENTATION_ACTIVE -> connected.copy(
             surfaceMode = SurfaceMode.PRESENTATION,
             title = "Extended desktop",
@@ -226,7 +213,6 @@ internal fun receiverPreviewState(name: String): ReceiverUiState {
             mirrorHeight = 1080,
             mirrorFrameReceived = true,
         )
-
         ReceiverPreviewActivity.PREVIEW_BROWSER,
         ReceiverPreviewActivity.PREVIEW_BROWSER_CHROME,
         ReceiverPreviewActivity.PREVIEW_BROWSER_MENU,
@@ -243,7 +229,6 @@ internal fun receiverPreviewState(name: String): ReceiverUiState {
             title = "Harness tab",
             detail = "Browser harness",
         )
-
         else -> ReceiverUiState()
     }
 }

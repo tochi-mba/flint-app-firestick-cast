@@ -38,22 +38,15 @@ object InstallFlow {
         if (stage == ReceiverInstallStage.Impossible) return stage
         return when (event) {
             InstallEvent.NotAndroid -> ReceiverInstallStage.Impossible
-
             is InstallEvent.Identified ->
                 if (event.receiverInstalled) ReceiverInstallStage.Installed else ReceiverInstallStage.NotInstalled
 
             InstallEvent.AuthorisationRequired -> ReceiverInstallStage.AwaitingAuthorisation
-
             InstallEvent.InstallStarted -> ReceiverInstallStage.Installing
-
             InstallEvent.InstallSucceeded -> ReceiverInstallStage.Installed
-
             is InstallEvent.InstallFailed -> ReceiverInstallStage.Failed(event.detail)
-
             InstallEvent.RemoveSucceeded -> ReceiverInstallStage.NotInstalled
-
             is InstallEvent.RemoveFailed -> ReceiverInstallStage.Failed(event.detail)
-
             // The card keeps saying what it last knew. An unreachable television is the Cast tab's
             // problem to report; the install stage is not evidence about it either way.
             is InstallEvent.Unreachable -> when (stage) {

@@ -131,11 +131,8 @@ internal fun ReceiverBrowserWorkspaceSurface(
                         }
                         true
                     }
-
                     resizeOpen -> false
-
                     controls.addressOpen -> controls.onKey(key, down, event.nativeKeyEvent.repeatCount)
-
                     key == KeyEvent.KEYCODE_BACK -> {
                         if (down && event.nativeKeyEvent.repeatCount == 0) {
                             controls.cancelGesture()
@@ -143,10 +140,8 @@ internal fun ReceiverBrowserWorkspaceSurface(
                         }
                         true
                     }
-
                     snapshot.interactionMode == BrowserWorkspaceInteractionMode.PAGE ->
                         controls.onKey(key, down, event.nativeKeyEvent.repeatCount)
-
                     else -> false
                 }
             }

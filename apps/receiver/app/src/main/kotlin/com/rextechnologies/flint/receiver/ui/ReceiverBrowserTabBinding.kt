@@ -44,21 +44,16 @@ internal class ReceiverBrowserTabBinding(
     override fun apply(effect: TabEffect) {
         when (effect) {
             is TabEffect.Create -> host.create(effect.id, effect.url)
-
             is TabEffect.Show -> host.show(effect.id)
-
             is TabEffect.Freeze -> {
                 fullscreen.remove(effect.id)?.abandon()
                 host.freeze(effect.id)
             }
-
             is TabEffect.Restore -> host.restore(effect.id)
-
             is TabEffect.Destroy -> {
                 fullscreen.remove(effect.id)?.abandon()
                 host.destroy(effect.id)
             }
-
             TabEffect.Refused -> Unit
         }
     }

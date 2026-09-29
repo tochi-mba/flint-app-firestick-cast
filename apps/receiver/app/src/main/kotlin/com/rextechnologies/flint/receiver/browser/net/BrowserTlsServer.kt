@@ -286,7 +286,6 @@ class BrowserTlsServer(
                 }
                 Log.i(TAG, "Browser TLS pairing accepted")
             }
-
             else -> {
                 if (BrowserWireRules.isBrowserMessage(message)) {
                     Log.w(TAG, "Browser TLS browser message before auth")
@@ -328,31 +327,18 @@ class BrowserTlsServer(
             requireNegotiated(frame, negotiatedVersion)
             when (val message = frame.message) {
                 is BrowserCommandMessage -> listener.onCommand(message)
-
                 is BrowserInputMessage -> listener.onInput(message)
-
                 is BrowserDialogReplyMessage -> listener.onDialogReply(message)
-
                 is BrowserTabCommandMessage -> listener.onTabCommand(message)
-
                 is BrowserViewCommandMessage -> listener.onViewCommand(message)
-
                 is BrowserLibraryCommandMessage -> listener.onLibraryCommand(message)
-
                 is BrowserLibraryStateMessage -> listener.onLibraryState(message)
-
                 is BrowserProfileCommandMessage -> listener.onProfileCommand(message)
-
                 is BrowserNetworkCommandMessage -> listener.onNetworkCommand(message)
-
                 is BrowserWorkspaceCommandMessage -> listener.onWorkspaceCommand(message)
-
                 is BrowserWorkspaceResizeMessage -> listener.onWorkspaceResize(message)
-
                 is BrowserWorkspaceInputMessage -> listener.onWorkspaceInput(message)
-
                 is ByeMessage -> break
-
                 else -> {
                     if (BrowserWireRules.isBrowserMessage(message)) {
                         // Already authenticated path; unknown browser subtype is ignored safely.

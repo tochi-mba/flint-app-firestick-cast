@@ -95,12 +95,9 @@ import java.net.URI
 /**
  * Everything the receiver does for the TV-resident browser, kept out of [ReceiverService].
  *
- * The service owns a listening socket, two decoders, a player, notifications and a discovery
- * responder; the browser adds a second TLS listener, an identity, a coordinator, an input router, a
- * dialog bridge and a preview loop. Holding both in one class pushed it past a thousand lines and
- * made the browser's lifecycle impossible to read next to the cast session's. The service keeps the
- * surface decision — which of player, mirror and browser owns the glass — and delegates the rest
- * here.
+ * The service owns a listening socket, two decoders, a player, notifications and discovery. The browser
+ * adds a TLS listener, identity, coordinator, input routing, dialogs and preview. Keeping both together
+ * obscured their lifecycles. The service decides which surface owns the glass and delegates browser work here.
  *
  * This class touches UI state but never a `WebView`, an `Activity` or a `Context`: the Activity
  * owns the view and attaches it through [attachWebView], exactly as ADR-0007 requires.
@@ -1000,12 +997,10 @@ class ReceiverBrowserController(
                 }
                 true
             }
-
             KeyEvent.KEYCODE_MEDIA_STOP -> {
                 closeFromTv()
                 true
             }
-
             else -> false
         }
     }
@@ -1077,7 +1072,6 @@ class ReceiverBrowserController(
                         publishWorkspaceStateToHost()
                         Log.i(TAG, "Secure browser OPEN accepted cmdId=${command.commandId}")
                     }
-
                     // Do not flip to a blank WebView when OPEN was refused (stale epoch / surface
                     // busy). That left the TV on a white page with nothing loading.
                     is BrowserCommandEffect.Rejected -> {
@@ -1086,20 +1080,16 @@ class ReceiverBrowserController(
                             when (effect.reason) {
                                 BrowserCommandRejection.SURFACE_BUSY ->
                                     "The TV is busy with another surface, so Windows could not open that page."
-
                                 BrowserCommandRejection.STALE_EPOCH ->
                                     "That open was refused as stale. Try again from Windows."
-
                                 else ->
                                     "Windows could not open that page (${effect.reason})."
                             },
                         )
                     }
-
                     else -> Log.w(TAG, "Secure browser OPEN produced unexpected effect: $effect")
                 }
             }
-
             BrowserCommandAction.NAVIGATE -> {
                 when (
                     val effect =
@@ -1107,7 +1097,6 @@ class ReceiverBrowserController(
                 ) {
                     is BrowserCommandEffect.Navigate ->
                         Log.i(TAG, "Secure browser NAVIGATE accepted cmdId=${command.commandId}")
-
                     is BrowserCommandEffect.Rejected -> {
                         Log.w(TAG, "Secure browser NAVIGATE rejected: ${effect.reason}")
                         showNotice(
@@ -1116,30 +1105,22 @@ class ReceiverBrowserController(
                                 BrowserCommandRejection.STALE_EPOCH,
                                 ->
                                     "That navigation was refused as stale. Try Go again from Windows."
-
                                 BrowserCommandRejection.NO_ACTIVE_BROWSER,
                                 BrowserCommandRejection.BROWSER_REQUIRES_OPEN,
                                 ->
                                     "Open a page on the TV before navigating from Windows."
-
                                 else ->
                                     "Windows could not navigate (${effect.reason})."
                             },
                         )
                     }
-
                     else -> Log.w(TAG, "Secure browser NAVIGATE produced unexpected effect: $effect")
                 }
             }
-
             BrowserCommandAction.BACK -> coordinator.goBack()
-
             BrowserCommandAction.FORWARD -> coordinator.goForward()
-
             BrowserCommandAction.RELOAD -> coordinator.reload()
-
             BrowserCommandAction.STOP -> coordinator.stopLoading()
-
             BrowserCommandAction.CLOSE -> {
                 coordinator.handleClose(command.epoch, command.commandId)
                 inputRouter.disable()
@@ -1147,10 +1128,8 @@ class ReceiverBrowserController(
                 leaveSurface()
                 Log.i(TAG, "Secure browser CLOSE applied cmdId=${command.commandId}")
             }
-
             BrowserCommandAction.SET_PREVIEW_ENABLED ->
                 setPreviewEnabled(command.previewEnabled == true)
-
             BrowserCommandAction.CLEAR_DATA -> hostBridge.requestClearData(command.epoch)
         }
     }
@@ -1166,14 +1145,10 @@ class ReceiverBrowserController(
             when (command.action) {
                 BrowserLibraryAction.ADD_BOOKMARK ->
                     profiles.addBookmark(command.url, command.title)
-
                 BrowserLibraryAction.REMOVE_BOOKMARK ->
                     profiles.removeBookmark(command.url)
-
                 BrowserLibraryAction.CLEAR_HISTORY -> profiles.clearHistory()
-
                 BrowserLibraryAction.CLEAR_BOOKMARKS -> profiles.clearBookmarks()
-
                 BrowserLibraryAction.REQUEST_SNAPSHOT -> Unit
             }
             publishProfileState()
@@ -1208,19 +1183,15 @@ class ReceiverBrowserController(
                         if (effect.id == attachedTabId) detachAttachedDriver()
                         surface.apply(effect)
                     }
-
                     is TabEffect.Destroy -> {
                         if (effect.id == attachedTabId) detachAttachedDriver()
                         surface.apply(effect)
                     }
-
                     is TabEffect.Show -> {
                         surface.apply(effect)
                         activateDriver(effect.id)
                     }
-
                     TabEffect.Refused -> showNotice("Eight tabs are already open. Close one to add another.")
-
                     else -> surface.apply(effect)
                 }
             }
@@ -1571,7 +1542,6 @@ class ReceiverBrowserController(
                     )
                 }
             }
-
             is BrowserNativeInput.Scroll -> {
                 val delivered = session.dispatchPreviewScroll(native.x, native.y, native)
                 Log.i(
@@ -1579,7 +1549,6 @@ class ReceiverBrowserController(
                     "Workspace preview scroll seq=${input.sequence} dx=${native.deltaX} dy=${native.deltaY} delivered=$delivered",
                 )
             }
-
             else -> Unit
         }
     }

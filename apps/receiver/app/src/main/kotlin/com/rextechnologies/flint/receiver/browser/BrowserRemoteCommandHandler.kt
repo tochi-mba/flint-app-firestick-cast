@@ -56,13 +56,9 @@ class BrowserRemoteCommandHandler(
                 }
                 applyTabs(tabs.openAccepted(current, address))
             }
-
             BrowserTabAction.CLOSE -> applyTabs(tabs.close(current, command.tabId))
-
             BrowserTabAction.SELECT -> applyTabs(tabs.select(current, command.tabId))
-
             BrowserTabAction.DUPLICATE -> applyTabs(tabs.duplicate(current, command.tabId))
-
             BrowserTabAction.MOVE -> {
                 // V2 names MOVE but has no destination field, so changing order would be a guess.
                 showNotice("Reordering tabs is not available on this receiver version.")
@@ -75,7 +71,6 @@ class BrowserRemoteCommandHandler(
         if (!accept(command.epoch, command.commandId, "view")) return
         when (command.action) {
             BrowserViewAction.SET_ZOOM -> setView(viewSettings.setZoom(command.value), true)
-
             BrowserViewAction.SET_UA -> {
                 val mode = when (WireUserAgentMode.fromId(command.value)) {
                     WireUserAgentMode.DESKTOP -> BrowserUserAgentMode.DESKTOP
@@ -85,12 +80,10 @@ class BrowserRemoteCommandHandler(
                 setView(viewSettings.setUserAgent(mode), true)
                 reload()
             }
-
             BrowserViewAction.SET_DARK -> setView(
                 viewSettings.setDarkMode(BrowserDarkMode.fromId(command.value) != BrowserDarkMode.LIGHT),
                 true,
             )
-
             BrowserViewAction.SET_INPUT_MODE -> setView(
                 viewSettings.setInputMode(
                     if (WireInteractionMode.fromId(command.value) == WireInteractionMode.FOCUS) {
@@ -101,7 +94,6 @@ class BrowserRemoteCommandHandler(
                 ),
                 false,
             )
-
             BrowserViewAction.SET_FULLSCREEN -> {
                 if (command.value == 0) {
                     exitFullscreen()
@@ -110,15 +102,10 @@ class BrowserRemoteCommandHandler(
                 }
                 publishView()
             }
-
             BrowserViewAction.FIND_START -> startFind(command.text)
-
             BrowserViewAction.FIND_NEXT -> findNext()
-
             BrowserViewAction.FIND_PREV -> findPrevious()
-
             BrowserViewAction.FIND_CLEAR -> clearFind()
-
             BrowserViewAction.SET_SEARCH_ENGINE -> {
                 val engine = when (WireSearchEngine.fromId(command.value)) {
                     WireSearchEngine.GOOGLE -> BrowserSearchEngine.GOOGLE
@@ -173,12 +160,10 @@ class BrowserRemoteCommandHandler(
                 }
                 publishNetwork(command.profileId)
             }
-
             BrowserNetworkAction.CLEAR -> {
                 clearNetwork(command.profileId)
                 publishNetwork(command.profileId)
             }
-
             BrowserNetworkAction.REQUEST_SNAPSHOT -> {
                 val profileId = command.profileId.ifEmpty { activeTvProfileId() }
                 publishNetwork(profileId)

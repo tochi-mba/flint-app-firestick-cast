@@ -118,17 +118,14 @@ internal fun ReceiverMirrorSurface(
                         activityMarker++
                         true
                     }
-
                     MirrorKeyOutcome.HIDE_CONTROLS -> {
                         controlsVisible = false
                         true
                     }
-
                     MirrorKeyOutcome.STOP_MIRRORING -> {
                         onStopMirroring()
                         true
                     }
-
                     MirrorKeyOutcome.IGNORE -> {
                         // A press meant for a button still counts as being present.
                         if (controlsVisible) activityMarker++
@@ -141,11 +138,9 @@ internal fun ReceiverMirrorSurface(
         val availableAspect = maxWidth.value / maxHeight.value
         val frameModifier = when {
             aspect == null -> Modifier.fillMaxSize()
-
             // FILL crops the overflowing edge by matching the *other* axis than FIT would.
             (aspect >= availableAspect) == (fitMode == MirrorFitMode.FIT) ->
                 Modifier.fillMaxWidth().aspectRatio(aspect)
-
             else -> Modifier.fillMaxHeight().aspectRatio(aspect)
         }
         Box(frameModifier.align(Alignment.Center)) {

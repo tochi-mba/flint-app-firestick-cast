@@ -85,11 +85,8 @@ class DiscoveryRunner(context: Context) : ReceiverFinder {
 
     private suspend fun runStep(step: DiscoveryStep): RungResult = when (step) {
         is DiscoveryStep.LineProbe -> sweep(step)
-
         is DiscoveryStep.MulticastDns -> multicastDns(step)
-
         is DiscoveryStep.UdpBroadcast -> broadcast(step)
-
         is DiscoveryStep.Ssdp -> RungResult(
             step.rung,
             emptyList(),

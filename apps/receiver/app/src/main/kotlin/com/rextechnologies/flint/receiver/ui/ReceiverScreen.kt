@@ -90,7 +90,6 @@ internal fun ReceiverSurface(
         ReceiverBackdrop(Modifier.fillMaxSize())
         when (state.surfaceMode) {
             SurfaceMode.IDLE -> ReceiverIdleSurface(state, onRefreshCode, onRetry, onBrowse)
-
             SurfaceMode.PLAYER -> ReceiverPlaybackSurface(
                 state,
                 playerContent,
@@ -98,7 +97,6 @@ internal fun ReceiverSurface(
                 onTogglePlayPause,
                 onClosePlayer,
             )
-
             SurfaceMode.MIRROR, SurfaceMode.PRESENTATION -> ReceiverMirrorSurface(
                 state = state,
                 presentation = state.surfaceMode == SurfaceMode.PRESENTATION,
@@ -107,7 +105,6 @@ internal fun ReceiverSurface(
                 controlsAutoHideMillis = mirrorControlsAutoHideMillis,
                 initialControlsVisible = initialMirrorControlsVisible,
             )
-
             SurfaceMode.BROWSER -> browserContent()
         }
         if (state.surfaceMode == SurfaceMode.IDLE) {

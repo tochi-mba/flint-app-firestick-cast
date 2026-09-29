@@ -102,7 +102,6 @@ class CapabilityCoordinator(
             val codec = CodecChoice.preferred(found)
             val trip = when {
                 codec == null -> EncoderRoundTrip.Outcome(ProbeOutcome.NOT_PROBED, "")
-
                 before.virtualDisplayProbe == ProbeOutcome.UNSUPPORTED -> EncoderRoundTrip.Outcome(
                     ProbeOutcome.NOT_PROBED,
                     DISPLAY_REFUSED_DETAIL,

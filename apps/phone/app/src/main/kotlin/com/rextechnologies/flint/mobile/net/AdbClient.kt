@@ -325,13 +325,9 @@ class AdbClient(
     /** Every way of not reaching the television, as the install reducer hears it. */
     private fun AdbAnswer.toInstallEvent(): InstallEvent = when (this) {
         is AdbAnswer.Unauthorised -> InstallEvent.AuthorisationRequired
-
         is AdbAnswer.Refused -> InstallEvent.Unreachable(detail)
-
         is AdbAnswer.Silent -> InstallEvent.Unreachable(detail)
-
         is AdbAnswer.Failed -> InstallEvent.Unreachable(detail)
-
         // A greeting that succeeded is not a way of failing to reach the television. The type
         // allows it only because every answer shares one hierarchy.
         is AdbAnswer.Identified -> InstallEvent.Unreachable("The television answered, then the exchange was lost.")

@@ -91,19 +91,14 @@ class BrowserPreviewMailbox {
     private fun validate(frame: BrowserPreviewFrame): PreviewRejection = when {
         frame.epoch <= 0 || frame.navigationId <= 0 || frame.frameId <= 0 ->
             PreviewRejection.INVALID_IDENTIFIER
-
         frame.width !in 1..MAX_WIDTH || frame.height !in 1..MAX_HEIGHT ->
             PreviewRejection.INVALID_DIMENSIONS
-
         frame.width.toLong() * frame.height.toLong() > MAX_PIXELS ->
             PreviewRejection.PIXEL_LIMIT_EXCEEDED
-
         frame.payload.format != BrowserPreviewFormat.JPEG ->
             PreviewRejection.INVALID_FORMAT
-
         frame.payload.byteCount !in 1..MAX_BYTES ->
             PreviewRejection.INVALID_BYTE_COUNT
-
         else -> PreviewRejection.NONE
     }
 }

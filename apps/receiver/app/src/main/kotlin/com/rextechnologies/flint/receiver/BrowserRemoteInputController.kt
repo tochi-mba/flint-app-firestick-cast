@@ -40,16 +40,13 @@ internal class BrowserRemoteInputController(
                     )
                 }
             }
-
             is BrowserNativeInput.Scroll ->
                 Log.i(
                     TAG,
                     "Secure browser input scroll seq=${input.sequence} dx=${native.deltaX} dy=${native.deltaY}",
                 )
-
             is BrowserNativeInput.KeyStroke ->
                 Log.i(TAG, "Secure browser input key seq=${input.sequence} key=${native.key}")
-
             is BrowserNativeInput.ComposedText ->
                 Log.i(
                     TAG,
@@ -71,9 +68,7 @@ internal class BrowserRemoteInputController(
                 input.action == BrowserPointerAction.DOWN ||
                     (input.action == BrowserPointerAction.MOVE && input.buttons == 1),
             )
-
             is BrowserNativeInput.Scroll -> Triple(input.x, input.y, false)
-
             else -> return null
         }
         return BrowserCursorUi(

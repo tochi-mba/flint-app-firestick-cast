@@ -201,9 +201,7 @@ private fun ReceiverPrimaryCard(
 ) {
     when (state.idleExperience()) {
         IdleExperience.READY -> PairingCard(state, onRefreshCode, onBrowse, modifier)
-
         IdleExperience.CONNECTED -> ConnectedCard(state, onBrowse, onRefreshCode, modifier)
-
         IdleExperience.STARTING -> StatusCard(
             eyebrow = "NETWORK CHECK",
             title = "Finding this TV's address",
@@ -211,7 +209,6 @@ private fun ReceiverPrimaryCard(
             modifier = modifier,
             loading = true,
         )
-
         IdleExperience.NO_NETWORK -> StatusCard(
             eyebrow = "NETWORK NEEDED",
             title = "Connect this Fire TV",
@@ -219,7 +216,6 @@ private fun ReceiverPrimaryCard(
                 "Flint will continue automatically.",
             modifier = modifier,
         )
-
         IdleExperience.ATTENTION -> StatusCard(
             eyebrow = "RECEIVER PAUSED",
             title = "Something needs attention",

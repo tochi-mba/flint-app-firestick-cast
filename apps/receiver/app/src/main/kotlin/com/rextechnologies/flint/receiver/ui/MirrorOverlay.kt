@@ -49,7 +49,6 @@ internal fun mirrorKeyOutcome(keyCode: Int, controlsVisible: Boolean): MirrorKey
             KeyEvent.KEYCODE_MENU,
             KeyEvent.KEYCODE_INFO,
             -> MirrorKeyOutcome.HIDE_CONTROLS
-
             // Everything else, D-pad included, belongs to the focused button now.
             else -> MirrorKeyOutcome.IGNORE
         }
@@ -64,9 +63,7 @@ internal fun mirrorKeyOutcome(keyCode: Int, controlsVisible: Boolean): MirrorKey
             KeyEvent.KEYCODE_MENU,
             KeyEvent.KEYCODE_INFO,
             -> MirrorKeyOutcome.REVEAL_CONTROLS
-
             KeyEvent.KEYCODE_BACK -> MirrorKeyOutcome.STOP_MIRRORING
-
             else -> MirrorKeyOutcome.IGNORE
         }
     }

@@ -324,17 +324,14 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                 false
             }
         }
-
         KeyEvent.KEYCODE_MEDIA_PLAY -> {
             resumeOrRestartPlayback()
             true
         }
-
         KeyEvent.KEYCODE_MEDIA_PAUSE -> {
             player.pause()
             true
         }
-
         KeyEvent.KEYCODE_MEDIA_STOP, KeyEvent.KEYCODE_BACK -> {
             if (_uiState.value.surfaceMode != SurfaceMode.IDLE) {
                 clearSessionSurface()
@@ -343,17 +340,14 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                 false
             }
         }
-
         KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
             seekBy(SEEK_STEP_MILLIS)
             true
         }
-
         KeyEvent.KEYCODE_MEDIA_REWIND -> {
             seekBy(-SEEK_STEP_MILLIS)
             true
         }
-
         // The basic Fire TV remote has no dedicated fast-forward/rewind keys, so scrubbing during
         // playback is the D-pad's job — the same convention YouTube and Netflix's TV apps use.
         // Gated to the player surface: on every other screen, left/right is ordinary focus
@@ -366,7 +360,6 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                 false
             }
         }
-
         KeyEvent.KEYCODE_DPAD_LEFT -> {
             if (_uiState.value.surfaceMode == SurfaceMode.PLAYER) {
                 seekBy(-SEEK_STEP_MILLIS)
@@ -375,7 +368,6 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                 false
             }
         }
-
         else -> false
     }
 
@@ -531,7 +523,6 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                     error = null,
                 )
             }
-
             is ReceiverState.Listening -> _uiState.update {
                 it.copy(
                     networkState = ReceiverNetworkState.LISTENING,
@@ -542,7 +533,6 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                     error = null,
                 )
             }
-
             is ReceiverState.Connected -> _uiState.update {
                 it.copy(
                     networkState = ReceiverNetworkState.LISTENING,
@@ -551,7 +541,6 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                     error = null,
                 )
             }
-
             is ReceiverState.Failed -> {
                 Log.e(TAG, "Receiver listener stopped: ${state.reason}")
                 _uiState.update {
@@ -601,7 +590,6 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
             }
 
             is PushedMediaSink.Outcome.Completed -> Log.i(TAG, "Finished receiving pushed media file")
-
             PushedMediaSink.Outcome.Accepted -> Unit
         }
     }
@@ -707,7 +695,6 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                     TransportAction.NEXT -> if (player.hasNextMediaItem()) player.seekToNextMediaItem()
                     TransportAction.PREVIOUS -> if (player.hasPreviousMediaItem()) player.seekToPreviousMediaItem()
                 }
-
                 is VolumeControl -> {
                     val manager = getSystemService(AudioManager::class.java)
                     val maximum = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
@@ -717,9 +704,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                         0,
                     )
                 }
-
                 is KeyControl -> if (event.action == KeyAction.DOWN) dispatchTvKey(event.keyCode)
-
                 else -> Unit
             }
         }

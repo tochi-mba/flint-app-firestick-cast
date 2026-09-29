@@ -79,9 +79,7 @@ data class BrowserPageTitle(val value: String) {
                         if (index + 1 == value.length || !Character.isLowSurrogate(value[index + 1])) return true
                         index += 2
                     }
-
                     Character.isLowSurrogate(value[index]) -> return true
-
                     else -> index += 1
                 }
             }

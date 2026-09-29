@@ -428,17 +428,14 @@ private fun sanitizeTitle(raw: String): String {
                     append(raw[index + 1])
                     index += 2
                 }
-
                 Character.isSurrogate(character) -> {
                     append('\uFFFD')
                     index += 1
                 }
-
                 character.isISOControl() -> {
                     append(' ')
                     index += 1
                 }
-
                 else -> {
                     append(character)
                     index += 1
@@ -456,13 +453,10 @@ private fun sanitizeProfileName(raw: String): String {
             val codePoint = raw.codePointAt(index)
             when {
                 codePoint == 0xfffd -> appendCodePoint(codePoint)
-
                 Character.isSurrogate(raw[index]) && Character.charCount(codePoint) == 1 -> append('\uFFFD')
-
                 Character.isISOControl(
                     codePoint,
                 ) || Character.getType(codePoint) == Character.FORMAT.toInt() -> append(' ')
-
                 else -> appendCodePoint(codePoint)
             }
             index += Character.charCount(codePoint)
@@ -561,19 +555,12 @@ private object BrowserLibraryJson {
         value.forEach { character ->
             when (character) {
                 '"' -> append("\\\"")
-
                 '\\' -> append("\\\\")
-
                 '\b' -> append("\\b")
-
                 '\u000C' -> append("\\f")
-
                 '\n' -> append("\\n")
-
                 '\r' -> append("\\r")
-
                 '\t' -> append("\\t")
-
                 else -> if (character.code < 0x20) {
                     append("\\u").append(character.code.toString(16).padStart(4, '0'))
                 } else {
@@ -655,11 +642,8 @@ private object BrowserLibraryJson {
                         require(!value.hasUnpairedSurrogate()) { "Unpaired Unicode surrogate" }
                         return value
                     }
-
                     character == '\\' -> result.append(parseEscape())
-
                     character.code < 0x20 -> throw IllegalArgumentException("Control character in JSON string")
-
                     else -> result.append(character)
                 }
                 require(result.length <= MAX_JSON_STRING_CODE_UNITS) { "JSON string is too long" }
@@ -671,17 +655,11 @@ private object BrowserLibraryJson {
             require(index < source.length) { "Missing JSON escape" }
             return when (val escaped = source[index++]) {
                 '"', '\\', '/' -> escaped
-
                 'b' -> '\b'
-
                 'f' -> '\u000C'
-
                 'n' -> '\n'
-
                 'r' -> '\r'
-
                 't' -> '\t'
-
                 'u' -> {
                     require(index + 4 <= source.length) { "Short Unicode escape" }
                     val digits = source.substring(index, index + 4)
@@ -689,7 +667,6 @@ private object BrowserLibraryJson {
                     digits.toIntOrNull(16)?.toChar()
                         ?: throw IllegalArgumentException("Invalid Unicode escape")
                 }
-
                 else -> throw IllegalArgumentException("Invalid JSON escape")
             }
         }
@@ -739,9 +716,7 @@ private fun String.hasUnpairedSurrogate(): Boolean {
                 if (index + 1 == length || !Character.isLowSurrogate(this[index + 1])) return true
                 index += 2
             }
-
             Character.isLowSurrogate(this[index]) -> return true
-
             else -> index += 1
         }
     }

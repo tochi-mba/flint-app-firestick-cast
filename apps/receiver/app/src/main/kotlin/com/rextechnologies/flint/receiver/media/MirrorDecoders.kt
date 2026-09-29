@@ -199,9 +199,7 @@ class MirrorVideoDecoder(
                                 onFrameRendered()
                             }
                         }
-
                         index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> continue
-
                         else -> break
                     }
                 }
@@ -349,9 +347,7 @@ class MirrorAudioDecoder(
                             }
                             active.releaseOutputBuffer(index, false)
                         }
-
                         index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> replaceTrack(active.outputFormat)
-
                         else -> break
                     }
                 }

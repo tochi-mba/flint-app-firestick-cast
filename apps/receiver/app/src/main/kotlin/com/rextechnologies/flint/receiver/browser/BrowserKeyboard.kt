@@ -115,7 +115,6 @@ class BrowserKeyboard {
                 // stops being true.
                 BrowserKeyCursor(row, cursor.column.coerceIn(grid[row].indices))
             }
-
             CursorDirection.LEFT, CursorDirection.RIGHT -> {
                 val width = grid[cursor.row].size
                 val delta = if (direction == CursorDirection.RIGHT) 1 else -1
@@ -131,17 +130,11 @@ class BrowserKeyboard {
             .copy(shifted = false)
 
         BrowserKey.Space -> append(state, " ")
-
         is BrowserKey.Shortcut -> append(state, key.text)
-
         BrowserKey.Backspace -> state.copy(text = state.text.dropLast(1))
-
         BrowserKey.Clear -> state.copy(text = "")
-
         BrowserKey.Shift -> state.copy(shifted = !state.shifted)
-
         BrowserKey.Submit -> state
-
         is BrowserKey.SwitchPage -> state.copy(
             page = key.page,
             // The cursor is placed rather than kept: the pages need not be the same shape, and
@@ -156,19 +149,12 @@ class BrowserKeyboard {
     /** What a key shows. Kept beside the model so the composable never invents a label. */
     fun label(key: BrowserKey, shifted: Boolean): String = when (key) {
         is BrowserKey.Character -> (if (shifted) key.upper else key.lower).toString()
-
         BrowserKey.Space -> "space"
-
         BrowserKey.Backspace -> "⌫"
-
         BrowserKey.Shift -> "⇧"
-
         BrowserKey.Clear -> "clear"
-
         BrowserKey.Submit -> "go"
-
         is BrowserKey.Shortcut -> key.text
-
         is BrowserKey.SwitchPage -> when (key.page) {
             BrowserKeyboardPage.SYMBOLS -> "?123"
             BrowserKeyboardPage.LETTERS -> "abc"

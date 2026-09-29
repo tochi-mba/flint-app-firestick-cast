@@ -102,7 +102,6 @@ internal object BrowserWireCodec {
             -> writer.utf8U16(message.url!!, BrowserWireLimits.MAX_URL_BYTES)
 
             BrowserCommandAction.SET_PREVIEW_ENABLED -> writer.boolean(message.previewEnabled!!)
-
             else -> Unit
         }
     }
@@ -151,7 +150,6 @@ internal object BrowserWireCodec {
             }
 
             is BrowserSemanticKeyInput -> writer.u8(event.key.id)
-
             is BrowserTextInput -> writer.utf8U16(event.text, BrowserWireLimits.MAX_TEXT_BYTES)
         }
     }
@@ -161,16 +159,13 @@ internal object BrowserWireCodec {
         val sequence = reader.i64("browser input sequence")
         val event = when (val eventId = reader.u8("browser input type")) {
             1 -> decodePointerInput(reader)
-
             2 -> decodeScrollInput(reader)
-
             3 -> BrowserSemanticKeyInput(
                 BrowserSemanticKey.fromId(reader.u8("browser semantic key"))
                     ?: unknown("browser semantic key"),
             )
 
             4 -> BrowserTextInput(reader.utf8U16(BrowserWireLimits.MAX_TEXT_BYTES, "browser text input"))
-
             else -> throw WireFormatException("Unknown browser input type: $eventId")
         }
         return BrowserInputMessage(epoch, sequence, event).also(::validate)
@@ -397,7 +392,6 @@ internal object BrowserWireCodec {
             }
 
             is BrowserSemanticKeyInput -> Unit
-
             is BrowserTextInput -> requireTextLength(event.text, BrowserWireLimits.MAX_TEXT_BYTES, "Browser text input")
         }
     }
