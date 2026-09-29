@@ -483,4 +483,3 @@ Pass: Visible focus and reachable controls; compact icons keep adequate targets;
 Scenarios: Invalid manifest/signature, protocol mismatch, replay/stale generation, untrusted TV, source leak, runtime update
 
 Pass: Fail safely with an action; authenticated encrypted browser presentation; golden vectors and hardware round trips pass.
-
