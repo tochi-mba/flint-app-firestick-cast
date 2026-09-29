@@ -5,8 +5,19 @@ using Shouldly;
 
 namespace Flint.App.Tests;
 
+/// <summary>
+/// Runs <see cref="DevFileLogTests"/> alone. They swap the process-wide <see cref="Trace"/>
+/// listener and assert on exact file contents and sizes, so another class's breadcrumbs must not
+/// land in their file mid-test.
+/// </summary>
+[CollectionDefinition(nameof(DevFileLogIsolation), DisableParallelization = true)]
+public sealed class DevFileLogIsolation;
+
+[Collection(nameof(DevFileLogIsolation))]
 public sealed class DevFileLogTests : IDisposable
 {
+    private static readonly TimeSpan DeadlockTimeout = TimeSpan.FromSeconds(10);
+
     private readonly string directory = Path.Combine(
         Path.GetTempPath(),
         "flint-devfilelog-tests",
@@ -149,6 +160,51 @@ public sealed class DevFileLogTests : IDisposable
         }
     }
 
+    [Fact]
+    public void ResetForTests_WhileTraceIsCallingListeners_DoesNotDeadlock()
+    {
+        // Regression test for a CI hang. Trace holds its global lock while it calls listeners, and
+        // ours then takes the file lock. Reset used to hold the file lock while removing the
+        // listener, which needs the Trace lock, so a breadcrumb logged by another test at that
+        // moment left each thread waiting on the other forever.
+        Trace.UseGlobalLock.ShouldBeTrue();
+        DevFileLog.StartForTests(path, maximumBytes: 64 * 1024, retainBytes: 32 * 1024);
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var holder = new HoldingTraceListener(entered, release);
+
+        // First in the list, so the tracing thread parks holding the Trace lock before it reaches ours.
+        Trace.Listeners.Insert(0, holder);
+        var tracing = new Thread(() => Trace.WriteLine("FlintDiag|INFO|FlintTest|racing reset")) { IsBackground = true };
+        var resetting = new Thread(DevFileLog.ResetForTests) { IsBackground = true };
+        try
+        {
+            tracing.Start();
+            entered.Wait(DeadlockTimeout, TestContext.Current.CancellationToken).ShouldBeTrue();
+            resetting.Start();
+
+            // Wait for the reset to block on the Trace lock: the point where the old code also held the file lock.
+            SpinWait.SpinUntil(
+                () => (resetting.ThreadState & System.Threading.ThreadState.WaitSleepJoin) != 0,
+                DeadlockTimeout).ShouldBeTrue();
+        }
+        finally
+        {
+            // Never leave the tracing thread parked on Trace's lock; every later trace would hang.
+            release.Set();
+        }
+
+        var finished = tracing.Join(DeadlockTimeout) && resetting.Join(DeadlockTimeout);
+        if (finished)
+        {
+            // Removing the listener needs the Trace lock, which a deadlocked thread would never release.
+            Trace.Listeners.Remove(holder);
+        }
+
+        finished.ShouldBeTrue("reset and a concurrent Trace.WriteLine deadlocked on each other's lock");
+        ReadShared(path).ShouldContain("[INFO] FlintTest: racing reset");
+    }
+
     /// <summary>
     /// Reads while the append writer is still open — same share mode agents use when copying the live log.
     /// </summary>
@@ -163,5 +219,24 @@ public sealed class DevFileLogTests : IDisposable
     {
         using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         return stream.Length;
+    }
+
+    /// <summary>Parks the first line it receives until released, holding Trace's global lock meanwhile.</summary>
+    private sealed class HoldingTraceListener(ManualResetEventSlim entered, ManualResetEventSlim release) : TraceListener
+    {
+        private int held;
+
+        public override void Write(string? message)
+        {
+        }
+
+        public override void WriteLine(string? message)
+        {
+            if (Interlocked.Exchange(ref held, 1) == 0)
+            {
+                entered.Set();
+                release.Wait();
+            }
+        }
     }
 }

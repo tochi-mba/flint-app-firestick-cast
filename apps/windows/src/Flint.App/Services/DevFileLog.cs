@@ -31,7 +31,18 @@ internal static class DevFileLog
     /// <summary>UI-thread lag above this is logged as a freeze suspect.</summary>
     private static readonly TimeSpan UiStallWarnAfter = TimeSpan.FromMilliseconds(750);
 
+    /// <summary>Serializes every file write, from direct calls and from the Trace listener alike.</summary>
     private static readonly object Gate = new();
+
+    /// <summary>Serializes start and reset, which register and remove the Trace listener.</summary>
+    /// <remarks>
+    /// <see cref="Trace"/> holds its own global lock while it calls listeners, and our listener then
+    /// takes <see cref="Gate"/>. Adding or removing a listener takes that same global lock, so doing
+    /// it while holding <see cref="Gate"/> inverts the order and deadlocks against any concurrent
+    /// <see cref="Trace.WriteLine(string)"/>. Registration therefore happens under this lock instead,
+    /// which nothing takes while holding either of the other two.
+    /// </remarks>
+    private static readonly object LifecycleGate = new();
     private static StreamWriter? writer;
     private static string? primaryPath;
     private static DispatcherTimer? watchdog;
@@ -74,7 +85,7 @@ internal static class DevFileLog
     /// <summary>Test seam: closes the writer and removes the Trace listener.</summary>
     internal static void ResetForTests()
     {
-        lock (Gate)
+        lock (LifecycleGate)
         {
             if (listener is not null)
             {
@@ -82,41 +93,48 @@ internal static class DevFileLog
                 listener = null;
             }
 
-            writer?.Dispose();
-            writer = null;
-            primaryPath = null;
-            MaximumBytes = DevLogRetention.DefaultMaximumBytes;
-            RetainBytes = DevLogRetention.DefaultRetainBytes;
-            Interlocked.Exchange(ref watchdogInFlight, 0);
+            lock (Gate)
+            {
+                writer?.Dispose();
+                writer = null;
+                primaryPath = null;
+                MaximumBytes = DevLogRetention.DefaultMaximumBytes;
+                RetainBytes = DevLogRetention.DefaultRetainBytes;
+                Interlocked.Exchange(ref watchdogInFlight, 0);
+            }
         }
     }
 
     private static void StartCore(string path, long maximumBytes, long retainBytes, bool truncateExisting)
     {
         DevLogRetention.ValidateBounds(maximumBytes, retainBytes);
-        lock (Gate)
+        lock (LifecycleGate)
         {
-            if (writer is not null)
+            lock (Gate)
             {
-                return;
+                if (writer is not null)
+                {
+                    return;
+                }
+
+                MaximumBytes = maximumBytes;
+                RetainBytes = retainBytes;
+                primaryPath = path;
+                if (truncateExisting)
+                {
+                    Truncate(primaryPath);
+                }
+                else
+                {
+                    DevLogRetention.TrimOldestIfNeeded(primaryPath, MaximumBytes, RetainBytes);
+                }
+
+                writer = OpenWriter(primaryPath);
+                WriteUnlocked("INFO", "DevFileLog", $"session start path={primaryPath} maxBytes={MaximumBytes} retainBytes={RetainBytes}");
             }
 
-            MaximumBytes = maximumBytes;
-            RetainBytes = retainBytes;
-            primaryPath = path;
-            if (truncateExisting)
-            {
-                Truncate(primaryPath);
-            }
-            else
-            {
-                DevLogRetention.TrimOldestIfNeeded(primaryPath, MaximumBytes, RetainBytes);
-            }
-
-            writer = OpenWriter(primaryPath);
             listener = new DevFileTraceListener();
             Trace.Listeners.Add(listener);
-            WriteUnlocked("INFO", "DevFileLog", $"session start path={primaryPath} maxBytes={MaximumBytes} retainBytes={RetainBytes}");
         }
     }
 
