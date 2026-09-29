@@ -197,7 +197,7 @@ class BrowserTlsServer(
                 negotiatedVersion,
             )
             Log.i(TAG, "Browser TLS dispatch loop enter sessionId=$sessionId")
-            dispatchLoop(input, negotiatedVersion)
+            dispatchLoop(client, input, negotiatedVersion)
             Log.i(TAG, "Browser TLS dispatch loop exit sessionId=$sessionId")
         } catch (failure: Throwable) {
             if (!closed.get()) {
@@ -315,13 +315,15 @@ class BrowserTlsServer(
      * The deadline still earns its place before authentication, where a silent peer is holding the
      * single client slot for nothing. Liveness after that is TCP keep-alive's job, not this loop's.
      */
-    private fun dispatchLoop(input: BufferedInputStream, negotiatedVersion: Int) {
+    private fun dispatchLoop(client: SSLSocket, input: BufferedInputStream, negotiatedVersion: Int) {
         while (!closed.get()) {
             val frame = try {
                 WireCodec.readFrom(input) ?: break
             } catch (_: SocketTimeoutException) {
                 continue
             }
+            // Revocation also discards frames already buffered before socket.close().
+            if (client.isClosed) break
             requireNegotiated(frame, negotiatedVersion)
             when (val message = frame.message) {
                 is BrowserCommandMessage -> listener.onCommand(message)

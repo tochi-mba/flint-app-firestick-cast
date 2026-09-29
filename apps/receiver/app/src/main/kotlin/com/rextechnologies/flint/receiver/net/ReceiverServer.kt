@@ -46,7 +46,6 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 
 /** What the receiver is doing right now, as the ten-foot UI needs to show it. */
 sealed interface ReceiverState {
@@ -96,7 +95,8 @@ class ReceiverServer(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val activeSessions = AtomicInteger(0)
-    private val activeClient = AtomicReference<Socket?>(null)
+    private val clientsLock = Any()
+    private val clients = mutableSetOf<Socket>()
 
     @Volatile
     private var sessionToken = sessionToken
@@ -134,7 +134,15 @@ class ReceiverServer(
                 // television's listener ending. This launch is a child of the accept loop, so
                 // anything thrown here used to cancel the loop and leave the TV unreachable
                 // until the service restarted.
-                launch { runCatching { serve(client) } }
+                synchronized(clientsLock) { clients.add(client) }
+                launch {
+                    try {
+                        runCatching { serve(client) }
+                    } finally {
+                        synchronized(clientsLock) { clients.remove(client) }
+                        runCatching { client.close() }
+                    }
+                }
             }
         }
         Unit
@@ -185,6 +193,8 @@ class ReceiverServer(
             try {
                 while (true) {
                     val frame = WireCodec.readFrom(input) ?: break
+                    // Closing the socket does not discard bytes already in BufferedInputStream.
+                    if (socket.isClosed) break
                     if (!established) {
                         when (val outcome = handshake.onMessage(frame.message)) {
                             is HandshakeOutcome.Continue -> frames.send(outcome.reply)
@@ -201,7 +211,6 @@ class ReceiverServer(
                                     frames.useProtocolVersion(outcome.parameters.protocolVersion)
                                     outcome.reply?.let(frames::send)
                                     established = true
-                                    activeClient.set(socket)
                                     sender = frames
                                     _state.value = ReceiverState.Connected(
                                         outcome.parameters.peer.deviceName,
@@ -230,7 +239,6 @@ class ReceiverServer(
             } finally {
                 if (established) {
                     sender = null
-                    activeClient.compareAndSet(socket, null)
                     listener.onSessionEnded()
                     _state.value = ReceiverState.Listening(address.hostAddress.orEmpty(), port)
                     activeSessions.set(0)
@@ -240,13 +248,12 @@ class ReceiverServer(
     }
 
     /** Revokes remembered cast access and ends the controller, leaving the listener ready to pair. */
-    fun revokeControllerAccess(): Boolean {
+    fun revokeControllerAccess(): Boolean = synchronized(clientsLock) {
         sessionToken = SessionToken.generate()
-        val client = activeClient.get() ?: return false
-        return runCatching {
-            client.close()
-            true
-        }.getOrDefault(false)
+        // Pending HELLO/AUTH handshakes captured the previous token and pairing code too.
+        val hadClients = clients.any { !it.isClosed }
+        clients.forEach { runCatching { it.close() } }
+        hadClients
     }
 
     /** Returns false when the session should end. */
@@ -299,7 +306,7 @@ class ReceiverServer(
     override fun close() {
         runCatching { server?.close() }
         server = null
-        activeClient.getAndSet(null)?.let { runCatching { it.close() } }
+        revokeControllerAccess()
         sender = null
         scope.cancel()
     }

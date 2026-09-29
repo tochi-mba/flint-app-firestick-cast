@@ -174,6 +174,37 @@ class ReceiverServerTest {
     }
 
     @Test
+    fun `revocation closes pending handshakes as well as the established controller`() {
+        val listener = RecordingListener()
+        ReceiverServer(loopback, listener, 0, { code }).use { server ->
+            assertTrue(server.start().isSuccess)
+            Socket().use { pending ->
+                pending.connect(InetSocketAddress(loopback, server.port), 2_000)
+                pending.soTimeout = 2_000
+                val input = pending.getInputStream().buffered()
+                write(pending.getOutputStream(), profile().hello())
+                assertIs<com.rextechnologies.flint.protocol.wire.HelloMessage>(WireCodec.readFrom(input)?.message)
+                Socket().use { active ->
+                    active.connect(InetSocketAddress(loopback, server.port), 2_000)
+                    active.soTimeout = 2_000
+                    establish(active.getInputStream().buffered(), active.getOutputStream().buffered())
+                    awaitConnectedClient(server)
+                    assertTrue(server.revokeControllerAccess())
+                    assertTrue(listener.ended.await(2, TimeUnit.SECONDS))
+                    assertEquals(-1, input.read())
+                }
+            }
+            assertTrue(waitUntil { server.state.value is ReceiverState.Listening })
+            Socket().use { fresh ->
+                fresh.connect(InetSocketAddress(loopback, server.port), 2_000)
+                fresh.soTimeout = 2_000
+                establish(fresh.getInputStream().buffered(), fresh.getOutputStream().buffered())
+                awaitConnectedClient(server)
+            }
+        }
+    }
+
+    @Test
     fun `receiver emits the negotiated wire version after its v1 compatible hello`() {
         ReceiverServer(loopback, RecordingListener(), 0, { code }).use { server ->
             assertTrue(server.start().isSuccess)

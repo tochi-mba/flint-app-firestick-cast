@@ -272,10 +272,11 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
 
     /** Revokes both controller channels, clears the screen, and presents a fresh pairing secret. */
     fun disconnectAndRefreshPairingCode() {
+        // New accepts must see the new secret before old handshakes are disconnected.
+        refreshPairingCode()
         clearSessionSurface()
         val castDisconnected = server?.revokeControllerAccess() == true
         val browserDisconnected = browserController.disconnectHostSession()
-        refreshPairingCode()
         _uiState.update {
             it.copy(
                 peerName = null,
