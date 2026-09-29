@@ -243,10 +243,53 @@ class ReceiverSetupTest {
             ReceiverInstallStage.Installed,
             bundle(versionName = "0.2.1"),
             "Fire TV Stick",
+            InstalledReceiver(BundledReceiver.RELEASE_PACKAGE, "0.2.1", 1),
         )
         assertTrue(plan.body.contains("0.2.1"), plan.body)
         assertEquals(ReceiverSetup.REMOVE_ACTION, plan.removeAction)
         assertNull(plan.installAction)
+    }
+
+    @Test
+    fun `an older installed receiver offers an in-place update with the bundled package disclosed`() {
+        val plan = ReceiverSetup.plan(
+            ReceiverPlatform.FIRE_OS_8,
+            ReceiverInstallStage.Installed,
+            bundle(versionName = "0.4.0", versionCode = 4),
+            "Fire TV Stick",
+            InstalledReceiver(BundledReceiver.RELEASE_PACKAGE, "0.3.0", 3),
+        )
+        assertEquals(ReceiverSetup.UPDATE_ACTION, plan.installAction)
+        assertTrue(plan.body.contains("0.3.0 (3)"), plan.body)
+        assertTrue(plan.body.contains("0.4.0 (4)"), plan.body)
+        assertTrue(plan.disclosure.any { it.contains("0.4.0 (4)") })
+        assertEquals(ReceiverSetup.REMOVE_ACTION, plan.removeAction)
+    }
+
+    @Test
+    fun `a newer installed receiver is never offered a downgrade`() {
+        val plan = ReceiverSetup.plan(
+            ReceiverPlatform.FIRE_OS_8,
+            ReceiverInstallStage.Installed,
+            bundle(versionName = "0.3.0", versionCode = 3),
+            "Fire TV Stick",
+            InstalledReceiver(BundledReceiver.RELEASE_PACKAGE, "0.4.0", 4),
+        )
+        assertNull(plan.installAction)
+        assertTrue(plan.body.contains("will not downgrade"), plan.body)
+    }
+
+    @Test
+    fun `a different installed package is not treated as an update target`() {
+        val plan = ReceiverSetup.plan(
+            ReceiverPlatform.FIRE_OS_8,
+            ReceiverInstallStage.Installed,
+            bundle(packageName = BundledReceiver.DEBUG_PACKAGE, versionCode = 9),
+            "Fire TV Stick",
+            InstalledReceiver(BundledReceiver.RELEASE_PACKAGE, "0.1.0", 1),
+        )
+        assertNull(plan.installAction)
+        assertTrue(plan.body.contains("different package"), plan.body)
     }
 
     @Test
@@ -256,6 +299,7 @@ class ReceiverSetupTest {
             ReceiverInstallStage.Installed,
             bundle(packageName = "com.rextechnologies.flint.receiver.debug"),
             "Fire TV Stick",
+            InstalledReceiver("com.rextechnologies.flint.receiver.debug", "0.1.0", 1),
         )
         assertTrue(plan.body.contains(".debug"), plan.body)
     }

@@ -167,6 +167,7 @@ private fun ReceiverSetupCard(state: MobileUiState, controller: MobileController
         stage = state.installStage,
         bundled = state.bundledReceiver,
         deviceName = deviceName,
+        installed = state.installedReceiver,
     )
     val busy = state.setupBusy
     val hasTelevision = selected != null

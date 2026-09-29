@@ -256,7 +256,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_NEW_CODE -> refreshPairingCode()
+            ACTION_NEW_CODE -> disconnectAndRefreshPairingCode()
             ACTION_STOP -> stopSelf()
         }
         return START_STICKY
@@ -268,6 +268,24 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
         pairingCode = PairingCode.generate()
         _uiState.update { it.copy(pairingCode = pairingCode.toString()) }
         updateNotification()
+    }
+
+    /** Revokes both controller channels, clears the screen, and presents a fresh pairing secret. */
+    fun disconnectAndRefreshPairingCode() {
+        // New accepts must see the new secret before old handshakes are disconnected.
+        refreshPairingCode()
+        clearSessionSurface()
+        val castDisconnected = server?.revokeControllerAccess() == true
+        val browserDisconnected = browserController.disconnectHostSession()
+        _uiState.update {
+            it.copy(
+                peerName = null,
+                surfaceMode = SurfaceMode.IDLE,
+                detail = "Ready with a new pairing code",
+                error = null,
+            )
+        }
+        Log.i(TAG, "Controller access revoked cast=$castDisconnected browser=$browserDisconnected")
     }
 
     /** Clears a recoverable listener failure and asks the network poller to bind again. */

@@ -6,6 +6,7 @@ import com.rextechnologies.flint.castcore.setup.AdbPortScan
 import com.rextechnologies.flint.castcore.setup.BundledReceiver
 import com.rextechnologies.flint.castcore.setup.FireOsPlatformResolver
 import com.rextechnologies.flint.castcore.setup.InstallEvent
+import com.rextechnologies.flint.castcore.setup.InstalledReceiver
 import com.rextechnologies.flint.protocol.adb.AdbAuthorizationRequiredException
 import com.rextechnologies.flint.protocol.adb.AdbConnection
 import com.rextechnologies.flint.protocol.adb.AdbFormatException
@@ -38,9 +39,14 @@ sealed interface AdbAnswer {
         val platform: ReceiverPlatform,
         /** The Flint receiver package the television lists, or `null` when it lists none. */
         val installedPackage: String?,
+        val installedVersionName: String? = null,
+        val installedVersionCode: Long? = null,
     ) : AdbAnswer {
         val receiverInstalled: Boolean
             get() = installedPackage != null
+
+        val installedReceiver: InstalledReceiver?
+            get() = installedPackage?.let { InstalledReceiver(it, installedVersionName, installedVersionCode) }
     }
 
     /** ADB answered on [port], and the television is holding its authorisation prompt. */
@@ -118,13 +124,19 @@ class AdbClient(
         val release = connection.shell("getprop ro.build.version.release").trim()
         val model = connection.shell("getprop ro.product.model").trim().ifBlank { connection.banner?.model.orEmpty() }
         val listed = listedPackages(connection)
+        val installedPackage = receiverPackages.firstOrNull { it in listed }
+        val installed = installedPackage?.let {
+            parseInstalledReceiver(it, connection.shell("dumpsys package $it"))
+        }
         AdbAnswer.Identified(
             port = session.port,
             model = model,
             androidRelease = release,
             apiLevel = apiLevel,
             platform = FireOsPlatformResolver.resolve(provesAndroid = true, apiLevel = apiLevel, buildModel = model),
-            installedPackage = receiverPackages.firstOrNull { it in listed },
+            installedPackage = installedPackage,
+            installedVersionName = installed?.versionName,
+            installedVersionCode = installed?.versionCode,
         )
     }.answerOrElse { it }
 
@@ -334,6 +346,21 @@ class AdbClient(
         private const val BUFFER_BYTES = 64 * 1024
         private const val DETAIL_LIMIT = 240
         private const val NO_REASON = "The television's package manager refused without saying why."
+
+        internal fun parseInstalledReceiver(packageName: String, dump: String): InstalledReceiver {
+            val versionName = dump.lineSequence()
+                .map { it.trim() }
+                .firstOrNull { it.startsWith("versionName=") }
+                ?.substringAfter('=')
+                ?.takeUnless { it.isBlank() || it == "null" }
+            val versionCode = dump.lineSequence()
+                .map { it.trim() }
+                .firstOrNull { it.startsWith("versionCode=") }
+                ?.substringAfter('=')
+                ?.substringBefore(' ')
+                ?.toLongOrNull()
+            return InstalledReceiver(packageName, versionName, versionCode)
+        }
 
         /**
          * What every port being closed means, told apart by how it was closed.
