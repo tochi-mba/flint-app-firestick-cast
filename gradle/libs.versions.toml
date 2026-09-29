@@ -17,8 +17,8 @@ jdk = "17"
 agp = "9.4.1"
 kotlin = "2.4.20"
 jacoco = "0.8.14"
-# ktlint 1.8 introduces a repository-wide formatting migration; keep it separate from runtime updates.
-ktlint = "1.7.1"
+# Formatting follows the pinned ktlint release in CI and locally.
+ktlint = "1.8.0"
 
 # Android platform
 compile-sdk = "36"
@@ -30,7 +30,7 @@ mobile-min-sdk = "26"
 receiver-min-sdk = "25"
 
 # AndroidX
-# Core 1.19 and Compose BOM 2026.09 require a verified compileSdk 37 upgrade first.
+# Core 1.19 and Compose BOM 2026.09 require SDK 37, unavailable from the configured SDK repository.
 androidx-core = "1.16.0"
 androidx-activity-compose = "1.13.0"
 # A floor rather than the resolved version: activity-compose already brings lifecycle in, and naming

@@ -18,7 +18,7 @@ fn device() -> Option<(ID3D11Device, ID3D11DeviceContext)> {
         D3D11CreateDevice(
             None,
             D3D_DRIVER_TYPE_HARDWARE,
-            None,
+            windows::Win32::Foundation::HMODULE::default(),
             D3D11_CREATE_DEVICE_VIDEO_SUPPORT | D3D11_CREATE_DEVICE_BGRA_SUPPORT,
             Some(&[D3D_FEATURE_LEVEL_11_0]),
             D3D11_SDK_VERSION,
@@ -190,7 +190,7 @@ fn a_device_without_video_support_is_refused_rather_than_used() {
         D3D11CreateDevice(
             None,
             D3D_DRIVER_TYPE_HARDWARE,
-            None,
+            windows::Win32::Foundation::HMODULE::default(),
             windows::Win32::Graphics::Direct3D11::D3D11_CREATE_DEVICE_FLAG::default(),
             Some(&[D3D_FEATURE_LEVEL_11_0]),
             D3D11_SDK_VERSION,

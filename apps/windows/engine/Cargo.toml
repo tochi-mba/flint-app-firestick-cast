@@ -15,7 +15,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 
 [target.'cfg(windows)'.dependencies.windows]
-version = "0.58"
+version = "0.62"
 features = [
     "Win32_Foundation",
     "Win32_Graphics_Dxgi",
@@ -25,6 +25,7 @@ features = [
     "Win32_Graphics_Gdi",
     "Win32_Media_MediaFoundation",
     "Win32_System_Com",
+    "Win32_System_Ole",
     # ICodecAPI takes its settings as VARIANTs; this is what makes the encoder's low-latency
     # controls reachable, and without them the software encoder buffers about seventeen frames
     # before emitting anything at all.

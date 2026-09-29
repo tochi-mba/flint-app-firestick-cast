@@ -151,7 +151,7 @@ public static class Snapshot
         var target = size ?? DefaultSize;
         window.Width = target.Width;
         window.Height = target.Height;
-        window.SystemDecorations = SystemDecorations.None;
+        window.WindowDecorations = WindowDecorations.None;
         window.Show();
         window.UpdateLayout();
 
@@ -174,7 +174,7 @@ public static class Snapshot
             Content = content,
             Width = size.Width,
             Height = size.Height,
-            SystemDecorations = SystemDecorations.None,
+            WindowDecorations = WindowDecorations.None,
         };
 
         window.Show();

@@ -38,7 +38,7 @@ public sealed class BrowserPageViewModelTabSurfaceTests
             ]));
         viewModel.Tabs.Items.Count.ShouldBe(2);
 
-        await coordinator.PrepareForAsync(TvSurfaceKind.Mirror);
+        await coordinator.PrepareForAsync(TvSurfaceKind.Mirror, TestContext.Current.CancellationToken);
         viewModel.HasOpenBrowserSurface.ShouldBeFalse();
         SetIsMirroring(cast, true);
 
@@ -83,7 +83,7 @@ public sealed class BrowserPageViewModelTabSurfaceTests
                     3, "C", "https://example.test/c", 100, false, false, false, false),
             ]));
 
-        await coordinator.PrepareForAsync(TvSurfaceKind.Mirror);
+        await coordinator.PrepareForAsync(TvSurfaceKind.Mirror, TestContext.Current.CancellationToken);
         SetIsMirroring(cast, true);
 
         await viewModel.Tabs.SelectTabCommand.ExecuteAsync(2);
@@ -120,7 +120,7 @@ public sealed class BrowserPageViewModelTabSurfaceTests
                     2, "cats", "https://www.google.com/search?q=cats", 100, false, false, false, false),
             ]));
 
-        await coordinator.PrepareForAsync(TvSurfaceKind.Mirror);
+        await coordinator.PrepareForAsync(TvSurfaceKind.Mirror, TestContext.Current.CancellationToken);
         SetIsMirroring(cast, true);
 
         await viewModel.Tabs.SelectTabCommand.ExecuteAsync(1);
@@ -186,7 +186,7 @@ public sealed class BrowserPageViewModelTabSurfaceTests
                     1, "A", "https://example.test/a", 100, false, false, false, false),
             ]));
 
-        await coordinator.PrepareForAsync(TvSurfaceKind.Mirror);
+        await coordinator.PrepareForAsync(TvSurfaceKind.Mirror, TestContext.Current.CancellationToken);
         SetIsMirroring(cast, true);
 
         await viewModel.Tabs.NewTabCommand.ExecuteAsync(null);
@@ -208,7 +208,7 @@ public sealed class BrowserPageViewModelTabSurfaceTests
 
         viewModel.Address = "https://example.test/a";
         await viewModel.NavigateCommand.ExecuteAsync(null);
-        await coordinator.PrepareForAsync(TvSurfaceKind.Mirror);
+        await coordinator.PrepareForAsync(TvSurfaceKind.Mirror, TestContext.Current.CancellationToken);
         SetIsMirroring(cast, true);
 
         var before = remote.Commands.Count;

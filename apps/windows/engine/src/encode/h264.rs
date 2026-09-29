@@ -11,7 +11,7 @@
 //! the output type must be set before the input type, and the encoder only reveals its sequence
 //! header (the SPS and PPS a decoder cannot start without) after the output type is committed.
 
-use windows::core::{Interface, VARIANT};
+use windows::core::Interface;
 use windows::Win32::Media::MediaFoundation::{
     CODECAPI_AVEncCommonMeanBitRate, CODECAPI_AVEncCommonRateControlMode,
     CODECAPI_AVEncCommonRealTime, CODECAPI_AVEncMPVDefaultBPictureCount, CODECAPI_AVEncMPVGOPSize,
@@ -27,6 +27,7 @@ use windows::Win32::Media::MediaFoundation::{
     MF_MT_MAJOR_TYPE, MF_MT_MPEG2_PROFILE, MF_MT_MPEG_SEQUENCE_HEADER, MF_MT_PIXEL_ASPECT_RATIO,
     MF_MT_SUBTYPE,
 };
+use windows::Win32::System::Variant::VARIANT;
 
 use super::mediafoundation::MediaFoundationPlatform;
 use super::video::{

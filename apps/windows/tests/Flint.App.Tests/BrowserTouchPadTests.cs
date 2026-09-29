@@ -29,8 +29,8 @@ public sealed class BrowserTouchPadTests
         await viewModel.NavigateCommand.ExecuteAsync(null);
         var navigationId = viewModel.ActiveNavigationIdForInteraction;
 
-        await viewModel.SendPointerAsync(BrowserPointerAction.Down, 100, 200, buttons: 1);
-        await viewModel.SendPointerAsync(BrowserPointerAction.Up, 100, 200, buttons: 0);
+        await viewModel.SendPointerAsync(BrowserPointerAction.Down, 100, 200, buttons: 1, cancellationToken: TestContext.Current.CancellationToken);
+        await viewModel.SendPointerAsync(BrowserPointerAction.Up, 100, 200, buttons: 0, cancellationToken: TestContext.Current.CancellationToken);
 
         var down = remote.Inputs[0].Event.ShouldBeOfType<BrowserPointerInput>();
         down.Action.ShouldBe(BrowserPointerAction.Down);
@@ -104,7 +104,7 @@ public sealed class BrowserTouchPadTests
         using var viewModel = await BrowserFixtures.ReadyViewModelAsync(remote);
         await viewModel.NavigateCommand.ExecuteAsync(null);
 
-        await viewModel.SendScrollAsync(10, 20, 0, -120);
+        await viewModel.SendScrollAsync(10, 20, 0, -120, TestContext.Current.CancellationToken);
 
         var scroll = remote.Inputs.Single().Event.ShouldBeOfType<BrowserScrollInput>();
         scroll.DeltaY.ShouldBe(-120);

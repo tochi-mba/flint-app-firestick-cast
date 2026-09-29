@@ -171,7 +171,7 @@ fn create_video_device(
         D3D11CreateDevice(
             adapter,
             D3D_DRIVER_TYPE_UNKNOWN,
-            None,
+            windows::Win32::Foundation::HMODULE::default(),
             // VIDEO_SUPPORT is the flag that matters: without it the device is created happily and
             // the encoder then refuses it, reporting nothing about which flag was missing. BGRA
             // support keeps this device interchangeable with the capture device.

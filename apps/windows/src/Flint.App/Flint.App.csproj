@@ -24,7 +24,6 @@
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" />
     <PackageReference Include="Velopack" />
-    <PackageReference Include="Avalonia.Diagnostics" Condition="'$(Configuration)' == 'Debug'" />
   </ItemGroup>
 
   <ItemGroup>

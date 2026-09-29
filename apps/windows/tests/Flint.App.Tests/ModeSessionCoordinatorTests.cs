@@ -13,7 +13,7 @@ public sealed class ModeSessionCoordinatorTests
             .SetValue(shell.Cast, true);
 
         var coordinator = new ModeSessionCoordinator(shell.Cast, shell.Browser);
-        await coordinator.PrepareForAsync(TvSurfaceKind.Browser);
+        await coordinator.PrepareForAsync(TvSurfaceKind.Browser, TestContext.Current.CancellationToken);
 
         shell.Cast.IsMediaPlaying.ShouldBeFalse();
         shell.Cast.MediaStatus.ShouldContain("stopped", Case.Insensitive);
@@ -31,7 +31,7 @@ public sealed class ModeSessionCoordinatorTests
         await viewModel.NavigateCommand.ExecuteAsync(null);
         viewModel.HasOpenBrowserSurface.ShouldBeTrue();
 
-        await coordinator.PrepareForAsync(TvSurfaceKind.Media);
+        await coordinator.PrepareForAsync(TvSurfaceKind.Media, TestContext.Current.CancellationToken);
 
         viewModel.HasOpenBrowserSurface.ShouldBeFalse();
         remote.Commands.ShouldContain(command => command.Action == Flint.Protocol.BrowserCommandAction.Close);
@@ -61,7 +61,7 @@ public sealed class ModeSessionCoordinatorTests
         await viewModel.NavigateCommand.ExecuteAsync(null);
         viewModel.HasOpenBrowserSurface.ShouldBeTrue();
 
-        await coordinator.PrepareForAsync(TvSurfaceKind.Mirror);
+        await coordinator.PrepareForAsync(TvSurfaceKind.Mirror, TestContext.Current.CancellationToken);
 
         viewModel.HasOpenBrowserSurface.ShouldBeFalse();
         remote.Commands.ShouldContain(command => command.Action == Flint.Protocol.BrowserCommandAction.Close);
@@ -77,7 +77,7 @@ public sealed class ModeSessionCoordinatorTests
             .SetValue(shell.Cast, true);
 
         var coordinator = new ModeSessionCoordinator(shell.Cast, shell.Browser);
-        await coordinator.PrepareForAsync(TvSurfaceKind.Browser);
+        await coordinator.PrepareForAsync(TvSurfaceKind.Browser, TestContext.Current.CancellationToken);
 
         shell.Cast.IsMirroring.ShouldBeFalse();
     }

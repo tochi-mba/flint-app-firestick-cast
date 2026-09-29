@@ -47,7 +47,7 @@ public sealed class BrowserProfileSessionRestorerTests
         remote.WorkspaceCommands.Count.ShouldBe(1);
         restore.Select(Profile(7, BrowserProfileStorageLocation.Television), BrowserSavedSession.Empty);
         restore.Observe(Workspace(7) with { IsWorkspaceMode = false });
-        await Task.Delay(30);
+        await Task.Delay(30, TestContext.Current.CancellationToken);
         remote.TabRequests.ShouldBeEmpty();
         remote.WorkspaceCommands.Count.ShouldBe(1);
     }

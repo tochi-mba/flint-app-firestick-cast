@@ -56,10 +56,10 @@ public sealed class BrowserTrustPersistenceTests : IDisposable
             DateTimeOffset.UtcNow);
 
         var first = new ProtectedFileBrowserTrustStore(Path.Combine(directory, "trust.json"));
-        await first.SaveAsync(receiver);
+        await first.SaveAsync(receiver, TestContext.Current.CancellationToken);
 
         var second = new ProtectedFileBrowserTrustStore(Path.Combine(directory, "trust.json"));
-        var found = await second.FindAsync("living-room");
+        var found = await second.FindAsync("living-room", TestContext.Current.CancellationToken);
 
         found.ShouldNotBeNull();
         found.Fingerprint.FullPin.ShouldBe(receiver.Fingerprint.FullPin);
@@ -77,10 +77,10 @@ public sealed class BrowserTrustPersistenceTests : IDisposable
             DateTimeOffset.UtcNow);
 
         var store = new ProtectedFileBrowserTrustStore(Path.Combine(directory, "trust.json"));
-        await store.SaveAsync(receiver);
-        await store.ForgetAsync("living-room");
+        await store.SaveAsync(receiver, TestContext.Current.CancellationToken);
+        await store.ForgetAsync("living-room", TestContext.Current.CancellationToken);
 
-        (await store.FindAsync("living-room")).ShouldBeNull();
+        (await store.FindAsync("living-room", TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
     [Fact]
@@ -88,6 +88,6 @@ public sealed class BrowserTrustPersistenceTests : IDisposable
     {
         var store = new ProtectedFileBrowserTrustStore(Path.Combine(directory, "trust.json"));
 
-        (await store.FindAsync("never-seen")).ShouldBeNull();
+        (await store.FindAsync("never-seen", TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 }

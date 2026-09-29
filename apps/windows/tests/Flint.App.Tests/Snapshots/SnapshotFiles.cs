@@ -151,7 +151,7 @@ public static class SnapshotFiles
                 new PixelSize(width, height),
                 new Vector(96, 96),
                 stride);
-            bitmap.Save(path);
+            bitmap.Save(path, PngBitmapEncoderOptions.Default);
         }
         finally
         {

@@ -95,12 +95,9 @@ import java.net.URI
 /**
  * Everything the receiver does for the TV-resident browser, kept out of [ReceiverService].
  *
- * The service owns a listening socket, two decoders, a player, notifications and a discovery
- * responder; the browser adds a second TLS listener, an identity, a coordinator, an input router, a
- * dialog bridge and a preview loop. Holding both in one class pushed it past a thousand lines and
- * made the browser's lifecycle impossible to read next to the cast session's. The service keeps the
- * surface decision — which of player, mirror and browser owns the glass — and delegates the rest
- * here.
+ * The service owns a listening socket, two decoders, a player, notifications and discovery. The browser
+ * adds a TLS listener, identity, coordinator, input routing, dialogs and preview. Keeping both together
+ * obscured their lifecycles. The service decides which surface owns the glass and delegates browser work here.
  *
  * This class touches UI state but never a `WebView`, an `Activity` or a `Context`: the Activity
  * owns the view and attaches it through [attachWebView], exactly as ADR-0007 requires.

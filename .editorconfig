@@ -41,6 +41,11 @@ ktlint_function_naming_ignore_when_annotated_with = Composable
 # formatter's opinion into the diff of every change to code that already reads consistently.
 ktlint_standard_class-signature = disabled
 ktlint_standard_function-signature = disabled
+# Ktlint 1.8 adds a blank line between every branch as soon as one branch spans
+# multiple lines. Large reducers use `when` as their primary control structure;
+# applying that rule adds hundreds of empty lines without making those branches
+# easier to scan and pushes established source-size baselines backwards.
+ktlint_standard_blank-line-between-when-conditions = disabled
 
 [*.{md,yml,yaml,json}]
 indent_size = 2
