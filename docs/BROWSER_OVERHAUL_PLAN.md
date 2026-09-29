@@ -1,6 +1,6 @@
 # Browser overhaul: two hosts, one live workspace
 
-Status: target design for review, not shipped capabilities. Updated 29 September 2026. Receiver lifecycle implementation is tracked in PR #26.
+Status: target design for review, not shipped capabilities. Updated 29 September 2026. Receiver lifecycle fixes shipped in PR #26.
 
 ## Host and display flows
 
