@@ -92,6 +92,7 @@ class BrowserTlsServer(
     private val activeClients = AtomicInteger(0)
     private val nextSessionId = AtomicLong(0)
     private val activeWriter = AtomicReference<BrowserReliableWriter?>(null)
+    private val activeClient = AtomicReference<SSLSocket?>(null)
     private var server: SSLServerSocket? = null
 
     private val _listening = MutableStateFlow(false)
@@ -160,6 +161,7 @@ class BrowserTlsServer(
             refuseExtraClient(client)
             return
         }
+        activeClient.set(client)
         var writer: BrowserReliableWriter? = null
         var authenticatedSessionId: Long? = null
         try {
@@ -204,6 +206,7 @@ class BrowserTlsServer(
         } finally {
             activeWriter.compareAndSet(writer, null)
             writer?.close()
+            activeClient.compareAndSet(client, null)
             runCatching { client.close() }
             // Teardown first, then the slot. Releasing the slot first lets the next host connect
             // and open a page while this session's cleanup is still running — and that cleanup
@@ -216,6 +219,15 @@ class BrowserTlsServer(
             }
             activeClients.set(0)
         }
+    }
+
+    /** Ends the authenticated controller while keeping the secure listener available. */
+    fun disconnectActiveSession(): Boolean {
+        val client = activeClient.get() ?: return false
+        return runCatching {
+            client.close()
+            true
+        }.getOrDefault(false)
     }
 
     private data class HandshakeResult(
@@ -437,6 +449,7 @@ class BrowserTlsServer(
         if (!closed.compareAndSet(false, true)) return
         _listening.value = false
         activeWriter.getAndSet(null)?.close()
+        activeClient.getAndSet(null)?.let { runCatching { it.close() } }
         runCatching { server?.close() }
         server = null
         scope.cancel()

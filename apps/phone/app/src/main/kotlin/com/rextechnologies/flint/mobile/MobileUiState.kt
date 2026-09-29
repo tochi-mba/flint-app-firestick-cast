@@ -12,6 +12,7 @@ import com.rextechnologies.flint.castcore.media.SessionDiagnostics
 import com.rextechnologies.flint.castcore.screen.SecondScreenScene
 import com.rextechnologies.flint.castcore.session.SessionFailure
 import com.rextechnologies.flint.castcore.setup.BundledReceiver
+import com.rextechnologies.flint.castcore.setup.InstalledReceiver
 import com.rextechnologies.flint.castcore.setup.ReceiverInstallStage
 import com.rextechnologies.flint.mobile.state.LinkState
 import com.rextechnologies.flint.mobile.state.LookupState
@@ -76,12 +77,14 @@ data class MobileUiState(
     val media: MediaState = MediaState.Idle,
     val bundledReceiver: BundledReceiver? = null,
     val installStage: ReceiverInstallStage = ReceiverInstallStage.Unknown,
-    /** The receiver package the selected television listed when last asked over ADB, or `null`. */
-    val installedReceiverPackage: String? = null,
+    /** The receiver package and version the selected television reported over ADB, or `null`. */
+    val installedReceiver: InstalledReceiver? = null,
     /** The phone is identifying, installing or removing right now. The card's buttons wait. */
     val setupBusy: Boolean = false,
     val notice: String? = null,
 ) {
+    val installedReceiverPackage: String?
+        get() = installedReceiver?.packageName
     val isProbing: Boolean
         get() = lookup is LookupState.Running || manualLookup is LookupState.Running
 

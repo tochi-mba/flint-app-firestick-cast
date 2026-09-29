@@ -2,6 +2,7 @@ package com.rextechnologies.flint.receiver.net
 
 import com.rextechnologies.flint.protocol.BinaryData
 import com.rextechnologies.flint.protocol.discovery.PairingCode
+import com.rextechnologies.flint.protocol.http.SessionToken
 import com.rextechnologies.flint.protocol.session.CastAuth
 import com.rextechnologies.flint.protocol.session.DeviceProfile
 import com.rextechnologies.flint.protocol.session.HandshakeOutcome
@@ -142,6 +143,37 @@ class ReceiverServerTest {
     }
 
     @Test
+    fun `the TV can revoke the active controller without stopping the listener`() {
+        val listener = RecordingListener()
+        val rememberedToken = SessionToken.generate()
+        ReceiverServer(loopback, listener, 0, { code }, sessionToken = rememberedToken).use { server ->
+            assertTrue(server.start().isSuccess)
+            Socket().use { socket ->
+                socket.connect(InetSocketAddress(loopback, server.port), 2_000)
+                socket.soTimeout = 2_000
+                establish(socket.getInputStream().buffered(), socket.getOutputStream().buffered())
+                awaitConnectedClient(server)
+
+                assertTrue(server.revokeControllerAccess())
+                assertTrue(listener.ended.await(2, TimeUnit.SECONDS))
+                assertTrue(waitUntil { server.state.value is ReceiverState.Listening })
+                assertTrue(!server.revokeControllerAccess())
+            }
+
+            Socket().use { socket ->
+                socket.connect(InetSocketAddress(loopback, server.port), 2_000)
+                socket.soTimeout = 2_000
+                val input = socket.getInputStream().buffered()
+                val output = socket.getOutputStream().buffered()
+                write(output, profile().hello())
+                assertIs<com.rextechnologies.flint.protocol.wire.HelloMessage>(WireCodec.readFrom(input)?.message)
+                write(output, AuthMessage(AuthMethod.SESSION_TOKEN, CastAuth.tokenCredential(rememberedToken)))
+                assertIs<ByeMessage>(WireCodec.readFrom(input)?.message)
+            }
+        }
+    }
+
+    @Test
     fun `receiver emits the negotiated wire version after its v1 compatible hello`() {
         ReceiverServer(loopback, RecordingListener(), 0, { code }).use { server ->
             assertTrue(server.start().isSuccess)
@@ -218,6 +250,15 @@ class ReceiverServerTest {
             Thread.sleep(5)
         }
         throw AssertionError("The server never reported a connected client")
+    }
+
+    private fun waitUntil(condition: () -> Boolean): Boolean {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
+        while (System.nanoTime() < deadline) {
+            if (condition()) return true
+            Thread.sleep(5)
+        }
+        return condition()
     }
 
     private fun profile() = DeviceProfile("Test phone", setOf(CodecId.H264), 1080, 1920, 420)

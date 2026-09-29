@@ -13,6 +13,21 @@ val keystoreProperties: Properties? =
         .asText
         .map { text -> Properties().apply { load(text.reader()) } }
         .orNull
+val keystorePath = providers.environmentVariable("MOBILE_KEYSTORE_PATH").orNull
+val keystorePassword = providers.environmentVariable("MOBILE_KEYSTORE_PASSWORD").orNull
+val releaseKeyAlias = providers.environmentVariable("MOBILE_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.environmentVariable("MOBILE_KEY_PASSWORD").orNull
+val environmentSigningPresent = !keystorePath.isNullOrBlank() &&
+    !keystorePassword.isNullOrBlank() &&
+    !releaseKeyAlias.isNullOrBlank() &&
+    !releaseKeyPassword.isNullOrBlank()
+val anyEnvironmentSigning = listOf(keystorePath, keystorePassword, releaseKeyAlias, releaseKeyPassword)
+    .any { !it.isNullOrBlank() }
+require(!anyEnvironmentSigning || environmentSigningPresent) {
+    "Receiver release signing needs MOBILE_KEYSTORE_PATH, MOBILE_KEYSTORE_PASSWORD, " +
+        "MOBILE_KEY_ALIAS and MOBILE_KEY_PASSWORD together."
+}
+val releaseSigningPresent = environmentSigningPresent || keystoreProperties != null
 
 android {
     namespace = "com.rextechnologies.flint.receiver"
@@ -24,19 +39,27 @@ android {
     }
 
     signingConfigs {
-        keystoreProperties?.let { properties ->
+        if (releaseSigningPresent) {
             create("release") {
-                storeFile = rootProject.file(properties.getProperty("storeFile"))
-                storePassword = properties.getProperty("storePassword")
-                keyAlias = properties.getProperty("keyAlias")
-                keyPassword = properties.getProperty("keyPassword")
+                if (environmentSigningPresent) {
+                    storeFile = file(keystorePath!!)
+                    storePassword = keystorePassword
+                    keyAlias = releaseKeyAlias
+                    keyPassword = releaseKeyPassword
+                } else {
+                    val properties = checkNotNull(keystoreProperties)
+                    storeFile = rootProject.file(properties.getProperty("storeFile"))
+                    storePassword = properties.getProperty("storePassword")
+                    keyAlias = properties.getProperty("keyAlias")
+                    keyPassword = properties.getProperty("keyPassword")
+                }
             }
         }
     }
 
     buildTypes {
         release {
-            if (keystoreProperties != null) {
+            if (releaseSigningPresent) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }

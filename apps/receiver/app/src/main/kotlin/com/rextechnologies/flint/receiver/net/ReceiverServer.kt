@@ -46,6 +46,7 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 /** What the receiver is doing right now, as the ten-foot UI needs to show it. */
 sealed interface ReceiverState {
@@ -86,7 +87,7 @@ class ReceiverServer(
     private val listener: ReceiverSessionListener,
     requestedPort: Int = DEFAULT_PORT,
     private val pairingCodeProvider: () -> PairingCode,
-    private val sessionToken: SessionToken = SessionToken.generate(),
+    sessionToken: SessionToken = SessionToken.generate(),
     private val displayMetrics: () -> Triple<Int, Int, Int> = { Triple(1920, 1080, 320) },
     private val browserPortProvider: () -> Int = { 0 },
 ) : Closeable {
@@ -95,6 +96,10 @@ class ReceiverServer(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val activeSessions = AtomicInteger(0)
+    private val activeClient = AtomicReference<Socket?>(null)
+
+    @Volatile
+    private var sessionToken = sessionToken
     private var server: ServerSocket? = null
 
     @Volatile
@@ -196,6 +201,7 @@ class ReceiverServer(
                                     frames.useProtocolVersion(outcome.parameters.protocolVersion)
                                     outcome.reply?.let(frames::send)
                                     established = true
+                                    activeClient.set(socket)
                                     sender = frames
                                     _state.value = ReceiverState.Connected(
                                         outcome.parameters.peer.deviceName,
@@ -224,12 +230,23 @@ class ReceiverServer(
             } finally {
                 if (established) {
                     sender = null
+                    activeClient.compareAndSet(socket, null)
                     listener.onSessionEnded()
                     _state.value = ReceiverState.Listening(address.hostAddress.orEmpty(), port)
                     activeSessions.set(0)
                 }
             }
         }
+    }
+
+    /** Revokes remembered cast access and ends the controller, leaving the listener ready to pair. */
+    fun revokeControllerAccess(): Boolean {
+        sessionToken = SessionToken.generate()
+        val client = activeClient.get() ?: return false
+        return runCatching {
+            client.close()
+            true
+        }.getOrDefault(false)
     }
 
     /** Returns false when the session should end. */
@@ -282,6 +299,7 @@ class ReceiverServer(
     override fun close() {
         runCatching { server?.close() }
         server = null
+        activeClient.getAndSet(null)?.let { runCatching { it.close() } }
         sender = null
         scope.cancel()
     }

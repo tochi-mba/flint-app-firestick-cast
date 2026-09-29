@@ -42,7 +42,7 @@ fun ReceiverScreen(service: ReceiverService?) {
 
     ReceiverSurface(
         state = state,
-        onRefreshCode = { service?.refreshPairingCode() },
+        onRefreshCode = { service?.disconnectAndRefreshPairingCode() },
         onRetry = { service?.retryConnection() },
         onBrowse = { service?.openBrowserFromTv() },
         onTogglePlayPause = { service?.dispatchTvKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) },

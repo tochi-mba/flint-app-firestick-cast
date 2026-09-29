@@ -109,20 +109,34 @@ jobs:
         shell: pwsh
         run: ./dev.ps1 check repo build-logic protocol phone
 
-      # The Fire TV package the phone can install over ADB. It is built from this same commit, so the
-      # version the phone offers to install is never a mystery. Debug rather than release on purpose:
-      # Android's debug signing makes this receiver package installable without a second release key.
+      # The Fire TV package the phone can install over ADB. It uses the persistent release key and
+      # the same monotonic build number as the phone so Android can replace an older receiver in
+      # place. An ephemeral runner debug key would make every later update a signature mismatch.
       - name: Build the receiver package to bundle
-        run: ./gradlew :receiver:app:assembleDebug --console plain
+        env:
+          MOBILE_KEYSTORE_PATH: ${{ format('{0}/signing/flint-mobile.jks', runner.temp) }}
+          MOBILE_KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          MOBILE_KEY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          MOBILE_KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
+        run: >
+          ./gradlew :receiver:app:assembleRelease --console plain
+          -Pflint.versionCode=${{ steps.version.outputs.code }}
+          -Pflint.versionSuffix=${{ steps.version.outputs.suffix }}
 
       - name: Stage the receiver package as an asset
         run: |
           set -euo pipefail
-          apk="$(find apps/receiver/app/build/outputs/apk/debug -name '*.apk' -print -quit)"
+          apk="$(find apps/receiver/app/build/outputs/apk/release -name '*.apk' -print -quit)"
           if [ -z "$apk" ]; then
             echo "No receiver APK was produced." >&2
             exit 1
           fi
+          apksigner="$(find "${ANDROID_HOME}/build-tools" -name apksigner -print -quit)"
+          if [ -z "$apksigner" ]; then
+            echo "apksigner is not installed, so the receiver signature cannot be verified." >&2
+            exit 1
+          fi
+          "$apksigner" verify --verbose --print-certs "$apk"
           mkdir -p apps/phone/app/src/main/assets
           cp "$apk" apps/phone/app/src/main/assets/flint-receiver.apk
           {

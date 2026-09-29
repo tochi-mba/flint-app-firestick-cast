@@ -201,7 +201,7 @@ private fun ReceiverPrimaryCard(
 ) {
     when (state.idleExperience()) {
         IdleExperience.READY -> PairingCard(state, onRefreshCode, onBrowse, modifier)
-        IdleExperience.CONNECTED -> ConnectedCard(state, onBrowse, modifier)
+        IdleExperience.CONNECTED -> ConnectedCard(state, onBrowse, onRefreshCode, modifier)
         IdleExperience.STARTING -> StatusCard(
             eyebrow = "NETWORK CHECK",
             title = "Finding this TV's address",
@@ -431,6 +431,7 @@ private fun PairingCodeGroup(value: String) {
 private fun ConnectedCard(
     state: ReceiverUiState,
     onBrowse: () -> Unit,
+    onDisconnectAndRefreshCode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val browseFocus = remember { FocusRequester() }
@@ -462,7 +463,8 @@ private fun ConnectedCard(
             modifier = Modifier.padding(top = 8.dp),
         )
         Text(
-            text = "Ready. Choose something in Flint and it will appear here automatically.",
+            text = "Ready. Choose something in Flint and it will appear here automatically. " +
+                "New code disconnects this device so another one can pair.",
             color = ReceiverColors.Muted,
             fontSize = 15.sp,
             lineHeight = 22.sp,
@@ -479,14 +481,22 @@ private fun ConnectedCard(
             )
         }
         Spacer(Modifier.height(22.dp))
-        TvActionButton(
-            label = "BROWSE ON THIS TV",
-            enabled = state.ready,
-            onClick = onBrowse,
-            modifier = Modifier
-                .testTag(ReceiverTags.BROWSER_ENTRY)
-                .focusRequester(browseFocus),
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(ReceiverSpace.Small)) {
+            TvActionButton(
+                label = "BROWSE ON THIS TV",
+                enabled = state.ready,
+                onClick = onBrowse,
+                modifier = Modifier
+                    .testTag(ReceiverTags.BROWSER_ENTRY)
+                    .focusRequester(browseFocus),
+            )
+            TvActionButton(
+                label = "NEW CODE",
+                enabled = state.ready,
+                onClick = onDisconnectAndRefreshCode,
+                modifier = Modifier.testTag(ReceiverTags.PRIMARY_ACTION),
+            )
+        }
     }
 }
 
