@@ -36,11 +36,15 @@ data class OnboardingStep(
 /**
  * The introduction, which is skippable and reachable again from Settings.
  *
+ * Three steps, because the introduction is what stands between a person and Find my TV. What else
+ * they might need — a hidden network, what each mode can do — is on the screen where the need
+ * arises rather than in a walkthrough they must read first.
+ *
  * Step two is the important one and it is where it is on purpose. It carries the failure tone and it
  * states the one fact that decides whether the app can work at all — before asking anybody to turn on
- * a hotspot, join a television to it, or go hunting through Developer Options. The desktop puts its
- * equivalent in the same place for the same reason: finding out on step five that the device in the
- * room can never work is a worse experience than being told on step two.
+ * a hotspot or join a television to it. The desktop puts its equivalent in the same place for the
+ * same reason: finding out on the last step that the device in the room can never work is a worse
+ * experience than being told on step two.
  *
  * The last step ends by running the probe, so the introduction finishes on an answer rather than on
  * an empty screen.
@@ -84,44 +88,6 @@ object OnboardingCopy {
                 "Come back here and let the phone find it.",
             ),
             ordered = true,
-        ),
-        OnboardingStep(
-            eyebrow = "If nothing is found",
-            title = "Flint will tell you why",
-            body = "It looks several ways, in order, and stops at the first that works. When none " +
-                "does, it says which network it was on and what it tried rather than showing an " +
-                "empty list.",
-            points = listOf(
-                "You can always type the TV's address in by hand.",
-                "The TV's address is on it, under Settings, My Fire TV, About, Network.",
-                "Flint never scans for Wi-Fi networks, so it never asks for location permission.",
-            ),
-        ),
-        OnboardingStep(
-            eyebrow = "What the TV shows",
-            title = "A second screen is not a second desktop",
-            body = "In second-screen mode the TV shows Flint's own screens — a player, photos, what " +
-                "is playing now — while the phone stays the controller. Android gives an app no way " +
-                "to move another app's window onto a second display, so this is not an extension of " +
-                "the phone itself.",
-            points = listOf(
-                "Mirror shows everything on this screen, and asks permission each time.",
-                "Second screen shows only what Flint draws, and asks for nothing.",
-            ),
-        ),
-        OnboardingStep(
-            eyebrow = "What works today",
-            title = "Flint says what it can prove",
-            body = "Every mode is judged against this phone, this network and this television, and " +
-                "reported with one of four words. A mode that is blocked tells you what to do. A mode " +
-                "that is not possible tells you why and offers nothing, because offering a remedy for " +
-                "an impossibility would be a lie.",
-            points = listOf(
-                "Ready means it has been checked and it works.",
-                "Blocked means something can be changed.",
-                "Not possible means this pair can never do it.",
-                "Coming soon means it is not built yet, and nothing on either device will help.",
-            ),
         ),
     )
 

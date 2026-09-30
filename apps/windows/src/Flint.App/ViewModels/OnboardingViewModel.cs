@@ -141,11 +141,9 @@ public sealed partial class OnboardingViewModel : ObservableObject
         new OnboardingStep(
             "Welcome",
             "Flint casts this PC to your TV",
-            "Flint is a REX Technologies product. It finds a Fire TV on your network, works out "
-                + "what your hardware can actually do together, and tells you plainly. Everything "
-                + "between Flint and the receiver stays on your local network: there is no Flint "
-                + "account, relay cloud, or analytics. Websites opened in the TV browser still "
-                + "connect to those websites over the internet.",
+            "Flint finds your Fire TV, puts the Flint app on it, and shows your screen, videos "
+                + "or web pages there. Everything stays on your own network: no account, no cloud, "
+                + "no analytics.",
             [
                 "Control and casting traffic stay on your network.",
                 "Flint never changes your TV without showing you what and why.",
@@ -154,9 +152,8 @@ public sealed partial class OnboardingViewModel : ObservableObject
         new OnboardingStep(
             "Read this first",
             "Your Fire TV model decides what is possible",
-            "This Flint receiver is an Android app for compatible Fire OS devices. It cannot run "
-                + "on Vega OS. Check the operating system on your TV before starting setup; Flint's "
-                + "device checks will then identify which features this receiver can actually use.",
+            "Flint on the TV is an Android app. It runs on Fire OS and cannot run on Vega OS, so "
+                + "this is the one thing worth checking before anything else.",
             [
                 "Check on the TV: Settings, then My Fire TV, then About.",
                 "A Fire OS version is a starting point, not a guarantee that every feature is supported.",
@@ -167,9 +164,9 @@ public sealed partial class OnboardingViewModel : ObservableObject
         new OnboardingStep(
             "On the TV, in this order",
             "Unlock Developer Options, then turn on ADB",
-            "Fire TV hides Developer Options until you unlock it, so the menu you need does not "
-                + "exist until step 4. Flint uses ADB for device checks and receiver setup. It shows "
-                + "what will be installed or changed, and provides receiver removal controls.",
+            "This is how Flint puts its app on the TV and opens it for you, once. The TV hides "
+                + "Developer Options until you unlock it, so the menu you need does not exist until "
+                + "step 4.",
             [
                 "Open Settings, then My Fire TV, then About.",
                 "Highlight your device's own name in that list — the Fire TV Stick entry itself, "
@@ -182,45 +179,5 @@ public sealed partial class OnboardingViewModel : ObservableObject
                     + "flint-rex-technologies.",
             ],
             Ordered: true),
-
-        new OnboardingStep(
-            "If nothing is found",
-            "Some networks hide devices from each other",
-            "Flint finds your TV by listening for the advertisement it broadcasts. Guest networks, "
-                + "corporate networks, and access points with client isolation switched on block "
-                + "those broadcasts, so nothing is found even though the TV is right there.",
-            [
-                "Make sure this PC and the TV are on the same network, and not a guest network.",
-                "If discovery still finds nothing, type the TV's IP address into the direct address "
-                    + "field on the Cast page.",
-                "The TV's address is under Settings, My Fire TV, About, Network.",
-            ]),
-
-        new OnboardingStep(
-            "Browse on the TV",
-            "Each workspace pane is a separate webpage",
-            "You can browse directly from the Fire TV with its remote, or use this Windows cockpit. "
-                + "The TV remains authoritative, so Windows waits for focus confirmation before "
-                + "sending keys or text to a pane.",
-            [
-                "On TV, choose Browse on this TV. Add page creates another independent WebView.",
-                "Workspace mode moves between panes; Select enters the focused page; Back leaves the page first.",
-                "A site's fullscreen video stays inside its pane. Theater mode is a separate explicit action.",
-                "TV profiles persist locally. A Windows-device profile is forgotten by the TV when it disconnects.",
-                "One optional profile VPN applies to every pane, and required VPN failures block browsing.",
-            ]),
-
-        new OnboardingStep(
-            "What works today",
-            "What Flint can do right now",
-            "Flint reports what your PC and TV can actually do together, plays local video files, "
-                + "and can host independent webpages on a compatible receiver. Flint tells you the "
-                + "truth about unavailable controls instead of offering one that quietly fails.",
-            [
-                "Capability reporting: finds your TV, identifies it, probes your encoders.",
-                "Media handoff: play a local video file on the TV at original quality.",
-                "Browser workspace: capability-gated independent pages controlled from TV or Windows.",
-                "Anything Flint cannot do on your hardware says so, and says why.",
-            ]),
     ];
 }
