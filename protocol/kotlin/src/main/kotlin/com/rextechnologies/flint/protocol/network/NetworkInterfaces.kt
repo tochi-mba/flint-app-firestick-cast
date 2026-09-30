@@ -13,6 +13,36 @@ data class InterfaceAddressSnapshot(
     }
 }
 
+/**
+ * What the platform's connectivity service says an interface is, where there is one to ask.
+ *
+ * The interface list alone cannot tell a Wi-Fi link from a mobile-data one: both are up, both are
+ * ordinary broadcast interfaces, and a carrier that hands out private addresses makes them look
+ * the same down to the address range. The platform knows which is which, so an adapter that can
+ * ask it records the answer here and the selection below stops having to guess.
+ */
+enum class PlatformLink {
+    /** Nobody asked. Every rule falls back to what the interface list alone supports. */
+    UNKNOWN,
+
+    /**
+     * The platform was asked and does not list this interface as a network the device has joined.
+     *
+     * For an interface holding a private address that leaves one explanation: the device is running
+     * that network itself. A hotspot, USB tethering and Bluetooth tethering all look like this.
+     */
+    NOT_LISTED,
+
+    /** A Wi-Fi or Ethernet network the device has joined as a client. */
+    LOCAL_CLIENT,
+
+    /** Mobile data. Never the path to a television, whatever its address looks like. */
+    CELLULAR,
+
+    /** A VPN tunnel. */
+    VPN,
+}
+
 data class NetworkInterfaceSnapshot(
     val name: String,
     val index: Int,
@@ -20,6 +50,7 @@ data class NetworkInterfaceSnapshot(
     val isLoopback: Boolean,
     val addresses: List<InterfaceAddressSnapshot>,
     val isPointToPoint: Boolean = false,
+    val platformLink: PlatformLink = PlatformLink.UNKNOWN,
 )
 
 /**
@@ -30,8 +61,14 @@ data class NetworkInterfaceSnapshot(
  * site-local and usually a /32, so it wins both the hotspot priority list and the narrowest-subnet
  * comparison that picks a client interface. Without this filter, a phone with any VPN switched on
  * sweeps the tunnel instead of the Wi-Fi it is actually on, and finds nothing.
+ *
+ * Mobile data is excluded for the same reason and fails the same way. Many carriers hand out a
+ * private address on a link of two or four hosts, which is narrower than any home network, so it
+ * won that comparison too and the sweep searched the carrier's link for a television.
  */
-fun NetworkInterfaceSnapshot.carriesLocalTraffic(): Boolean = isUp && !isLoopback && !isPointToPoint
+fun NetworkInterfaceSnapshot.carriesLocalTraffic(): Boolean =
+    isUp && !isLoopback && !isPointToPoint &&
+        platformLink != PlatformLink.CELLULAR && platformLink != PlatformLink.VPN
 
 fun interface NetworkInterfaceSource {
     fun snapshots(): List<NetworkInterfaceSnapshot>
@@ -84,14 +121,25 @@ data class SelectedHotspotInterface(
         get() = Ipv4Subnet(address, prefixLength)
 }
 
-/** Selects tethering candidates without assuming any particular hotspot subnet. */
+/**
+ * Selects tethering candidates without assuming any particular hotspot subnet.
+ *
+ * The name list is what a plain interface list supports, and it is incomplete by nature: every
+ * vendor names its access-point interface differently and new names keep appearing. Where the
+ * platform has been asked, its answer settles it both ways. An interface it lists as a joined
+ * network is never a hotspot, whatever it is called, and one it does not list is one however
+ * unfamiliar the name.
+ */
 class HotspotInterfaceSelector {
     fun select(interfaces: Iterable<NetworkInterfaceSnapshot>): SelectedHotspotInterface? {
         return interfaces.withIndex()
             .asSequence()
             .filter { it.value.carriesLocalTraffic() }
+            .filter { it.value.platformLink != PlatformLink.LOCAL_CLIENT }
             .mapNotNull { indexed ->
-                val priority = candidatePriority(indexed.value.name) ?: return@mapNotNull null
+                val priority = candidatePriority(indexed.value.name)
+                    ?: UNNAMED_PRIORITY.takeIf { indexed.value.platformLink == PlatformLink.NOT_LISTED }
+                    ?: return@mapNotNull null
                 val address = indexed.value.addresses.firstOrNull {
                     it.address.isSiteLocalAddress && !it.address.isLoopbackAddress
                 } ?: return@mapNotNull null
@@ -119,6 +167,11 @@ class HotspotInterfaceSelector {
             normalized.matches(Regex("rndis[0-9]+")) -> 4
             else -> null
         }
+    }
+
+    private companion object {
+        /** After every recognised name, so a known access-point interface still wins a tie. */
+        const val UNNAMED_PRIORITY = 5
     }
 
     private data class Candidate(

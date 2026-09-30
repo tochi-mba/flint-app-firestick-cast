@@ -7,7 +7,6 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import com.rextechnologies.flint.castcore.capability.LocalNetwork
 import com.rextechnologies.flint.castcore.capability.LocalNetworkAssessor
-import com.rextechnologies.flint.protocol.network.JvmNetworkInterfaceSource
 import com.rextechnologies.flint.protocol.network.NetworkInterfaceSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,13 +41,24 @@ import java.io.Closeable
  */
 class AndroidNetworkWatcher(
     context: Context,
-    private val interfaces: NetworkInterfaceSource = JvmNetworkInterfaceSource(),
+    interfaceSource: NetworkInterfaceSource? = null,
     private val assessor: LocalNetworkAssessor = LocalNetworkAssessor(),
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) : Closeable {
     private val applicationContext = context.applicationContext
     private val connectivity =
         applicationContext.getSystemService(ConnectivityManager::class.java)
+
+    /**
+     * The interface list, with the platform's word on each entry.
+     *
+     * The connectivity service's idea of the current network is still ignored for the verdict, for
+     * the reason above. What it is asked is narrower and reliable: which interfaces are mobile data
+     * or a tunnel, so neither can be mistaken for the network the television is on, and which are
+     * networks the phone joined, so the rest must be ones it is running.
+     */
+    private val interfaces: NetworkInterfaceSource =
+        interfaceSource ?: PlatformNetworkInterfaceSource(connectivity)
 
     /**
      * Starts at "no local network", which is what is true before anything has looked.
