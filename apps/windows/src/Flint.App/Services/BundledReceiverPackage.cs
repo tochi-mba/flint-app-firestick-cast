@@ -40,7 +40,7 @@ public sealed class BundledReceiverPackage(string directory) : IBundledReceiverS
 
     private readonly string _apkPath = Path.Combine(directory, ApkFileName);
     private readonly string _sidecarPath = Path.Combine(directory, SidecarFileName);
-    private BundledReceiver? _described;
+    private Described? _described;
     private bool _looked;
 
     /// <summary>The package beside the running executable.</summary>
@@ -49,23 +49,31 @@ public sealed class BundledReceiverPackage(string directory) : IBundledReceiverS
     /// <inheritdoc />
     public BundledReceiver? Describe()
     {
-        if (_looked)
+        if (!_looked)
         {
-            return _described;
+            _described = Read();
+            _looked = true;
         }
 
-        _described = Read();
-        _looked = true;
-        return _described;
+        return _described?.Receiver;
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// The bytes are checked against the digest again, not just their size: a file replaced since
+    /// it was described, even by one of the same length, must not be installed under the old
+    /// description.
+    /// </remarks>
     public async Task<byte[]> ReadAsync(CancellationToken cancellationToken)
     {
-        var described = Describe()
-            ?? throw new InvalidOperationException("This copy of Flint carries no receiver package.");
+        Describe();
+        if (_described is not { } described)
+        {
+            throw new InvalidOperationException("This copy of Flint carries no receiver package.");
+        }
+
         var bytes = await File.ReadAllBytesAsync(_apkPath, cancellationToken).ConfigureAwait(false);
-        if (bytes.LongLength != described.SizeBytes)
+        if (bytes.LongLength != described.Receiver.SizeBytes || !DigestMatches(SHA256.HashData(bytes), described.Sha256))
         {
             throw new InvalidOperationException("The bundled receiver changed since Flint described it.");
         }
@@ -73,7 +81,7 @@ public sealed class BundledReceiverPackage(string directory) : IBundledReceiverS
         return bytes;
     }
 
-    private BundledReceiver? Read()
+    private Described? Read()
     {
         if (!File.Exists(_apkPath) || !File.Exists(_sidecarPath))
         {
@@ -100,20 +108,27 @@ public sealed class BundledReceiverPackage(string directory) : IBundledReceiverS
         }
 
         var apk = new FileInfo(_apkPath);
-        if (apk.Length <= 0 || apk.Length != sidecar.SizeBytes || !DigestMatches(apk, sidecar.Sha256))
+        if (apk.Length <= 0 || apk.Length != sidecar.SizeBytes || !DigestMatches(DigestOf(apk), sidecar.Sha256))
         {
             return null;
         }
 
-        return new BundledReceiver(sidecar.PackageName, sidecar.VersionName, sidecar.VersionCode, apk.Length);
+        return new Described(
+            new BundledReceiver(sidecar.PackageName, sidecar.VersionName, sidecar.VersionCode, apk.Length),
+            sidecar.Sha256);
     }
 
-    private static bool DigestMatches(FileInfo apk, string expected)
+    private static byte[] DigestOf(FileInfo apk)
     {
         using var stream = apk.OpenRead();
-        var digest = Convert.ToHexString(SHA256.HashData(stream));
-        return string.Equals(digest, expected, StringComparison.OrdinalIgnoreCase);
+        return SHA256.HashData(stream);
     }
+
+    private static bool DigestMatches(byte[] digest, string expected) =>
+        string.Equals(Convert.ToHexString(digest), expected, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The description, with the digest it was proved against.</summary>
+    private sealed record Described(BundledReceiver Receiver, string Sha256);
 
     /// <summary>What the packager writes. Field names match <c>tools/scripts/package.ps1</c>.</summary>
     internal sealed record Sidecar(

@@ -494,7 +494,7 @@ public sealed partial class CastPageViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            Failure = exception.Message;
+            Failure = DescribeTelevisionFailure(exception);
             PairingStatus = "Flint could not open the receiver on the TV.";
         }
         finally
@@ -841,7 +841,7 @@ public sealed partial class CastPageViewModel : ObservableObject
             ApplyReport(report);
             onSuccess?.Invoke();
             RefreshPairingGuidance();
-            await IdentifyReceiverAsync(cancellationToken).ConfigureAwait(true);
+            await IdentifyReceiverAsync(report.Device, cancellationToken).ConfigureAwait(true);
             FlintDiag.Info(
                 "FlintCast",
                 $"probe ok reachable={report.Device?.IsReachable == true} adb={report.Device?.AdbState} "

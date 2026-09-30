@@ -13,6 +13,9 @@ namespace Flint.App.Tests;
 /// </summary>
 public sealed class CastPageReceiverSetupTests
 {
+    private const string TvStoppedAnswering =
+        "The TV stopped answering. Check it is awake and on the same network, then try again.";
+
     private static readonly BundledReceiver Bundled =
         new(BundledReceiver.DebugPackage, "0.1.0-debug", 1118, 12 * 1024 * 1024);
 
@@ -121,7 +124,7 @@ public sealed class CastPageReceiverSetupTests
         var page = Page(installer, new FakeBundledSource(Bundled, apk), launcher: launcher);
         await page.ProbeCommand.ExecuteAsync(null);
 
-        await page.RunReceiverActionCommand.ExecuteAsync(null);
+        await OnTheUiQueue(() => page.RunReceiverActionCommand.ExecuteAsync(null));
 
         installer.InstalledBytes.ShouldBe(apk);
         installer.InstalledOn.ShouldNotBeNull();
@@ -322,15 +325,180 @@ public sealed class CastPageReceiverSetupTests
     [Fact]
     public async Task ACancelledInstall_SaysSoAndLeavesThePageIdle()
     {
+        var installer = new FakeReceiverInstaller { Installed = null, HangUntilCancelled = true };
+        var page = Page(installer, new FakeBundledSource(Bundled));
+        await page.ProbeCommand.ExecuteAsync(null);
+
+        var running = page.RunReceiverActionCommand.ExecuteAsync(null);
+        page.RunReceiverActionCommand.Cancel();
+        await running;
+
+        page.PairingStatus.ShouldBe("The install was cancelled.");
+        page.Failure.ShouldBeNull();
+        page.IsBusy.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task AnInstallThatTimesOut_IsAFailureRatherThanACancellation()
+    {
+        // The ADB client's timeouts surface as a cancellation nobody asked for, and nothing on the
+        // page cancels an install, so the person must not be told they cancelled it.
         var installer = new FakeReceiverInstaller { Installed = null, InstallFailure = new OperationCanceledException() };
         var page = Page(installer, new FakeBundledSource(Bundled));
         await page.ProbeCommand.ExecuteAsync(null);
 
         await page.RunReceiverActionCommand.ExecuteAsync(null);
 
-        page.PairingStatus.ShouldBe("The install was cancelled.");
-        page.Failure.ShouldBeNull();
+        page.Failure.ShouldBe(TvStoppedAnswering);
+        page.PairingStatus.ShouldBe("Flint could not install the receiver on the TV.");
         page.IsBusy.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task ACheckThatTimesOutAfterTheInstall_SaysTheTvTookThePackage()
+    {
+        var installer = new FakeReceiverInstaller { Installed = null, VerifyFailure = new OperationCanceledException() };
+        var launcher = new FakeLauncher();
+        var page = Page(installer, new FakeBundledSource(Bundled), launcher: launcher);
+        await page.ProbeCommand.ExecuteAsync(null);
+
+        await page.RunReceiverActionCommand.ExecuteAsync(null);
+
+        page.Failure.ShouldBe(TvStoppedAnswering);
+        page.PairingStatus.ShouldStartWith("The TV took the package, then stopped answering");
+        page.ReceiverAction.ShouldBe(ReceiverSetupAction.Install, "nothing has confirmed the install yet");
+        launcher.LaunchedPackage.ShouldBeNull();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AnOpenThatFailsAfterAGoodInstall_KeepsTheInstallAndOffersToOpenAgain(bool timedOut)
+    {
+        var installer = new FakeReceiverInstaller
+        {
+            Installed = null,
+            AfterInstall = new InstalledReceiver(BundledReceiver.DebugPackage, "0.1.0-debug", 1118),
+        };
+        var launcher = new FakeLauncher
+        {
+            Failure = timedOut ? new OperationCanceledException() : new IOException("the TV closed the connection"),
+        };
+        var page = Page(installer, new FakeBundledSource(Bundled), launcher: launcher);
+        await page.ProbeCommand.ExecuteAsync(null);
+
+        await page.RunReceiverActionCommand.ExecuteAsync(null);
+
+        page.Failure.ShouldBe(timedOut ? TvStoppedAnswering : "the TV closed the connection");
+        page.PairingStatus.ShouldBe(
+            "Flint 0.1.0-debug is on the TV but did not open. Press OPEN RECEIVER ON TV, or open Flint from the TV's apps.");
+        page.ReceiverAction.ShouldBe(ReceiverSetupAction.Open);
+        page.ReceiverActionLabel.ShouldBe("OPEN RECEIVER ON TV");
+        page.InstalledReceiver.ShouldNotBeNull().VersionCode.ShouldBe(1118);
+    }
+
+    [Fact]
+    public async Task AnUpdateTheTvDidNotTake_IsAFailureAndStillOffersTheUpdate()
+    {
+        var installer = new FakeReceiverInstaller
+        {
+            Installed = new InstalledReceiver(BundledReceiver.DebugPackage, "0.1.0-debug", 1100),
+            AfterInstall = new InstalledReceiver(BundledReceiver.DebugPackage, "0.1.0-debug", 1100),
+        };
+        var launcher = new FakeLauncher();
+        var page = Page(installer, new FakeBundledSource(Bundled), launcher: launcher);
+        await page.ProbeCommand.ExecuteAsync(null);
+
+        await page.RunReceiverActionCommand.ExecuteAsync(null);
+
+        page.Failure.ShouldBe("The installer answered Success, but the TV still has 0.1.0-debug (1100).");
+        page.PairingStatus.ShouldBe("Flint was not updated on the TV.");
+        page.ReceiverAction.ShouldBe(ReceiverSetupAction.Update);
+        launcher.LaunchedPackage.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task AnUpdateThatLeavesNothingBehind_OffersTheInstallRatherThanFailingToDescribeIt()
+    {
+        // The button used to stay on UPDATE with nothing installed, and describing an update with no
+        // installed version threw while the card was drawn.
+        var installer = new FakeReceiverInstaller
+        {
+            Installed = new InstalledReceiver(BundledReceiver.DebugPackage, "0.1.0-debug", 1100),
+            AfterInstall = null,
+        };
+        var page = Page(installer, new FakeBundledSource(Bundled));
+        await page.ProbeCommand.ExecuteAsync(null);
+
+        await page.RunReceiverActionCommand.ExecuteAsync(null);
+
+        page.Failure.ShouldBe($"The installer answered Success, but {BundledReceiver.DebugPackage} is not on the TV afterwards.");
+        page.ReceiverAction.ShouldBe(ReceiverSetupAction.Install);
+        Should.NotThrow(() => page.ReceiverSetupStatus).ShouldContain("not on Living Room");
+    }
+
+    [Fact]
+    public async Task AnInstallWhoseVersionTheTvDoesNotReport_IsOpenedButNotClaimedAsTheVersionSent()
+    {
+        var installer = new FakeReceiverInstaller
+        {
+            Installed = new InstalledReceiver(BundledReceiver.DebugPackage, "0.1.0-debug", 1100),
+            AfterInstall = new InstalledReceiver(BundledReceiver.DebugPackage, null, null),
+        };
+        var launcher = new FakeLauncher();
+        var page = Page(installer, new FakeBundledSource(Bundled), launcher: launcher);
+        await page.ProbeCommand.ExecuteAsync(null);
+
+        await page.RunReceiverActionCommand.ExecuteAsync(null);
+
+        launcher.LaunchedPackage.ShouldBe(BundledReceiver.DebugPackage);
+        page.PairingStatus.ShouldBe(
+            "Flint is on the TV and open, but the TV did not confirm the version that was sent. "
+            + "Enter the six-digit code shown there, then pair.");
+        page.ReceiverAction.ShouldBe(ReceiverSetupAction.OpenUnverified);
+    }
+
+    [Fact]
+    public async Task OpeningAnInstalledReceiverThatTimesOut_SaysTheTvStoppedAnswering()
+    {
+        var installer = new FakeReceiverInstaller
+        {
+            Installed = new InstalledReceiver(BundledReceiver.DebugPackage, "0.1.0-debug", 1118),
+        };
+        var launcher = new FakeLauncher { Failure = new OperationCanceledException() };
+        var page = Page(installer, new FakeBundledSource(Bundled), launcher: launcher);
+        await page.ProbeCommand.ExecuteAsync(null);
+        page.ReceiverAction.ShouldBe(ReceiverSetupAction.Open);
+
+        await page.RunReceiverActionCommand.ExecuteAsync(null);
+
+        page.Failure.ShouldBe(TvStoppedAnswering);
+        page.PairingStatus.ShouldBe("Flint could not open the receiver on the TV.");
+    }
+
+    [Fact]
+    public async Task AnInstall_ShowsHowMuchHasBeenCopiedThenClearsIt()
+    {
+        var installer = new FakeReceiverInstaller
+        {
+            Installed = null,
+            AfterInstall = new InstalledReceiver(BundledReceiver.DebugPackage, "0.1.0-debug", 1118),
+            Fractions = [0.25, 1.0],
+        };
+        var page = Page(installer, new FakeBundledSource(Bundled));
+        await page.ProbeCommand.ExecuteAsync(null);
+        var shown = new List<string>();
+        page.PropertyChanged += (_, change) =>
+        {
+            if (change.PropertyName == nameof(CastPageViewModel.InstallProgress))
+            {
+                shown.Add(page.InstallProgress);
+            }
+        };
+
+        await OnTheUiQueue(() => page.RunReceiverActionCommand.ExecuteAsync(null));
+
+        shown.ShouldBe(["25% copied", "100% copied", string.Empty]);
     }
 
     [Fact]
@@ -423,6 +591,14 @@ public sealed class CastPageReceiverSetupTests
 
         public Exception? InstallFailure { get; set; }
 
+        /// <summary>Thrown by the look that follows an install, not by the one before it.</summary>
+        public Exception? VerifyFailure { get; set; }
+
+        /// <summary>The install waits until the command is cancelled, as a slow copy would.</summary>
+        public bool HangUntilCancelled { get; set; }
+
+        public IReadOnlyList<double> Fractions { get; set; } = [1.0];
+
         public IReadOnlyList<string>? CandidatesAsked { get; private set; }
 
         public byte[]? InstalledBytes { get; private set; }
@@ -441,14 +617,14 @@ public sealed class CastPageReceiverSetupTests
 
             if (InstalledBytes is not null)
             {
-                return Task.FromResult(AfterInstall);
+                return VerifyFailure is null ? Task.FromResult(AfterInstall) : throw VerifyFailure;
             }
 
             CandidatesAsked = candidates;
             return Task.FromResult(Installed);
         }
 
-        public Task<AdbInstallOutcome> InstallAsync(
+        public async Task<AdbInstallOutcome> InstallAsync(
             FireTvDevice device,
             ReadOnlyMemory<byte> apk,
             IProgress<double>? progress,
@@ -459,10 +635,19 @@ public sealed class CastPageReceiverSetupTests
                 throw InstallFailure;
             }
 
+            if (HangUntilCancelled)
+            {
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
+
             InstalledBytes = apk.ToArray();
             InstalledOn = device;
-            progress?.Report(1.0);
-            return Task.FromResult(Outcome);
+            foreach (var fraction in Fractions)
+            {
+                progress?.Report(fraction);
+            }
+
+            return Outcome;
         }
     }
 
@@ -481,11 +666,49 @@ public sealed class CastPageReceiverSetupTests
     {
         public string? LaunchedPackage { get; private set; }
 
+        public Exception? Failure { get; set; }
+
         public Task LaunchAsync(FireTvDevice device, string packageName, CancellationToken cancellationToken = default)
         {
+            if (Failure is not null)
+            {
+                throw Failure;
+            }
+
             LaunchedPackage = packageName;
             return Task.CompletedTask;
         }
+    }
+
+    /// <summary>
+    /// Runs <paramref name="action"/> with posts executed at once and in order, as the UI thread's
+    /// queue would. Progress&lt;T&gt; posts every report; without a context they go to the thread
+    /// pool and may land after the install has finished. The fakes complete synchronously, so the
+    /// whole action runs on this thread.
+    /// </summary>
+    private static async Task OnTheUiQueue(Func<Task> action)
+    {
+        var previous = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(new InOrderContext());
+        Task running;
+        try
+        {
+            running = action();
+        }
+        finally
+        {
+            // Restored on this thread before anything is awaited, so the context never outlives the
+            // action on a thread the test runner goes on to use for other tests.
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+
+        running.IsCompleted.ShouldBeTrue("the fakes complete synchronously, so the action ran on this thread");
+        await running;
+    }
+
+    private sealed class InOrderContext : SynchronizationContext
+    {
+        public override void Post(SendOrPostCallback d, object? state) => d(state);
     }
 
     private sealed class FakeHostProbe : IHostProbe

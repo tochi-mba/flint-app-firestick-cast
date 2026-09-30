@@ -117,6 +117,44 @@ public sealed class FlintProcessCleanupTests
         new FlintProcessCleanup.RunningProcess(system).IsFlint.ShouldBeFalse();
     }
 
+    [Fact]
+    public void AnExecutableCarryingFlintsMetadata_IsRecognised()
+    {
+        // Every assembly in this repository is stamped Flint / REX Technologies, this one included.
+        FlintProcessCleanup.IsFlintExecutable(typeof(FlintProcessCleanup).Assembly.Location).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void AnExecutableFromAnotherPublisher_IsNotFlint()
+    {
+        var ping = Path.Combine(Environment.SystemDirectory, "PING.EXE");
+
+        FlintProcessCleanup.IsFlintExecutable(ping).ShouldBeFalse();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void NoExecutablePath_IsNotFlint(string? path)
+    {
+        FlintProcessCleanup.IsFlintExecutable(path).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void AProcessObjectThatWasNeverStarted_IsNotFlintAndIgnoresEveryCall()
+    {
+        // Asking an unassociated Process anything throws InvalidOperationException; the sweep must
+        // treat that as "not a copy it can act on", not as a crash inside the installer.
+        using var unstarted = new Process();
+        var process = new FlintProcessCleanup.RunningProcess(unstarted);
+
+        process.IsFlint.ShouldBeFalse();
+        Should.NotThrow(process.RequestClose);
+        process.WaitForExit(TimeSpan.FromMilliseconds(10)).ShouldBeFalse();
+        Should.NotThrow(process.Kill);
+    }
+
     private static Process StartPing() =>
         Process.Start(new ProcessStartInfo("ping", "-n 60 127.0.0.1")
         {

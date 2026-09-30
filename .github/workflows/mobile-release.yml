@@ -65,10 +65,9 @@ jobs:
           fi
           # Monotonic on master and reproducible from the commit alone, so the Windows release stamps
           # the same code into the receiver it bundles and the two channels agree on which build is
-          # newer. Mirrors Get-FlintReceiverBuildNumber in tools/dev/release.ps1. The offset keeps it
-          # clear of the codes a hand-built APK may already have installed on somebody's phone, and
-          # above every run-number code published before this scheme.
-          echo "code=$(( 1000 + $(git rev-list --count HEAD) ))" >> "$GITHUB_OUTPUT"
+          # newer. Computed by the same function the Windows release calls, rather than a copy of it.
+          code=$(pwsh -NoProfile -Command '. ./tools/dev/release.ps1; Get-FlintReceiverBuildNumber ([int](git rev-list --count HEAD))')
+          echo "code=$code" >> "$GITHUB_OUTPUT"
 
       # Release signing is mandatory. Publishing an unsigned APK creates a download Android cannot
       # install, so missing credentials are a release failure rather than a degraded build mode.
@@ -149,8 +148,8 @@ jobs:
           } > apps/phone/app/src/main/assets/flint-receiver.properties
           cat apps/phone/app/src/main/assets/flint-receiver.properties
 
-      # R8 runs here and nowhere else. package.ps1 only ever assembles debug, so the receiver's
-      # proguard rules have never actually been exercised; the phone's are, every merge.
+      # The phone's R8 pass runs here and nowhere else. The receiver's runs above and in the Windows
+      # release, which bundles this same release-signed receiver.
       - name: Build the release APK
         env:
           MOBILE_KEYSTORE_PATH: ${{ format('{0}/signing/flint-mobile.jks', runner.temp) }}

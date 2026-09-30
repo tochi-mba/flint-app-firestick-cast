@@ -16,6 +16,17 @@ public sealed class FireTvDeviceProbe : IAddressableDeviceProbe
     /// <summary>How long to listen for multicast answers before giving up on stragglers.</summary>
     public static readonly TimeSpan ListenWindow = TimeSpan.FromSeconds(3);
 
+    /// <summary>
+    /// Sends one multicast query for <paramref name="serviceType"/> and hands every datagram heard
+    /// within <paramref name="window"/> to <paramref name="handle"/>, as
+    /// <see cref="MulticastServiceScanner.QueryAsync"/> does on the real network.
+    /// </summary>
+    internal delegate Task MulticastQuery(
+        string serviceType,
+        TimeSpan window,
+        Action<ReadOnlyMemory<byte>> handle,
+        CancellationToken cancellationToken);
+
     private readonly AdbProbeClient _adb;
     private readonly Func<CancellationToken, Task<IReadOnlyList<ServiceInstance>>> _advertisements;
     private readonly Func<CancellationToken, Task<IReadOnlyList<ReceiverProbeScanner.Answer>>> _probeScan;
@@ -160,16 +171,25 @@ public sealed class FireTvDeviceProbe : IAddressableDeviceProbe
     /// <summary>
     /// Collects every Fire TV advertisement seen within the listen window.
     /// </summary>
-    private static async Task<IReadOnlyList<ServiceInstance>> ListenAsync(
+    private static Task<IReadOnlyList<ServiceInstance>> ListenAsync(CancellationToken cancellationToken) =>
+        ListenAsync(MulticastServiceScanner.QueryAsync, cancellationToken);
+
+    /// <summary>
+    /// Asks for both advertisements through <paramref name="query"/> and merges what answers. A
+    /// parameter so a test can play the datagrams rather than wait on a real multicast group.
+    /// </summary>
+    internal static async Task<IReadOnlyList<ServiceInstance>> ListenAsync(
+        MulticastQuery query,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(query);
         var serviceTypes = new[]
         {
             MulticastDnsCodec.FireTvServiceType,
             MulticastDnsCodec.FlintReceiverServiceType,
         };
         var answers = await Task.WhenAll(
-            serviceTypes.Select(serviceType => ListenAsync(serviceType, cancellationToken)))
+            serviceTypes.Select(serviceType => ListenAsync(query, serviceType, cancellationToken)))
             .ConfigureAwait(false);
         return Merge(answers);
     }
@@ -205,13 +225,14 @@ public sealed class FireTvDeviceProbe : IAddressableDeviceProbe
     }
 
     private static async Task<IReadOnlyList<ServiceInstance>> ListenAsync(
+        MulticastQuery query,
         string serviceType,
         CancellationToken cancellationToken)
     {
         var found = new Dictionary<string, ServiceInstance>(StringComparer.OrdinalIgnoreCase);
         var gate = new Lock();
 
-        await MulticastServiceScanner.QueryAsync(
+        await query(
             serviceType,
             ListenWindow,
             datagram => Record(datagram, serviceType, found, gate),

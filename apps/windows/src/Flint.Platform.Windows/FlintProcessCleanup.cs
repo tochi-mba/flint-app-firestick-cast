@@ -76,6 +76,18 @@ public static class FlintProcessCleanup
         }
     }
 
+    /// <summary>Whether the executable at <paramref name="path"/> carries Flint's product and publisher.</summary>
+    internal static bool IsFlintExecutable(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        var identity = FileVersionInfo.GetVersionInfo(path);
+        return HasFlintIdentity(identity.ProductName, identity.CompanyName);
+    }
+
     internal static bool HasFlintIdentity(string? productName, string? companyName) =>
         string.Equals(productName, "Flint", StringComparison.Ordinal)
         && string.Equals(companyName, "REX Technologies", StringComparison.Ordinal);
@@ -106,17 +118,7 @@ public static class FlintProcessCleanup
     {
         public int Id => process.Id;
 
-        public bool IsFlint => Try(() =>
-        {
-            var path = process.MainModule?.FileName;
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                return false;
-            }
-
-            var identity = FileVersionInfo.GetVersionInfo(path);
-            return HasFlintIdentity(identity.ProductName, identity.CompanyName);
-        });
+        public bool IsFlint => Try(() => IsFlintExecutable(process.MainModule?.FileName));
 
         public void RequestClose() => Try(process.CloseMainWindow);
 

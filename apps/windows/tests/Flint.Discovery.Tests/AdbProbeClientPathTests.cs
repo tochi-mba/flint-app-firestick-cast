@@ -276,6 +276,139 @@ public sealed class AdbProbeClientPathTests
             Client().FindInstalledPackageAsync(IPAddress.Loopback, 5555, [string.Empty], Token));
     }
 
+    [Fact]
+    public async Task CancellingWhileThePropertiesAreAwaited_IsCancelledRatherThanReportedConnected()
+    {
+        // The property read has its own timeout, after which a connected TV is still reported. A
+        // cancellation from the caller is not that timeout and must not be dressed up as a result.
+        await using var peer = new ScriptedAdbPeer(async (stream, token) =>
+        {
+            await ScriptedAdbPeer.ReadAsync(stream, token);
+            await ScriptedAdbPeer.WriteAsync(stream, ScriptedAdbPeer.Banner(), token);
+            await ScriptedAdbPeer.StaySilentAsync(stream, token);
+        });
+        using var cancel = CancellationTokenSource.CreateLinkedTokenSource(Token);
+        cancel.CancelAfter(TimeSpan.FromMilliseconds(300));
+
+        await Should.ThrowAsync<OperationCanceledException>(() => Client(handshakeTimeout: TimeSpan.FromSeconds(10))
+            .ProbePortAsync(IPAddress.Loopback, peer.Port, cancel.Token));
+    }
+
+    [Fact]
+    public async Task TheTvsLateCloseOfTheListing_IsNotTakenForTheVersionLookupClosing()
+    {
+        // The exchange a Fire TV Stick 4K Max (AFTMM) produced: adbd answers the host's CLSE of the
+        // listing with one of its own, which arrives after the dumpsys OPEN has gone out. Under one
+        // reused stream id that CLSE ended the lookup before it began, so every installed receiver
+        // read as "version unknown" and Windows could never offer an update.
+        await using var peer = new ScriptedAdbPeer(async (stream, token) =>
+        {
+            await ScriptedAdbPeer.ReadAsync(stream, token);
+            await ScriptedAdbPeer.WriteAsync(stream, ScriptedAdbPeer.Banner(), token);
+
+            var listing = await ScriptedAdbPeer.ReadAsync(stream, token);
+            await ScriptedAdbPeer.WriteAsync(stream, new AdbMessage(AdbCommand.Okay, 31, listing.Arg0, []), token);
+            await ScriptedAdbPeer.WriteAsync(
+                stream,
+                new AdbMessage(AdbCommand.Write, 31, listing.Arg0, Encoding.UTF8.GetBytes("package:com.rextechnologies.flint.receiver.debug\n")),
+                token);
+            (await ScriptedAdbPeer.ReadAsync(stream, token)).Command.ShouldBe(AdbCommand.Okay);
+            await ScriptedAdbPeer.WriteAsync(stream, new AdbMessage(AdbCommand.Close, 31, listing.Arg0, []), token);
+            (await ScriptedAdbPeer.ReadAsync(stream, token)).Command.ShouldBe(AdbCommand.Close);
+
+            var lookup = await ScriptedAdbPeer.ReadAsync(stream, token);
+            lookup.Command.ShouldBe(AdbCommand.Open);
+            await ScriptedAdbPeer.WriteAsync(stream, new AdbMessage(AdbCommand.Close, 31, listing.Arg0, []), token);
+            await ScriptedAdbPeer.WriteAsync(stream, new AdbMessage(AdbCommand.Okay, 32, lookup.Arg0, []), token);
+            await ScriptedAdbPeer.WriteAsync(
+                stream,
+                new AdbMessage(AdbCommand.Write, 32, lookup.Arg0, Encoding.UTF8.GetBytes("    versionCode=1 minSdk=25 targetSdk=36\n    versionName=0.1.0-debug\n")),
+                token);
+            (await ScriptedAdbPeer.ReadAsync(stream, token)).Command.ShouldBe(AdbCommand.Okay);
+            await ScriptedAdbPeer.WriteAsync(stream, new AdbMessage(AdbCommand.Close, 32, lookup.Arg0, []), token);
+            await ScriptedAdbPeer.StaySilentAsync(stream, token);
+        });
+
+        var installed = await Client().FindInstalledPackageAsync(
+            IPAddress.Loopback,
+            peer.Port,
+            [BundledReceiver.ReleasePackage, BundledReceiver.DebugPackage],
+            Token);
+
+        installed.ShouldNotBeNull();
+        installed.PackageName.ShouldBe(BundledReceiver.DebugPackage);
+        installed.VersionCode.ShouldBe(1);
+        installed.VersionName.ShouldBe("0.1.0-debug");
+    }
+
+    [Fact]
+    public async Task AServiceThatGoesQuiet_EndsAsACancellationTheCallerDidNotAskFor()
+    {
+        // The Cast page tells "the TV stopped answering" from "the person cancelled" by exactly
+        // this: a cancellation while the caller's own token was never cancelled.
+        await using var peer = new ScriptedAdbPeer(async (stream, token) =>
+        {
+            await ScriptedAdbPeer.ReadAsync(stream, token);
+            await ScriptedAdbPeer.WriteAsync(stream, ScriptedAdbPeer.Banner(), token);
+            var open = await ScriptedAdbPeer.ReadAsync(stream, token);
+            await ScriptedAdbPeer.WriteAsync(stream, new AdbMessage(AdbCommand.Okay, 77, open.Arg0, []), token);
+            await ScriptedAdbPeer.StaySilentAsync(stream, token);
+        });
+
+        await Should.ThrowAsync<OperationCanceledException>(() => Client(handshakeTimeout: Short)
+            .FindInstalledPackageAsync(IPAddress.Loopback, peer.Port, [BundledReceiver.DebugPackage], Token));
+
+        Token.IsCancellationRequested.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task AChunkTheTvNeverAcknowledges_IsNotCountedAsCopiedAndFailsTheInstall()
+    {
+        await using var peer = new ScriptedAdbPeer(async (stream, token) =>
+        {
+            await ScriptedAdbPeer.ReadAsync(stream, token);
+            await ScriptedAdbPeer.WriteAsync(stream, ScriptedAdbPeer.Banner(maxData: 4), token);
+            var open = await ScriptedAdbPeer.ReadAsync(stream, token);
+            await ScriptedAdbPeer.WriteAsync(stream, new AdbMessage(AdbCommand.Okay, 77, open.Arg0, []), token);
+            (await ScriptedAdbPeer.ReadAsync(stream, token)).Command.ShouldBe(AdbCommand.Write);
+            // Gone before acknowledging it, as when the package manager dies or the TV sleeps.
+            await ScriptedAdbPeer.WriteAsync(stream, new AdbMessage(AdbCommand.Close, 77, open.Arg0, []), token);
+            await ScriptedAdbPeer.StaySilentAsync(stream, token);
+        });
+        var progress = new RecordingProgress();
+
+        var failure = await Should.ThrowAsync<IOException>(
+            () => Client().InstallPackageAsync(IPAddress.Loopback, peer.Port, new byte[10], progress, Token));
+
+        failure.Message.ShouldBe("The TV closed the install after taking 0 of 10 bytes.");
+        progress.Values.ShouldBeEmpty("the one chunk sent was never acknowledged");
+    }
+
+    [Fact]
+    public async Task ATvThatRefusesBeforeTakingEverything_KeepsItsReason()
+    {
+        await using var peer = new ScriptedAdbPeer(async (stream, token) =>
+        {
+            await ScriptedAdbPeer.ReadAsync(stream, token);
+            await ScriptedAdbPeer.WriteAsync(stream, ScriptedAdbPeer.Banner(maxData: 4), token);
+            var open = await ScriptedAdbPeer.ReadAsync(stream, token);
+            await ScriptedAdbPeer.WriteAsync(stream, new AdbMessage(AdbCommand.Okay, 77, open.Arg0, []), token);
+            (await ScriptedAdbPeer.ReadAsync(stream, token)).Command.ShouldBe(AdbCommand.Write);
+            // The package manager judged the declared size and answered without reading on.
+            await ScriptedAdbPeer.WriteAsync(
+                stream,
+                new AdbMessage(AdbCommand.Write, 77, open.Arg0, Encoding.UTF8.GetBytes("Failure [INSTALL_FAILED_INSUFFICIENT_STORAGE]\n")),
+                token);
+            await ScriptedAdbPeer.WriteAsync(stream, new AdbMessage(AdbCommand.Close, 77, open.Arg0, []), token);
+            await ScriptedAdbPeer.StaySilentAsync(stream, token);
+        });
+
+        var outcome = await Client().InstallPackageAsync(IPAddress.Loopback, peer.Port, new byte[10], progress: null, Token);
+
+        outcome.Succeeded.ShouldBeFalse();
+        outcome.Output.ShouldContain("INSTALL_FAILED_INSUFFICIENT_STORAGE");
+    }
+
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     /// <summary>The first-time exchange up to the television's prompt: challenge, signature, challenge, key.</summary>

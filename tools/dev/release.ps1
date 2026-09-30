@@ -75,7 +75,7 @@ function Resolve-FlintPackageVersion(
     Windows release — which bundles the receiver — stamp the same code for the same commit and a
     television updated from either channel agrees with the other about which build is newer. The
     offset keeps it clear of the codes a hand-built APK may carry and above every run-number code
-    published before this scheme. mobile-release.yml computes the same number in bash.
+    published before this scheme. release.yml and mobile-release.yml both call this function.
 #>
 function Get-FlintReceiverBuildNumber([int]$CommitCount) {
     if ($CommitCount -lt 1) {

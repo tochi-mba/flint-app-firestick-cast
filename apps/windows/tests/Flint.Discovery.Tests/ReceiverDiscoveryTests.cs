@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -69,6 +70,18 @@ public sealed class LocalSubnetTests
         ReceiverProbeScanner.IsPrivate(IPAddress.Parse(address)).ShouldBe(expected);
     }
 
+    [Theory]
+    [InlineData("192.168.1.10", 24, true)]
+    [InlineData("10.0.0.1", 23, true)]
+    [InlineData("10.0.0.1", 22, false)]
+    [InlineData("172.19.160.1", 20, false)]
+    [InlineData("10.0.0.1", 32, false)]
+    public void IsSweepable_IsSomebodyElseOnASmallSubnet(string address, int prefix, bool expected)
+    {
+        ReceiverProbeScanner.IsSweepable(new ReceiverProbeScanner.LocalSubnet(IPAddress.Parse(address), prefix))
+            .ShouldBe(expected);
+    }
+
     [Fact]
     public void LocalSubnets_OnlyEverOffersSmallPrivateIpv4Subnets()
     {
@@ -78,6 +91,46 @@ public sealed class LocalSubnetTests
             ReceiverProbeScanner.IsPrivate(subnet.Address).ShouldBeTrue();
             subnet.HostCount.ShouldBeInRange(1, ReceiverProbeScanner.MaximumHosts);
         }
+    }
+
+    [Theory]
+    [InlineData(OperationalStatus.Up, NetworkInterfaceType.Ethernet, "192.168.1.10", 24, true)]
+    [InlineData(OperationalStatus.Up, NetworkInterfaceType.Wireless80211, "10.0.0.5", 24, true)]
+    [InlineData(OperationalStatus.Down, NetworkInterfaceType.Ethernet, "192.168.1.10", 24, false)]
+    [InlineData(OperationalStatus.Up, NetworkInterfaceType.Loopback, "127.0.0.1", 8, false)]
+    [InlineData(OperationalStatus.Up, NetworkInterfaceType.Tunnel, "10.8.0.2", 24, false)]
+    [InlineData(OperationalStatus.Up, NetworkInterfaceType.Ppp, "10.64.0.2", 30, false)]
+    [InlineData(OperationalStatus.Up, NetworkInterfaceType.Wwanpp, "10.44.201.6", 30, false)]
+    [InlineData(OperationalStatus.Up, NetworkInterfaceType.Wwanpp2, "10.44.201.6", 30, false)]
+    [InlineData(OperationalStatus.Up, (NetworkInterfaceType)53, "10.8.0.2", 24, false)]
+    [InlineData(OperationalStatus.Up, NetworkInterfaceType.GigabitEthernet, "192.168.1.10", 24, true)]
+    [InlineData(OperationalStatus.Up, NetworkInterfaceType.Ethernet, "fe80::1", 64, false)]
+    [InlineData(OperationalStatus.Up, NetworkInterfaceType.Ethernet, "8.8.4.4", 24, false)]
+    [InlineData(OperationalStatus.Up, NetworkInterfaceType.Ethernet, "10.0.0.5", 16, false)]
+    public void LocalSubnets_SweepsOnlyASmallPrivateSubnetOnALinkATvCouldShare(
+        OperationalStatus status,
+        NetworkInterfaceType type,
+        string address,
+        int prefix,
+        bool swept)
+    {
+        var subnets = ReceiverProbeScanner.LocalSubnets(
+            [new ReceiverProbeScanner.AdapterAddress(status, type, IPAddress.Parse(address), prefix)]);
+
+        subnets.Any().ShouldBe(swept);
+    }
+
+    [Fact]
+    public void LocalSubnets_OffersASubnetListedTwiceOnce()
+    {
+        var wifi = new ReceiverProbeScanner.AdapterAddress(
+            OperationalStatus.Up,
+            NetworkInterfaceType.Wireless80211,
+            IPAddress.Parse("192.168.1.10"),
+            24);
+
+        ReceiverProbeScanner.LocalSubnets([wifi, wifi])
+            .ShouldBe([new ReceiverProbeScanner.LocalSubnet(IPAddress.Parse("192.168.1.10"), 24)]);
     }
 }
 
@@ -131,6 +184,66 @@ public sealed class ReceiverProbeScannerScanTests
             ReceiverProbeScanner.Port,
             TimeSpan.FromMilliseconds(500),
             cancelled.Token));
+    }
+
+    [Fact]
+    public async Task CancellingAScanMidway_IsCancelledRatherThanReportedEmpty()
+    {
+        // Every host accepts and says nothing, so every probe is mid-wait when the caller cancels.
+        // The probe has to tell that apart from its own per-host timeout, which means "not a TV".
+        using var first = Listener("127.0.0.2", port: 0);
+        var port = ((IPEndPoint)first.LocalEndpoint).Port;
+        using var second = Listener("127.0.0.3", port);
+        using var third = Listener("127.0.0.4", port);
+        using var fourth = Listener("127.0.0.5", port);
+        using var fifth = Listener("127.0.0.6", port);
+        var holding = Task.WhenAll(
+            HoldOpenAsync(first),
+            HoldOpenAsync(second),
+            HoldOpenAsync(third),
+            HoldOpenAsync(fourth),
+            HoldOpenAsync(fifth));
+        using var cancel = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        cancel.CancelAfter(TimeSpan.FromMilliseconds(300));
+
+        await Should.ThrowAsync<OperationCanceledException>(() => ReceiverProbeScanner.ScanAsync(
+            [Loopback29],
+            port,
+            TimeSpan.FromSeconds(10),
+            cancel.Token));
+
+        StopAll(first, second, third, fourth, fifth);
+        await holding;
+    }
+
+    [Fact]
+    public async Task AnAddressThisPcDoesNotHave_ProbesNothingAndFindsNothing()
+    {
+        // Binding the probe to an address no interface holds fails at once, for every host.
+        var answers = await ReceiverProbeScanner.ScanAsync(
+            [new ReceiverProbeScanner.LocalSubnet(IPAddress.Parse("192.0.2.1"), 30)],
+            ReceiverProbeScanner.Port,
+            TimeSpan.FromMilliseconds(500),
+            TestContext.Current.CancellationToken);
+
+        answers.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task TheRealScan_WhenCancelled_ContactsNobody()
+    {
+        // Cancelled before it starts, so this unit test never probes the developer's own network.
+        using var cancelled = new CancellationTokenSource();
+        await cancelled.CancelAsync();
+
+        try
+        {
+            (await ReceiverProbeScanner.ScanAsync(cancelled.Token)).ShouldBeEmpty();
+        }
+        catch (OperationCanceledException)
+        {
+            // Equally correct: a machine with a sweepable subnet stops at its first probe.
+        }
     }
 
     [Fact]
@@ -259,6 +372,35 @@ public sealed class FireTvDeviceProbeDiscoveryTests
     }
 
     [Fact]
+    public async Task AProbedTvWithOnlyABanner_TakesItsModelFromTheBanner()
+    {
+        var probe = Probe(
+            advertisements: [],
+            probeScan: () => [new ReceiverProbeScanner.Answer(Tv, "Bedroom", 47_855)],
+            adb: new AdbProbeResult(AdbConnectionState.Connected, 5555, AdbBanner.Parse("device::ro.product.model=AFTMM")));
+
+        var device = (await probe.DiscoverAsync(TestContext.Current.CancellationToken)).ShouldHaveSingleItem();
+
+        device.Model.ShouldBe("AFTMM");
+        device.FriendlyName.ShouldBe("Bedroom");
+    }
+
+    [Fact]
+    public void ThePublicConstructor_BuildsItsOwnAdbClient()
+    {
+        Should.NotThrow(() => new FireTvDeviceProbe());
+    }
+
+    [Fact]
+    public async Task BrowserEvidence_ForATvThatDoesNotAdvertise_IsNull()
+    {
+        // Listens on the real group for the full window; loopback never advertises, so nothing matches.
+        var evidence = await FireTvDeviceProbe.TryDiscoverBrowserEvidenceAsync(IPAddress.Loopback, TestContext.Current.CancellationToken);
+
+        evidence.ShouldBeNull();
+    }
+
+    [Fact]
     public async Task NothingAdvertisedAndNothingAnswering_FindsNothing()
     {
         var probe = Probe(advertisements: [], probeScan: () => []);
@@ -297,6 +439,59 @@ public sealed class FireTvDeviceProbeDiscoveryTests
 
         found.Keys.ShouldBe(["192.168.1.42"]);
         found["192.168.1.42"].Port.ShouldBe(47_855);
+    }
+
+    [Fact]
+    public async Task Listen_AsksForBothAdvertisementsAndLetsFlintsWinForTheSameTv()
+    {
+        var asked = new System.Collections.Concurrent.ConcurrentQueue<(string ServiceType, TimeSpan Window)>();
+
+        var heard = await FireTvDeviceProbe.ListenAsync(
+            (serviceType, window, handle, _) =>
+            {
+                asked.Enqueue((serviceType, window));
+                if (serviceType == MulticastDnsCodec.FireTvServiceType)
+                {
+                    handle(Advertisement(serviceType, "Lounge TV", 8009, "192.168.1.60"));
+                    handle(Advertisement(serviceType, "Bedroom TV", 8009, "192.168.1.61"));
+                }
+                else
+                {
+                    handle(new byte[] { 1, 2, 3 });
+                    handle(Advertisement(serviceType, "Lounge", 47_855, "192.168.1.60"));
+                }
+
+                return Task.CompletedTask;
+            },
+            TestContext.Current.CancellationToken);
+
+        asked.OrderBy(static query => query.ServiceType, StringComparer.Ordinal).ShouldBe(
+        [
+            (MulticastDnsCodec.FireTvServiceType, FireTvDeviceProbe.ListenWindow),
+            (MulticastDnsCodec.FlintReceiverServiceType, FireTvDeviceProbe.ListenWindow),
+        ]);
+        // The Lounge TV advertises both; Flint's answer carries the receiver's port, so it wins.
+        heard.Select(static instance => (instance.Address.ToString(), instance.Port))
+            .OrderBy(static pair => pair.Item1, StringComparer.Ordinal)
+            .ShouldBe([("192.168.1.60", 47_855), ("192.168.1.61", 8009)]);
+    }
+
+    [Fact]
+    public async Task Listen_WithoutAQuery_IsRefused()
+    {
+        await Should.ThrowAsync<ArgumentNullException>(
+            () => FireTvDeviceProbe.ListenAsync(null!, TestContext.Current.CancellationToken));
+    }
+
+    private static byte[] Advertisement(string serviceType, string name, int port, string address)
+    {
+        var instance = $"{name}.{serviceType}";
+        var host = $"{name.Replace(' ', '-')}.local";
+        return new DnsPacketBuilder()
+            .AddPointer(serviceType, instance)
+            .AddService(instance, host, port)
+            .AddAddress(host, address)
+            .Build();
     }
 
     [Fact]

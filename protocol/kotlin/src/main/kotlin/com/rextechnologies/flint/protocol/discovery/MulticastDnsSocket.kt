@@ -64,12 +64,7 @@ class MulticastDnsSocket private constructor(
             } catch (_: java.net.SocketTimeoutException) {
                 return null
             }
-            val source = packet.address as? Inet4Address ?: continue
-            if (!subnet.contains(source)) continue
-            return Received(
-                payload = packet.data.copyOfRange(packet.offset, packet.offset + packet.length),
-                source = InetSocketAddress(source, packet.port),
-            )
+            accept(subnet, packet)?.let { return it }
         }
     }
 
@@ -99,6 +94,29 @@ class MulticastDnsSocket private constructor(
 
         private val GROUP_ENDPOINT = InetSocketAddress(InetAddress.getByName(GROUP), PORT)
         private const val NANOS_PER_MILLI = 1_000_000L
+
+        /**
+         * Whether a datagram from [source] belongs to this socket's interface.
+         *
+         * Only an IPv4 sender on [subnet] qualifies. Anything else is the kernel handing over group
+         * traffic that arrived on another interface, which this socket must not answer.
+         */
+        internal fun isOnSubnet(subnet: Ipv4Subnet, source: InetAddress?): Boolean =
+            source is Inet4Address && subnet.contains(source)
+
+        /**
+         * What [receive] makes of one datagram: its payload and sender, or `null` for a sender off
+         * [subnet], which [receive] skips without ending its wait.
+         */
+        internal fun accept(subnet: Ipv4Subnet, packet: DatagramPacket): Received? =
+            if (!isOnSubnet(subnet, packet.address)) {
+                null
+            } else {
+                Received(
+                    payload = packet.data.copyOfRange(packet.offset, packet.offset + packet.length),
+                    source = InetSocketAddress(packet.address, packet.port),
+                )
+            }
 
         /**
          * Opens the socket for the interface that owns [address].

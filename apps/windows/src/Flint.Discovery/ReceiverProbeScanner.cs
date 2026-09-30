@@ -23,6 +23,13 @@ internal static class ReceiverProbeScanner
 
     internal sealed record Answer(IPAddress Address, string ModelName, int ServicePort);
 
+    /// <summary>One address on one adapter, as Windows reports it.</summary>
+    internal sealed record AdapterAddress(
+        OperationalStatus Status,
+        NetworkInterfaceType Type,
+        IPAddress Address,
+        int PrefixLength);
+
     /// <summary>Probes every small private subnet this PC is on.</summary>
     internal static Task<IReadOnlyList<Answer>> ScanAsync(CancellationToken cancellationToken) =>
         ScanAsync(LocalSubnets(), Port, Timeout, cancellationToken);
@@ -66,21 +73,55 @@ internal static class ReceiverProbeScanner
         return new Answer(address, fields[1], servicePort);
     }
 
-    /// <summary>
-    /// Every small private IPv4 subnet on an interface that is up and is not a loopback or tunnel.
-    /// </summary>
+    /// <summary>Every small private IPv4 subnet on this PC's adapters that a television could share.</summary>
     internal static IEnumerable<LocalSubnet> LocalSubnets() =>
-        NetworkInterface.GetAllNetworkInterfaces()
-            .Where(static nic => nic.OperationalStatus == OperationalStatus.Up)
-            .Where(static nic => nic.NetworkInterfaceType is not NetworkInterfaceType.Loopback
-                and not NetworkInterfaceType.Tunnel
-                and not NetworkInterfaceType.Ppp)
-            .SelectMany(static nic => nic.GetIPProperties().UnicastAddresses)
-            .Where(static unicast => unicast.Address.AddressFamily == AddressFamily.InterNetwork)
-            .Where(static unicast => IsPrivate(unicast.Address))
-            .Select(static unicast => new LocalSubnet(unicast.Address, unicast.PrefixLength))
-            .Where(static subnet => subnet.HostCount is > 0 and <= MaximumHosts)
+        LocalSubnets(NetworkInterface.GetAllNetworkInterfaces().SelectMany(static nic =>
+            nic.GetIPProperties().UnicastAddresses.Select(unicast => new AdapterAddress(
+                nic.OperationalStatus,
+                nic.NetworkInterfaceType,
+                unicast.Address,
+                unicast.PrefixLength))));
+
+    /// <summary>
+    /// The subnets worth sweeping among <paramref name="addresses"/>: IPv4, private, small, on an
+    /// adapter that is up and is a link a television could be on.
+    /// </summary>
+    internal static IEnumerable<LocalSubnet> LocalSubnets(IEnumerable<AdapterAddress> addresses) =>
+        addresses
+            .Where(static adapter => adapter.Status == OperationalStatus.Up && CouldShareATelevision(adapter.Type))
+            .Where(static adapter => adapter.Address.AddressFamily == AddressFamily.InterNetwork)
+            .Where(static adapter => IsPrivate(adapter.Address))
+            .Select(static adapter => new LocalSubnet(adapter.Address, adapter.PrefixLength))
+            .Where(IsSweepable)
             .Distinct();
+
+    /// <summary>
+    /// Whether an adapter of this type can be on the same network as a television: Ethernet or Wi-Fi.
+    /// </summary>
+    /// <remarks>
+    /// Named rather than excluded, because what else Windows reports is open-ended. Mobile broadband
+    /// is the costly miss: a carrier often hands a USB modem or a tethered phone a small private
+    /// subnet of its own, and probing the carrier's side finds no television and costs the person
+    /// data. Dial-up, tunnels and virtual adapters such as WireGuard's, which reports a type .NET
+    /// has no name for, are left out the same way.
+    /// </remarks>
+    private static bool CouldShareATelevision(NetworkInterfaceType type) => type is
+        NetworkInterfaceType.Ethernet
+        or NetworkInterfaceType.Ethernet3Megabit
+        or NetworkInterfaceType.FastEthernetT
+        or NetworkInterfaceType.FastEthernetFx
+        or NetworkInterfaceType.GigabitEthernet
+        or NetworkInterfaceType.Wireless80211;
+
+    /// <summary>
+    /// Whether a subnet is small enough to probe one host at a time, and has anyone else on it.
+    /// </summary>
+    /// <remarks>
+    /// A /16 is sixty thousand connection attempts against machines that never asked to be
+    /// probed, so anything beyond <see cref="MaximumHosts"/> is left to advertisement and to a
+    /// typed-in address.
+    /// </remarks>
+    internal static bool IsSweepable(LocalSubnet subnet) => subnet.HostCount is > 0 and <= MaximumHosts;
 
     /// <summary>Whether <paramref name="address"/> is in one of the three RFC 1918 private ranges.</summary>
     internal static bool IsPrivate(IPAddress address)
@@ -184,9 +225,11 @@ internal static class ReceiverProbeScanner
         private uint Last => (Value | ~Mask) - (PrefixLength <= 30 ? 1u : 0u);
 
         /// <summary>How many addresses <see cref="Hosts"/> yields: the range, less this PC's own address.</summary>
-        internal long HostCount => Last < First
-            ? 0
-            : (long)Last - First + 1 - (Value >= First && Value <= Last ? 1 : 0);
+        /// <remarks>
+        /// The range is never empty: a /31 or /32 keeps both ends, and every wider prefix has at
+        /// least two hosts between its network and broadcast addresses.
+        /// </remarks>
+        internal long HostCount => (long)Last - First + 1 - (Value >= First && Value <= Last ? 1 : 0);
 
         /// <summary>Every other host on the subnet, in address order.</summary>
         internal IEnumerable<IPAddress> Hosts()

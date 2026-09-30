@@ -119,6 +119,22 @@ public sealed class BundledReceiverPackageTests : IDisposable
         await Should.ThrowAsync<InvalidOperationException>(() => package.ReadAsync(TestContext.Current.CancellationToken));
     }
 
+    [Fact]
+    public async Task ReadingAnApkReplacedByOneOfTheSameSize_Throws()
+    {
+        // The size alone cannot tell these apart; the digest the description was proved against can.
+        WriteApk();
+        WriteSidecar(Apk);
+        var package = new BundledReceiverPackage(directory);
+        package.Describe().ShouldNotBeNull();
+        File.WriteAllBytes(Path.Combine(directory, BundledReceiverPackage.ApkFileName), [.. Apk.Select(static b => (byte)~b)]);
+
+        var failure = await Should.ThrowAsync<InvalidOperationException>(
+            () => package.ReadAsync(TestContext.Current.CancellationToken));
+
+        failure.Message.ShouldBe("The bundled receiver changed since Flint described it.");
+    }
+
     private void WriteApk() =>
         File.WriteAllBytes(Path.Combine(directory, BundledReceiverPackage.ApkFileName), Apk);
 

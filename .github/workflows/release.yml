@@ -49,6 +49,35 @@ jobs:
       # The package carries the Fire TV receiver, so this job needs the Android toolchain too.
       - uses: ./.github/actions/android-setup
 
+      # The bundled receiver is signed with the release key, the one the mobile release signs the
+      # same receiver with, so a TV can take an update from either channel. A debug build here would
+      # be signed with a key generated for this run alone, and Android refuses every later update
+      # signed by another: no Windows release could ever update a receiver an earlier one installed.
+      - name: Decode the signing key
+        shell: pwsh
+        env:
+          KEYSTORE_BASE64: ${{ secrets.MOBILE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
+        run: |
+          $missing = @('KEYSTORE_BASE64', 'KEYSTORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD' |
+            Where-Object { [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($_)) })
+          if ($missing.Count -gt 0) {
+            throw "Release signing is required; missing $(($missing | ForEach-Object { "MOBILE_$_" }) -join ', ')."
+          }
+          $signing = Join-Path $env:RUNNER_TEMP 'signing'
+          New-Item -ItemType Directory -Path $signing -Force | Out-Null
+          $keystore = Join-Path $signing 'flint-mobile.jks'
+          [IO.File]::WriteAllBytes($keystore, [Convert]::FromBase64String($env:KEYSTORE_BASE64))
+          if ((Get-Item -LiteralPath $keystore).Length -eq 0) {
+            throw 'The decoded signing keystore is empty.'
+          }
+          keytool -list -keystore $keystore -storepass $env:KEYSTORE_PASSWORD -alias $env:KEY_ALIAS | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            throw 'The signing keystore does not hold the release key alias.'
+          }
+
       - name: Install Pester
         shell: pwsh
         run: |
@@ -84,13 +113,19 @@ jobs:
         run: ./dev.ps1 check repo build-logic engine windows receiver
 
       # The receiver's versionCode comes from the commit count, the same number the mobile release
-      # stamps, so a TV updated from a phone and one updated from Windows agree on which is newer.
+      # stamps, and it is signed with the same release key, so a TV updated from a phone and one
+      # updated from Windows agree on which is newer and each can take the other's update.
       - name: Package
         shell: pwsh
+        env:
+          MOBILE_KEYSTORE_PATH: ${{ format('{0}/signing/flint-mobile.jks', runner.temp) }}
+          MOBILE_KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          MOBILE_KEY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          MOBILE_KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
         run: |
           . ./tools/dev/release.ps1
           $code = Get-FlintReceiverBuildNumber ([int](git rev-list --count HEAD))
-          ./tools/scripts/package.ps1 -Version ${{ steps.version.outputs.value }} -ReceiverBuildNumber $code
+          ./tools/scripts/package.ps1 -Version ${{ steps.version.outputs.value }} -ReceiverBuildNumber $code -ReleaseReceiver
 
       # Never publish on faith. package.ps1 checks the engine reached the staging folder; this opens
       # the zip that will actually be downloaded and checks what someone extracting it would find,
@@ -112,6 +147,24 @@ jobs:
             if (-not (Test-Path -LiteralPath (Join-Path $check $file))) {
               throw "The package is missing $file."
             }
+          }
+          # The receiver must carry the release key and be the release package. A debug-signed one
+          # would install on a TV that no later release could update.
+          $apksigner = Get-ChildItem -LiteralPath (Join-Path $env:ANDROID_HOME 'build-tools') -Recurse -Filter apksigner.bat |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if ($null -eq $apksigner) {
+            throw 'apksigner is not installed, so the receiver signature cannot be verified.'
+          }
+          $certificates = & $apksigner.FullName verify --print-certs (Join-Path $check 'Flint.Receiver.apk')
+          if ($LASTEXITCODE -ne 0) {
+            throw 'The bundled receiver is not validly signed.'
+          }
+          if ($certificates -match 'CN=Android Debug') {
+            throw 'The bundled receiver is signed with a debug key.'
+          }
+          $receiver = Get-Content -LiteralPath (Join-Path $check 'Flint.Receiver.json') -Raw | ConvertFrom-Json
+          if ($receiver.packageName -ne 'com.rextechnologies.flint.receiver') {
+            throw "The bundled receiver is $($receiver.packageName), not the release package."
           }
           # Documentation XML is generated so the analyzers can see unused usings. It carries every
           # internal comment in the codebase and has no business in a download.

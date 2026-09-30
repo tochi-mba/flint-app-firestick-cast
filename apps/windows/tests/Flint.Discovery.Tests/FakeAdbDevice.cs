@@ -11,7 +11,9 @@ namespace Flint.Discovery.Tests;
 /// It greets with CNXN straight away, as a television that has already accepted Flint's key does,
 /// and then serves one stream at a time: OKAY to the OPEN, the scripted answer as WRTE, then CLSE.
 /// A service that takes a payload is fed every WRTE the host sends, acknowledging each one, so the
-/// flow control the real protocol demands is exercised rather than assumed.
+/// flow control the real protocol demands is exercised rather than assumed. Like adbd on a real
+/// Fire TV, it gives every stream a fresh id and answers the host's CLSE with a CLSE of its own,
+/// which a host that has already opened its next stream reads there.
 /// </remarks>
 internal sealed class FakeAdbDevice : IAsyncDisposable
 {
@@ -22,6 +24,7 @@ internal sealed class FakeAdbDevice : IAsyncDisposable
     private readonly uint _maxData;
     private readonly uint _announcedMaxData;
     private readonly List<string> _requests = [];
+    private uint _nextDeviceId = 31;
 
     /// <param name="services">
     /// Answers a service destination (such as <c>shell:getprop</c>) and the payload the host sent it.
@@ -112,7 +115,7 @@ internal sealed class FakeAdbDevice : IAsyncDisposable
 
     private async Task ServeStreamAsync(NetworkStream stream, uint hostId, string destination, CancellationToken cancellationToken)
     {
-        const uint deviceId = 77;
+        var deviceId = _nextDeviceId++;
         await WriteAsync(stream, new AdbMessage(AdbCommand.Okay, deviceId, hostId, []), cancellationToken);
 
         var expected = ExpectedPayloadLength(destination);
@@ -153,6 +156,10 @@ internal sealed class FakeAdbDevice : IAsyncDisposable
         {
             throw new InvalidOperationException($"Expected CLSE back, got {close.Command}.");
         }
+
+        // adbd acknowledges the host's CLSE with its own. On a connection the host keeps using, that
+        // arrives after the host's next OPEN, exactly as a Fire TV's does.
+        await WriteAsync(stream, new AdbMessage(AdbCommand.Close, deviceId, hostId, []), cancellationToken);
     }
 
     /// <summary>A streamed install says its size up front; every other service takes nothing.</summary>
