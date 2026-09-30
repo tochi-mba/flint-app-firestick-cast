@@ -4,6 +4,7 @@ import android.os.Build
 import com.rextechnologies.flint.protocol.discovery.DnsPacketCodec
 import com.rextechnologies.flint.protocol.discovery.FlintDnsSd
 import com.rextechnologies.flint.protocol.discovery.FlintService
+import com.rextechnologies.flint.protocol.discovery.MulticastDnsSocket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -11,12 +12,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.Closeable
-import java.net.DatagramPacket
 import java.net.Inet4Address
-import java.net.InetAddress
-import java.net.InetSocketAddress
-import java.net.MulticastSocket
-import java.net.NetworkInterface
 import java.net.SocketException
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -28,39 +24,28 @@ class ReceiverMdnsResponder(
 ) : Closeable {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val closed = AtomicBoolean()
-    private var socket: MulticastSocket? = null
+    private var socket: MulticastDnsSocket? = null
 
     fun start(): Result<Unit> = runCatching {
         check(socket == null) { "mDNS responder is already running" }
-        val network = NetworkInterface.getByInetAddress(address)
-            ?: error("No interface owns the receiver address")
-        val group = InetAddress.getByName(MDNS_GROUP)
-        val active = MulticastSocket(null).apply {
-            reuseAddress = true
-            bind(InetSocketAddress(address, MDNS_PORT))
-            networkInterface = network
-            soTimeout = RECEIVE_TIMEOUT_MILLIS
-            joinGroup(InetSocketAddress(group, MDNS_PORT), network)
-        }
+        val active = MulticastDnsSocket.open(address, RECEIVE_TIMEOUT_MILLIS)
         socket = active
-        announce(active, ttl = DEFAULT_TTL_SECONDS)
+        announce(active, ttl = DEFAULT_TTL_SECONDS, destination = null)
         scope.launch {
             while (isActive && !closed.get()) {
-                val buffer = ByteArray(DnsPacketCodec.MAX_PACKET_BYTES)
-                val packet = DatagramPacket(buffer, buffer.size)
                 try {
-                    active.receive(packet)
-                    val query = DnsPacketCodec.decode(
-                        packet.data.copyOfRange(packet.offset, packet.offset + packet.length),
-                    )
+                    val received = active.receive() ?: continue
+                    val query = DnsPacketCodec.decode(received.payload)
                     if (query.questions.any {
                             it.name.trimEnd('.').equals(FlintDnsSd.SERVICE_TYPE, ignoreCase = true)
                         }
                     ) {
-                        announce(active, ttl = DEFAULT_TTL_SECONDS)
+                        announce(
+                            active,
+                            ttl = DEFAULT_TTL_SECONDS,
+                            destination = received.source.takeIf { received.wantsDirectReply },
+                        )
                     }
-                } catch (_: java.net.SocketTimeoutException) {
-                    // Periodically observe cancellation.
                 } catch (_: IllegalArgumentException) {
                     // Unrelated multicast traffic is not a receiver error.
                 } catch (_: SocketException) {
@@ -70,7 +55,11 @@ class ReceiverMdnsResponder(
         }
     }
 
-    private fun announce(active: MulticastSocket, ttl: Long) {
+    private fun announce(
+        active: MulticastDnsSocket,
+        ttl: Long,
+        destination: java.net.InetSocketAddress?,
+    ) {
         val model = Build.MODEL.orEmpty().replace(Regex("[^A-Za-z0-9 _-]"), " ").trim()
             .ifBlank { "Fire TV" }
         val host = "rexcast-" + address.hostAddress.orEmpty().replace(".", "-")
@@ -94,20 +83,17 @@ class ReceiverMdnsResponder(
                 ),
             ),
         )
-        val group = InetAddress.getByName(MDNS_GROUP)
-        active.send(DatagramPacket(payload, payload.size, group, MDNS_PORT))
+        if (destination == null) {
+            active.sendToGroup(payload)
+        } else {
+            active.sendTo(payload, destination)
+        }
     }
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         socket?.let { active ->
-            runCatching { announce(active, ttl = 0) }
-            runCatching {
-                active.leaveGroup(
-                    InetSocketAddress(InetAddress.getByName(MDNS_GROUP), MDNS_PORT),
-                    active.networkInterface,
-                )
-            }
+            runCatching { announce(active, ttl = 0, destination = null) }
             active.close()
         }
         socket = null
@@ -115,8 +101,6 @@ class ReceiverMdnsResponder(
     }
 
     private companion object {
-        const val MDNS_GROUP = "224.0.0.251"
-        const val MDNS_PORT = 5_353
         const val DEFAULT_TTL_SECONDS = 120L
         const val RECEIVE_TIMEOUT_MILLIS = 500
     }
