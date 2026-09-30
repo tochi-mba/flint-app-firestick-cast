@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Flint.App.Services;
 using Flint.Core;
 using Flint.Discovery;
@@ -30,8 +31,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         Cast = cast;
         Browser = new BrowserPageViewModel(cast);
-        _ = new ModeSessionCoordinator(Cast, Browser);
+        Coordinator = new ModeSessionCoordinator(Cast, Browser, SwitchPrompt);
         Onboarding = new OnboardingViewModel(onboardingState);
+
+        // What the TV is showing changes under every page: a mirror ends, a video stops, the
+        // browser closes. The notice follows it rather than a page switch.
+        Cast.PropertyChanged += (_, _) => RaiseTvNotice();
+        Browser.PropertyChanged += (_, _) => RaiseTvNotice();
 
         // The update panel is told what a live session is rather than working it out: mirroring and
         // a browser session both end when this process exits, and neither may be cut short by an
@@ -78,6 +84,33 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>The independent browser eligibility page.</summary>
     public BrowserPageViewModel Browser { get; }
+
+    /// <summary>The question asked before the TV is switched from one thing to another.</summary>
+    public SurfaceSwitchPrompt SwitchPrompt { get; } = new();
+
+    /// <summary>Keeps one thing on the TV at a time, and asks before replacing it.</summary>
+    public ModeSessionCoordinator Coordinator { get; }
+
+    /// <summary>What the TV is showing, when that is not what the selected page puts there.</summary>
+    public string? TvNotice => Coordinator.NoticeFor(SelectedSurface);
+
+    /// <summary>Whether <see cref="TvNotice"/> has anything to say.</summary>
+    public bool ShowTvNotice => TvNotice is not null;
+
+    /// <summary>Whether the selected page can take the TV over right now.</summary>
+    public bool CanSwitchHere => Coordinator.CanSwitchTo(SelectedSurface);
+
+    /// <summary>The label on the button that takes the TV over for the selected page.</summary>
+    public string SwitchHereLabel => SelectedSurface is TvSurfaceKind.Mirror ? "MIRROR INSTEAD" : "SWITCH TO BROWSER";
+
+    /// <summary>The surface the selected page puts on the TV, if any.</summary>
+    private TvSurfaceKind SelectedSurface => Selected.Label switch
+    {
+        "Web" => TvSurfaceKind.Browser,
+        "Screen" => TvSurfaceKind.Mirror,
+        "Media" => TvSurfaceKind.Media,
+        _ => TvSurfaceKind.None,
+    };
 
     /// <summary>The first-run introduction, shown over the shell until it is completed.</summary>
     public OnboardingViewModel Onboarding { get; }
@@ -224,10 +257,36 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Takes the TV over for the selected page because the person pressed the button that says so.
+    /// </summary>
+    [RelayCommand]
+    private Task SwitchHereAsync() => Coordinator.SwitchToAsync(SelectedSurface);
+
+    private void RaiseTvNotice()
+    {
+        OnPropertyChanged(nameof(TvNotice));
+        OnPropertyChanged(nameof(ShowTvNotice));
+        OnPropertyChanged(nameof(CanSwitchHere));
+        OnPropertyChanged(nameof(SwitchHereLabel));
+    }
+
     partial void OnSelectedChanged(NavigationDestination value)
     {
         Flint.Core.FlintDiag.Info("FlintUi", $"rail select={value.Label}");
-        if (value.Label == "Web") _ = Browser.ActivateAsync();
+
+        // A question about the page being left is withdrawn, as keeping what the TV shows.
+        SwitchPrompt.Dismiss();
+        if (value.Label == "Web")
+        {
+            _ = Coordinator.OfferOnArrivalAsync(TvSurfaceKind.Browser, () => IsWebSelected);
+        }
+        else if (value.Label == "Screen")
+        {
+            _ = Coordinator.OfferOnArrivalAsync(TvSurfaceKind.Mirror, () => IsScreenSelected);
+        }
+
+        RaiseTvNotice();
         OnPropertyChanged(nameof(IsCastSelected));
         OnPropertyChanged(nameof(IsDiagnosticsSelected));
         OnPropertyChanged(nameof(IsMediaSelected));
