@@ -339,6 +339,56 @@ public sealed class CastPageReceiverSetupTests
     }
 
     [Fact]
+    public async Task AnInstallTheTvAnswersWithSomethingThatIsNotAdb_IsAFailedInstall()
+    {
+        var installer = new FakeReceiverInstaller
+        {
+            Installed = null,
+            InstallFailure = new AdbProtocolException("Unexpected ADB command Connect in the service stream."),
+        };
+        var page = Page(installer, new FakeBundledSource(Bundled));
+        await page.ProbeCommand.ExecuteAsync(null);
+
+        await page.RunReceiverActionCommand.ExecuteAsync(null);
+
+        page.Failure.ShouldBe("Unexpected ADB command Connect in the service stream.");
+        page.PairingStatus.ShouldBe("Flint could not install the receiver on the TV.");
+        page.IsBusy.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task ABundledPackageThatChangedSinceItWasDescribed_IsNeverSent()
+    {
+        // What BundledReceiverPackage throws when the APK no longer matches its digest.
+        var installer = new FakeReceiverInstaller { Installed = null };
+        var source = new FakeBundledSource(Bundled)
+        {
+            ReadFailure = new InvalidOperationException("The bundled receiver changed since Flint described it."),
+        };
+        var page = Page(installer, source);
+        await page.ProbeCommand.ExecuteAsync(null);
+
+        await page.RunReceiverActionCommand.ExecuteAsync(null);
+
+        installer.InstalledBytes.ShouldBeNull("nothing was sent to the TV");
+        page.Failure.ShouldBe("The bundled receiver changed since Flint described it.");
+        page.PairingStatus.ShouldBe("Flint could not install the receiver on the TV.");
+    }
+
+    [Fact]
+    public async Task AFaultInFlintItself_IsNotDressedUpAsTheTvFailing()
+    {
+        var installer = new FakeReceiverInstaller { Installed = null, InstallFailure = new ArgumentException("a bug") };
+        var page = Page(installer, new FakeBundledSource(Bundled));
+        await page.ProbeCommand.ExecuteAsync(null);
+
+        await Should.ThrowAsync<ArgumentException>(() => page.RunReceiverActionCommand.ExecuteAsync(null));
+
+        page.Failure.ShouldBeNull();
+        page.IsBusy.ShouldBeFalse("the page is released even when the command faults");
+    }
+
+    [Fact]
     public async Task AnInstallThatTimesOut_IsAFailureRatherThanACancellation()
     {
         // The ADB client's timeouts surface as a cancellation nobody asked for, and nothing on the
@@ -656,10 +706,13 @@ public sealed class CastPageReceiverSetupTests
         /// <summary>Settable so a test can take the package away between the look and the install.</summary>
         public BundledReceiver? Bundled { get; set; } = bundled;
 
+        /// <summary>What reading the package throws, as a file changed since it was described does.</summary>
+        public Exception? ReadFailure { get; set; }
+
         public BundledReceiver? Describe() => Bundled;
 
         public Task<byte[]> ReadAsync(CancellationToken cancellationToken) =>
-            Task.FromResult(apk ?? new byte[] { 9 });
+            ReadFailure is null ? Task.FromResult(apk ?? new byte[] { 9 }) : Task.FromException<byte[]>(ReadFailure);
     }
 
     private sealed class FakeLauncher : IReceiverLauncher
