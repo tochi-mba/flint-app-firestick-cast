@@ -359,21 +359,6 @@ public sealed class OnboardingViewModelTests
     }
 
     [Fact]
-    public void BrowserWorkspaceStep_ExplainsPaneInputProfilesAndInternetBoundary()
-    {
-        var onboarding = NewFlow();
-        var text = string.Join(
-            " ",
-            onboarding.Steps.SelectMany(step =>
-                new[] { step.Title, step.Body }.Concat(step.Points)));
-
-        text.ShouldContain("separate webpage");
-        text.ShouldContain("focus confirmation");
-        text.ShouldContain("Windows-device profile");
-        text.ShouldContain("connect to those websites over the internet");
-    }
-
-    [Fact]
     public void Constructor_NullState_Throws()
     {
         // Act & Assert

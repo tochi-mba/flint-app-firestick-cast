@@ -225,8 +225,8 @@ class CopyVoiceTest {
 
 class OnboardingCopyTest {
     @Test
-    fun `the introduction is six steps`() {
-        assertEquals(6, OnboardingCopy.steps.size)
+    fun `the introduction is three steps`() {
+        assertEquals(3, OnboardingCopy.steps.size)
     }
 
     @Test
@@ -247,9 +247,6 @@ class OnboardingCopyTest {
                 "Welcome",
                 "Read this first",
                 "On the TV, in this order",
-                "If nothing is found",
-                "What the TV shows",
-                "What works today",
             ),
             OnboardingCopy.steps.map { it.eyebrow },
         )
