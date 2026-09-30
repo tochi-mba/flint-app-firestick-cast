@@ -21,10 +21,12 @@ internal static class Program
         // Before anything else, including the log. The installer runs this same executable to carry
         // out its hooks and expects it to do that one job and exit; anything started first would run
         // during an install, an update and an uninstall as well.
+        // Wiring only: what each hook does is InstallLifecycle's, where it is tested.
+        var lifecycle = InstallLifecycle.ForThisInstall();
         VelopackApp.Build()
-            .OnAfterInstallFastCallback(_ => CompleteInstall())
-            .OnAfterUpdateFastCallback(_ => FlintProcessCleanup.StopOtherCopies())
-            .OnBeforeUninstallFastCallback(_ => CompleteUninstall())
+            .OnAfterInstallFastCallback(_ => lifecycle.AfterInstall())
+            .OnAfterUpdateFastCallback(_ => lifecycle.AfterUpdate())
+            .OnBeforeUninstallFastCallback(_ => lifecycle.BeforeUninstall())
             .Run();
 
         using var instance = FlintSingleInstance.TryAcquire();
@@ -35,27 +37,6 @@ internal static class Program
 
         DevFileLog.Start();
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
-    }
-
-    private static void CompleteInstall()
-    {
-        FlintProcessCleanup.StopOtherCopies();
-        AnnounceIfChanged(PathRegistration.Add(new RegistryUserPathStore(), AppContext.BaseDirectory));
-    }
-
-    private static void CompleteUninstall()
-    {
-        FlintProcessCleanup.StopOtherCopies();
-        AnnounceIfChanged(PathRegistration.Remove(new RegistryUserPathStore(), AppContext.BaseDirectory));
-    }
-
-    /// <summary>Tells the desktop about a PATH edit, so a terminal opened next sees it.</summary>
-    private static void AnnounceIfChanged(bool changed)
-    {
-        if (changed)
-        {
-            PathRegistration.AnnounceChange();
-        }
     }
 
     /// <summary>

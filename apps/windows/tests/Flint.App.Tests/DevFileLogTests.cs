@@ -65,6 +65,19 @@ public sealed class DevFileLogTests : IDisposable
     }
 
     [Fact]
+    public void StartingAgainWhileRunning_KeepsTheFirstFile()
+    {
+        var second = Path.Combine(directory, "second.log");
+        DevFileLog.StartForTests(path, maximumBytes: 64 * 1024, retainBytes: 32 * 1024);
+
+        DevFileLog.StartForTests(second, maximumBytes: 64 * 1024, retainBytes: 32 * 1024);
+        DevFileLog.Info("FlintBrowser", "after-second-start");
+
+        File.Exists(second).ShouldBeFalse();
+        ReadShared(path).ShouldContain("after-second-start");
+    }
+
+    [Fact]
     public void Start_WritesSessionHeaderAndInfoLines()
     {
         DevFileLog.StartForTests(path, maximumBytes: 64 * 1024, retainBytes: 32 * 1024);

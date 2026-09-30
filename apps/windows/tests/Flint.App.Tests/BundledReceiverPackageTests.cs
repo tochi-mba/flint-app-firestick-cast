@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Cryptography;
 using Flint.App.Services;
 using Flint.Core;
+using Flint.Discovery;
 using Shouldly;
 
 namespace Flint.App.Tests;
@@ -135,6 +136,34 @@ public sealed class ReceiverAdbGuardTests
 {
     private static readonly FireTvDevice Unauthorised =
         new(IPAddress.Loopback, "TV", DiscoverySource.Manual) { AdbState = AdbConnectionState.Unauthorized, AdbPort = 5555 };
+
+    /// <summary>Authorised, but at an address nothing can connect to: the call reaches ADB and fails there.</summary>
+    private static readonly FireTvDevice AuthorisedButUnreachable =
+        new(IPAddress.Any, "TV", DiscoverySource.Manual) { AdbState = AdbConnectionState.Connected, AdbPort = 5555 };
+
+    [Fact]
+    public async Task AnAuthorisedTv_IsAskedOverAdb()
+    {
+        var installer = new AdbReceiverInstaller(new AdbProbeClient());
+
+        await Should.ThrowAsync<IOException>(() =>
+            installer.FindInstalledAsync(AuthorisedButUnreachable, [BundledReceiver.DebugPackage], TestContext.Current.CancellationToken));
+        await Should.ThrowAsync<IOException>(() =>
+            installer.InstallAsync(AuthorisedButUnreachable, new byte[1], null, TestContext.Current.CancellationToken));
+        await Should.ThrowAsync<IOException>(() =>
+            new AdbReceiverLauncher(new AdbProbeClient()).LaunchAsync(AuthorisedButUnreachable, BundledReceiver.DebugPackage, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task AnAuthorisedTvWithNoKnownPort_IsRefusedBeforeConnecting()
+    {
+        var noPort = AuthorisedButUnreachable with { AdbPort = null };
+
+        await Should.ThrowAsync<InvalidOperationException>(() =>
+            new AdbReceiverInstaller().FindInstalledAsync(noPort, [BundledReceiver.DebugPackage], TestContext.Current.CancellationToken));
+        await Should.ThrowAsync<InvalidOperationException>(() =>
+            new AdbReceiverLauncher().LaunchAsync(noPort, BundledReceiver.DebugPackage, TestContext.Current.CancellationToken));
+    }
 
     [Fact]
     public async Task TheInstaller_RefusesAnUnauthorisedTv()
