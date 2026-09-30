@@ -473,6 +473,7 @@ public sealed class AdbProbeClient
         uint remoteId = 0;
         var sent = 0;
         var acknowledged = 0;
+        var total = payload?.Length ?? 0;
         var awaitingOkay = true;
         var closed = false;
         using var output = new MemoryStream();
@@ -489,11 +490,11 @@ public sealed class AdbProbeClient
                 case AdbCommand.Okay:
                     remoteId = message.Arg0;
                     awaitingOkay = false;
-                    if (sent > acknowledged && payload is { } copying)
+                    if (sent > acknowledged)
                     {
                         // Every OKAY after the one answering OPEN acknowledges the chunk before it.
                         acknowledged = sent;
-                        progress?.Report((double)acknowledged / copying.Length);
+                        progress?.Report((double)acknowledged / total);
                     }
 
                     break;
@@ -543,12 +544,12 @@ public sealed class AdbProbeClient
             awaitingOkay = true;
         }
 
-        if (payload is { } expected && acknowledged < expected.Length && output.Length == 0)
+        if (acknowledged < total && output.Length == 0)
         {
             // Closed mid-copy with nothing said, as when the package manager dies or the TV sleeps.
             // An empty answer would read as a refusal with no reason. A package manager that did
             // answer, having refused before reading everything, keeps its reason.
-            throw new IOException($"The TV closed the install after taking {acknowledged} of {expected.Length} bytes.");
+            throw new IOException($"The TV closed the install after taking {acknowledged} of {total} bytes.");
         }
 
         return Encoding.UTF8.GetString(output.GetBuffer(), 0, checked((int)output.Length));
