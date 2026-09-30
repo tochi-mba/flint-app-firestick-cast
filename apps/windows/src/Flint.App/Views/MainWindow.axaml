@@ -97,38 +97,65 @@
       </DockPanel>
     </Border>
 
-    <!-- Content. -->
-    <Panel Grid.Column="1">
-      <views:CastPage DataContext="{Binding Cast}"
-                      IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsCastSelected}" />
+    <!-- Content, under a strip that says what the TV is showing when it is not this page's. -->
+    <DockPanel Grid.Column="1">
+      <Border DockPanel.Dock="Top"
+              IsVisible="{Binding ShowTvNotice}"
+              Background="{StaticResource PanelBrush}"
+              BorderBrush="{StaticResource LineBrush}"
+              BorderThickness="0,0,0,1"
+              Padding="24,10">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Grid.Column="0"
+                     Theme="{StaticResource BodyMedium}"
+                     VerticalAlignment="Center"
+                     TextWrapping="Wrap"
+                     Text="{Binding TvNotice}"
+                     AutomationProperties.Name="What the TV is showing" />
+          <Button Grid.Column="1"
+                  Theme="{StaticResource OutlineAction}"
+                  Height="34"
+                  Padding="12,0"
+                  Margin="16,0,0,0"
+                  Content="{Binding SwitchHereLabel}"
+                  Command="{Binding SwitchHereCommand}"
+                  IsVisible="{Binding CanSwitchHere}"
+                  AutomationProperties.Name="Switch the TV to this page" />
+        </Grid>
+      </Border>
 
-      <views:DiagnosticsPage DataContext="{Binding Cast}"
-                             IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsDiagnosticsSelected}" />
+      <Panel>
+        <views:CastPage DataContext="{Binding Cast}"
+                        IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsCastSelected}" />
 
-      <views:MediaPage DataContext="{Binding Cast}"
-               IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsMediaSelected}" />
+        <views:DiagnosticsPage DataContext="{Binding Cast}"
+                               IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsDiagnosticsSelected}" />
 
-      <views:ScreenPage DataContext="{Binding Cast}"
-            IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsScreenSelected}" />
+        <views:MediaPage DataContext="{Binding Cast}"
+                 IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsMediaSelected}" />
 
-      <views:BrowserPage DataContext="{Binding Browser}"
-                         IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsWebSelected}" />
+        <views:ScreenPage DataContext="{Binding Cast}"
+              IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsScreenSelected}" />
 
-      <views:SettingsPage DataContext="{Binding Settings}"
-              IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsSettingsSelected}" />
+        <views:BrowserPage DataContext="{Binding Browser}"
+                           IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsWebSelected}" />
 
-      <ScrollViewer IsVisible="{Binding IsPlaceholderSelected}">
-        <StackPanel Margin="{StaticResource PageMargin}" Spacing="12">
-          <controls:PageHeading Eyebrow="Local tools"
-                                Title="{Binding SelectedLabel}"
-                                Trailing=""
-                                TrailingTone="Neutral" />
-          <controls:EmptyState Glyph="—"
-                               Title="No tool connected"
-                               Body="This area is ready for a local receiver connection. Return to Cast to connect your Fire TV." />
-        </StackPanel>
-      </ScrollViewer>
-    </Panel>
+        <views:SettingsPage DataContext="{Binding Settings}"
+                IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsSettingsSelected}" />
+
+        <ScrollViewer IsVisible="{Binding IsPlaceholderSelected}">
+          <StackPanel Margin="{StaticResource PageMargin}" Spacing="12">
+            <controls:PageHeading Eyebrow="Local tools"
+                                  Title="{Binding SelectedLabel}"
+                                  Trailing=""
+                                  TrailingTone="Neutral" />
+            <controls:EmptyState Glyph="—"
+                                 Title="No tool connected"
+                                 Body="This area is ready for a local receiver connection. Return to Cast to connect your Fire TV." />
+          </StackPanel>
+        </ScrollViewer>
+      </Panel>
+    </DockPanel>
 
   </Grid>
 
@@ -139,5 +166,42 @@
     -->
     <views:OnboardingView DataContext="{Binding Onboarding}"
                           IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Onboarding.IsVisible}" />
+
+    <!--
+      The switch question covers the shell until it is answered, and nothing on the TV changes while
+      it is open. Focus moves to the switch button, so Enter or Space answers it once it is showing,
+      though never an Enter still held from opening it; Escape keeps what the TV shows.
+    -->
+    <Border x:Name="SwitchOverlay"
+            IsVisible="{Binding SwitchPrompt.IsOpen}"
+            Background="#CC000000"
+            KeyboardNavigation.TabNavigation="Cycle"
+            KeyDown="OnSwitchOverlayKeyDown">
+      <controls:InfoCard BorderTone="Signal"
+                         MaxWidth="480"
+                         Margin="24"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center">
+        <StackPanel Spacing="12">
+          <TextBlock Theme="{StaticResource TitleMedium}"
+                     TextWrapping="Wrap"
+                     Text="{Binding SwitchPrompt.Title}" />
+          <TextBlock Theme="{StaticResource BodyMedium}"
+                     TextWrapping="Wrap"
+                     Text="{Binding SwitchPrompt.Body}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button x:Name="SwitchConfirm"
+                    Theme="{StaticResource SignalButton}"
+                    Content="{Binding SwitchPrompt.ConfirmLabel}"
+                    Command="{Binding SwitchPrompt.ConfirmCommand}"
+                    AutomationProperties.Name="Switch the TV" />
+            <Button Theme="{StaticResource OutlineAction}"
+                    Content="{Binding SwitchPrompt.KeepLabel}"
+                    Command="{Binding SwitchPrompt.KeepCommand}"
+                    AutomationProperties.Name="Keep what the TV is showing" />
+          </StackPanel>
+        </StackPanel>
+      </controls:InfoCard>
+    </Border>
   </Panel>
 </Window>
