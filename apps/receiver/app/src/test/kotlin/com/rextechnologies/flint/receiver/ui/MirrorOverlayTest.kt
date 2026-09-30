@@ -219,26 +219,6 @@ class MirrorOverlayTest {
         assertNull(mirrorAspectRatio(1920, -1080))
     }
 
-    @Test
-    fun `the stats row says it is waiting before any frame arrives`() {
-        // Even when a size has been negotiated: a size is not a picture, and reporting one while
-        // nothing decodes is precisely how a broken mirror looked healthy.
-        assertEquals(
-            "Waiting for the first frame",
-            mirrorStatsLabel(1920, 1080, frameReceived = false),
-        )
-    }
-
-    @Test
-    fun `the stats row reports the live frame size once frames arrive`() {
-        assertEquals("1920 x 1080", mirrorStatsLabel(1920, 1080, frameReceived = true))
-    }
-
-    @Test
-    fun `frames arriving without a reported size say so rather than showing zeroes`() {
-        assertEquals("Streaming, size not reported", mirrorStatsLabel(0, 0, frameReceived = true))
-    }
-
     private companion object {
         // KeyEvent.getMaxKeyCode() is an Android runtime call and throws in this plain JVM suite.
         // This exceeds every Fire TV remote key code and also exercises the unknown-key branch.

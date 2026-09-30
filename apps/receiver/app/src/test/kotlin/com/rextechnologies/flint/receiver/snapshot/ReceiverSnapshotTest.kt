@@ -259,7 +259,7 @@ class ReceiverSnapshotTest {
             )
         }
 
-        compose.onNodeWithTag(ReceiverTags.MIRROR_CONTROLS_STATS).requestFocus()
+        compose.onNodeWithTag(ReceiverTags.MIRROR_CONTROLS_STOP).requestFocus()
 
         Snapshot.matches(compose, "receiver-mirror-control-focused")
     }
