@@ -4,6 +4,7 @@ import com.rextechnologies.flint.protocol.network.HotspotInterfaceSelector
 import com.rextechnologies.flint.protocol.network.InterfaceAddressSnapshot
 import com.rextechnologies.flint.protocol.network.Ipv4
 import com.rextechnologies.flint.protocol.network.NetworkInterfaceSnapshot
+import com.rextechnologies.flint.protocol.network.PlatformLink
 import com.rextechnologies.flint.protocol.network.SelectedHotspotInterface
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -256,6 +257,36 @@ class LocalNetworkTest {
         val client = assertIs<LocalNetwork.PhoneIsClient>(assessed)
         assertEquals("wlan0", client.interfaceName)
         assertEquals(24, client.prefixLength)
+    }
+
+    @Test
+    fun `mobile data on a private address never wins the client interface`() {
+        // The bug this pins: many carriers hand the phone a 10.x address on a two-host link, which
+        // is site-local and narrower than any home network. The narrowest-subnet rule picked it, so
+        // every rung searched the carrier's link and the television was only ever reachable by
+        // typing its address in.
+        val carrier = snapshot("rmnet_data0", 21, address = "10.44.201.6", prefix = 30)
+            .copy(platformLink = PlatformLink.CELLULAR)
+        val wifi = snapshot("wlan0", 2, address = "10.182.169.140", prefix = 24)
+            .copy(platformLink = PlatformLink.LOCAL_CLIENT)
+
+        val client = assertIs<LocalNetwork.PhoneIsClient>(assessor.assess(listOf(carrier, wifi)))
+        assertEquals("wlan0", client.interfaceName)
+        assertEquals("10.182.169.140", client.boundAddress.hostAddress)
+
+        assertSame(LocalNetwork.NoLocalNetwork, assessor.assess(listOf(carrier)))
+    }
+
+    @Test
+    fun `an unlisted interface with a private address is the phone's own hotspot`() {
+        val carrier = snapshot("rmnet_data0", 21, address = "10.44.201.6", prefix = 30)
+            .copy(platformLink = PlatformLink.CELLULAR)
+        val bridged = snapshot("ap_br_wlan1", 4, address = "10.182.169.1", prefix = 24)
+            .copy(platformLink = PlatformLink.NOT_LISTED)
+
+        val host = assertIs<LocalNetwork.PhoneIsHost>(assessor.assess(listOf(carrier, bridged)))
+        assertEquals("ap_br_wlan1", host.selected.interfaceName)
+        assertEquals("10.182.169.0", host.subnet.networkAddress.hostAddress)
     }
 
     @Test
