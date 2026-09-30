@@ -91,12 +91,24 @@
                       Content="CONNECT TO TV"
                       AutomationProperties.Name="Connect to TV" />
             </Grid>
-                  <Button Theme="{StaticResource OutlineAction}"
-                    HorizontalAlignment="Left"
-                    Command="{Binding OpenReceiverCommand}"
-                    IsEnabled="{Binding CanOpenReceiver}"
-                    Content="OPEN RECEIVER ON TV"
-                    AutomationProperties.Name="Open receiver on TV" />
+                  <TextBlock Theme="{StaticResource BodySmall}"
+                       Foreground="{StaticResource MutedBrush}"
+                       TextWrapping="Wrap"
+                       Text="{Binding ReceiverSetupStatus}"
+                       AutomationProperties.Name="Receiver setup status" />
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Button Theme="{StaticResource OutlineAction}"
+                      HorizontalAlignment="Left"
+                      Command="{Binding RunReceiverActionCommand}"
+                      IsEnabled="{Binding CanRunReceiverAction}"
+                      Content="{Binding ReceiverActionLabel}"
+                      AutomationProperties.Name="Receiver action" />
+                    <TextBlock Theme="{StaticResource BodySmall}"
+                         VerticalAlignment="Center"
+                         Foreground="{StaticResource MutedBrush}"
+                         Text="{Binding InstallProgress}"
+                         AutomationProperties.Name="Install progress" />
+                  </StackPanel>
             <Grid ColumnDefinitions="*,110,Auto" ColumnSpacing="10" RowDefinitions="Auto,Auto"
                   RowSpacing="4">
               <TextBlock Grid.Row="0" Grid.Column="0" Theme="{StaticResource LabelSmall}"

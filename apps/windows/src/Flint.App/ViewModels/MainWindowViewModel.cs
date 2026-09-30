@@ -153,12 +153,20 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// so a test asking about the shell is not handed the introduction it did not ask for.
     /// </param>
     /// <param name="addressStore">Recent addresses. Defaults to a store that remembers none.</param>
+    /// <remarks>
+    /// The receiver installer is the offline one: a shell built around a supplied prober has no
+    /// television to talk to, and the real installer would try the fake device's address on every
+    /// probe.
+    /// </remarks>
     public static MainWindowViewModel CreateWith(
         CapabilityProber prober,
         IOnboardingState? onboardingState = null,
         IRecentAddressStore? addressStore = null) =>
         new(
-            new CastPageViewModel(prober, addressStore ?? new EmptyRecentAddressStore()),
+            new CastPageViewModel(
+                prober,
+                addressStore ?? new EmptyRecentAddressStore(),
+                receiverInstaller: new OfflineReceiverInstaller()),
             onboardingState ?? new CompletedOnboardingState());
 
     /// <summary>An onboarding store that always reports completion and remembers nothing.</summary>
