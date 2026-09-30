@@ -27,6 +27,47 @@ function Get-FlintVersion {
 
 <#
 .SYNOPSIS
+    Resolves the package version used by a tagged or rolling Windows release.
+
+.DESCRIPTION
+    A commit hash identifies code but does not order it. Velopack compares package versions, so a
+    hash-only suffix can make a newer rolling build sort below the installed one and strand that
+    installation forever. GitHub's run number is monotonic within the repository; keeping it in its
+    own numeric SemVer identifier gives every later rolling build a provably later package version.
+#>
+function Resolve-FlintPackageVersion(
+    [string]$Base,
+    [string]$Reference,
+    [string]$Commit,
+    [string]$RunNumber
+) {
+    if ($Base -notmatch '^\d+\.\d+\.\d+$') {
+        throw "VERSION holds '$Base', which is not a MAJOR.MINOR.PATCH version."
+    }
+
+    if ($Reference -like 'refs/tags/v*') {
+        $tagged = $Reference -replace '^refs/tags/v', ''
+        if ($tagged -ne $Base) {
+            throw "Tag v$tagged does not match VERSION $Base."
+        }
+        return [pscustomobject]@{ Version = $Base; Tagged = $true }
+    }
+
+    if ($Commit -notmatch '^[0-9a-fA-F]{7,}$') {
+        throw 'A rolling package needs a commit hash of at least seven hexadecimal characters.'
+    }
+    if ($RunNumber -notmatch '^[1-9]\d*$') {
+        throw 'A rolling package needs GitHub''s positive, monotonic run number.'
+    }
+
+    [pscustomobject]@{
+        Version = "$Base-rolling.$RunNumber.g$($Commit.Substring(0, 7).ToLowerInvariant())"
+        Tagged = $false
+    }
+}
+
+<#
+.SYNOPSIS
     Replaces the first match of a pattern in a repository file, keeping its line endings.
 #>
 function Update-RepoFile([string]$Path, [string]$Pattern, [string]$Replacement) {
