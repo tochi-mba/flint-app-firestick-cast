@@ -122,7 +122,8 @@
                          VerticalAlignment="Bottom"
                          Margin="12,0,0,4"
                          Text="{Binding Trailing, RelativeSource={RelativeSource TemplatedParent}}"
-                         Tone="{Binding TrailingTone, RelativeSource={RelativeSource TemplatedParent}}" />
+                         Tone="{Binding TrailingTone, RelativeSource={RelativeSource TemplatedParent}}"
+                         IsVisible="{Binding Trailing, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         </Grid>
       </ControlTemplate>
     </Setter>
