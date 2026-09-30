@@ -9,9 +9,8 @@
       <controls:PageHeading Eyebrow="Local playback" Title="Play on your TV" Trailing="{Binding SessionStatus}" TrailingTone="{Binding HeadingTone}" />
       <controls:InfoCard BorderTone="{Binding HeadingTone}">
         <StackPanel Spacing="12">
-          <TextBlock Theme="{StaticResource TitleMedium}" Text="Play media on the connected TV" />
           <TextBlock Theme="{StaticResource BodyMedium}" Foreground="{StaticResource MutedBrush}"
-                     Text="Choose a file to send to the receiver. Starting media stops mirror or browser on the TV first." />
+                     Text="Choose a video, audio file or image to play on the TV at full quality. Starting it stops screen sharing or the browser on the TV." />
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Theme="{StaticResource SignalButton}" Content="CHOOSE MEDIA FILE"
                     Command="{Binding ChooseMediaFileCommand}"
@@ -24,17 +23,18 @@
                     HorizontalAlignment="Left"
                     AutomationProperties.Name="Stop media playback" />
           </StackPanel>
-          <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}" Text="{Binding MediaStatus}" />
+          <!-- One line of status: what is happening, or the one thing to do first. -->
+          <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                     IsVisible="{Binding IsSessionConnected}"
+                     Text="{Binding MediaStatus}" />
           <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
                      IsVisible="{Binding !IsSessionConnected}"
-                     Text="Connect the receiver on Cast first." />
+                     Text="Connect to your TV on the Cast page first." />
         </StackPanel>
       </controls:InfoCard>
       <Expander Header="Supported media" HorizontalAlignment="Stretch">
-        <StackPanel Spacing="8">
-          <TextBlock Theme="{StaticResource LabelSmall}" Text="SUPPORTED PLAYBACK" />
-          <TextBlock Theme="{StaticResource BodyMedium}" Text="Local video, audio, images, subtitles, and direct network streams" />
-        </StackPanel>
+        <TextBlock Theme="{StaticResource BodyMedium}" Margin="0,12,0,0"
+                   Text="Local video, audio, images, subtitles, and direct network streams." />
       </Expander>
     </StackPanel>
   </ScrollViewer>
