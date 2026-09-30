@@ -53,8 +53,8 @@ import kotlinx.coroutines.delay
 /**
  * How long the controls stay up before folding away again.
  *
- * Long enough to read the stats and reach a button with a D-pad, short enough that a viewer who
- * summoned them by accident gets their picture back without doing anything.
+ * Long enough to reach a button with a D-pad, short enough that a viewer who summoned them by
+ * accident gets their picture back without doing anything.
  */
 private const val CONTROLS_AUTO_HIDE_MILLIS = 6_000L
 
@@ -77,7 +77,6 @@ internal fun ReceiverMirrorSurface(
 ) {
     var controlsVisible by remember { mutableStateOf(initialControlsVisible) }
     var fitMode by remember { mutableStateOf(MirrorFitMode.FIT) }
-    var statsVisible by remember { mutableStateOf(false) }
 
     // Bumped by anything that should restart the auto-hide countdown. Without it, pressing a
     // button four seconds in would leave the controls closing two seconds later, mid-interaction.
@@ -171,17 +170,6 @@ internal fun ReceiverMirrorSurface(
         }
 
         AnimatedVisibility(
-            visible = statsVisible,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(horizontal = horizontalSafeArea, vertical = verticalSafeArea),
-        ) {
-            MirrorStatsPanel(state, fitMode)
-        }
-
-        AnimatedVisibility(
             visible = controlsVisible,
             enter = fadeIn() + slideInVertically { it / 3 },
             exit = fadeOut() + slideOutVertically { it / 3 },
@@ -191,16 +179,11 @@ internal fun ReceiverMirrorSurface(
                 state = state,
                 presentation = presentation,
                 fitMode = fitMode,
-                statsVisible = statsVisible,
                 horizontalSafeArea = horizontalSafeArea,
                 verticalSafeArea = verticalSafeArea,
                 firstControlFocus = firstControlFocus,
                 onToggleFit = {
                     fitMode = fitMode.toggled()
-                    activityMarker++
-                },
-                onToggleStats = {
-                    statsVisible = !statsVisible
                     activityMarker++
                 },
                 onStop = onStopMirroring,
@@ -230,17 +213,22 @@ internal fun ReceiverMirrorSurface(
     }
 }
 
+/**
+ * What is on the TV and the two things a viewer can do about it: change how it fits, or stop it.
+ *
+ * Deliberately no frame size or stream statistics. A viewer who wants their screen on the
+ * television has no use for "1920 x 1080", and a numbers panel on the TV was exactly the clutter
+ * people reported. The sender knows what it sends and says so on its own diagnostics.
+ */
 @Composable
 private fun MirrorControls(
     state: ReceiverUiState,
     presentation: Boolean,
     fitMode: MirrorFitMode,
-    statsVisible: Boolean,
     horizontalSafeArea: androidx.compose.ui.unit.Dp,
     verticalSafeArea: androidx.compose.ui.unit.Dp,
     firstControlFocus: FocusRequester,
     onToggleFit: () -> Unit,
-    onToggleStats: () -> Unit,
     onStop: () -> Unit,
 ) {
     Column(
@@ -282,16 +270,6 @@ private fun MirrorControls(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Text(
-                text = mirrorStatsLabel(
-                    state.mirrorWidth,
-                    state.mirrorHeight,
-                    state.mirrorFrameReceived,
-                ),
-                color = ReceiverColors.Muted,
-                fontSize = 14.sp,
-                lineHeight = 18.sp,
-            )
         }
 
         Spacer(Modifier.height(18.dp))
@@ -304,12 +282,6 @@ private fun MirrorControls(
                 modifier = Modifier
                     .testTag(ReceiverTags.MIRROR_CONTROLS_FIT)
                     .focusRequester(firstControlFocus),
-            )
-            TvActionButton(
-                label = if (statsVisible) "HIDE STATS" else "SHOW STATS",
-                enabled = true,
-                onClick = onToggleStats,
-                modifier = Modifier.testTag(ReceiverTags.MIRROR_CONTROLS_STATS),
             )
             TvActionButton(
                 label = "STOP MIRRORING",
@@ -347,48 +319,6 @@ private fun MirrorLivePill() {
             lineHeight = 12.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp,
-        )
-    }
-}
-
-@Composable
-private fun MirrorStatsPanel(state: ReceiverUiState, fitMode: MirrorFitMode) {
-    val shape = RoundedCornerShape(14.dp)
-    Column(
-        modifier = Modifier
-            .background(ReceiverColors.Ink.copy(alpha = 0.9f), shape)
-            .border(1.dp, ReceiverColors.Line, shape)
-            .padding(horizontal = 16.dp, vertical = 13.dp)
-            .testTag(ReceiverTags.MIRROR_STATS_PANEL),
-    ) {
-        StatsRow("SOURCE", state.peerName?.takeIf { it.isNotBlank() } ?: "Unknown device")
-        StatsRow(
-            "FRAME",
-            mirrorStatsLabel(state.mirrorWidth, state.mirrorHeight, state.mirrorFrameReceived),
-        )
-        StatsRow("SCALING", if (fitMode == MirrorFitMode.FIT) "Fit, nothing cropped" else "Filled, edges cropped")
-    }
-}
-
-@Composable
-private fun StatsRow(label: String, value: String) {
-    Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = label,
-            color = ReceiverColors.Muted,
-            fontSize = 10.sp,
-            lineHeight = 13.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.1.sp,
-            modifier = Modifier.width(78.dp),
-        )
-        Text(
-            text = value,
-            color = ReceiverColors.Text,
-            fontSize = 13.sp,
-            lineHeight = 17.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
     }
 }

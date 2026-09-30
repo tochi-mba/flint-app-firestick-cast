@@ -99,16 +99,3 @@ internal enum class MirrorFitMode {
  */
 internal fun mirrorAspectRatio(width: Int, height: Int): Float? =
     if (width > 0 && height > 0) width.toFloat() / height else null
-
-/**
- * A one-line summary of the live stream, for the controls' stats row.
- *
- * Reports what is actually known rather than a plausible-looking placeholder: a mirror that
- * silently showed "1920x1080" while receiving nothing is the exact failure this project spent an
- * evening chasing.
- */
-internal fun mirrorStatsLabel(width: Int, height: Int, frameReceived: Boolean): String = when {
-    !frameReceived -> "Waiting for the first frame"
-    width > 0 && height > 0 -> "$width x $height"
-    else -> "Streaming, size not reported"
-}
