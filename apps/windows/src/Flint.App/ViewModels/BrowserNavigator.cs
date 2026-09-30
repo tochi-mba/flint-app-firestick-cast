@@ -7,8 +7,9 @@ namespace Flint.App.ViewModels;
 /// The commands that move the page: opening an address, and walking its history.
 /// </summary>
 /// <remarks>
-/// Both paths have to take the television's glass back first — Mirror or Media may own it — and
-/// both have to be honest about what a successful send does and does not mean. A wire send is not
+/// Both paths have to take the television's glass back first — Mirror or Media may own it, and the
+/// person is asked before either is stopped — and both have to be honest about what a successful
+/// send does and does not mean. A wire send is not
 /// an acknowledgement: flipping the HUD to Loading here left it stuck on "Loading… N%" over a page
 /// the television had already finished. Load state comes from the receiver alone.
 /// </remarks>
@@ -40,9 +41,13 @@ internal sealed class BrowserNavigator(BrowserPageViewModel page)
 
         try
         {
-            // Always yield the glass. Navigating while Screen owned it used to be skipped when a
-            // stale surface-open flag was still true.
-            await page.PrepareBrowserGlassAsync(cancellationToken).ConfigureAwait(true);
+            // Always ask for the glass. Navigating while Screen owned it used to be skipped when a
+            // stale surface-open flag was still true. A person who keeps what the TV is showing
+            // keeps their address typed, and nothing is sent.
+            if (!await page.TakeBrowserGlassAsync(cancellationToken).ConfigureAwait(true))
+            {
+                return;
+            }
 
             var commandId = page.NextCommandId++;
             BrowserCommandAction action;
@@ -129,9 +134,11 @@ internal sealed class BrowserNavigator(BrowserPageViewModel page)
     /// Sends one command that carries no address — back, forward, reload, stop, clear data.
     /// </summary>
     /// <remarks>
-    /// Taking the glass can itself close the surface, so the check happens after the prepare rather
-    /// than before it. Sending into a surface that is no longer there is silently dropped by the
-    /// receiver, which is far harder to diagnose than a logged skip.
+    /// Each of these acts on the page the TV is showing, so with no page open there is nothing to
+    /// do and no reason to take the TV from whatever else is on it. Taking the glass can itself
+    /// close the surface, so the check is made again after it. Sending into a surface that is no
+    /// longer there is silently dropped by the receiver, which is far harder to diagnose than a
+    /// logged skip.
     /// </remarks>
     public async Task SendActionAsync(BrowserCommandAction action, CancellationToken cancellationToken)
     {
@@ -140,9 +147,18 @@ internal sealed class BrowserNavigator(BrowserPageViewModel page)
             return;
         }
 
+        if (!page.SurfaceOpen)
+        {
+            Flint.Core.FlintDiag.Info("FlintBrowser", $"command {action} skipped — no browser page is open");
+            return;
+        }
+
         try
         {
-            await page.PrepareBrowserGlassAsync(cancellationToken).ConfigureAwait(true);
+            if (!await page.TakeBrowserGlassAsync(cancellationToken).ConfigureAwait(true))
+            {
+                return;
+            }
 
             if (!page.SurfaceOpen)
             {

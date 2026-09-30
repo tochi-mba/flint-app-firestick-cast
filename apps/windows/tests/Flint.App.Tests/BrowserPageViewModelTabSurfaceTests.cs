@@ -199,8 +199,10 @@ public sealed class BrowserPageViewModelTabSurfaceTests
     }
 
     [Fact]
-    public async Task Reload_WhileMirroringAfterClose_DoesNotSendIntoClosedSurface()
+    public async Task Reload_WhileMirroringAfterClose_LeavesTheMirrorAloneAndSendsNothing()
     {
+        // Reload used to take the glass first, which stopped the mirror, and only then find there
+        // was no page to reload: the TV lost the mirror for a command that did nothing.
         var remote = new RecordingBrowserRemote();
         var viewModel = await BrowserFixtures.ReadyViewModelAsync(remote);
         var cast = MainWindowViewModel.CreateWith(BrowserFixtures.Prober(BrowserFixtures.EligibleDevice())).Cast;
@@ -214,8 +216,8 @@ public sealed class BrowserPageViewModelTabSurfaceTests
         var before = remote.Commands.Count;
         await viewModel.ReloadCommand.ExecuteAsync(null);
 
-        cast.IsMirroring.ShouldBeFalse();
-        remote.Commands.Skip(before).ShouldNotContain(c => c.Action == BrowserCommandAction.Reload);
+        cast.IsMirroring.ShouldBeTrue();
+        remote.Commands.Skip(before).ShouldBeEmpty();
     }
 
     private static void SetIsMirroring(CastPageViewModel cast, bool value)
