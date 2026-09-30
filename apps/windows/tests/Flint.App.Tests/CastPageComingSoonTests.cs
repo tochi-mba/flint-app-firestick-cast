@@ -2,6 +2,7 @@ using System.Net;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
+using Flint.App.Services;
 using Flint.App.ViewModels;
 using Flint.App.Views;
 using Flint.Core;
@@ -144,7 +145,8 @@ public sealed class CastPageComingSoonTests
                 new FakeHostProbe(host),
                 new FakeDeviceProbe(device),
                 new FakeNetworkProbe(path)),
-            new EmptyRecentAddressStore());
+            new EmptyRecentAddressStore(),
+            receiverInstaller: new OfflineReceiverInstaller());
         var view = new CastPage { DataContext = viewModel };
         var window = new Window { Width = 1180, Height = 900, Content = view };
         window.Show();

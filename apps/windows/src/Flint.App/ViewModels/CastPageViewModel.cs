@@ -52,6 +52,8 @@ public sealed partial class CastPageViewModel : ObservableObject
     private readonly IRecentAddressStore addressStore;
     private readonly IReceiverLauncher receiverLauncher;
     private readonly IMirrorEngine mirrorEngine;
+    private readonly IReceiverInstaller receiverInstaller;
+    private readonly IBundledReceiverSource bundledReceiver;
     private CastSession? session;
     private CancellationTokenSource? mirrorStop;
     private TaskCompletionSource? mirrorStopped;
@@ -61,12 +63,16 @@ public sealed partial class CastPageViewModel : ObservableObject
         CapabilityProber prober,
         IRecentAddressStore? addressStore = null,
         IReceiverLauncher? receiverLauncher = null,
-        IMirrorEngine? mirrorEngine = null)
+        IMirrorEngine? mirrorEngine = null,
+        IReceiverInstaller? receiverInstaller = null,
+        IBundledReceiverSource? bundledReceiver = null)
     {
         this.prober = prober ?? throw new ArgumentNullException(nameof(prober));
         this.addressStore = addressStore ?? new FileRecentAddressStore();
         this.receiverLauncher = receiverLauncher ?? new AdbReceiverLauncher();
         this.mirrorEngine = mirrorEngine ?? new NativeMirrorEngine();
+        this.receiverInstaller = receiverInstaller ?? new AdbReceiverInstaller();
+        this.bundledReceiver = bundledReceiver ?? BundledReceiverPackage.BesideTheApp();
 
         var recent = this.addressStore.Load();
         RecentAddresses = new ObservableCollection<RecentAddress>(recent);
@@ -445,6 +451,10 @@ public sealed partial class CastPageViewModel : ObservableObject
         {
             Modes.Add(new ModeVerdictViewModel(verdict));
         }
+
+        // A different television is a different question; what the last one had is not evidence.
+        InstalledReceiver = null;
+        ReceiverAction = ReceiverSetupAction.Unknown;
     }
 
     /// <summary>Opens the installed receiver so its pairing code is visible on the TV.</summary>
@@ -814,6 +824,7 @@ public sealed partial class CastPageViewModel : ObservableObject
             ApplyReport(report);
             onSuccess?.Invoke();
             RefreshPairingGuidance();
+            await IdentifyReceiverAsync(cancellationToken).ConfigureAwait(true);
             FlintDiag.Info(
                 "FlintCast",
                 $"probe ok reachable={report.Device?.IsReachable == true} adb={report.Device?.AdbState} "
@@ -859,8 +870,8 @@ public sealed partial class CastPageViewModel : ObservableObject
     private async Task OpenReceiverCoreAsync(FireTvDevice device, CancellationToken cancellationToken)
     {
         PairingStatus = "Opening the receiver on the TV...";
-        FlintDiag.Info("FlintCast", $"open receiver adb={device.AdbState} address={device.Address}");
-        await receiverLauncher.LaunchAsync(device, cancellationToken).ConfigureAwait(true);
+        FlintDiag.Info("FlintCast", $"open receiver adb={device.AdbState} address={device.Address} package={ReceiverPackageToOpen}");
+        await receiverLauncher.LaunchAsync(device, ReceiverPackageToOpen, cancellationToken).ConfigureAwait(true);
         FlintDiag.Info("FlintCast", "open receiver launch issued");
     }
 
@@ -931,6 +942,8 @@ public sealed partial class CastPageViewModel : ObservableObject
         OnPropertyChanged(nameof(HeadingStatus));
         OnPropertyChanged(nameof(HeadingTone));
         OnPropertyChanged(nameof(SessionStatus));
+        OnPropertyChanged(nameof(CanRunReceiverAction));
+        OnPropertyChanged(nameof(ReceiverSetupStatus));
         OnPropertyChanged(nameof(ReceiverReady));
         OnPropertyChanged(nameof(IsSessionConnected));
         OnPropertyChanged(nameof(CanOpenReceiver));

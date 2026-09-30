@@ -686,7 +686,8 @@ public sealed class CastPageViewModelTests
             new FakeDeviceProbe(device),
             new FakeNetworkProbe(path)),
             new EmptyRecentAddressStore(),
-            receiverLauncher);
+            receiverLauncher,
+            receiverInstaller: new OfflineReceiverInstaller());
 
     private static class Fake
     {
@@ -774,9 +775,12 @@ public sealed class CastPageViewModelTests
     {
         public FireTvDevice? LaunchedDevice { get; private set; }
 
-        public Task LaunchAsync(FireTvDevice device, CancellationToken cancellationToken = default)
+        public string? LaunchedPackage { get; private set; }
+
+        public Task LaunchAsync(FireTvDevice device, string packageName, CancellationToken cancellationToken = default)
         {
             LaunchedDevice = device;
+            LaunchedPackage = packageName;
             return Task.CompletedTask;
         }
     }

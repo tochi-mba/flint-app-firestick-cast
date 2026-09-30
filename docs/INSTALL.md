@@ -53,10 +53,14 @@ you have typed in, the browser trust store — lives under `%LOCALAPPDATA%\REX T
 The installed program itself lives under `%LOCALAPPDATA%\Flint`; uninstalling removes that folder
 and takes the PATH entry with it.
 
-The download includes `Flint.Receiver.apk`. Install it on the Fire TV once using your normal
-sideloading method. After the television authorises Flint over ADB, `OPEN RECEIVER ON TV` and
-`PAIR WITH TV` bring the receiver to the foreground automatically. You do not need Android Studio
-or the Android SDK to use Flint after that initial installation.
+The download includes the Fire TV side of Flint, and Flint puts it on the television for you.
+Once the television has authorised Flint over ADB (see below), the Cast page says whether Flint
+is on the TV and which version, and its one receiver button does the next thing: **INSTALL FLINT
+ON TV** when it is missing, **UPDATE FLINT ON TV** when the TV has an older build than this
+download carries, and **OPEN RECEIVER ON TV** otherwise. Before installing, it names the package,
+version and size it will copy. It never downgrades a newer build on the TV, and it never replaces
+a Flint package that was installed under a different name — it says so instead. You do not need
+Android Studio, the Android SDK, or any sideloading tool.
 
 ## Windows will warn you
 
