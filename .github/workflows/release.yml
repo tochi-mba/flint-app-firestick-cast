@@ -61,30 +61,18 @@ jobs:
       # package could be named one thing and stamped another (ADR-0028). Now a tag that disagrees
       # fails the release.
       #
-      # A rolling build appends the commit, prefixed `g` as git describe does. A short hash can come
-      # out all digits with a leading zero, which strict SemVer does not allow in a prerelease label,
-      # and dotnet reads Version as a package version. The prefix rules that out rather than leaving
-      # it to be discovered on whichever merge happens to draw that hash.
+      # A rolling build uses GitHub's monotonic run number as its numeric prerelease identifier. A
+      # commit hash identifies bytes but has no ordering, so using it alone caused some newer builds
+      # to compare older and never reach installed copies of Flint.
       - name: Resolve the version
         id: version
         shell: pwsh
         run: |
+          . ./tools/dev/release.ps1
           $base = (Get-Content -LiteralPath VERSION -Raw).Trim()
-          if ($base -notmatch '^\d+\.\d+\.\d+$') {
-            throw "VERSION holds '$base', which is not a MAJOR.MINOR.PATCH version."
-          }
-          if ($env:GITHUB_REF -like 'refs/tags/v*') {
-            $tagged = $env:GITHUB_REF -replace '^refs/tags/v', ''
-            if ($tagged -ne $base) {
-              throw "Tag v$tagged does not match VERSION $base."
-            }
-            $version = $base
-            $isTagged = 'true'
-          }
-          else {
-            $version = "$base-g$($env:GITHUB_SHA.Substring(0, 7))"
-            $isTagged = 'false'
-          }
+          $resolved = Resolve-FlintPackageVersion $base $env:GITHUB_REF $env:GITHUB_SHA $env:GITHUB_RUN_NUMBER
+          $version = $resolved.Version
+          $isTagged = $resolved.Tagged.ToString().ToLowerInvariant()
           "value=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "tagged=$isTagged" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Version $version (tagged: $isTagged)"

@@ -78,3 +78,30 @@ Describe 'release notes' {
         { Show-ReleaseNotes '9.9.9' } | Should -Throw '*no section for 9.9.9*'
     }
 }
+
+Describe 'package version' {
+    It 'orders rolling builds with GitHub''s monotonic run number rather than the commit hash' {
+        $older = Resolve-FlintPackageVersion '0.1.0' 'refs/heads/master' 'fffffff0123' '41'
+        $newer = Resolve-FlintPackageVersion '0.1.0' 'refs/heads/master' '0000000abcd' '42'
+
+        $older.Version | Should -Be '0.1.0-rolling.41.gfffffff'
+        $newer.Version | Should -Be '0.1.0-rolling.42.g0000000'
+        $older.Tagged | Should -BeFalse
+    }
+
+    It 'keeps a matching tagged release stable' {
+        $resolved = Resolve-FlintPackageVersion '1.2.3' 'refs/tags/v1.2.3' 'abcdef01234' '99'
+
+        $resolved.Version | Should -Be '1.2.3'
+        $resolved.Tagged | Should -BeTrue
+    }
+
+    It 'refuses mismatched tags and unusable rolling inputs' {
+        { Resolve-FlintPackageVersion '1.2.3' 'refs/tags/v1.2.4' 'abcdef01234' '99' } |
+            Should -Throw '*does not match*'
+        { Resolve-FlintPackageVersion '1.2.3' 'refs/heads/master' 'not-a-hash' '99' } |
+            Should -Throw '*commit hash*'
+        { Resolve-FlintPackageVersion '1.2.3' 'refs/heads/master' 'abcdef01234' '0' } |
+            Should -Throw '*run number*'
+    }
+}
