@@ -152,8 +152,9 @@ public sealed class AdbProbeClientPackageTests
                 return service == $"exec:cmd package install -r -S {apk.Length}" ? "Success\n" : "Failure [unexpected service]";
             },
             maxData: 4096);
-        var fractions = new List<double>();
-        var progress = new Progress<double>(fractions.Add);
+        // Not Progress<T>: that posts every report to the thread pool, where concurrent Adds on a
+        // List corrupted it and took the whole test host down. The client reports synchronously.
+        var progress = new LastFraction();
 
         var outcome = await Client().InstallPackageAsync(
             Loopback,
@@ -166,6 +167,7 @@ public sealed class AdbProbeClientPackageTests
         outcome.Output.ShouldBe("Success");
         delivered.ShouldNotBeNull();
         delivered.ShouldBe(apk);
+        progress.Value.ShouldBe(1.0, "every byte was acknowledged");
     }
 
     [Fact]
@@ -259,6 +261,14 @@ public sealed class AdbProbeClientPackageTests
     {
         using var rsa = RSA.Create(2048);
         return new AdbProbeClient(new FixedIdentityProvider(new AdbIdentity(rsa, "flint@test")));
+    }
+
+    /// <summary>Keeps the latest fraction. Reports arrive synchronously, on the caller's thread.</summary>
+    private sealed class LastFraction : IProgress<double>
+    {
+        public double Value { get; private set; }
+
+        public void Report(double value) => Value = value;
     }
 
     private sealed class FixedIdentityProvider(AdbIdentity identity) : IAdbIdentityProvider
