@@ -474,7 +474,12 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
         }
         server = candidate
         val browserPort = browserController.start(address, pairingCodeProvider = { pairingCode })
-        ReceiverMdnsResponder.onWifi(this, address, port = candidate.port, browserPort = browserPort).also { responder ->
+        ReceiverMdnsResponder.onWifi(
+            this,
+            address,
+            port = candidate.port,
+            browserPort = browserPort,
+        ).also { responder ->
             responder.start()
                 .onSuccess {
                     mdns = responder
