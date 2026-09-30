@@ -11,8 +11,11 @@ internal interface IBrowserTabSessionHost
     /// <summary>The Windows-held tab strip for the current profile session.</summary>
     BrowserTabsViewModel Tabs { get; }
 
-    /// <summary>Takes the television's glass for the browser, stopping mirror or media first.</summary>
-    Task PrepareBrowserGlassAsync(CancellationToken cancellationToken);
+    /// <summary>
+    /// Takes the television's glass for the browser, asking first when mirror or media is on it.
+    /// False when the person keeps what the TV is showing.
+    /// </summary>
+    Task<bool> TakeBrowserGlassAsync(CancellationToken cancellationToken);
 
     /// <summary>Opens one address on the television, as the address bar would.</summary>
     Task OpenAddressAsync(string url, CancellationToken cancellationToken);
@@ -65,7 +68,8 @@ internal sealed class BrowserTabSessionRestorer(IBrowserTabSessionHost host)
     /// </summary>
     /// <returns>
     /// True to send the tab wire command; false when this already reopened the page itself, which
-    /// is required after the surface closed and the receiver's tab ids went with it.
+    /// is required after the surface closed and the receiver's tab ids went with it, or when the
+    /// person kept what the TV was showing.
     /// </returns>
     public async Task<bool> BeforeTabCommandAsync(
         BrowserTabRequest request,
@@ -75,8 +79,7 @@ internal sealed class BrowserTabSessionRestorer(IBrowserTabSessionHost host)
         // re-entrant, so the pair deadlocks on the UI thread.
         if (host.SurfaceOpen)
         {
-            await host.PrepareBrowserGlassAsync(cancellationToken).ConfigureAwait(true);
-            return true;
+            return await host.TakeBrowserGlassAsync(cancellationToken).ConfigureAwait(true);
         }
 
         if (request.Operation is BrowserTabOperation.Select or BrowserTabOperation.Duplicate
@@ -97,13 +100,25 @@ internal sealed class BrowserTabSessionRestorer(IBrowserTabSessionHost host)
             return false;
         }
 
-        await host.PrepareBrowserGlassAsync(cancellationToken).ConfigureAwait(true);
-        return true;
+        return await host.TakeBrowserGlassAsync(cancellationToken).ConfigureAwait(true);
     }
 
+    /// <summary>Puts the held session back on the television, first tab in front; else the start page.</summary>
+    public Task ResumeAsync(CancellationToken cancellationToken) => RestoreAsync(long.MinValue, cancellationToken);
+
     /// <summary>Rebuilds the strip from the held URLs, focusing the tab that was clicked.</summary>
+    /// <remarks>
+    /// The glass is asked for once, here, before anything opens. Each tab that follows opens on
+    /// a TV the browser already has, so a person who keeps what is showing is asked once, not
+    /// once per tab, and nothing opens at all.
+    /// </remarks>
     private async Task RestoreAsync(long preferredTabId, CancellationToken cancellationToken)
     {
+        if (!await host.TakeBrowserGlassAsync(cancellationToken).ConfigureAwait(true))
+        {
+            return;
+        }
+
         var tabs = suspended.Length > 0 ? suspended : LiveTabs();
         if (tabs.Length == 0)
         {

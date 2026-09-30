@@ -128,6 +128,12 @@ public sealed partial class CastPageViewModel : ObservableObject
     /// <summary>Whether the Screen page should offer Stop rather than only Start.</summary>
     public bool CanStopMirror => IsMirroring;
 
+    /// <summary>
+    /// Whether pressing Start would begin mirroring now: this PC can mirror to this TV, a session
+    /// is paired, and no mirror is already running.
+    /// </summary>
+    public bool CanStartMirrorNow => MirrorVerdict is { IsOfferable: true } && IsSessionConnected && !IsMirroring;
+
     /// <summary>Whether Media is actively playing on the TV from this PC.</summary>
     public bool CanStopMedia => IsMediaPlaying && IsSessionConnected;
 
@@ -570,9 +576,11 @@ public sealed partial class CastPageViewModel : ObservableObject
 
         try
         {
-            if (coordinator is not null)
+            // Asked, not assumed: the TV may be mirroring or showing the browser, and a person who
+            // keeps it that way has chosen not to play this now.
+            if (coordinator is not null && !await coordinator.TakeAsync(TvSurfaceKind.Media).ConfigureAwait(true))
             {
-                await coordinator.PrepareForAsync(TvSurfaceKind.Media).ConfigureAwait(true);
+                return;
             }
 
             var mimeType = GetMimeType(path);
@@ -696,9 +704,9 @@ public sealed partial class CastPageViewModel : ObservableObject
             return;
         }
 
-        if (coordinator is not null)
+        if (coordinator is not null && !await coordinator.TakeAsync(TvSurfaceKind.Mirror).ConfigureAwait(true))
         {
-            await coordinator.PrepareForAsync(TvSurfaceKind.Mirror).ConfigureAwait(true);
+            return;
         }
 
         var runner = new ScreenMirrorRunner(mirrorEngine);

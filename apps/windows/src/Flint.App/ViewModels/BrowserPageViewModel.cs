@@ -618,23 +618,15 @@ public sealed partial class BrowserPageViewModel
         OnPropertyChanged(nameof(KeyboardCaptureLabel));
     }
 
+    /// <summary>Closes the browser surface if open; safe no-op otherwise.</summary>
     [RelayCommand(CanExecute = nameof(CanActOnOpenPage))]
     private Task CloseBrowserAsync(CancellationToken cancellationToken) =>
         secureSession.StopSurfaceAsync(cancellationToken);
 
-    /// <summary>Closes the browser surface if open; safe no-op otherwise.</summary>
-    /// <summary>
-    /// Binds the cockpit channel that carries tabs, view settings and the library.
-    /// </summary>
-    /// <remarks>
-    /// Null until the receiver negotiates those message families. The cockpit panels then report
-    /// themselves unavailable rather than rendering empty controls that would look broken — a panel
-    /// that pretends to work is worse than one that says it cannot.
-    /// </remarks>
     bool IBrowserTabSessionHost.SurfaceOpen => browserSurfaceOpen;
 
-    Task IBrowserTabSessionHost.PrepareBrowserGlassAsync(CancellationToken cancellationToken) =>
-        PrepareBrowserGlassAsync(cancellationToken);
+    Task<bool> IBrowserTabSessionHost.TakeBrowserGlassAsync(CancellationToken cancellationToken) =>
+        TakeBrowserGlassAsync(cancellationToken);
 
     async Task IBrowserTabSessionHost.OpenAddressAsync(string url, CancellationToken cancellationToken)
     {
@@ -808,11 +800,20 @@ public sealed partial class BrowserPageViewModel
         }
     }
 
-    /// <summary>Takes the television's glass for the browser, stopping mirror or media first.</summary>
-    internal Task PrepareBrowserGlassAsync(CancellationToken cancellationToken) =>
+    /// <summary>
+    /// Takes the television's glass for the browser, asking first when mirror or media is on it.
+    /// </summary>
+    /// <returns>False when the person keeps what the TV is showing; the browser must not go on.</returns>
+    internal Task<bool> TakeBrowserGlassAsync(CancellationToken cancellationToken) =>
         coordinator is null
-            ? Task.CompletedTask
-            : coordinator.PrepareForAsync(TvSurfaceKind.Browser, cancellationToken);
+            ? Task.FromResult(true)
+            : coordinator.TakeAsync(TvSurfaceKind.Browser, cancellationToken);
+
+    /// <summary>
+    /// Puts the browser back on the television: the tabs held from before, else the start page.
+    /// </summary>
+    internal Task ShowOnTvAsync(CancellationToken cancellationToken = default) =>
+        tabSession.ResumeAsync(cancellationToken);
 
     /// <summary>Asks the television to match the host preview preference.</summary>
     internal Task SyncPreviewPreferenceAsync(CancellationToken cancellationToken) =>
