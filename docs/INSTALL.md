@@ -43,6 +43,11 @@ Devices known to ship with it are the **Fire TV Stick 4K Select** (October 2025)
 extract it anywhere and run **Flint.App.exe**. Nothing is installed, nothing goes on the PATH, and
 nothing updates itself.
 
+**One Flint at a time.** Installing or updating closes every running Flint first, including one
+started from an extracted zip, so an old build never keeps running beside the new one. The extracted
+folder itself is left alone: it is yours to delete. Opening Flint while it is already running does
+nothing; the copy that is running keeps the television.
+
 Either way, what Flint remembers about you — that you have seen the introduction, the televisions
 you have typed in, the browser trust store — lives under `%LOCALAPPDATA%\REX Technologies\Flint`.
 The installed program itself lives under `%LOCALAPPDATA%\Flint`; uninstalling removes that folder
