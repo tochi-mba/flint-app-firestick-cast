@@ -6,6 +6,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -24,7 +26,7 @@ class ReceiverIdleBrowserEntryTest {
     val compose = createAndroidComposeRule<ComponentActivity>()
 
     @Test
-    fun `a ready TV focuses and opens standalone browsing without a host`() {
+    fun `standalone browsing remains available in connection details`() {
         var opens = 0
         compose.setContent {
             ReceiverTheme {
@@ -36,16 +38,22 @@ class ReceiverIdleBrowserEntryTest {
         }
 
         compose.waitForIdle()
-        compose.onNodeWithTag(ReceiverTags.BROWSER_ENTRY)
+        compose.onNodeWithTag("receiver-connection-details")
             .assertIsDisplayed()
             .assertIsFocused()
             .performKeyInput { pressKey(Key.DirectionCenter) }
+        compose.onNodeWithTag(ReceiverTags.BROWSER_ENTRY)
+            .assertIsDisplayed()
+        compose.onNodeWithText("Close").performKeyInput {
+            pressKey(Key.DirectionRight)
+            pressKey(Key.DirectionCenter)
+        }
 
         compose.runOnIdle { assertEquals(1, opens) }
     }
 
     @Test
-    fun `standalone browsing remains available while a PC is connected`() {
+    fun `the waiting screen hides standalone browsing until details are opened`() {
         compose.setContent {
             ReceiverTheme {
                 ReceiverSurface(state = readyState().copy(peerName = "Living room laptop"))
@@ -54,7 +62,9 @@ class ReceiverIdleBrowserEntryTest {
 
         compose.waitForIdle()
 
-        compose.onNodeWithTag(ReceiverTags.BROWSER_ENTRY).assertIsDisplayed().assertIsFocused()
+        compose.onNodeWithTag(ReceiverTags.BROWSER_ENTRY).assertDoesNotExist()
+        compose.onNodeWithTag("receiver-connection-details").assertIsDisplayed()
+        compose.onNodeWithTag(ReceiverTags.PRIMARY_ACTION).assertIsDisplayed().assertIsFocused()
     }
 
     @Test
@@ -70,14 +80,38 @@ class ReceiverIdleBrowserEntryTest {
         }
 
         compose.waitForIdle()
-        compose.onNodeWithTag(ReceiverTags.BROWSER_ENTRY)
-            .assertIsFocused()
-            .performKeyInput { pressKey(Key.DirectionRight) }
-        compose.onNodeWithTag(ReceiverTags.PRIMARY_ACTION)
+        // Disconnecting is on the screen itself, focused, one press away: it is the one thing a
+        // person needs while another device holds the TV.
+        compose.onNodeWithText("Disconnect")
             .assertIsDisplayed()
             .assertIsFocused()
             .performKeyInput { pressKey(Key.DirectionCenter) }
         compose.runOnIdle { assertEquals(1, refreshes) }
+
+        // The details sheet offers a fresh code only for a TV nobody holds.
+        compose.onNodeWithTag("receiver-connection-details").performClick()
+        compose.onNodeWithText("New code").assertDoesNotExist()
+    }
+
+    @Test
+    fun `connection details are optional and closing returns focus to their entry`() {
+        compose.setContent {
+            ReceiverTheme {
+                ReceiverSurface(state = readyState().copy(browserPort = 47856, browserFingerprint = "ABCD 1234"))
+            }
+        }
+        compose.onNodeWithTag(ReceiverTags.PAIRING_CODE).assertIsDisplayed()
+        compose.onNodeWithTag(ReceiverTags.ENDPOINT).assertDoesNotExist()
+        compose.onNodeWithTag("receiver-security-code").assertDoesNotExist()
+        compose.onNodeWithTag("receiver-connection-details")
+            .assertIsFocused()
+            .performKeyInput { pressKey(Key.DirectionCenter) }
+        compose.onNodeWithTag(ReceiverTags.ENDPOINT).assertIsDisplayed()
+        compose.onNodeWithTag("receiver-security-code").assertIsDisplayed()
+        compose.onNodeWithText("Close").assertIsFocused()
+            .performKeyInput { pressKey(Key.DirectionCenter) }
+        compose.onNodeWithTag(ReceiverTags.ENDPOINT).assertDoesNotExist()
+        compose.onNodeWithTag("receiver-connection-details").assertIsFocused()
     }
 
     private fun readyState() = ReceiverUiState(

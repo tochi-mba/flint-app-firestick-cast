@@ -38,6 +38,9 @@ public sealed partial class CastPageViewModel
         ? ReceiverSetup.Describe(ReceiverAction, bundledReceiver.Describe(), InstalledReceiver, device.FriendlyName)
         : "Find the TV first.";
 
+    /// <summary>Bring required setup into view without exposing it on every connection.</summary>
+    public bool NeedsReceiverSetup => ReceiverAction is ReceiverSetupAction.Install or ReceiverSetupAction.Update or ReceiverSetupAction.NothingBundled;
+
     /// <summary>Progress of a running install, as text, or blank.</summary>
     public string InstallProgress { get; private set; } = string.Empty;
 
@@ -177,6 +180,7 @@ public sealed partial class CastPageViewModel
     private void RaiseReceiverSetup()
     {
         OnPropertyChanged(nameof(InstalledReceiver));
+        OnPropertyChanged(nameof(NeedsReceiverSetup));
         OnPropertyChanged(nameof(ReceiverAction));
         OnPropertyChanged(nameof(ReceiverActionLabel));
         OnPropertyChanged(nameof(CanRunReceiverAction));

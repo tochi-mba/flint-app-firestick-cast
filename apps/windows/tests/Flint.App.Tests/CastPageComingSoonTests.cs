@@ -151,6 +151,9 @@ public sealed class CastPageComingSoonTests
         var window = new Window { Width = 1180, Height = 900, Content = view };
         window.Show();
         window.UpdateLayout();
+        view.GetVisualDescendants().OfType<Expander>()
+            .Single(expander => Equals(expander.Header, "Connection details and supported features")).IsExpanded = true;
+        window.UpdateLayout();
         return (view, viewModel);
     }
 

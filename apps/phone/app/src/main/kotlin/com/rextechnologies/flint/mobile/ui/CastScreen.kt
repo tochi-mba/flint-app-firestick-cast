@@ -25,7 +25,6 @@ import com.rextechnologies.flint.castcore.capability.ReceiverDevice
 import com.rextechnologies.flint.castcore.copy.CastCopy
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.castcore.copy.Placeholders
-import com.rextechnologies.flint.design.EmptyState
 import com.rextechnologies.flint.design.FlintColors
 import com.rextechnologies.flint.design.FlintSpace
 import com.rextechnologies.flint.design.FlintText
@@ -44,83 +43,67 @@ import com.rextechnologies.flint.mobile.MobileController
 import com.rextechnologies.flint.mobile.MobileUiState
 import com.rextechnologies.flint.mobile.state.LookupState
 
-/** The Cast tab: the network, the television, and the verdict for each mode. */
+/** Choose the destination first. Network and capability details stay available on demand. */
 @Composable
 fun CastScreen(state: MobileUiState, controller: MobileController) {
-    val tab = MobileTab.CAST
     PageHeading(
-        eyebrow = tab.eyebrow,
-        headline = tab.title,
-        statusText = CastCopy.headingStatus(state.isProbing, state.report),
-        statusTone = CastCopy.headingTone(state.report).toDesignTone(),
+        eyebrow = "Your screens, together",
+        headline = if (state.isConnected) "Your TV" else "Connect to your TV",
     )
-
-    Spacer(Modifier.height(FlintSpace.Small))
-    SectionLabel(CastCopy.SECTION_NETWORK)
-    NetworkCard(state)
-
     if (state.showNoNetwork) {
-        // The one dead end worth an affordance rather than a sentence. With no local network there
-        // is nothing for a probe to find, so offering one would be offering a button that fails.
-        Spacer(Modifier.height(FlintSpace.Small))
         HotspotCard()
         return
     }
-
-    Spacer(Modifier.height(FlintSpace.Small))
-    Row(horizontalArrangement = Arrangement.spacedBy(FlintSpace.Small)) {
+    if (state.isConnected) {
+        InfoCard(borderTone = Tone.Signal) {
+            FlintText(text = state.selected?.displayName ?: "Connected TV", style = FlintType.TitleLarge)
+            FlintText(text = "Choose what to show.", style = FlintType.BodyMedium)
+            SignalButton(text = "Share screen", onClick = { controller.selectTab(MobileTab.SCREEN) })
+            OutlineAction(text = "Play media", onClick = { controller.selectTab(MobileTab.MEDIA) })
+            OutlineAction(text = "Disconnect", onClick = controller::disconnect)
+        }
+    } else {
+        FlintText(
+            text = "Open Flint on your TV and connect both devices to the same Wi-Fi or hotspot.",
+            style = FlintType.BodyMedium,
+        )
         SignalButton(
-            text = if (state.isProbing) "Probing" else CastCopy.PROBE_ACTION,
+            text = if (state.isProbing) "Finding TVs…" else "Find TVs",
             onClick = controller::probe,
-            enabled = !state.isProbing,
+            enabled = !state.isProbing && !state.isConnecting,
         )
-        OutlineAction(
-            text = if (state.isConnected) "Disconnect" else CastCopy.PAIR_ACTION,
-            onClick = {
-                if (state.isConnected) controller.disconnect() else controller.showPairing(true)
-            },
-            enabled = state.selected != null && !state.isConnecting,
-            tone = if (state.isConnected) Tone.Live else Tone.Line,
-        )
-    }
-
-    ManualAddressCard(state, controller)
-
-    if (state.showProbeFailed) {
-        Spacer(Modifier.height(FlintSpace.Small))
-        ProbeFailedCard(state)
-    } else if (state.showEmptyState) {
-        Spacer(Modifier.height(FlintSpace.Small))
-        EmptyState(
-            glyph = CastCopy.empty.glyph,
-            title = CastCopy.empty.title,
-            body = CastCopy.empty.body,
-        )
-        return
-    }
-
-    if (state.receivers.isNotEmpty()) {
-        Spacer(Modifier.height(FlintSpace.Small))
-        SectionLabel(CastCopy.SECTION_RECEIVERS)
-        Column(verticalArrangement = Arrangement.spacedBy(FlintSpace.CardSpacing)) {
-            state.receivers.forEach { device ->
-                ReceiverRow(
-                    device = device,
-                    selected = device.address == state.selected?.address,
-                    paired = state.isConnected && device.address == state.selected?.address,
-                    onSelect = { controller.select(device) },
-                )
+        if (state.receivers.isNotEmpty()) {
+            SectionLabel("Nearby TVs")
+            Column(verticalArrangement = Arrangement.spacedBy(FlintSpace.CardSpacing)) {
+                state.receivers.forEach { device ->
+                    ReceiverRow(
+                        device = device,
+                        selected = device.address == state.selected?.address,
+                        paired = false,
+                        onSelect = { controller.select(device) },
+                    )
+                }
             }
         }
+        if (state.selected != null) {
+            SignalButton(
+                text = if (state.isConnecting) "Connecting…" else "Connect to ${state.selected.displayName}",
+                onClick = { controller.showPairing(true) },
+                enabled = !state.isConnecting,
+            )
+        }
+        if (state.showProbeFailed) ProbeFailedCard(state)
+        ManualAddressCard(state, controller)
     }
-
-    state.report?.let { report ->
-        Spacer(Modifier.height(FlintSpace.Small))
-        SectionLabel(CastCopy.SECTION_MODES)
-        Column(
-            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-            verticalArrangement = Arrangement.spacedBy(FlintSpace.CardSpacing),
-        ) {
+    if (state.selected != null) {
+        DetailSection("Set up or manage Flint on this TV") { ReceiverSetupCard(state, controller) }
+    }
+    DetailSection("Connection details") {
+        NetworkCard(state)
+        state.selected?.let { device ->
+            FlintText(text = "${device.address}:${device.port}", style = FlintType.BodySmall)
+        }
+        state.report?.let { report ->
             report.verdicts.forEach { ModeCard(it) }
         }
     }
@@ -215,10 +198,6 @@ private fun ReceiverRow(
                 selected -> Pill(text = "Selected", tone = Tone.Signal)
             }
         }
-        FlintText(
-            text = "${device.address}:${device.port} · ${device.source.name.lowercase().replace('_', ' ')}",
-            style = FlintType.BodySmall,
-        )
     }
 }
 

@@ -143,28 +143,45 @@ public sealed partial class CastPageViewModel : ObservableObject
     /// <summary>Whether the current receiver can be brought to the foreground over ADB.</summary>
     public bool CanOpenReceiver => Report?.Device?.AdbState is AdbConnectionState.Connected && !IsBusy;
 
+    /// <summary>Whether discovery has identified a destination.</summary>
+    public bool HasDevice => Report?.Device is not null;
+
+    /// <summary>Show code entry only while a known TV is not connected.</summary>
+    public bool ShowPairing => HasDevice && !IsConnected;
+
     /// <summary>
-    /// Whether a pairing code can be entered and submitted.
+    /// Whether a complete pairing code can be submitted.
     /// </summary>
     /// <remarks>
     /// Pairing by code talks directly to the receiver's own port using the wire protocol's own
     /// authentication; it never touches ADB. Gating it on ADB, as <see cref="CanOpenReceiver"/>
     /// does, would defeat its purpose: it exists precisely as the path that still works when ADB
     /// is unauthorised, refused, or wedged, which is a routine and separate failure mode. All it
-    /// needs is a known address, which a completed probe always leaves behind.
+    /// needs is a known address and the complete code shown on the TV.
     /// </remarks>
-    public bool CanPairWithCode => Report?.Device is not null && !IsBusy;
+    public bool CanPairWithCode
+    {
+        get
+        {
+            var code = PairingCode.Trim();
+            return Report?.Device is not null
+                && !IsBusy
+                && code.Length == 6
+                && code.All(char.IsDigit);
+        }
+    }
+
+    partial void OnPairingCodeChanged(string value) => OnPropertyChanged(nameof(CanPairWithCode));
 
     /// <summary>Whether the shell is processing a probe, launch, or pairing action.</summary>
     public bool IsBusy => IsProbing || IsConnecting;
 
     /// <summary>Whether the receiver is connected or ready for a session.</summary>
-    public string SessionStatus => IsConnected ? "Connected" : ReceiverReady ? "Receiver ready" : "Not connected";
+    public string SessionStatus => IsConnected ? "Connected" : ReceiverReady ? "TV found" : "Not connected";
 
     /// <summary>Guidance and result text for the receiver-open and pairing sequence.</summary>
     public string PairingStatus { get; private set; } =
-        "Open \"Flint Receiver\" on the TV and type its six-digit code above, or use OPEN RECEIVER "
-        + "ON TV once ADB is authorised.";
+        "No code on the TV? Open the setup options below.";
 
     /// <summary>Current result of media selection and handoff.</summary>
     public string MediaStatus { get; private set; } = "Choose a local file to play on the TV.";
@@ -922,6 +939,8 @@ public sealed partial class CastPageViewModel : ObservableObject
     private void RaiseDerived()
     {
         OnPropertyChanged(nameof(HasReport));
+        OnPropertyChanged(nameof(HasDevice));
+        OnPropertyChanged(nameof(ShowPairing));
         OnPropertyChanged(nameof(ShowEmptyState));
         OnPropertyChanged(nameof(DeviceName));
         OnPropertyChanged(nameof(DevicePlatform));

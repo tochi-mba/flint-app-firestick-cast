@@ -102,11 +102,11 @@ internal static class BrowserSecureReceiverPrompt
     {
         BrowserSecureReceiverStep.ChooseReceiver => capabilityRemedy,
         BrowserSecureReceiverStep.EnterBrowserPort =>
-            "Discovery did not advertise a browser port. Type the BROWSER PORT shown on the TV's Flint Receiver screen into the box below.",
+            "Discovery did not advertise a browser port. Open Connection details in Flint on the TV, then type the browser port shown there.",
         BrowserSecureReceiverStep.EnterPairingCode =>
             "Enter the six-digit Cast pairing code on the Cast page. Windows reconnects this receiver on its own once the code is there.",
         BrowserSecureReceiverStep.CompareSecurityCodes =>
-            "Compare the security code on the TV with the one shown here, then confirm to pin this receiver. Flint asks once per receiver.",
+            "Open Connection details in Flint on the TV. Compare its security code with the one shown here, then confirm to remember this TV. Flint asks once per receiver.",
         _ => null,
     };
 

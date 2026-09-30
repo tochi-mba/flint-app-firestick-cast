@@ -46,50 +46,54 @@ fun SettingsScreen(state: MobileUiState, controller: MobileController, activity:
     val tab = MobileTab.SETTINGS
     PageHeading(eyebrow = tab.eyebrow, headline = tab.title)
 
-    Spacer(Modifier.height(FlintSpace.Small))
-    SectionLabel(SettingsCopy.SECTION_RECEIVER)
-    ReceiverSetupCard(state, controller)
-
-    Spacer(Modifier.height(FlintSpace.Small))
-    SectionLabel(SettingsCopy.SECTION_CHECKS)
-    InfoCard {
-        FlintText(
-            text = SettingsCopy.SECOND_SCREEN_PROBE_EXPLANATION,
-            style = FlintType.BodyMedium,
-        )
-        // Each button says while it is running rather than looking untouched for a second, and each
-        // one's result is announced through the banner rather than only changing a diagnostics row.
-        Row(horizontalArrangement = Arrangement.spacedBy(FlintSpace.Small)) {
-            OutlineAction(
-                text = if (state.secondScreenProbeRunning) {
-                    SettingsCopy.PROBE_RUNNING
-                } else {
-                    SettingsCopy.RUN_SECOND_SCREEN_PROBE
-                },
-                onClick = { controller.runSecondScreenProbe(activity) },
-                enabled = !state.secondScreenProbeRunning,
-            )
+    if (state.selected != null) {
+        DetailSection("Manage ${state.selected.displayName}") {
+            ReceiverSetupCard(state, controller)
         }
-        FlintText(
-            text = SettingsCopy.ENCODER_PROBE_EXPLANATION,
-            style = FlintType.BodyMedium,
-        )
-        OutlineAction(
-            text = if (state.encoderProbeRunning) {
-                SettingsCopy.PROBE_RUNNING
-            } else {
-                SettingsCopy.RUN_ENCODER_PROBE
-            },
-            onClick = { controller.runEncoderProbe(activity) },
-            enabled = !state.encoderProbeRunning,
-        )
     }
 
-    Spacer(Modifier.height(FlintSpace.Small))
-    SectionLabel(DiagnosticsCopy.SECTION_PHONE)
-    DiagnosticsCard(state)
+    DetailSection("Diagnostics and troubleshooting") {
+        Spacer(Modifier.height(FlintSpace.Small))
+        SectionLabel(SettingsCopy.SECTION_CHECKS)
+        InfoCard {
+            FlintText(
+                text = SettingsCopy.SECOND_SCREEN_PROBE_EXPLANATION,
+                style = FlintType.BodyMedium,
+            )
+            // Each button says while it is running rather than looking untouched for a second, and each
+            // one's result is announced through the banner rather than only changing a diagnostics row.
+            Row(horizontalArrangement = Arrangement.spacedBy(FlintSpace.Small)) {
+                OutlineAction(
+                    text = if (state.secondScreenProbeRunning) {
+                        SettingsCopy.PROBE_RUNNING
+                    } else {
+                        SettingsCopy.RUN_SECOND_SCREEN_PROBE
+                    },
+                    onClick = { controller.runSecondScreenProbe(activity) },
+                    enabled = !state.secondScreenProbeRunning,
+                )
+            }
+            FlintText(
+                text = SettingsCopy.ENCODER_PROBE_EXPLANATION,
+                style = FlintType.BodyMedium,
+            )
+            OutlineAction(
+                text = if (state.encoderProbeRunning) {
+                    SettingsCopy.PROBE_RUNNING
+                } else {
+                    SettingsCopy.RUN_ENCODER_PROBE
+                },
+                onClick = { controller.runEncoderProbe(activity) },
+                enabled = !state.encoderProbeRunning,
+            )
+        }
 
-    LastFailureCard(activity)
+        Spacer(Modifier.height(FlintSpace.Small))
+        SectionLabel(DiagnosticsCopy.SECTION_PHONE)
+        DiagnosticsCard(state)
+
+        LastFailureCard(activity)
+    }
 
     Spacer(Modifier.height(FlintSpace.Small))
     SectionLabel(SettingsCopy.SECTION_ABOUT)
@@ -159,7 +163,7 @@ internal fun LastFailureCard(activity: Context) {
 }
 
 @Composable
-private fun ReceiverSetupCard(state: MobileUiState, controller: MobileController) {
+internal fun ReceiverSetupCard(state: MobileUiState, controller: MobileController) {
     val selected = state.selected
     val deviceName = selected?.displayName ?: "the TV"
     val plan = ReceiverSetup.plan(

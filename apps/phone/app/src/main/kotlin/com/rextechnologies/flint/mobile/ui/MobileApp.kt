@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -30,7 +29,6 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import com.rextechnologies.flint.castcore.copy.MobileTab
 import com.rextechnologies.flint.design.FlintColors
-import com.rextechnologies.flint.design.FlintShapes
 import com.rextechnologies.flint.design.FlintSpace
 import com.rextechnologies.flint.design.FlintText
 import com.rextechnologies.flint.design.FlintType
@@ -38,7 +36,6 @@ import com.rextechnologies.flint.design.flintClickable
 import com.rextechnologies.flint.mobile.MobileActivity
 import com.rextechnologies.flint.mobile.MobileController
 import com.rextechnologies.flint.mobile.MobileUiState
-import java.util.Locale
 
 /**
  * The app's one screen.
@@ -193,9 +190,8 @@ internal fun BottomBar(selected: MobileTab, onSelect: (MobileTab) -> Unit) {
 /**
  * One tab.
  *
- * `Role.Tab` and `selected` are what let a screen-reader user know which one is active — the colour
- * that says so visually is invisible to them. The glyph and the label are cleared and replaced by
- * the tab's own name, because unmerged they were announced as "Cast tab, C, CAST".
+ * `Role.Tab` and `selected` tell a screen reader which destination is active. The visible label is
+ * also the accessible label, so each destination is presented exactly once.
  *
  * The navigation-bar inset is not applied here. The outer column already consumes `safeDrawing`,
  * which includes it, and applying it again pushed the bar up by its own height above the gesture
@@ -204,7 +200,7 @@ internal fun BottomBar(selected: MobileTab, onSelect: (MobileTab) -> Unit) {
 @Composable
 private fun TabButton(tab: MobileTab, selected: Boolean, onSelect: () -> Unit) {
     val tint = if (selected) FlintColors.Signal else FlintColors.Muted
-    Column(
+    Box(
         modifier = Modifier
             // The role is given to the clickable itself rather than added beside it, so there is one
             // role on this node instead of a button's and a tab's disagreeing.
@@ -213,29 +209,15 @@ private fun TabButton(tab: MobileTab, selected: Boolean, onSelect: () -> Unit) {
                 contentDescription = tab.title
                 this.selected = selected
             }
-            .padding(horizontal = FlintSpace.Compact, vertical = FlintSpace.Tiny),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(FlintSpace.Tiny),
+            .background(if (selected) FlintColors.SignalWash else FlintColors.Ink)
+            .padding(horizontal = FlintSpace.Compact, vertical = FlintSpace.Small),
+        contentAlignment = Alignment.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .size(FlintSpace.XLarge)
-                .background(
-                    if (selected) FlintColors.SignalWash else FlintColors.Ink,
-                    FlintShapes.Small,
-                )
-                // The letterform is decoration standing in for an icon. Announcing it reads as a
-                // stray letter between the tab's name and its label.
-                .clearAndSetSemantics { },
-            contentAlignment = Alignment.Center,
-        ) {
-            FlintText(text = tab.glyph, style = FlintType.TitleMedium.copy(color = tint))
-        }
         FlintText(
-            text = tab.title.uppercase(Locale.ROOT),
+            text = tab.title,
             style = FlintType.LabelSmall.copy(color = tint),
-            // The upper-cased label is the tab's name a second time. The description on the node
-            // is the copy that is read out.
+            // The description on the node is the copy that is read out. Left merged, the label is
+            // the tab's name a second time: "Cast, Cast".
             modifier = Modifier.clearAndSetSemantics { },
         )
     }
