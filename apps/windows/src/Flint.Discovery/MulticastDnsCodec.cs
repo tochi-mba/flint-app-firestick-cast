@@ -18,6 +18,9 @@ public static class MulticastDnsCodec
     /// <summary>The service type Fire TV devices advertise for the Amazon Whisperplay protocol.</summary>
     public const string FireTvServiceType = "_amzn-wplay._tcp.local";
 
+    /// <summary>The service type Flint's receiver advertises.</summary>
+    public const string FlintReceiverServiceType = "_rexcast._tcp.local";
+
     /// <summary>The multicast address for mDNS.</summary>
     public static readonly IPAddress MulticastAddress = IPAddress.Parse("224.0.0.251");
 

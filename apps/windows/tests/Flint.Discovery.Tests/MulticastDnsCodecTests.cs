@@ -28,6 +28,12 @@ public sealed class MulticastDnsCodecTests
     }
 
     [Fact]
+    public void FlintReceiverServiceType_MatchesTheReceiverAdvertisement()
+    {
+        MulticastDnsCodec.FlintReceiverServiceType.ShouldBe("_rexcast._tcp.local");
+    }
+
+    [Fact]
     public void BuildQuery_BlankServiceType_Throws()
     {
         // Act & Assert
