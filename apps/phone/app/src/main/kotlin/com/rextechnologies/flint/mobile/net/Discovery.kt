@@ -171,7 +171,7 @@ class DiscoveryRunner(context: Context) : ReceiverFinder {
             runCatching { acquire() }
         }
         try {
-            RungResult(step.rung, queryMulticastDns(step.boundAddress), attempted = true)
+            RungResult(step.rung, queryMulticastDns(step), attempted = true)
         } catch (_: Throwable) {
             RungResult(step.rung, emptyList(), attempted = true, detail = "Multicast did not reach this phone.")
         } finally {
@@ -179,17 +179,18 @@ class DiscoveryRunner(context: Context) : ReceiverFinder {
         }
     }
 
-    private fun queryMulticastDns(boundAddress: Inet4Address): List<ReceiverDevice> {
+    private fun queryMulticastDns(step: DiscoveryStep.MulticastDns): List<ReceiverDevice> {
         val group = InetAddress.getByName(MDNS_GROUP)
-        val networkInterface = NetworkInterface.getByInetAddress(boundAddress)
-        // Bound to the chosen address rather than the wildcard, matching what the receiver does on
-        // its side. The group membership below is what pins which interface the answers arrive on.
+        val networkInterface = NetworkInterface.getByInetAddress(step.boundAddress)
+            ?: error("No interface owns ${step.boundAddress.hostAddress}")
+        // A query from an ordinary port asks an mDNS responder for a direct reply. That means this
+        // socket stays pinned to the selected address and does not need a broad receive bind or a
+        // group membership merely to hear its answer.
         val socket = MulticastSocket(null)
         return socket.use {
             it.reuseAddress = true
-            it.bind(InetSocketAddress(boundAddress, MDNS_PORT))
-            networkInterface?.let { chosen -> it.networkInterface = chosen }
-            it.joinGroup(InetSocketAddress(group, MDNS_PORT), networkInterface)
+            it.bind(InetSocketAddress(step.boundAddress, 0))
+            it.networkInterface = networkInterface
             it.soTimeout = MDNS_TIMEOUT_MILLIS
 
             val query = DnsPacketCodec.encode(FlintDnsSd.query())
@@ -205,8 +206,10 @@ class DiscoveryRunner(context: Context) : ReceiverFinder {
                 } catch (_: Throwable) {
                     break
                 }
+                val source = packet.address as? Inet4Address ?: continue
+                if (!step.subnet.contains(source)) continue
                 val decoded = runCatching {
-                    DnsPacketCodec.decode(packet.data.copyOf(packet.length))
+                    DnsPacketCodec.decode(packet.data.copyOfRange(packet.offset, packet.offset + packet.length))
                 }.getOrNull() ?: continue
                 for (service in FlintDnsSd.extractServices(decoded)) {
                     val address = service.address.hostAddress ?: continue
@@ -220,7 +223,6 @@ class DiscoveryRunner(context: Context) : ReceiverFinder {
                 }
                 if (found.isNotEmpty()) break
             }
-            runCatching { it.leaveGroup(InetSocketAddress(group, MDNS_PORT), networkInterface) }
             found.values.toList()
         }
     }
