@@ -259,7 +259,8 @@ public sealed class AdbProbeClientPackageTests
 
     private static AdbProbeClient Client()
     {
-        using var rsa = RSA.Create(2048);
+        // Not disposed here: the identity signs with this key for as long as the client lives.
+        var rsa = RSA.Create(2048);
         return new AdbProbeClient(new FixedIdentityProvider(new AdbIdentity(rsa, "flint@test")));
     }
 

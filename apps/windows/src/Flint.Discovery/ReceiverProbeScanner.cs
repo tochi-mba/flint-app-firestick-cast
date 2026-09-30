@@ -15,17 +15,29 @@ namespace Flint.Discovery;
 internal static class ReceiverProbeScanner
 {
     internal const int Port = 47_855;
-    private const int MaximumHosts = 512;
+    internal const int MaximumHosts = 512;
     private const int Concurrency = 16;
-    private const int TimeoutMilliseconds = 400;
     private const int MaximumResponseBytes = 512;
+    private static readonly TimeSpan Timeout = TimeSpan.FromMilliseconds(400);
     private static readonly byte[] Request = Encoding.ASCII.GetBytes("REXCAST DISCOVER/1\n");
 
     internal sealed record Answer(IPAddress Address, string ModelName, int ServicePort);
 
-    internal static async Task<IReadOnlyList<Answer>> ScanAsync(CancellationToken cancellationToken)
+    /// <summary>Probes every small private subnet this PC is on.</summary>
+    internal static Task<IReadOnlyList<Answer>> ScanAsync(CancellationToken cancellationToken) =>
+        ScanAsync(LocalSubnets(), Port, Timeout, cancellationToken);
+
+    /// <summary>
+    /// Probes <paramref name="subnets"/> on <paramref name="port"/>, each connection bounded by
+    /// <paramref name="timeout"/>. The seam tests use to aim the real scan at a loopback receiver.
+    /// </summary>
+    internal static async Task<IReadOnlyList<Answer>> ScanAsync(
+        IEnumerable<LocalSubnet> subnets,
+        int port,
+        TimeSpan timeout,
+        CancellationToken cancellationToken)
     {
-        var scans = LocalSubnets().Select(subnet => ScanAsync(subnet, cancellationToken));
+        var scans = subnets.Select(subnet => ScanAsync(subnet, port, timeout, cancellationToken));
         var answers = await Task.WhenAll(scans).ConfigureAwait(false);
         return answers
             .SelectMany(static result => result)
@@ -45,17 +57,45 @@ internal static class ReceiverProbeScanner
         if (fields.Length != 3
             || !string.Equals(fields[0], "REXCAST RECEIVER/1", StringComparison.Ordinal)
             || string.IsNullOrWhiteSpace(fields[1])
-            || !int.TryParse(fields[2], out var port)
-            || port is < 1 or > 65_535)
+            || !int.TryParse(fields[2], out var servicePort)
+            || servicePort is < 1 or > 65_535)
         {
             return null;
         }
 
-        return new Answer(address, fields[1], port);
+        return new Answer(address, fields[1], servicePort);
+    }
+
+    /// <summary>
+    /// Every small private IPv4 subnet on an interface that is up and is not a loopback or tunnel.
+    /// </summary>
+    internal static IEnumerable<LocalSubnet> LocalSubnets() =>
+        NetworkInterface.GetAllNetworkInterfaces()
+            .Where(static nic => nic.OperationalStatus == OperationalStatus.Up)
+            .Where(static nic => nic.NetworkInterfaceType is not NetworkInterfaceType.Loopback
+                and not NetworkInterfaceType.Tunnel
+                and not NetworkInterfaceType.Ppp)
+            .SelectMany(static nic => nic.GetIPProperties().UnicastAddresses)
+            .Where(static unicast => unicast.Address.AddressFamily == AddressFamily.InterNetwork)
+            .Where(static unicast => IsPrivate(unicast.Address))
+            .Select(static unicast => new LocalSubnet(unicast.Address, unicast.PrefixLength))
+            .Where(static subnet => subnet.HostCount is > 0 and <= MaximumHosts)
+            .Distinct();
+
+    /// <summary>Whether <paramref name="address"/> is in one of the three RFC 1918 private ranges.</summary>
+    internal static bool IsPrivate(IPAddress address)
+    {
+        var bytes = address.GetAddressBytes();
+        return bytes.Length == 4
+            && (bytes[0] == 10
+                || (bytes[0] == 172 && bytes[1] is >= 16 and <= 31)
+                || (bytes[0] == 192 && bytes[1] == 168));
     }
 
     private static async Task<IReadOnlyList<Answer>> ScanAsync(
         LocalSubnet subnet,
+        int port,
+        TimeSpan timeout,
         CancellationToken cancellationToken)
     {
         using var gate = new SemaphoreSlim(Concurrency, Concurrency);
@@ -64,7 +104,7 @@ internal static class ReceiverProbeScanner
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                return await ProbeAsync(subnet.Address, address, cancellationToken).ConfigureAwait(false);
+                return await ProbeAsync(subnet.Address, address, port, timeout, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -78,15 +118,17 @@ internal static class ReceiverProbeScanner
     private static async Task<Answer?> ProbeAsync(
         IPAddress local,
         IPAddress target,
+        int port,
+        TimeSpan timeout,
         CancellationToken cancellationToken)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        deadline.CancelAfter(TimeoutMilliseconds);
+        deadline.CancelAfter(timeout);
         using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         try
         {
             socket.Bind(new IPEndPoint(local, 0));
-            await socket.ConnectAsync(new IPEndPoint(target, Port), deadline.Token).ConfigureAwait(false);
+            await socket.ConnectAsync(new IPEndPoint(target, port), deadline.Token).ConfigureAwait(false);
             var sent = 0;
             while (sent < Request.Length)
             {
@@ -129,38 +171,24 @@ internal static class ReceiverProbeScanner
         }
     }
 
-    private static IEnumerable<LocalSubnet> LocalSubnets() =>
-        NetworkInterface.GetAllNetworkInterfaces()
-            .Where(static nic => nic.OperationalStatus == OperationalStatus.Up)
-            .Where(static nic => nic.NetworkInterfaceType is not NetworkInterfaceType.Loopback
-                and not NetworkInterfaceType.Tunnel
-                and not NetworkInterfaceType.Ppp)
-            .SelectMany(static nic => nic.GetIPProperties().UnicastAddresses)
-            .Where(static unicast => unicast.Address.AddressFamily == AddressFamily.InterNetwork)
-            .Where(static unicast => IsPrivate(unicast.Address))
-            .Select(static unicast => new LocalSubnet(unicast.Address, unicast.PrefixLength))
-            .Where(static subnet => subnet.HostCount is > 0 and <= MaximumHosts)
-            .Distinct();
-
-    private static bool IsPrivate(IPAddress address)
-    {
-        var bytes = address.GetAddressBytes();
-        return bytes[0] == 10
-            || (bytes[0] == 172 && bytes[1] is >= 16 and <= 31)
-            || (bytes[0] == 192 && bytes[1] == 168);
-    }
-
-    private sealed record LocalSubnet(IPAddress Address, int PrefixLength)
+    /// <summary>One local address and its prefix: the hosts a probe may contact.</summary>
+    internal sealed record LocalSubnet(IPAddress Address, int PrefixLength)
     {
         private uint Value => BinaryPrimitives.ReadUInt32BigEndian(Address.GetAddressBytes());
+
         private uint Mask => PrefixLength == 0 ? 0 : uint.MaxValue << (32 - PrefixLength);
+
+        // /31 and /32 have no network or broadcast address to leave out (RFC 3021).
         private uint First => (Value & Mask) + (PrefixLength <= 30 ? 1u : 0u);
+
         private uint Last => (Value | ~Mask) - (PrefixLength <= 30 ? 1u : 0u);
 
+        /// <summary>How many addresses <see cref="Hosts"/> yields: the range, less this PC's own address.</summary>
         internal long HostCount => Last < First
             ? 0
             : (long)Last - First + 1 - (Value >= First && Value <= Last ? 1 : 0);
 
+        /// <summary>Every other host on the subnet, in address order.</summary>
         internal IEnumerable<IPAddress> Hosts()
         {
             for (var value = First; value <= Last; value++)

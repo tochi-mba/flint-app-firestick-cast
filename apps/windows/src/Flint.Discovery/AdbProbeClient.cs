@@ -42,6 +42,8 @@ public sealed class AdbProbeClient
     public static readonly TimeSpan InstallTimeout = TimeSpan.FromMinutes(3);
 
     private readonly IAdbIdentityProvider _identities;
+    private readonly TimeSpan _handshakeTimeout;
+    private readonly TimeSpan _promptTimeout;
 
     /// <summary>Creates a probe using Flint's persistent, per-user ADB host identity.</summary>
     public AdbProbeClient()
@@ -49,8 +51,20 @@ public sealed class AdbProbeClient
     {
     }
 
-    internal AdbProbeClient(IAdbIdentityProvider identities) =>
+    /// <summary>A probe with its own identity and, for tests, shorter waits.</summary>
+    /// <remarks>
+    /// The waits are parameters so a test can reach the "the TV never answered" branches in
+    /// milliseconds rather than sitting through the real four- and thirty-second budgets.
+    /// </remarks>
+    internal AdbProbeClient(
+        IAdbIdentityProvider identities,
+        TimeSpan? handshakeTimeout = null,
+        TimeSpan? promptTimeout = null)
+    {
         _identities = identities ?? throw new ArgumentNullException(nameof(identities));
+        _handshakeTimeout = handshakeTimeout ?? HandshakeTimeout;
+        _promptTimeout = promptTimeout ?? AuthorizationPromptTimeout;
+    }
 
     /// <summary>Probes one address across the Fire TV ADB port range.</summary>
     public async Task<AdbProbeResult> ProbeAsync(
@@ -107,7 +121,7 @@ public sealed class AdbProbeClient
             }
 
             using var propertyTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            propertyTimeout.CancelAfter(HandshakeTimeout);
+            propertyTimeout.CancelAfter(_handshakeTimeout);
             try
             {
                 var output = await RunServiceAsync(stream, "shell:getprop", payload: null, chunkLength: 0, progress: null, propertyTimeout.Token)
@@ -157,7 +171,7 @@ public sealed class AdbProbeClient
         using var client = await ConnectAuthorizedAsync(address, port, "open the receiver", cancellationToken)
             .ConfigureAwait(false);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(HandshakeTimeout);
+        timeout.CancelAfter(_handshakeTimeout);
         var output = await RunServiceAsync(
             client.Client.GetStream(),
             $"shell:am start -n {packageName}/{activityName}",
@@ -196,7 +210,7 @@ public sealed class AdbProbeClient
             .ConfigureAwait(false);
         var stream = client.Client.GetStream();
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(HandshakeTimeout);
+        timeout.CancelAfter(_handshakeTimeout);
 
         var listing = await RunServiceAsync(
             stream,
@@ -324,7 +338,7 @@ public sealed class AdbProbeClient
         CancellationToken callerCancellation)
     {
         using var handshakeTimeout = CancellationTokenSource.CreateLinkedTokenSource(callerCancellation);
-        handshakeTimeout.CancelAfter(HandshakeTimeout);
+        handshakeTimeout.CancelAfter(_handshakeTimeout);
         var deadline = handshakeTimeout.Token;
 
         await WriteAsync(stream, AdbMessage.Connect(), deadline).ConfigureAwait(false);
@@ -376,7 +390,7 @@ public sealed class AdbProbeClient
 
                 using var authorizationTimeout =
                     CancellationTokenSource.CreateLinkedTokenSource(callerCancellation);
-                authorizationTimeout.CancelAfter(AuthorizationPromptTimeout);
+                authorizationTimeout.CancelAfter(_promptTimeout);
                 try
                 {
                     reply = await ReadAsync(stream, authorizationTimeout.Token).ConfigureAwait(false);
