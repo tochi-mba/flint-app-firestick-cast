@@ -63,9 +63,12 @@ jobs:
             echo "suffix=-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
             echo "tagged=false" >> "$GITHUB_OUTPUT"
           fi
-          # Monotonic and reproducible from the run alone. The offset keeps it clear of the codes a
-          # hand-built APK may already have installed on somebody's phone.
-          echo "code=$(( 1000 + GITHUB_RUN_NUMBER ))" >> "$GITHUB_OUTPUT"
+          # Monotonic on master and reproducible from the commit alone, so the Windows release stamps
+          # the same code into the receiver it bundles and the two channels agree on which build is
+          # newer. Mirrors Get-FlintReceiverBuildNumber in tools/dev/release.ps1. The offset keeps it
+          # clear of the codes a hand-built APK may already have installed on somebody's phone, and
+          # above every run-number code published before this scheme.
+          echo "code=$(( 1000 + $(git rev-list --count HEAD) ))" >> "$GITHUB_OUTPUT"
 
       # Release signing is mandatory. Publishing an unsigned APK creates a download Android cannot
       # install, so missing credentials are a release failure rather than a degraded build mode.

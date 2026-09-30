@@ -83,9 +83,14 @@ jobs:
         shell: pwsh
         run: ./dev.ps1 check repo build-logic engine windows receiver
 
+      # The receiver's versionCode comes from the commit count, the same number the mobile release
+      # stamps, so a TV updated from a phone and one updated from Windows agree on which is newer.
       - name: Package
         shell: pwsh
-        run: ./tools/scripts/package.ps1 -Version ${{ steps.version.outputs.value }}
+        run: |
+          . ./tools/dev/release.ps1
+          $code = Get-FlintReceiverBuildNumber ([int](git rev-list --count HEAD))
+          ./tools/scripts/package.ps1 -Version ${{ steps.version.outputs.value }} -ReceiverBuildNumber $code
 
       # Never publish on faith. package.ps1 checks the engine reached the staging folder; this opens
       # the zip that will actually be downloaded and checks what someone extracting it would find,
@@ -103,7 +108,7 @@ jobs:
             Remove-Item -LiteralPath $check -Recurse -Force
           }
           Expand-Archive -LiteralPath $zip -DestinationPath $check
-          foreach ($file in 'Flint.App.exe', 'flint.exe', 'flint_engine.dll', 'Flint.Receiver.apk', 'INSTALL.md') {
+          foreach ($file in 'Flint.App.exe', 'flint.exe', 'flint_engine.dll', 'Flint.Receiver.apk', 'Flint.Receiver.json', 'INSTALL.md') {
             if (-not (Test-Path -LiteralPath (Join-Path $check $file))) {
               throw "The package is missing $file."
             }

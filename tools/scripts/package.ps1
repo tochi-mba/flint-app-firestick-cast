@@ -29,13 +29,19 @@
 
 .PARAMETER Pack
     Package an already staged folder and stop.
+
+.PARAMETER ReceiverBuildNumber
+    The Android versionCode stamped into the bundled receiver. CI derives it from the commit count
+    so the phone and Windows channels agree on which receiver is newer; a local build leaves it at
+    the Android default of 1, which no published receiver will ever be older than.
 #>
 [CmdletBinding()]
 param(
     [string]$Version,
     [string]$OutputDirectory,
     [switch]$Stage,
-    [switch]$Pack
+    [switch]$Pack,
+    [int]$ReceiverBuildNumber = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -59,7 +65,7 @@ function Resolve-Cargo {
 }
 
 function Invoke-Stage {
-    param([string]$Version, [string]$StagingDirectory)
+    param([string]$Version, [string]$StagingDirectory, [int]$ReceiverBuildNumber)
 
     # The engine first: a package without it reports encoders as unprobed.
     $cargo = Resolve-Cargo
@@ -123,14 +129,22 @@ function Invoke-Stage {
     }
 
     Write-Host '  Building the Fire TV receiver' -ForegroundColor Green
-    & (Join-Path $projectRoot 'gradlew.bat') --no-daemon :receiver:app:assembleDebug
+    $gradleArguments = @('--no-daemon', ':receiver:app:assembleDebug')
+    if ($ReceiverBuildNumber -gt 0) {
+        $gradleArguments += "-Pflint.versionCode=$ReceiverBuildNumber"
+    }
+    & (Join-Path $projectRoot 'gradlew.bat') @gradleArguments
     if ($LASTEXITCODE -ne 0) { throw 'Gradle receiver build failed.' }
 
-    $receiverApk = Join-Path $projectRoot 'apps\receiver\app\build\outputs\apk\debug\app-debug.apk'
+    $receiverOutputs = Join-Path $projectRoot 'apps\receiver\app\build\outputs\apk\debug'
+    $receiverApk = Join-Path $receiverOutputs 'app-debug.apk'
     if (-not (Test-Path -LiteralPath $receiverApk)) {
         throw "The receiver did not produce $receiverApk."
     }
-    Copy-Item -LiteralPath $receiverApk -Destination (Join-Path $StagingDirectory 'Flint.Receiver.apk')
+    $bundledApk = Join-Path $StagingDirectory 'Flint.Receiver.apk'
+    Copy-Item -LiteralPath $receiverApk -Destination $bundledApk
+    Write-ReceiverSidecar -Apk $bundledApk -Metadata (Join-Path $receiverOutputs 'output-metadata.json') `
+        -Destination (Join-Path $StagingDirectory 'Flint.Receiver.json')
 
     # The engine is a build output of another toolchain, so verify rather than assume it landed.
     $packagedEngine = Join-Path $StagingDirectory 'flint_engine.dll'
@@ -140,6 +154,45 @@ function Invoke-Stage {
 
     Copy-Item -LiteralPath (Join-Path $projectRoot 'LICENSE') -Destination $StagingDirectory
     Copy-Item -LiteralPath (Join-Path $projectRoot 'docs\INSTALL.md') -Destination $StagingDirectory
+}
+
+<#
+.SYNOPSIS
+    Describes the bundled receiver for the Windows app, from what the Android build says it built.
+.DESCRIPTION
+    The app shows this above "this is what will be installed" and compares it with what the TV
+    reports, so it has to describe these exact bytes. The version comes from the build's own
+    output metadata rather than from anything typed here, and the digest ties the description to
+    the file: the app refuses the description if the APK beside it no longer matches.
+#>
+function Write-ReceiverSidecar {
+    param([string]$Apk, [string]$Metadata, [string]$Destination)
+
+    if (-not (Test-Path -LiteralPath $Metadata)) {
+        throw "The receiver build left no output metadata at $Metadata."
+    }
+    # A distinct name: PowerShell variables are case-insensitive, so $metadata would replace the path.
+    $document = Get-Content -LiteralPath $Metadata -Raw | ConvertFrom-Json
+    $element = @($document.elements) | Select-Object -First 1
+    if ($null -eq $element -or [string]::IsNullOrWhiteSpace($element.versionName) -or -not $element.versionCode) {
+        throw "The receiver output metadata at $Metadata names no version."
+    }
+    $file = Get-Item -LiteralPath $Apk
+    $sidecar = [ordered]@{
+        packageName = [string]$document.applicationId
+        versionName = [string]$element.versionName
+        versionCode = [long]$element.versionCode
+        sizeBytes   = [long]$file.Length
+        sha256      = (Get-FileHash -LiteralPath $Apk -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    if ([string]::IsNullOrWhiteSpace($sidecar.packageName)) {
+        throw "The receiver output metadata at $Metadata names no package."
+    }
+    [System.IO.File]::WriteAllText(
+        $Destination,
+        ($sidecar | ConvertTo-Json -Compress) + "`n",
+        [System.Text.UTF8Encoding]::new($false))
+    Write-Host "  Bundled receiver $($sidecar.packageName) $($sidecar.versionName) ($($sidecar.versionCode))" -ForegroundColor Green
 }
 
 function Invoke-Zip {
@@ -226,7 +279,7 @@ try {
     Write-Host "  Packaging $packageName"
 
     if ($runStage) {
-        Invoke-Stage -Version $Version -StagingDirectory $stagingDirectory
+        Invoke-Stage -Version $Version -StagingDirectory $stagingDirectory -ReceiverBuildNumber $ReceiverBuildNumber
     }
 
     if (-not (Test-Path -LiteralPath $stagingDirectory)) {

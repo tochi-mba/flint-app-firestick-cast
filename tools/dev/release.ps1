@@ -68,6 +68,24 @@ function Resolve-FlintPackageVersion(
 
 <#
 .SYNOPSIS
+    The Android versionCode a release stamps into the receiver and the phone app.
+
+.DESCRIPTION
+    Monotonic on master and reproducible from the commit alone, so the mobile release and the
+    Windows release — which bundles the receiver — stamp the same code for the same commit and a
+    television updated from either channel agrees with the other about which build is newer. The
+    offset keeps it clear of the codes a hand-built APK may carry and above every run-number code
+    published before this scheme. mobile-release.yml computes the same number in bash.
+#>
+function Get-FlintReceiverBuildNumber([int]$CommitCount) {
+    if ($CommitCount -lt 1) {
+        throw 'The receiver build number needs the positive commit count of the checkout.'
+    }
+    return 1000 + $CommitCount
+}
+
+<#
+.SYNOPSIS
     Replaces the first match of a pattern in a repository file, keeping its line endings.
 #>
 function Update-RepoFile([string]$Path, [string]$Pattern, [string]$Replacement) {

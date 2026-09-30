@@ -79,6 +79,17 @@ Describe 'release notes' {
     }
 }
 
+Describe 'receiver build number' {
+    It 'is the commit count above the offset that clears every earlier code' {
+        Get-FlintReceiverBuildNumber 118 | Should -Be 1118
+        Get-FlintReceiverBuildNumber 1 | Should -Be 1001
+    }
+
+    It 'refuses a count that could not have come from a checkout' {
+        { Get-FlintReceiverBuildNumber 0 } | Should -Throw '*commit count*'
+    }
+}
+
 Describe 'package version' {
     It 'orders rolling builds with GitHub''s monotonic run number rather than the commit hash' {
         $older = Resolve-FlintPackageVersion '0.1.0' 'refs/heads/master' 'fffffff0123' '41'
