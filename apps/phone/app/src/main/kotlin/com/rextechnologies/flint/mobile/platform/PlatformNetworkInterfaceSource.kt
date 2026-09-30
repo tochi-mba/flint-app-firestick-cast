@@ -1,6 +1,7 @@
 package com.rextechnologies.flint.mobile.platform
 
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
 import com.rextechnologies.flint.protocol.network.JvmNetworkInterfaceSource
 import com.rextechnologies.flint.protocol.network.NetworkInterfaceSnapshot
@@ -43,10 +44,17 @@ data class PlatformLinkTable(
  * phone is running rather than one it joined, so the framework never lists it, whatever the vendor
  * called it.
  */
-class PlatformNetworkInterfaceSource(
+class PlatformNetworkInterfaceSource internal constructor(
     private val connectivity: ConnectivityManager?,
-    private val interfaces: NetworkInterfaceSource = JvmNetworkInterfaceSource(),
+    private val interfaces: NetworkInterfaceSource,
+    /** How the platform's networks are listed. A parameter so a test can make the platform fail. */
+    private val listNetworks: (ConnectivityManager) -> Array<Network>,
 ) : NetworkInterfaceSource {
+    constructor(
+        connectivity: ConnectivityManager?,
+        interfaces: NetworkInterfaceSource = JvmNetworkInterfaceSource(),
+    ) : this(connectivity, interfaces, ::everyNetwork)
+
     override fun snapshots(): List<NetworkInterfaceSnapshot> = table().classify(interfaces.snapshots())
 
     /**
@@ -55,16 +63,23 @@ class PlatformNetworkInterfaceSource(
      */
     private fun table(): PlatformLinkTable {
         val manager = connectivity ?: return PlatformLinkTable.UNAVAILABLE
+        // A network can vanish between being listed and being asked about, and some builds throw
+        // rather than answer null when it does. Either way the walk has no complete answer: the
+        // network it could not describe may own any interface, mobile data's included, so no
+        // interface can be called unlisted on the strength of this walk.
         return runCatching {
             val listed = mutableMapOf<String, PlatformLink>()
-            @Suppress("DEPRECATION")
-            for (network in manager.allNetworks) {
-                val capabilities = manager.getNetworkCapabilities(network) ?: continue
-                val properties = manager.getLinkProperties(network) ?: continue
-                val name = properties.interfaceName ?: continue
+            var complete = true
+            for (network in listNetworks(manager)) {
+                val capabilities = manager.getNetworkCapabilities(network)
+                val name = manager.getLinkProperties(network)?.interfaceName
+                if (capabilities == null || name == null) {
+                    complete = false
+                    continue
+                }
                 listed[name] = linkOf(capabilities)
             }
-            PlatformLinkTable(listed, complete = true)
+            PlatformLinkTable(listed, complete)
         }.getOrDefault(PlatformLinkTable.UNAVAILABLE)
     }
 
@@ -75,3 +90,7 @@ class PlatformNetworkInterfaceSource(
         else -> PlatformLink.LOCAL_CLIENT
     }
 }
+
+/** Every network at once. Deprecated in favour of callbacks, which cannot give one consistent view. */
+@Suppress("DEPRECATION")
+private fun everyNetwork(manager: ConnectivityManager): Array<Network> = manager.allNetworks

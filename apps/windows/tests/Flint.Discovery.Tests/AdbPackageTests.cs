@@ -152,9 +152,7 @@ public sealed class AdbProbeClientPackageTests
                 return service == $"exec:cmd package install -r -S {apk.Length}" ? "Success\n" : "Failure [unexpected service]";
             },
             maxData: 4096);
-        // Not Progress<T>: that posts every report to the thread pool, where concurrent Adds on a
-        // List corrupted it and took the whole test host down. The client reports synchronously.
-        var progress = new LastFraction();
+        var progress = new RecordingProgress();
 
         var outcome = await Client().InstallPackageAsync(
             Loopback,
@@ -167,7 +165,10 @@ public sealed class AdbProbeClientPackageTests
         outcome.Output.ShouldBe("Success");
         delivered.ShouldNotBeNull();
         delivered.ShouldBe(apk);
-        progress.Value.ShouldBe(1.0, "every byte was acknowledged");
+        progress.Values.Count.ShouldBe(37, "one report per acknowledged chunk of 4096 bytes");
+        progress.Values[0].ShouldBe(4096.0 / apk.Length);
+        progress.Values.Zip(progress.Values.Skip(1)).ShouldAllBe(pair => pair.First < pair.Second);
+        progress.Values[^1].ShouldBe(1.0, "every byte was acknowledged");
     }
 
     [Fact]
@@ -259,18 +260,12 @@ public sealed class AdbProbeClientPackageTests
 
     private static AdbProbeClient Client()
     {
-        using var rsa = RSA.Create(2048);
+        // Not disposed here: the identity signs with this key for as long as the client lives.
+        var rsa = RSA.Create(2048);
         return new AdbProbeClient(new FixedIdentityProvider(new AdbIdentity(rsa, "flint@test")));
     }
 
     /// <summary>Keeps the latest fraction. Reports arrive synchronously, on the caller's thread.</summary>
-    private sealed class LastFraction : IProgress<double>
-    {
-        public double Value { get; private set; }
-
-        public void Report(double value) => Value = value;
-    }
-
     private sealed class FixedIdentityProvider(AdbIdentity identity) : IAdbIdentityProvider
     {
         public AdbIdentity GetIdentity() => identity;

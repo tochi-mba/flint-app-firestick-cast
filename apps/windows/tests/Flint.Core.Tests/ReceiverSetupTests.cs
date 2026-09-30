@@ -136,6 +136,24 @@ public sealed class ReceiverSetupTests
     }
 
     [Fact]
+    public void Describe_AnActionItDoesNotKnow_IsRefusedRatherThanDescribedVaguely()
+    {
+        Should.Throw<ArgumentOutOfRangeException>(() =>
+            ReceiverSetup.Describe((ReceiverSetupAction)99, Bundled, null, "Living Room"));
+    }
+
+    [Fact]
+    public void Describe_AReleaseBuild_CarriesNoDebugNote()
+    {
+        var release = Bundled with { PackageName = BundledReceiver.ReleasePackage };
+
+        var text = ReceiverSetup.Describe(ReceiverSetupAction.Install, release, null, "Living Room");
+
+        text.ShouldContain(BundledReceiver.ReleasePackage);
+        text.ShouldNotContain("debug build");
+    }
+
+    [Fact]
     public void Describe_RejectsABlankDeviceName()
     {
         Should.Throw<ArgumentException>(() => ReceiverSetup.Describe(ReceiverSetupAction.Install, Bundled, null, " "));

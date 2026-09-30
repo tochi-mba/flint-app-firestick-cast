@@ -290,6 +290,22 @@ class LocalNetworkTest {
     }
 
     @Test
+    fun `a network the platform confirmed outranks a narrower one it could not describe`() {
+        // While mobile data is torn down the platform can list it without naming its interface,
+        // which leaves the carrier's link undescribed rather than cellular.
+        val undescribed = snapshot("rmnet_data0", 21, address = "10.44.201.6", prefix = 30)
+        val wifi = snapshot("wlan0", 2, address = "10.182.169.140", prefix = 24)
+            .copy(platformLink = PlatformLink.LOCAL_CLIENT)
+
+        val client = assertIs<LocalNetwork.PhoneIsClient>(assessor.assess(listOf(undescribed, wifi)))
+        assertEquals("wlan0", client.interfaceName)
+
+        // With nothing confirmed, the narrowest subnet still decides, as it does without a platform.
+        val unconfirmed = assessor.assess(listOf(undescribed, wifi.copy(platformLink = PlatformLink.UNKNOWN)))
+        assertEquals("rmnet_data0", assertIs<LocalNetwork.PhoneIsClient>(unconfirmed).interfaceName)
+    }
+
+    @Test
     fun `a tunnel alone is not a local network`() {
         val tunnel = snapshot("tun0", 9, address = "10.8.0.2", prefix = 32).copy(isPointToPoint = true)
 

@@ -32,6 +32,35 @@ public sealed class FlintInstanceTests
         reacquired.ShouldBeTrue();
     }
 
+    [Fact]
+    public void DisposingTwice_IsHarmless()
+    {
+        var instance = FlintSingleInstance.TryAcquire($@"Local\Flint-test-{Guid.NewGuid():N}").ShouldNotBeNull();
+
+        instance.Dispose();
+
+        Should.NotThrow(instance.Dispose);
+    }
+
+    [Fact]
+    public void ABlankName_IsRefused()
+    {
+        Should.Throw<ArgumentException>(() => FlintSingleInstance.TryAcquire(" "));
+    }
+
+    [Fact]
+    public void TheRealIdentity_IsExclusiveWhileHeld()
+    {
+        // The shell's own name. A Flint already running on this machine holds it, in which case both
+        // attempts are refused; otherwise the first is granted and the second refused. Either way a
+        // second copy never gets it.
+        using var first = FlintSingleInstance.TryAcquire();
+
+        using var second = FlintSingleInstance.TryAcquire();
+
+        second.ShouldBeNull();
+    }
+
     [Theory]
     [InlineData("Flint", "REX Technologies", true)]
     [InlineData("Flint", "Somebody else", false)]

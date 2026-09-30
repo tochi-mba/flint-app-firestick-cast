@@ -55,9 +55,10 @@ class AndroidNetworkWatcher(
      * The connectivity service's idea of the current network is still ignored for the verdict, for
      * the reason above. What it is asked is narrower and reliable: which interfaces are mobile data
      * or a tunnel, so neither can be mistaken for the network the television is on, and which are
-     * networks the phone joined, so the rest must be ones it is running.
+     * networks the phone joined, so the rest must be ones it is running. Internal so a test can
+     * check that the default is this one rather than the bare interface list.
      */
-    private val interfaces: NetworkInterfaceSource =
+    internal val interfaces: NetworkInterfaceSource =
         interfaceSource ?: PlatformNetworkInterfaceSource(connectivity)
 
     /**

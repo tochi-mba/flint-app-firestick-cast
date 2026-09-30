@@ -1,9 +1,9 @@
 package com.rextechnologies.flint.castcore.capability
 
 import com.rextechnologies.flint.protocol.network.HotspotInterfaceSelector
-import com.rextechnologies.flint.protocol.network.InterfaceAddressSnapshot
 import com.rextechnologies.flint.protocol.network.Ipv4Subnet
 import com.rextechnologies.flint.protocol.network.NetworkInterfaceSnapshot
+import com.rextechnologies.flint.protocol.network.PlatformLink
 import com.rextechnologies.flint.protocol.network.SelectedHotspotInterface
 import com.rextechnologies.flint.protocol.network.carriesLocalTraffic
 import java.net.Inet4Address
@@ -84,26 +84,23 @@ class LocalNetworkAssessor(
      * outright and send the sweep down a tunnel with no television on it. Where more than one
      * candidate survives, the narrowest subnet wins — that is the one with a television on it rather than a corporate /8 —
      * and enumeration order settles the rest so the answer is stable between samples.
+     *
+     * The platform's word beats the shape. Once it has confirmed a network the phone joined, an
+     * interface it could not describe never outranks that one, however narrow its subnet: while
+     * mobile data is being torn down the platform can still list it without saying which interface
+     * is its, and the carrier's two-host link would otherwise win on width alone.
      */
     private fun clientCandidate(interfaces: List<NetworkInterfaceSnapshot>): LocalNetwork.PhoneIsClient? {
-        var bestSnapshot: NetworkInterfaceSnapshot? = null
-        var bestBinding: InterfaceAddressSnapshot? = null
-        for (snapshot in interfaces) {
-            if (!snapshot.carriesLocalTraffic()) continue
-            val binding = snapshot.addresses.firstOrNull {
-                it.address.isSiteLocalAddress && !it.address.isLoopbackAddress
-            } ?: continue
-            val incumbent = bestBinding
-            // Strictly greater, so a tie keeps the earlier interface and repeated samples of an
-            // unchanged machine keep returning the same answer.
-            if (incumbent == null || binding.prefixLength > incumbent.prefixLength) {
-                bestSnapshot = snapshot
-                bestBinding = binding
-            }
+        val eligible = interfaces.mapNotNull { snapshot ->
+            if (!snapshot.carriesLocalTraffic()) return@mapNotNull null
+            snapshot.addresses
+                .firstOrNull { it.address.isSiteLocalAddress && !it.address.isLoopbackAddress }
+                ?.let { snapshot to it }
         }
-
-        val snapshot = bestSnapshot ?: return null
-        val binding = bestBinding ?: return null
+        val confirmed = eligible.filter { (snapshot, _) -> snapshot.platformLink == PlatformLink.LOCAL_CLIENT }
+        // The first of the narrowest, so repeated samples of an unchanged phone agree.
+        val (snapshot, binding) = confirmed.ifEmpty { eligible }.maxByOrNull { (_, binding) -> binding.prefixLength }
+            ?: return null
         return LocalNetwork.PhoneIsClient(
             interfaceName = snapshot.name,
             interfaceIndex = snapshot.index,

@@ -51,9 +51,9 @@ public sealed partial class CastPageViewModel
     /// Read-only, and only once ADB is authorised: the look never triggers the television's prompt
     /// by itself, because the probe that preceded it already did or already could not.
     /// </remarks>
-    private async Task IdentifyReceiverAsync(CancellationToken cancellationToken)
+    private async Task IdentifyReceiverAsync(FireTvDevice? device, CancellationToken cancellationToken)
     {
-        if (Report?.Device is not { AdbState: AdbConnectionState.Connected } device)
+        if (device is not { AdbState: AdbConnectionState.Connected })
         {
             return;
         }
@@ -121,6 +121,7 @@ public sealed partial class CastPageViewModel
         IsConnecting = true;
         Failure = null;
         var verb = ReceiverAction is ReceiverSetupAction.Update ? "Updating" : "Installing";
+        var step = InstallStep.Sending;
         try
         {
             PairingStatus = $"{verb} Flint on the TV. The screen may go dark for a moment.";
@@ -141,9 +142,14 @@ public sealed partial class CastPageViewModel
                 return;
             }
 
-            // "Success" is what the installer said. Asking again is what proves it.
+            // "Success" is what the installer said. Asking again is what proves it: the package is
+            // there, at the version that was sent. For an update the package alone proves nothing,
+            // because the older build was there before.
+            step = InstallStep.Checking;
             InstalledReceiver = await receiverInstaller.FindInstalledAsync(device, [bundled.PackageName], cancellationToken)
                 .ConfigureAwait(true);
+            // Whatever the check found is what the button offers next, a failed install included.
+            ReceiverAction = ReceiverSetup.Decide(bundled, InstalledReceiver);
             if (InstalledReceiver is null)
             {
                 Failure = $"The installer answered Success, but {bundled.PackageName} is not on the TV afterwards.";
@@ -151,20 +157,38 @@ public sealed partial class CastPageViewModel
                 return;
             }
 
-            ReceiverAction = ReceiverSetup.Decide(bundled, InstalledReceiver);
+            if (ReceiverAction is ReceiverSetupAction.Update)
+            {
+                Failure = $"The installer answered Success, but the TV still has {InstalledReceiver.VersionLabel}.";
+                PairingStatus = "Flint was not updated on the TV.";
+                return;
+            }
+
             FlintDiag.Info("FlintCast", "receiver install ok");
+            step = InstallStep.Opening;
             await OpenReceiverCoreAsync(device, cancellationToken).ConfigureAwait(true);
-            PairingStatus = $"Flint {bundled.VersionName} is on the TV and open. Enter the six-digit code shown there, then pair.";
+            PairingStatus = ReceiverAction is ReceiverSetupAction.Open
+                ? $"Flint {bundled.VersionName} is on the TV and open. Enter the six-digit code shown there, then pair."
+                : "Flint is on the TV and open, but the TV did not confirm the version that was sent. "
+                    + "Enter the six-digit code shown there, then pair.";
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             PairingStatus = "The install was cancelled.";
         }
-        catch (Exception exception) when (exception is IOException or AdbProtocolException or InvalidOperationException)
+        catch (Exception exception) when (IsTelevisionFailure(exception, cancellationToken))
         {
-            Failure = exception.Message;
-            PairingStatus = "Flint could not install the receiver on the TV.";
-            FlintDiag.Error("FlintCast", $"receiver install failed: {exception.GetType().Name}");
+            Failure = DescribeTelevisionFailure(exception);
+            PairingStatus = step switch
+            {
+                InstallStep.Sending => "Flint could not install the receiver on the TV.",
+                InstallStep.Checking =>
+                    "The TV took the package, then stopped answering before the install could be checked. "
+                    + "Find the TV again to see what it has.",
+                _ => $"Flint {bundled.VersionName} is on the TV but did not open. "
+                    + "Press OPEN RECEIVER ON TV, or open Flint from the TV's apps.",
+            };
+            FlintDiag.Error("FlintCast", $"receiver install failed step={step}: {exception.GetType().Name}");
         }
         finally
         {
@@ -176,6 +200,34 @@ public sealed partial class CastPageViewModel
             RaiseDerived();
         }
     }
+
+    /// <summary>Where an install had got to, so a failure can say what did and did not happen.</summary>
+    private enum InstallStep
+    {
+        /// <summary>Reading the bundled package and streaming it to the television.</summary>
+        Sending,
+
+        /// <summary>Asking the television whether the package it accepted is really there.</summary>
+        Checking,
+
+        /// <summary>Opening the receiver that is now installed.</summary>
+        Opening,
+    }
+
+    /// <summary>
+    /// The ways a conversation with the television fails, rather than a fault in Flint.
+    /// </summary>
+    /// <remarks>
+    /// A cancellation nobody asked for is one of them. Nothing on this page cancels an install, so
+    /// it is a timeout: the television went quiet past the time the ADB client allows it.
+    /// </remarks>
+    private static bool IsTelevisionFailure(Exception exception, CancellationToken cancellationToken) =>
+        exception is IOException or AdbProtocolException or InvalidOperationException
+        || (exception is OperationCanceledException && !cancellationToken.IsCancellationRequested);
+
+    private static string DescribeTelevisionFailure(Exception exception) => exception is OperationCanceledException
+        ? "The TV stopped answering. Check it is awake and on the same network, then try again."
+        : exception.Message;
 
     private void RaiseReceiverSetup()
     {

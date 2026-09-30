@@ -77,6 +77,12 @@ public sealed class BrowserSecureReceiverPromptTests
             hasRoutableEndpoint: false);
 
         step.ShouldBe(BrowserSecureReceiverStep.EnterBrowserPort);
+
+        // The port now lives behind Connection details on the TV, so the remedy says where to look.
+        var remedy = BrowserSecureReceiverPrompt.Remedy(step, capabilityRemedy: null);
+        remedy.ShouldNotBeNull();
+        remedy.ShouldContain("Connection details");
+        remedy.ShouldContain("browser port");
     }
 
     [Fact]

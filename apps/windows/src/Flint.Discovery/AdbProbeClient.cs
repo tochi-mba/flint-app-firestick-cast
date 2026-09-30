@@ -41,7 +41,18 @@ public sealed class AdbProbeClient
     /// </remarks>
     public static readonly TimeSpan InstallTimeout = TimeSpan.FromMinutes(3);
 
+    /// <summary>The local id of the first stream on a connection.</summary>
+    /// <remarks>
+    /// Every further stream on the same connection takes the next id. adbd answers the host's CLSE
+    /// with a CLSE of its own, and on a Fire TV that arrives after the host's next OPEN has gone out:
+    /// under a reused id it reads as the new stream closing before it has begun, and the answer
+    /// that follows is never read.
+    /// </remarks>
+    private const uint FirstStream = 1;
+
     private readonly IAdbIdentityProvider _identities;
+    private readonly TimeSpan _handshakeTimeout;
+    private readonly TimeSpan _promptTimeout;
 
     /// <summary>Creates a probe using Flint's persistent, per-user ADB host identity.</summary>
     public AdbProbeClient()
@@ -49,8 +60,20 @@ public sealed class AdbProbeClient
     {
     }
 
-    internal AdbProbeClient(IAdbIdentityProvider identities) =>
+    /// <summary>A probe with its own identity and, for tests, shorter waits.</summary>
+    /// <remarks>
+    /// The waits are parameters so a test can reach the "the TV never answered" branches in
+    /// milliseconds rather than sitting through the real four- and thirty-second budgets.
+    /// </remarks>
+    internal AdbProbeClient(
+        IAdbIdentityProvider identities,
+        TimeSpan? handshakeTimeout = null,
+        TimeSpan? promptTimeout = null)
+    {
         _identities = identities ?? throw new ArgumentNullException(nameof(identities));
+        _handshakeTimeout = handshakeTimeout ?? HandshakeTimeout;
+        _promptTimeout = promptTimeout ?? AuthorizationPromptTimeout;
+    }
 
     /// <summary>Probes one address across the Fire TV ADB port range.</summary>
     public async Task<AdbProbeResult> ProbeAsync(
@@ -107,10 +130,10 @@ public sealed class AdbProbeClient
             }
 
             using var propertyTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            propertyTimeout.CancelAfter(HandshakeTimeout);
+            propertyTimeout.CancelAfter(_handshakeTimeout);
             try
             {
-                var output = await RunServiceAsync(stream, "shell:getprop", payload: null, chunkLength: 0, progress: null, propertyTimeout.Token)
+                var output = await RunServiceAsync(stream, FirstStream, "shell:getprop", payload: null, chunkLength: 0, progress: null, propertyTimeout.Token)
                     .ConfigureAwait(false);
                 var properties = AdbBuildProperties.Parse(output);
                 return result with
@@ -157,9 +180,10 @@ public sealed class AdbProbeClient
         using var client = await ConnectAuthorizedAsync(address, port, "open the receiver", cancellationToken)
             .ConfigureAwait(false);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(HandshakeTimeout);
+        timeout.CancelAfter(_handshakeTimeout);
         var output = await RunServiceAsync(
             client.Client.GetStream(),
+            FirstStream,
             $"shell:am start -n {packageName}/{activityName}",
             payload: null,
             chunkLength: 0,
@@ -196,10 +220,11 @@ public sealed class AdbProbeClient
             .ConfigureAwait(false);
         var stream = client.Client.GetStream();
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(HandshakeTimeout);
+        timeout.CancelAfter(_handshakeTimeout);
 
         var listing = await RunServiceAsync(
             stream,
+            FirstStream,
             $"shell:pm list packages {AdbPackageInventory.PackagePrefix}",
             payload: null,
             chunkLength: 0,
@@ -212,8 +237,10 @@ public sealed class AdbProbeClient
             return null;
         }
 
+        // The second stream on this connection, so it takes the next id: see FirstStream.
         var dump = await RunServiceAsync(
             stream,
+            FirstStream + 1,
             $"shell:dumpsys package {found}",
             payload: null,
             chunkLength: 0,
@@ -251,6 +278,7 @@ public sealed class AdbProbeClient
         var chunkLength = (int)Math.Min(AdbMessage.MaxPayloadLength, client.RemoteMaxData);
         var output = await RunServiceAsync(
             client.Client.GetStream(),
+            FirstStream,
             $"exec:cmd package install -r -S {apk.Length}",
             apk,
             chunkLength,
@@ -324,7 +352,7 @@ public sealed class AdbProbeClient
         CancellationToken callerCancellation)
     {
         using var handshakeTimeout = CancellationTokenSource.CreateLinkedTokenSource(callerCancellation);
-        handshakeTimeout.CancelAfter(HandshakeTimeout);
+        handshakeTimeout.CancelAfter(_handshakeTimeout);
         var deadline = handshakeTimeout.Token;
 
         await WriteAsync(stream, AdbMessage.Connect(), deadline).ConfigureAwait(false);
@@ -376,7 +404,7 @@ public sealed class AdbProbeClient
 
                 using var authorizationTimeout =
                     CancellationTokenSource.CreateLinkedTokenSource(callerCancellation);
-                authorizationTimeout.CancelAfter(AuthorizationPromptTimeout);
+                authorizationTimeout.CancelAfter(_promptTimeout);
                 try
                 {
                     reply = await ReadAsync(stream, authorizationTimeout.Token).ConfigureAwait(false);
@@ -430,13 +458,13 @@ public sealed class AdbProbeClient
     /// </remarks>
     private static async Task<string> RunServiceAsync(
         NetworkStream stream,
+        uint localId,
         string destination,
         ReadOnlyMemory<byte>? payload,
         int chunkLength,
         IProgress<double>? progress,
         CancellationToken cancellationToken)
     {
-        const uint localId = 1;
         await WriteAsync(
             stream,
             new AdbMessage(AdbCommand.Open, localId, 0, Encoding.UTF8.GetBytes($"{destination}\0")),
@@ -444,6 +472,7 @@ public sealed class AdbProbeClient
 
         uint remoteId = 0;
         var sent = 0;
+        var acknowledged = 0;
         var awaitingOkay = true;
         var closed = false;
         using var output = new MemoryStream();
@@ -460,6 +489,13 @@ public sealed class AdbProbeClient
                 case AdbCommand.Okay:
                     remoteId = message.Arg0;
                     awaitingOkay = false;
+                    if (sent > acknowledged && payload is { } copying)
+                    {
+                        // Every OKAY after the one answering OPEN acknowledges the chunk before it.
+                        acknowledged = sent;
+                        progress?.Report((double)acknowledged / copying.Length);
+                    }
+
                     break;
 
                 case AdbCommand.Write:
@@ -505,7 +541,14 @@ public sealed class AdbProbeClient
                 cancellationToken).ConfigureAwait(false);
             sent += chunk.Length;
             awaitingOkay = true;
-            progress?.Report((double)sent / bytes.Length);
+        }
+
+        if (payload is { } expected && acknowledged < expected.Length && output.Length == 0)
+        {
+            // Closed mid-copy with nothing said, as when the package manager dies or the TV sleeps.
+            // An empty answer would read as a refusal with no reason. A package manager that did
+            // answer, having refused before reading everything, keeps its reason.
+            throw new IOException($"The TV closed the install after taking {acknowledged} of {expected.Length} bytes.");
         }
 
         return Encoding.UTF8.GetString(output.GetBuffer(), 0, checked((int)output.Length));
