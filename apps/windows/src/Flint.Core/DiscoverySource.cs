@@ -11,4 +11,7 @@ public enum DiscoverySource
 
     /// <summary>Entered by the user. Always permitted; discovery is never the only route.</summary>
     Manual = 2,
+
+    /// <summary>Answered Flint's bounded receiver probe on the selected local subnet.</summary>
+    ReceiverProbe = 3,
 }

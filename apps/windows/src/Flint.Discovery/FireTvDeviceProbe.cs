@@ -3,13 +3,13 @@ using Flint.Core;
 namespace Flint.Discovery;
 
 /// <summary>
-/// Finds Fire TV devices by multicast advertisement, then identifies each one over ADB.
+/// Finds Fire TV and Flint receiver advertisements, then identifies each one over ADB when it is
+/// available.
 /// </summary>
 /// <remarks>
-/// Discovery is advertisement-led rather than scan-led. Sweeping a subnet for open ADB ports would
-/// mean thousands of connection attempts against machines that never asked to be probed; listening
-/// for devices that advertise themselves finds the same televisions without touching anything else
-/// on the network.
+/// Discovery is advertisement-led. When multicast is filtered, a bounded fallback contacts only
+/// Flint's receiver port on a derived small local subnet and requires the exact read-only receiver
+/// answer. ADB ports are never swept.
 /// </remarks>
 /// <param name="adb">The ADB probe used to identify each advertised device.</param>
 public sealed class FireTvDeviceProbe(AdbProbeClient? adb = null) : IAddressableDeviceProbe
@@ -26,7 +26,15 @@ public sealed class FireTvDeviceProbe(AdbProbeClient? adb = null) : IAddressable
         var advertised = await ListenAsync(cancellationToken).ConfigureAwait(false);
         if (advertised.Count == 0)
         {
-            return [];
+            var probed = await ReceiverProbeScanner.ScanAsync(cancellationToken).ConfigureAwait(false);
+            if (probed.Count == 0)
+            {
+                return [];
+            }
+
+            return await Task.WhenAll(
+                probed.Select(answer => IdentifyAsync(answer, cancellationToken)))
+                .ConfigureAwait(false);
         }
 
         var identified = await Task.WhenAll(
@@ -130,11 +138,49 @@ public sealed class FireTvDeviceProbe(AdbProbeClient? adb = null) : IAddressable
     private static async Task<IReadOnlyList<ServiceInstance>> ListenAsync(
         CancellationToken cancellationToken)
     {
+        var serviceTypes = new[]
+        {
+            MulticastDnsCodec.FireTvServiceType,
+            MulticastDnsCodec.FlintReceiverServiceType,
+        };
+        var answers = await Task.WhenAll(
+            serviceTypes.Select(serviceType => ListenAsync(serviceType, cancellationToken)))
+            .ConfigureAwait(false);
+
+        // The Flint announcement is last and therefore wins when the TV advertises both. It carries
+        // the receiver and browser ports that the Amazon advertisement cannot know about.
+        var found = new Dictionary<string, ServiceInstance>(StringComparer.OrdinalIgnoreCase);
+        foreach (var instance in answers.SelectMany(static answer => answer))
+        {
+            found[instance.Address.ToString()] = instance;
+        }
+
+        return [.. found.Values];
+    }
+
+    private async Task<FireTvDevice> IdentifyAsync(
+        ReceiverProbeScanner.Answer answer,
+        CancellationToken cancellationToken)
+    {
+        var probe = await _adb.ProbeAsync(answer.Address, cancellationToken).ConfigureAwait(false);
+        var model = probe.Model ?? probe.Banner?.Model ?? answer.ModelName;
+        return ToDevice(
+            answer.Address,
+            answer.ModelName,
+            DiscoverySource.ReceiverProbe,
+            model,
+            probe);
+    }
+
+    private static async Task<IReadOnlyList<ServiceInstance>> ListenAsync(
+        string serviceType,
+        CancellationToken cancellationToken)
+    {
         var found = new Dictionary<string, ServiceInstance>(StringComparer.OrdinalIgnoreCase);
         var gate = new Lock();
 
         await MulticastServiceScanner.QueryAsync(
-            MulticastDnsCodec.FireTvServiceType,
+            serviceType,
             ListenWindow,
             datagram =>
             {
@@ -142,7 +188,7 @@ public sealed class FireTvDeviceProbe(AdbProbeClient? adb = null) : IAddressable
                 {
                     var instances = MulticastDnsCodec.ReadInstances(
                         datagram.Span,
-                        MulticastDnsCodec.FireTvServiceType);
+                        serviceType);
 
                     lock (gate)
                     {
