@@ -95,7 +95,7 @@ public sealed class ScreenPageTests
     }
 
     private static Button StartButton(Control root) =>
-        root.GetVisualDescendants().OfType<Button>().Single(button => Equals(button.Content, "START SCREEN SESSION"));
+        root.GetVisualDescendants().OfType<Button>().Single(button => Equals(button.Content, "SHARE SCREEN"));
 
     private static List<string> Texts(Control root) =>
     [

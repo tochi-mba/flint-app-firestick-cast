@@ -68,28 +68,28 @@ class ReceiverHelpTest {
         compose.waitForIdle()
     }
 
-    @Test fun `initial help invitation does not steal focus or open a modal`() {
+    @Test fun `help entry does not steal focus or open a modal`() {
         show()
         compose.onNodeWithText("Existing control").assertIsFocused()
         compose.onNodeWithText("Start here").assertDoesNotExist()
-        compose.onNodeWithText("New here? Help").assertIsDisplayed()
+        compose.onNodeWithText("Help").assertIsDisplayed()
     }
 
     @Test fun `remote opens help with close focused and can return to the page`() {
         show()
-        activate("New here? Help")
+        activate("Help")
         compose.onNodeWithText("Start here").assertIsDisplayed()
         compose.onNodeWithText("Close").assertIsFocused()
         activate("Close")
         compose.onNodeWithText("Start here").assertDoesNotExist()
         compose.onNodeWithText("Existing control").assertIsDisplayed()
-        compose.onNodeWithText("New here? Help").assertIsFocused()
+        compose.onNodeWithText("Help").assertIsFocused()
     }
 
     @Test fun `completion survives help surface recreation without reopening`() {
         val visible = mutableStateOf(true)
         compose.setContent { ReceiverTheme { if (visible.value) ReceiverHelp() } }
-        activate("New here? Help")
+        activate("Help")
         advanceToLastTopic()
         activate("Got it")
         compose.runOnIdle { visible.value = false }
@@ -104,7 +104,7 @@ class ReceiverHelpTest {
 
     @Test fun `remote back closes without marking tips dismissed`() {
         show()
-        activate("New here? Help")
+        activate("Help")
         // Back belongs to the Android dialog window, not Compose's focused-node key pipeline.
         compose.runOnIdle {
             val dialog = checkNotNull(ShadowDialog.getLatestDialog())
@@ -113,12 +113,12 @@ class ReceiverHelpTest {
         }
         compose.waitForIdle()
         compose.onNodeWithText("Start here").assertDoesNotExist()
-        compose.onNodeWithText("New here? Help").assertIsFocused()
+        compose.onNodeWithText("Help").assertIsFocused()
     }
 
     @Test fun `dismissed tips stay replayable from the remote`() {
         show()
-        activate("New here? Help")
+        activate("Help")
         activate("Dismiss tips")
         compose.onNodeWithText("Start here").assertDoesNotExist()
         activate("Help")

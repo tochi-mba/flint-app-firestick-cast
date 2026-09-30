@@ -202,38 +202,11 @@ private fun LiveStrip(output: LiveOutput, controller: MobileController) {
             style = FlintType.BodyMedium.copy(color = FlintColors.Muted),
         )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .semantics { liveRegion = LiveRegionMode.Polite },
-            horizontalArrangement = Arrangement.spacedBy(FlintSpace.Large),
-        ) {
-            Readout(value = PlaybackClock.format(output.elapsedSeconds * 1_000))
-            Readout(value = "${output.width}×${output.height}")
-            Readout(
-                value = ScreenCopy.linkHealthWord(output.health),
-                tone = ScreenCopy.linkHealthTone(output.health).toDesignTone(),
-            )
-        }
-
-        output.degradedReason?.let { AdvisoryBlock(heading = "WHAT IS HAPPENING", body = it) }
-
-        // The cockpit: what the television is showing, when this phone is drawing it.
-        output.scene?.let { DiagnosticRow(label = "Showing", value = it.title) }
-        DiagnosticRow(label = "Codec", value = CodecNames.label(output.codec))
+        output.degradedReason?.let { AdvisoryBlock(heading = "Connection quality", body = it) }
         DiagnosticRow(label = AudioCopy.ROW, value = AudioPolicy.word(output.audio))
         AudioPolicy.sentence(output.audio, secondScreen = output.mode == OutputMode.SECOND_SCREEN)?.let {
             FlintText(text = it, style = FlintType.BodySmall.copy(color = FlintColors.Muted))
         }
-        if (output.keyFrameFallback) DiagnosticRow(label = "Key frames", value = "Every few seconds")
-        DiagnosticRow(
-            label = "Bitrate",
-            // One decimal place rather than integer division, which printed "0 Mbit/s" for every
-            // bitrate the controller can back off to.
-            value = "${Decimal.oneDecimal(output.bitrateBitsPerSecond / 1_000_000.0)} Mbit/s",
-        )
-        SessionRows(output.diagnostics)
-
         OutlineAction(
             text = when (output.mode) {
                 OutputMode.SECOND_SCREEN -> ScreenCopy.STOP_SECOND_SCREEN
@@ -242,5 +215,32 @@ private fun LiveStrip(output: LiveOutput, controller: MobileController) {
             onClick = controller::stopOutput,
             tone = Tone.Live,
         )
+        DetailSection("Session details") {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { liveRegion = LiveRegionMode.Polite },
+                horizontalArrangement = Arrangement.spacedBy(FlintSpace.Large),
+            ) {
+                Readout(value = PlaybackClock.format(output.elapsedSeconds * 1_000))
+                Readout(value = "${output.width}×${output.height}")
+                Readout(
+                    value = ScreenCopy.linkHealthWord(output.health),
+                    tone = ScreenCopy.linkHealthTone(output.health).toDesignTone(),
+                )
+            }
+
+            // The cockpit: what the television is showing, when this phone is drawing it.
+            output.scene?.let { DiagnosticRow(label = "Showing", value = it.title) }
+            DiagnosticRow(label = "Codec", value = CodecNames.label(output.codec))
+            if (output.keyFrameFallback) DiagnosticRow(label = "Key frames", value = "Every few seconds")
+            DiagnosticRow(
+                label = "Bitrate",
+                // One decimal place rather than integer division, which printed "0 Mbit/s" for every
+                // bitrate the controller can back off to.
+                value = "${Decimal.oneDecimal(output.bitrateBitsPerSecond / 1_000_000.0)} Mbit/s",
+            )
+            SessionRows(output.diagnostics)
+        }
     }
 }

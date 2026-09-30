@@ -83,7 +83,7 @@ fun MediaScreen(state: MobileUiState, controller: MobileController, onPickVideo:
 
     when (media) {
         MediaState.Idle -> InfoCard(borderTone = if (verdict.isOfferable) Tone.Signal else Tone.Line) {
-            AdvisoryBlock(heading = "WHY IT IS SENT RATHER THAN FETCHED", body = MediaCopy.WHY_PUSHED)
+            FlintText(text = "Choose a video to play on your TV.", style = FlintType.BodyMedium)
             SignalButton(text = MediaCopy.PICK_ACTION, onClick = onPickVideo, enabled = verdict.isOfferable)
         }
 

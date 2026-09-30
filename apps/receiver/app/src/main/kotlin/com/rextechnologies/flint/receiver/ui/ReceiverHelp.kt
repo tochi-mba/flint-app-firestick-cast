@@ -44,7 +44,7 @@ internal fun ReceiverHelp(modifier: Modifier = Modifier) {
         runCatching { preferences.edit().putBoolean("receiver-v1-dismissed", true).apply() }
     }
     Button(onClick = { progress = progress.show() }, modifier = modifier) {
-        Text(if (progress.dismissed) "Help" else "New here? Help")
+        Text("Help")
     }
     if (progress.open) {
         val closeFocus = remember { FocusRequester() }

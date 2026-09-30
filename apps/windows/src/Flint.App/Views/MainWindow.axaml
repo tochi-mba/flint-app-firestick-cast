@@ -85,14 +85,8 @@
 
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="vm:NavigationDestination">
-              <Grid ColumnDefinitions="24,*,Auto">
-                <TextBlock Grid.Column="0"
-                           Text="{Binding Glyph}"
-                           FontWeight="Black"
-                           FontSize="12"
-                           Foreground="{StaticResource MutedBrush}"
-                           VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1"
+              <Grid>
+                <TextBlock
                            Text="{Binding Label}"
                            Theme="{StaticResource TitleMedium}"
                            VerticalAlignment="Center" />

@@ -252,7 +252,7 @@ public sealed class CastPageViewModelTests
     }
 
     [Fact]
-    public async Task CanPairWithCode_TrueAssoonAsADeviceIsKnown_EvenWithAdbRefused()
+    public async Task CanPairWithCode_TrueWithCompleteCode_EvenWithAdbRefused()
     {
         // Pairing by code talks to the receiver's own port, never ADB. Gating the button on ADB
         // would strand exactly the people it exists for: someone whose ADB daemon is wedged but
@@ -261,8 +261,23 @@ public sealed class CastPageViewModelTests
         var page = PageFor(Fake.Device() with { AdbState = AdbConnectionState.Refused }, Fake.Host(), Fake.Path());
 
         await page.ProbeCommand.ExecuteAsync(null);
+        page.PairingCode = "123456";
 
         page.CanPairWithCode.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("12345")]
+    [InlineData("12345x")]
+    public async Task CanPairWithCode_FalseUntilCodeIsSixDigits(string code)
+    {
+        var page = PageFor(Fake.Device(), Fake.Host(), Fake.Path());
+
+        await page.ProbeCommand.ExecuteAsync(null);
+        page.PairingCode = code;
+
+        page.CanPairWithCode.ShouldBeFalse();
     }
 
     [Fact]
@@ -281,6 +296,7 @@ public sealed class CastPageViewModelTests
         var page = PageFor(Fake.Device() with { AdbState = AdbConnectionState.Refused }, Fake.Host(), Fake.Path());
 
         await page.ProbeCommand.ExecuteAsync(null);
+        page.PairingCode = "123456";
 
         page.CanOpenReceiver.ShouldBeFalse();
         page.CanPairWithCode.ShouldBeTrue();

@@ -6,7 +6,7 @@
              x:DataType="vm:CastPageViewModel">
   <ScrollViewer>
     <StackPanel Margin="{StaticResource PageMargin}" Spacing="12" MaxWidth="820" HorizontalAlignment="Left">
-      <controls:PageHeading Eyebrow="Local playback" Title="Media" Trailing="{Binding SessionStatus}" TrailingTone="{Binding HeadingTone}" />
+      <controls:PageHeading Eyebrow="Local playback" Title="Play on your TV" Trailing="{Binding SessionStatus}" TrailingTone="{Binding HeadingTone}" />
       <controls:InfoCard BorderTone="{Binding HeadingTone}">
         <StackPanel Spacing="12">
           <TextBlock Theme="{StaticResource TitleMedium}" Text="Play media on the connected TV" />
@@ -18,7 +18,7 @@
                     IsEnabled="{Binding IsSessionConnected}"
                     HorizontalAlignment="Left"
                     AutomationProperties.Name="Choose media file" />
-            <Button Theme="{StaticResource OutlineAction}" Content="STOP"
+            <Button Theme="{StaticResource OutlineAction}" Content="STOP PLAYBACK"
                     Command="{Binding StopMediaCommand}"
                     IsVisible="{Binding IsMediaPlaying}"
                     HorizontalAlignment="Left"
@@ -30,12 +30,12 @@
                      Text="Connect the receiver on Cast first." />
         </StackPanel>
       </controls:InfoCard>
-      <controls:InfoCard>
+      <Expander Header="Supported media" HorizontalAlignment="Stretch">
         <StackPanel Spacing="8">
           <TextBlock Theme="{StaticResource LabelSmall}" Text="SUPPORTED PLAYBACK" />
           <TextBlock Theme="{StaticResource BodyMedium}" Text="Local video, audio, images, subtitles, and direct network streams" />
         </StackPanel>
-      </controls:InfoCard>
+      </Expander>
     </StackPanel>
   </ScrollViewer>
 </UserControl>
