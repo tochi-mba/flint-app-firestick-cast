@@ -1,0 +1,203 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="using:Flint.App.Controls">
+
+  <ControlTheme x:Key="FlintTextBox" TargetType="TextBox"
+                BasedOn="{StaticResource {x:Type TextBox}}">
+    <Setter Property="MinHeight" Value="42" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+    <Style Selector="^:focus-within">
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="FlintComboBox" TargetType="ComboBox"
+                BasedOn="{StaticResource {x:Type ComboBox}}">
+    <Setter Property="MinWidth" Value="150" />
+    <Setter Property="MinHeight" Value="42" />
+    <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+    <Style Selector="^:focus-within">
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="FlintToggleSwitch" TargetType="ToggleSwitch">
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="42,Auto" ColumnSpacing="10" VerticalAlignment="Center">
+          <Border x:Name="Track" Width="42" Height="24" CornerRadius="12"
+                  Background="{StaticResource RaisedBrush}"
+                  BorderBrush="{StaticResource LineBrush}" BorderThickness="1">
+            <Grid x:Name="PART_MovingKnobs">
+              <Grid x:Name="PART_SwitchKnob" Width="16" Height="16" Margin="3"
+                    HorizontalAlignment="Left">
+                <Ellipse x:Name="Thumb" Fill="{StaticResource MutedBrush}" />
+              </Grid>
+            </Grid>
+          </Border>
+          <ContentPresenter Grid.Column="1" Content="{TemplateBinding Content}"
+                            VerticalAlignment="Center" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:checked /template/ Border#Track">
+      <Setter Property="Background" Value="{StaticResource SignalBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
+    <Style Selector="^:checked /template/ Grid#PART_SwitchKnob">
+      <Setter Property="HorizontalAlignment" Value="Right" />
+    </Style>
+    <Style Selector="^:checked /template/ Ellipse#Thumb">
+      <Setter Property="Fill" Value="{StaticResource InkBrush}" />
+    </Style>
+    <Style Selector="^:focus-visible">
+      <Setter Property="Foreground" Value="{StaticResource SignalBrush}" />
+    </Style>
+    <Style Selector="^:focus-visible /template/ Border#Track">
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+      <Setter Property="BorderThickness" Value="2" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="Opacity" Value="0.6" />
+      <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="FlintSlider" TargetType="Slider"
+                BasedOn="{StaticResource {x:Type Slider}}">
+    <Setter Property="MinWidth" Value="180" />
+    <Setter Property="Foreground" Value="{StaticResource SignalBrush}" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type controls:SettingRow}" TargetType="controls:SettingRow">
+    <Setter Property="Padding" Value="0,14" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1"
+                Padding="{TemplateBinding Padding}">
+          <WrapPanel Orientation="Horizontal">
+            <StackPanel Width="390" Margin="0,0,20,8" Spacing="4">
+              <TextBlock Theme="{StaticResource TitleMedium}"
+                         Text="{Binding Title, RelativeSource={RelativeSource TemplatedParent}}" />
+              <TextBlock Theme="{StaticResource BodySmall}"
+                         Text="{Binding Description, RelativeSource={RelativeSource TemplatedParent}}" />
+            </StackPanel>
+            <ContentPresenter MinWidth="180"
+                              VerticalAlignment="Center"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </WrapPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <!--
+    A button whose content is a layout rather than a label, such as a search result naming its
+    section, title and explanation. OutlineAction draws its content as one upper-cased label, which
+    turns a panel into its type name.
+  -->
+  <ControlTheme x:Key="ContentOutlineButton" TargetType="Button">
+    <Setter Property="Padding" Value="14,10" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="BorderBrush" Value="{StaticResource MutedBrush}" />
+    </Style>
+    <Style Selector="^:pressed">
+      <Setter Property="Opacity" Value="0.72" />
+    </Style>
+    <Style Selector="^:focus-visible">
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
+  </ControlTheme>
+
+  <!--
+    One option of a SegmentedChoice. Its own theme, assigned as the list's ItemContainerTheme,
+    because a ControlTheme may only style its own template: a "^ ListBoxItem" descendant selector
+    inside the list's theme throws the moment the theme is loaded.
+  -->
+  <ControlTheme x:Key="SegmentedChoiceItem" TargetType="ListBoxItem">
+    <Setter Property="Padding" Value="14,10" />
+    <Setter Property="Margin" Value="0,0,6,6" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_Border"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Name="PART_ContentPresenter"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="BorderBrush" Value="{StaticResource MutedBrush}" />
+    </Style>
+    <Style Selector="^:selected">
+      <Setter Property="Background" Value="{StaticResource SignalWashBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type controls:SegmentedChoice}" TargetType="controls:SegmentedChoice">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="ItemContainerTheme" Value="{StaticResource SegmentedChoiceItem}" />
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ItemsPresenter ItemsPanel="{TemplateBinding ItemsPanel}" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

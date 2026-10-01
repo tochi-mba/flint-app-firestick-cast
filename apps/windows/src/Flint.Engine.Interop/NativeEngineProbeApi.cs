@@ -139,20 +139,28 @@ internal sealed partial class NativeEngineProbeApi : IEngineProbeApi
             ?? 0;
     }
 
-    private static unsafe bool HasCompatibleVersion()
+    private static bool HasCompatibleVersion() => ReadVersion() == CompatibleEngineVersion;
+
+    /// <summary>The version the engine reports, or null when it reports none that can be read.</summary>
+    internal static unsafe string? ReadVersion()
     {
         Span<byte> buffer = stackalloc byte[32];
         fixed (byte* pointer = buffer)
         {
             if ((FlintStatus)NativeMethods.Version(pointer, (nuint)buffer.Length) is not FlintStatus.Ok)
             {
-                return false;
+                return null;
             }
         }
 
+        return ToVersion(buffer);
+    }
+
+    /// <summary>The version text in a native buffer, which must be NUL-terminated.</summary>
+    internal static string? ToVersion(ReadOnlySpan<byte> buffer)
+    {
         var terminator = buffer.IndexOf((byte)0);
-        return terminator >= 0
-            && Encoding.UTF8.GetString(buffer[..terminator]) == CompatibleEngineVersion;
+        return terminator > 0 ? Encoding.UTF8.GetString(buffer[..terminator]) : null;
     }
 
     private static EngineProbeResult EmptyResult() => new([], [], 0);

@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sys="using:System"
+             xmlns:settings="using:Flint.App.ViewModels.Settings"
+             xmlns:views="using:Flint.App.Views"
+             x:Class="Flint.App.Views.PrivacySettingsSection"
+             x:DataType="settings:PrivacySettingsViewModel">
+  <StackPanel Spacing="12">
+    <TextBlock Theme="{StaticResource HeadlineLarge}" Text="Privacy and data" />
+    <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding KeptText.Description}" />
+    <ItemsControl ItemsSource="{Binding KeptItems}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="sys:String">
+          <TextBlock Theme="{StaticResource BodySmall}" Text="{Binding StringFormat='•  {0}'}" Margin="0,2" />
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <Border Height="1" Background="{StaticResource LineBrush}" Margin="0,6" />
+    <TextBlock Theme="{StaticResource TitleMedium}" Text="Your folders" />
+    <TextBlock Theme="{StaticResource BodySmall}" Text="{Binding DataFolder}" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <Button Theme="{StaticResource OutlineAction}" Content="OPEN DATA FOLDER"
+              Command="{Binding OpenDataFolderCommand}" AutomationProperties.Name="Open the data folder" />
+      <Button Theme="{StaticResource OutlineAction}" Content="OPEN LOGS FOLDER"
+              Command="{Binding OpenLogsFolderCommand}" AutomationProperties.Name="Open the logs folder" />
+    </StackPanel>
+
+    <Border Height="1" Background="{StaticResource LineBrush}" Margin="0,6" />
+    <TextBlock Theme="{StaticResource TitleMedium}" Text="Take your settings with you" />
+    <TextBlock Theme="{StaticResource BodySmall}" Text="{Binding TransferText.Description}" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <Button Theme="{StaticResource OutlineAction}" Content="EXPORT SETTINGS"
+              Command="{Binding RequestExportCommand}" AutomationProperties.Name="Export settings" />
+      <Button Theme="{StaticResource OutlineAction}" Content="IMPORT SETTINGS"
+              Command="{Binding RequestImportCommand}" AutomationProperties.Name="Import settings" />
+    </StackPanel>
+    <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding Status}" IsVisible="{Binding !!Status}" />
+    <views:ConfirmableActionView DataContext="{Binding ResetAll}" Margin="0,8,0,0" />
+  </StackPanel>
+</UserControl>

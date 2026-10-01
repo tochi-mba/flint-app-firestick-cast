@@ -58,10 +58,7 @@ internal static class DevFileLog
     /// </summary>
     public static void Start()
     {
-        var appDataDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Flint",
-            "logs");
+        var appDataDir = FlintDataFolder.LogsPath;
         Directory.CreateDirectory(appDataDir);
         StartCore(
             Path.Combine(appDataDir, "windows-latest.log"),

@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:settings="using:Flint.App.ViewModels.Settings"
+             x:Class="Flint.App.Views.ConfirmableActionView"
+             x:DataType="settings:ConfirmableAction">
+  <Panel>
+    <Button Theme="{StaticResource OutlineAction}"
+            HorizontalAlignment="Left"
+            IsVisible="{Binding !IsAsking}"
+            Content="{Binding Label}"
+            Command="{Binding AskCommand}"
+            AutomationProperties.Name="{Binding Label}" />
+    <StackPanel IsVisible="{Binding IsAsking}" Spacing="10">
+      <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding Question}" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Theme="{StaticResource SignalButton}"
+                Content="{Binding ConfirmLabel}"
+                Command="{Binding ConfirmCommand}"
+                AutomationProperties.Name="{Binding ConfirmLabel}" />
+        <Button Theme="{StaticResource OutlineAction}" Content="KEEP IT" Command="{Binding CancelCommand}"
+                AutomationProperties.Name="Cancel" />
+      </StackPanel>
+    </StackPanel>
+  </Panel>
+</UserControl>

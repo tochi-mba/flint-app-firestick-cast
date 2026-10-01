@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:settings="using:Flint.App.ViewModels.Settings"
+             x:Class="Flint.App.Views.AboutSettingsSection"
+             x:DataType="settings:AboutSettingsViewModel">
+  <StackPanel Spacing="12">
+    <TextBlock Theme="{StaticResource HeadlineLarge}" Text="About" />
+    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="18" RowSpacing="8">
+      <TextBlock Grid.Row="0" Grid.Column="0" Theme="{StaticResource BodySmall}" Text="Flint" />
+      <TextBlock Grid.Row="0" Grid.Column="1" Theme="{StaticResource BodyMedium}" Text="{Binding AppVersion}" />
+      <TextBlock Grid.Row="1" Grid.Column="0" Theme="{StaticResource BodySmall}" Text="Capture engine" />
+      <TextBlock Grid.Row="1" Grid.Column="1" Theme="{StaticResource BodyMedium}" Text="{Binding EngineVersion}" />
+    </Grid>
+    <Button Theme="{StaticResource OutlineAction}" HorizontalAlignment="Left"
+            Content="COPY DETAILS FOR A BUG REPORT" Command="{Binding CopyReportCommand}"
+            AutomationProperties.Name="Copy details for a bug report" />
+    <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding Status}" IsVisible="{Binding !!Status}" />
+    <Border Height="1" Background="{StaticResource LineBrush}" Margin="0,6" />
+    <TextBlock Theme="{StaticResource TitleMedium}" Text="Licence" />
+    <TextBlock Theme="{StaticResource BodySmall}" Text="{Binding LicenceText.Description}" />
+  </StackPanel>
+</UserControl>

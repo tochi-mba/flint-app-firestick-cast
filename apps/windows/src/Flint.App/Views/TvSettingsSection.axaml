@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:settings="using:Flint.App.ViewModels.Settings"
+             xmlns:core="using:Flint.Core"
+             xmlns:views="using:Flint.App.Views"
+             x:Class="Flint.App.Views.TvSettingsSection"
+             x:DataType="settings:TvSettingsViewModel">
+  <StackPanel Spacing="12">
+    <TextBlock Theme="{StaticResource HeadlineLarge}" Text="TVs" />
+    <TextBlock Theme="{StaticResource BodySmall}" Text="{Binding RememberedText.Description}" />
+    <ItemsControl ItemsSource="{Binding RecentAddresses}" IsVisible="{Binding HasRecentAddresses}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="core:RecentAddress">
+          <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="0,12">
+            <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding Label}" />
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <TextBlock Theme="{StaticResource BodyMedium}" IsVisible="{Binding !HasRecentAddresses}"
+               Text="No remembered TVs. Addresses you type on Cast will appear here." />
+    <views:ConfirmableActionView DataContext="{Binding ForgetAll}"
+                                 IsVisible="{Binding $parent[UserControl].((settings:TvSettingsViewModel)DataContext).HasRecentAddresses}" />
+  </StackPanel>
+</UserControl>
