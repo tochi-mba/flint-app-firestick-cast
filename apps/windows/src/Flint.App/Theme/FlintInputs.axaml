@@ -10,45 +10,157 @@
     <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
     <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
     <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
-    <Style Selector="^:focus-within">
+    <!-- Fluent paints hover and focus on the template's own border, in the system accent colour. -->
+    <Style Selector="^:pointerover /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource MutedBrush}" />
+    </Style>
+    <Style Selector="^:focus /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+      <Setter Property="BorderThickness" Value="2" />
+    </Style>
+    <Style Selector="^:disabled /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    </Style>
+  </ControlTheme>
+
+  <!-- One choice in a FlintComboBox's list. Fluent's own item theme highlights in the system accent. -->
+  <ControlTheme x:Key="FlintComboBoxItem" TargetType="ComboBoxItem">
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Padding" Value="12,9" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Name="PART_ContentPresenter"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+    </Style>
+    <Style Selector="^:selected">
+      <Setter Property="Background" Value="{StaticResource SignalWashBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
+    <Style Selector="^:focus-visible">
       <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
     </Style>
   </ControlTheme>
 
+  <!--
+    Fluent paints hover, focus and disabled on the template's Background border, and draws its own
+    focus rectangle; both are replaced here so the box reads as REX in every state.
+  -->
   <ControlTheme x:Key="FlintComboBox" TargetType="ComboBox"
                 BasedOn="{StaticResource {x:Type ComboBox}}">
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="MinWidth" Value="150" />
     <Setter Property="MinHeight" Value="42" />
     <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
     <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
     <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
     <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
-    <Style Selector="^:focus-within">
+    <Setter Property="ItemContainerTheme" Value="{StaticResource FlintComboBoxItem}" />
+    <!--
+      The glyph's colour is set inside Fluent's template, which outranks a plain setter; only a
+      state-triggered style outranks it, hence :not(:disabled). The content is a ContentControl.
+    -->
+    <Style Selector="^:not(:disabled) /template/ ContentControl#ContentPresenter">
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    </Style>
+    <Style Selector="^:not(:disabled) /template/ TextBlock#PlaceholderTextBlock">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    </Style>
+    <Style Selector="^:not(:disabled) /template/ PathIcon#DropDownGlyph">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    </Style>
+    <Style Selector="^ /template/ Border#PopupBorder">
+      <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+      <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+    </Style>
+    <Style Selector="^:pointerover /template/ Border#Background">
+      <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource MutedBrush}" />
+    </Style>
+    <Style Selector="^:pressed /template/ Border#Background">
+      <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource MutedBrush}" />
+    </Style>
+    <Style Selector="^:focus-visible /template/ Border#Background">
       <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+      <Setter Property="BorderThickness" Value="2" />
+    </Style>
+    <Style Selector="^:focus-visible /template/ Border#HighlightBackground">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:focus-visible /template/ PathIcon#DropDownGlyph">
+      <Setter Property="Foreground" Value="{StaticResource SignalBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ Border#Background">
+      <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ ContentControl#ContentPresenter">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+      <Setter Property="Foreground" Value="{StaticResource LineBrush}" />
     </Style>
   </ControlTheme>
 
+  <!--
+    On: a signal track with an ink knob. Off: a raised track with a muted knob. Focus is a ring
+    outside the track, so it shows whether the switch is on or off: a focus border drawn on the
+    track itself would be signal on signal, invisible exactly when the switch is on.
+    Disabled keeps its contrast by losing its colour rather than fading it, for the reason the
+    SignalButton theme gives: a dimmed accent still reads as live.
+  -->
   <ControlTheme x:Key="FlintToggleSwitch" TargetType="ToggleSwitch">
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
     <Setter Property="Cursor" Value="Hand" />
     <Setter Property="Template">
       <ControlTemplate>
-        <Grid ColumnDefinitions="42,Auto" ColumnSpacing="10" VerticalAlignment="Center">
-          <Border x:Name="Track" Width="42" Height="24" CornerRadius="12"
-                  Background="{StaticResource RaisedBrush}"
-                  BorderBrush="{StaticResource LineBrush}" BorderThickness="1">
-            <Grid x:Name="PART_MovingKnobs">
-              <Grid x:Name="PART_SwitchKnob" Width="16" Height="16" Margin="3"
-                    HorizontalAlignment="Left">
-                <Ellipse x:Name="Thumb" Fill="{StaticResource MutedBrush}" />
+        <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="10" VerticalAlignment="Center">
+          <Border x:Name="FocusRing" Padding="2" CornerRadius="16" BorderThickness="2"
+                  BorderBrush="Transparent">
+            <Border x:Name="Track" Width="42" Height="24" CornerRadius="12"
+                    Background="{StaticResource RaisedBrush}"
+                    BorderBrush="{StaticResource LineBrush}" BorderThickness="1">
+              <Grid x:Name="PART_MovingKnobs">
+                <Grid x:Name="PART_SwitchKnob" Width="16" Height="16" Margin="3"
+                      HorizontalAlignment="Left">
+                  <Ellipse x:Name="Thumb" Fill="{StaticResource MutedBrush}" />
+                </Grid>
               </Grid>
-            </Grid>
+            </Border>
           </Border>
           <ContentPresenter Grid.Column="1" Content="{TemplateBinding Content}"
                             VerticalAlignment="Center" />
         </Grid>
       </ControlTemplate>
     </Setter>
+    <Style Selector="^:pointerover /template/ Border#Track">
+      <Setter Property="BorderBrush" Value="{StaticResource MutedBrush}" />
+    </Style>
     <Style Selector="^:checked /template/ Border#Track">
       <Setter Property="Background" Value="{StaticResource SignalBrush}" />
       <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
@@ -59,24 +171,92 @@
     <Style Selector="^:checked /template/ Ellipse#Thumb">
       <Setter Property="Fill" Value="{StaticResource InkBrush}" />
     </Style>
-    <Style Selector="^:focus-visible">
-      <Setter Property="Foreground" Value="{StaticResource SignalBrush}" />
-    </Style>
-    <Style Selector="^:focus-visible /template/ Border#Track">
+    <Style Selector="^:focus-visible /template/ Border#FocusRing">
       <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
-      <Setter Property="BorderThickness" Value="2" />
     </Style>
     <Style Selector="^:disabled">
       <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
-      <Setter Property="Opacity" Value="0.6" />
       <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+    <Style Selector="^:disabled /template/ Border#Track">
+      <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    </Style>
+    <Style Selector="^:disabled /template/ Ellipse#Thumb">
+      <Setter Property="Fill" Value="{StaticResource LineBrush}" />
     </Style>
   </ControlTheme>
 
-  <ControlTheme x:Key="FlintSlider" TargetType="Slider"
-                BasedOn="{StaticResource {x:Type Slider}}">
+  <!--
+    A thin line track with the filled part in signal and a thumb large enough to grab. The thumb
+    carries the focus ring, because that is where a keyboard user's arrow keys act.
+  -->
+  <ControlTheme x:Key="FlintSlider" TargetType="Slider">
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="MinWidth" Value="180" />
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="Background" Value="{StaticResource LineBrush}" />
     <Setter Property="Foreground" Value="{StaticResource SignalBrush}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid MinHeight="{TemplateBinding MinHeight}">
+          <Border Height="4" CornerRadius="2" VerticalAlignment="Center"
+                  Background="{TemplateBinding Background}" />
+          <Track Name="PART_Track"
+                 Orientation="Horizontal"
+                 Minimum="{TemplateBinding Minimum}"
+                 Maximum="{TemplateBinding Maximum}"
+                 Value="{TemplateBinding Value, Mode=TwoWay}"
+                 IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
+            <Track.DecreaseButton>
+              <RepeatButton Name="PART_DecreaseButton" Focusable="False"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                            Background="{TemplateBinding Foreground}">
+                <RepeatButton.Template>
+                  <ControlTemplate>
+                    <Border Height="4" CornerRadius="2" VerticalAlignment="Center"
+                            Background="{TemplateBinding Background}" />
+                  </ControlTemplate>
+                </RepeatButton.Template>
+              </RepeatButton>
+            </Track.DecreaseButton>
+            <Track.IncreaseButton>
+              <RepeatButton Name="PART_IncreaseButton" Focusable="False" Background="Transparent"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <RepeatButton.Template>
+                  <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}" />
+                  </ControlTemplate>
+                </RepeatButton.Template>
+              </RepeatButton>
+            </Track.IncreaseButton>
+            <Thumb Name="thumb" Width="18" Height="18"
+                   Background="{StaticResource TextBrush}"
+                   BorderBrush="{StaticResource InkBrush}" BorderThickness="2">
+              <Thumb.Template>
+                <ControlTemplate>
+                  <Border CornerRadius="9"
+                          Background="{TemplateBinding Background}"
+                          BorderBrush="{TemplateBinding BorderBrush}"
+                          BorderThickness="{TemplateBinding BorderThickness}" />
+                </ControlTemplate>
+              </Thumb.Template>
+            </Thumb>
+          </Track>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:focus-visible /template/ Thumb#thumb">
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Foreground" Value="{StaticResource LineBrush}" />
+      <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+    <Style Selector="^:disabled /template/ Thumb#thumb">
+      <Setter Property="Background" Value="{StaticResource MutedBrush}" />
+    </Style>
   </ControlTheme>
 
   <ControlTheme x:Key="{x:Type controls:SettingRow}" TargetType="controls:SettingRow">
@@ -109,6 +289,7 @@
     turns a panel into its type name.
   -->
   <ControlTheme x:Key="ContentOutlineButton" TargetType="Button">
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="Padding" Value="14,10" />
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
@@ -140,6 +321,7 @@
     </Style>
     <Style Selector="^:focus-visible">
       <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+      <Setter Property="BorderThickness" Value="2" />
     </Style>
   </ControlTheme>
 
@@ -149,6 +331,7 @@
     inside the list's theme throws the moment the theme is loaded.
   -->
   <ControlTheme x:Key="SegmentedChoiceItem" TargetType="ListBoxItem">
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="Padding" Value="14,10" />
     <Setter Property="Margin" Value="0,0,6,6" />
     <Setter Property="Background" Value="Transparent" />
@@ -180,6 +363,12 @@
     <Style Selector="^:selected">
       <Setter Property="Background" Value="{StaticResource SignalWashBrush}" />
       <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
+    <!-- Focus thickens the ring rather than changing its colour, so it reads on a selected option too. -->
+    <Style Selector="^:focus-visible">
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="Padding" Value="13,9" />
     </Style>
     <Style Selector="^:disabled">
       <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
