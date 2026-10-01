@@ -49,7 +49,10 @@ public partial class MainWindow : Window
     /// </remarks>
     private void OnPromptChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName == nameof(SurfaceSwitchPrompt.IsOpen) && prompt is { IsOpen: true })
+        // This handler is attached only to SurfaceSwitchPrompt.PropertyChanged. Reading the event
+        // sender avoids a nullable-field branch that cannot occur while the subscription is live.
+        var changedPrompt = (SurfaceSwitchPrompt)sender!;
+        if (args.PropertyName == nameof(SurfaceSwitchPrompt.IsOpen) && changedPrompt.IsOpen)
         {
             enterOpenedTheQuestion = enterDown;
             Dispatcher.UIThread.Post(() => SwitchConfirm.Focus(NavigationMethod.Tab), DispatcherPriority.Loaded);
@@ -93,11 +96,12 @@ public partial class MainWindow : Window
         enterOpenedTheQuestion = false;
     }
 
+    /// <remarks>The overlay shows, and so takes keys, only while a shell's question is open.</remarks>
     private void OnSwitchOverlayKeyDown(object? sender, KeyEventArgs args)
     {
-        if (args.Key == Key.Escape && prompt is { IsOpen: true })
+        if (args.Key == Key.Escape)
         {
-            prompt.KeepCommand.Execute(null);
+            prompt!.KeepCommand.Execute(null);
             args.Handled = true;
         }
     }

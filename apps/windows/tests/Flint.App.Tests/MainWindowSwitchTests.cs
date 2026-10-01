@@ -168,6 +168,59 @@ public sealed class MainWindowSwitchTests
     }
 
     [AvaloniaFact]
+    public async Task AnUnrelatedKeyWhileTheQuestionIsOpen_DoesNotAnswerIt()
+    {
+        var shell = Shell();
+        var window = new MainWindow { DataContext = shell, Width = 1180, Height = 780 };
+        try
+        {
+            window.Show();
+            Settle(window);
+            var answer = shell.SwitchPrompt.AskAsync(MirrorToBrowser);
+            Settle(window);
+
+            window.KeyPressQwerty(PhysicalKey.A, RawInputModifiers.None);
+            window.KeyReleaseQwerty(PhysicalKey.A, RawInputModifiers.None);
+            Settle(window);
+
+            answer.IsCompleted.ShouldBeFalse();
+            shell.SwitchPrompt.KeepCommand.Execute(null);
+            (await answer).ShouldBeFalse();
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void ReplacingTheShell_UnhooksTheOldQuestionAndHooksTheNewOne()
+    {
+        var oldShell = Shell();
+        var newShell = Shell();
+        var window = new MainWindow { DataContext = oldShell, Width = 1180, Height = 780 };
+        try
+        {
+            window.Show();
+            Settle(window);
+
+            window.DataContext = null;
+            oldShell.SwitchPrompt.AskAsync(MirrorToBrowser);
+            Settle(window);
+            Find(window, "Switch the TV").IsFocused.ShouldBeFalse("the old prompt was unhooked");
+
+            window.DataContext = newShell;
+            newShell.SwitchPrompt.AskAsync(MirrorToBrowser);
+            Settle(window);
+            Find(window, "Switch the TV").IsFocused.ShouldBeTrue("the replacement prompt was hooked");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public void WithTheQuestionClosed_EnterAndEscapeStillReachTheWindow()
     {
         // The window watches Enter for the question's sake; with no question open, it and Escape
@@ -235,6 +288,61 @@ public sealed class MainWindowSwitchTests
 
             answer.IsCompleted.ShouldBeTrue("a key the question hears answers it at once");
             (await answer).ShouldBeTrue();
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task EnterHeldAfterTheQuestionCloses_IsNotSwallowedByTheClosedOverlay()
+    {
+        var shell = Shell();
+        var window = new MainWindow { DataContext = shell, Width = 1180, Height = 780 };
+        var reached = new List<Key>();
+        try
+        {
+            window.Show();
+            Settle(window);
+            window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+            var answer = shell.SwitchPrompt.AskAsync(MirrorToBrowser);
+            Settle(window);
+            shell.SwitchPrompt.KeepCommand.Execute(null);
+            (await answer).ShouldBeFalse();
+            window.AddHandler(InputElement.KeyDownEvent, (_, args) => reached.Add(args.Key), RoutingStrategies.Bubble);
+
+            window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+            Settle(window);
+
+            reached.ShouldContain(Key.Enter);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void EnterHeldAfterTheShellIsRemoved_IsNotSwallowed()
+    {
+        var shell = Shell();
+        var window = new MainWindow { DataContext = shell, Width = 1180, Height = 780 };
+        var reached = new List<Key>();
+        try
+        {
+            window.Show();
+            Settle(window);
+            window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+            shell.SwitchPrompt.AskAsync(MirrorToBrowser);
+            Settle(window);
+            window.DataContext = null;
+            window.AddHandler(InputElement.KeyDownEvent, (_, args) => reached.Add(args.Key), RoutingStrategies.Bubble);
+
+            window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+            Settle(window);
+
+            reached.ShouldContain(Key.Enter);
         }
         finally
         {
