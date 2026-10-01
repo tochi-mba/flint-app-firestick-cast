@@ -3,6 +3,7 @@ using Avalonia.Headless.XUnit;
 using Flint.App.ViewModels;
 using Flint.App.Views;
 using Flint.Core.Media;
+using Shouldly;
 using static Flint.App.Tests.CastPageFixtures;
 
 namespace Flint.App.Tests.Snapshots;
@@ -92,8 +93,14 @@ public sealed class MediaPageSnapshotTests
     {
         await using var receiver = new LoopbackReceiver();
         var media = await PlayingAsync(receiver, PlaybackPhase.Playing);
-        media.NowPlaying.ConnectionLost("The connection to Living Room was lost.");
 
+        // The TV really goes away, so the heading and the card are drawn from the state the app
+        // reaches rather than one set by hand. Setting only the card's state drew a heading that
+        // still said Connected beside a card that said the connection was lost.
+        await receiver.CloseAsync();
+        await Until(() => !media.Cast.IsConnected && media.NowPlaying.IsConnectionLost);
+
+        media.Cast.SessionStatus.ShouldNotBe("Connected");
         Snapshot.Matches("media-page-connection-lost", Page(media), Tall);
     }
 
