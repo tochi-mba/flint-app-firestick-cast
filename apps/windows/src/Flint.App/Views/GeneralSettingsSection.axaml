@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Flint.App.Controls"
+             xmlns:settings="using:Flint.App.ViewModels.Settings"
+             xmlns:views="using:Flint.App.Views"
+             x:Class="Flint.App.Views.GeneralSettingsSection"
+             x:DataType="settings:GeneralSettingsViewModel">
+  <StackPanel Spacing="0">
+    <TextBlock Theme="{StaticResource HeadlineLarge}" Text="General" Margin="0,0,0,10" />
+    <controls:SettingRow Title="{Binding AskBeforeSwitchingText.Title}"
+                         Description="{Binding AskBeforeSwitchingText.Description}">
+      <ToggleSwitch x:Name="AskBeforeSwitching"
+                    Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding AskBeforeSwitching, Mode=TwoWay}"
+                    AutomationProperties.Name="Ask before switching what the TV shows" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding KeepAwakeText.Title}"
+                         Description="{Binding KeepAwakeText.Description}">
+      <ToggleSwitch x:Name="KeepAwake"
+                    Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding KeepAwake, Mode=TwoWay}"
+                    AutomationProperties.Name="Keep this PC awake while sharing or playing" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding InterfaceSizeText.Title}"
+                         Description="{Binding InterfaceSizeText.Description}">
+      <ComboBox x:Name="InterfaceSize"
+                Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding InterfaceScales}"
+                SelectedItem="{Binding InterfaceScale, Mode=TwoWay}"
+                AutomationProperties.Name="Interface size" />
+    </controls:SettingRow>
+    <views:ConfirmableActionView DataContext="{Binding Reset}" Margin="0,18,0,0" />
+  </StackPanel>
+</UserControl>

@@ -23,6 +23,7 @@ public partial class MainWindow : Window
         AddHandler(KeyUpEvent, OnWindowKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         // A key released while another window has focus never comes up here.
         Deactivated += (_, _) => ReleaseEnter();
+        Closed += (_, _) => (DataContext as IDisposable)?.Dispose();
     }
 
     private void OnDataContextChanged(object? sender, EventArgs args)

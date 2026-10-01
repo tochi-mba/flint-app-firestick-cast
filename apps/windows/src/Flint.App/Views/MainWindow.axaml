@@ -8,10 +8,14 @@
         Title="Flint — REX Technologies"
         Icon="avares://Flint.App/Assets/flint.ico"
         Width="1180" Height="780"
-        MinWidth="900" MinHeight="620"
+        MinWidth="{Binding MinimumWidth}" MinHeight="{Binding MinimumHeight}"
         Background="{StaticResource InkBrush}"
         FontFamily="{StaticResource FlintFont}">
 
+  <LayoutTransformControl>
+    <LayoutTransformControl.LayoutTransform>
+      <ScaleTransform ScaleX="{Binding InterfaceScale}" ScaleY="{Binding InterfaceScale}" />
+    </LayoutTransformControl.LayoutTransform>
   <Panel>
   <Grid ColumnDefinitions="220,*">
 
@@ -204,4 +208,5 @@
       </controls:InfoCard>
     </Border>
   </Panel>
+  </LayoutTransformControl>
 </Window>

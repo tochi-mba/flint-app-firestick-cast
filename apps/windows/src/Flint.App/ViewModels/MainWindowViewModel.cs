@@ -2,7 +2,9 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Flint.App.Services;
+using Flint.App.ViewModels.Settings;
 using Flint.Core;
+using Flint.Core.Settings;
 using Flint.Discovery;
 using Flint.Engine.Interop;
 using Flint.Platform.Windows;
@@ -12,8 +14,17 @@ namespace Flint.App.ViewModels;
 /// <summary>
 /// The shell: the left rail, the brand lockup, and whichever page is selected.
 /// </summary>
-public sealed partial class MainWindowViewModel : ObservableObject
+public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 {
+    /// <summary>The narrowest the window may be at 100% interface size.</summary>
+    public const double BaseMinimumWidth = 900;
+
+    /// <summary>The shortest the window may be at 100% interface size.</summary>
+    public const double BaseMinimumHeight = 620;
+
+    private readonly SettingsService settingsService;
+    private readonly KeepAwakeCoordinator keepAwake;
+
     /// <summary>The product name shown under the REX mark.</summary>
     public const string ProductName = "Flint";
 
@@ -26,12 +37,26 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private MainWindowViewModel(
         CastPageViewModel cast,
         IOnboardingState onboardingState,
+        IAppSettingsStore settingsStore,
+        Func<KeepAwakeLevel, bool> keepAwakeApply,
+        IFolderOpener folders,
         IUpdateSource? updateSource = null,
         IUpdatePreference? updatePreference = null)
     {
         Cast = cast;
+        settingsService = new SettingsService(settingsStore);
+        settingsService.Changed += (_, change) =>
+        {
+            if (change.Previous.General.InterfaceScalePercent != change.Current.General.InterfaceScalePercent)
+            {
+                OnPropertyChanged(nameof(InterfaceScale));
+                OnPropertyChanged(nameof(MinimumWidth));
+                OnPropertyChanged(nameof(MinimumHeight));
+            }
+        };
         Browser = new BrowserPageViewModel(cast);
-        Coordinator = new ModeSessionCoordinator(Cast, Browser, SwitchPrompt);
+        Coordinator = new ModeSessionCoordinator(Cast, Browser, SwitchPrompt, settingsService);
+        keepAwake = new KeepAwakeCoordinator(Cast, settingsService, keepAwakeApply);
         Onboarding = new OnboardingViewModel(onboardingState);
 
         // What the TV is showing changes under every page: a mirror ends, a video stops, the
@@ -46,7 +71,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
             updateSource ?? new UninstalledUpdateSource(),
             updatePreference ?? new SessionUpdatePreference(),
             () => Cast.IsSessionConnected || Cast.IsMirroring || Browser.HasLiveSession);
-        Settings = new SettingsPageViewModel(Cast, Updates);
+        Settings = new SettingsPageViewModel(
+        [
+            new GeneralSettingsViewModel(settingsService),
+            new TvSettingsViewModel(Cast),
+            new PrivacySettingsViewModel(settingsService, folders, FlintDataFolder.Path, FlintDataFolder.LogsPath),
+            new UpdatesSectionViewModel(Updates),
+            new AboutSettingsViewModel(Cast, VersionLabel, EngineVersion.Read(), Environment.OSVersion.VersionString),
+        ]);
         Cast.PropertyChanged += (_, changed) =>
         {
             if (changed.PropertyName is nameof(CastPageViewModel.IsSessionConnected)
@@ -78,7 +110,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>The rail's destinations.</summary>
     public ObservableCollection<NavigationDestination> Destinations { get; }
 
-    /// <summary>The Cast page, which connects to the local receiver.</summary>
     /// <summary>The Cast page and local receiver connection screen.</summary>
     public CastPageViewModel Cast { get; }
 
@@ -121,6 +152,29 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>The Settings page: what Flint remembers, and how it updates itself.</summary>
     public SettingsPageViewModel Settings { get; }
 
+    /// <summary>The live settings.</summary>
+    public ISettingsService SettingsService => settingsService;
+
+    /// <summary>How large the window draws its contents, where 1 is Flint's own size.</summary>
+    public double InterfaceScale => settingsService.Current.General.InterfaceScalePercent / 100.0;
+
+    /// <summary>The narrowest the window may be at the current interface size.</summary>
+    public double MinimumWidth => Math.Round(BaseMinimumWidth * InterfaceScale);
+
+    /// <summary>The shortest the window may be at the current interface size.</summary>
+    public double MinimumHeight => Math.Round(BaseMinimumHeight * InterfaceScale);
+
+    /// <summary>The level this PC is currently kept awake at.</summary>
+    public KeepAwakeLevel KeepAwakeLevel => keepAwake.Level;
+
+    /// <summary>Writes any settings change still waiting and lets the PC sleep normally.</summary>
+    /// <remarks>Called as Flint exits, so a change made in the last moment is not lost.</remarks>
+    public void Dispose()
+    {
+        keepAwake.Dispose();
+        settingsService.Dispose();
+    }
+
     /// <summary>The version shown in the rail foot.</summary>
     public static string VersionLabel =>
         typeof(MainWindowViewModel).Assembly.GetName().Version is { } version
@@ -162,6 +216,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Builds the shell with the real Windows probes wired in.</summary>
     public static MainWindowViewModel CreateDefault()
     {
+        var sleepBlocker = new SleepBlocker();
         var shell = new MainWindowViewModel(
             new CastPageViewModel(
                 new CapabilityProber(
@@ -170,6 +225,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
                     new TcpNetworkProbe()),
                 new FileRecentAddressStore()),
             new FileOnboardingState(),
+            new FileAppSettingsStore(),
+            sleepBlocker.Apply,
+            new ExplorerFolderOpener(),
             new VelopackUpdateSource(),
             new FileUpdatePreference());
 
@@ -186,6 +244,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// so a test asking about the shell is not handed the introduction it did not ask for.
     /// </param>
     /// <param name="addressStore">Recent addresses. Defaults to a store that remembers none.</param>
+    /// <param name="settingsStore">Settings. Defaults to a store that keeps them only in memory.</param>
+    /// <param name="keepAwake">
+    /// Where keep-awake requests go. Defaults to one that grants them without asking Windows, so a
+    /// test never holds the machine running it awake.
+    /// </param>
+    /// <param name="folders">Opens folders. Defaults to one that opens nothing.</param>
     /// <remarks>
     /// The receiver installer is the offline one: a shell built around a supplied prober has no
     /// television to talk to, and the real installer would try the fake device's address on every
@@ -194,13 +258,25 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public static MainWindowViewModel CreateWith(
         CapabilityProber prober,
         IOnboardingState? onboardingState = null,
-        IRecentAddressStore? addressStore = null) =>
+        IRecentAddressStore? addressStore = null,
+        IAppSettingsStore? settingsStore = null,
+        Func<KeepAwakeLevel, bool>? keepAwake = null,
+        IFolderOpener? folders = null) =>
         new(
             new CastPageViewModel(
                 prober,
                 addressStore ?? new EmptyRecentAddressStore(),
                 receiverInstaller: new OfflineReceiverInstaller()),
-            onboardingState ?? new CompletedOnboardingState());
+            onboardingState ?? new CompletedOnboardingState(),
+            settingsStore ?? new InMemoryAppSettingsStore(),
+            keepAwake ?? (_ => true),
+            folders ?? new NoFolderOpener());
+
+    /// <summary>A folder opener for tests and design-time shells, which must not open windows.</summary>
+    private sealed class NoFolderOpener : IFolderOpener
+    {
+        public bool Open(string path) => true;
+    }
 
     /// <summary>An onboarding store that always reports completion and remembers nothing.</summary>
     private sealed class CompletedOnboardingState : IOnboardingState

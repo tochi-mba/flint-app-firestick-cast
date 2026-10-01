@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Flint.Core.Settings;
 
 namespace Flint.App.ViewModels;
 
@@ -35,6 +36,7 @@ public enum TvSurfaceKind
 public sealed class ModeSessionCoordinator
 {
     private readonly SemaphoreSlim gate = new(1, 1);
+    private readonly ISettingsService? settings;
 
     /// <summary>Builds a coordinator bound to the shell's Cast and Web pages.</summary>
     /// <param name="cast">The Cast / Media / Screen page.</param>
@@ -43,11 +45,20 @@ public sealed class ModeSessionCoordinator
     /// Where the switch question is asked. Without one nothing is asked and a claim simply
     /// proceeds, which is what a coordinator built only to stop surfaces needs.
     /// </param>
-    public ModeSessionCoordinator(CastPageViewModel cast, BrowserPageViewModel browser, SurfaceSwitchPrompt? prompt = null)
+    /// <param name="settings">
+    /// Whether the person wants to be asked at all. Without settings, a coordinator with a prompt
+    /// always asks.
+    /// </param>
+    public ModeSessionCoordinator(
+        CastPageViewModel cast,
+        BrowserPageViewModel browser,
+        SurfaceSwitchPrompt? prompt = null,
+        ISettingsService? settings = null)
     {
         Cast = cast ?? throw new ArgumentNullException(nameof(cast));
         Browser = browser ?? throw new ArgumentNullException(nameof(browser));
         Prompt = prompt;
+        this.settings = settings;
         Cast.AttachCoordinator(this);
         Browser.AttachCoordinator(this);
     }
@@ -60,6 +71,13 @@ public sealed class ModeSessionCoordinator
 
     /// <summary>Where the switch question is asked, when anywhere.</summary>
     public SurfaceSwitchPrompt? Prompt { get; }
+
+    /// <summary>Whether a claim asks before replacing what the TV shows.</summary>
+    /// <remarks>
+    /// The person can turn the question off in Settings. Arrival offers ask the same question, so
+    /// they stop with it: an offer that cannot be declined would replace the TV on a page visit.
+    /// </remarks>
+    public bool AsksBeforeSwitching => Prompt is not null && (settings?.Current.General.AskBeforeSwitching ?? true);
 
     /// <summary>What this PC has on the TV right now.</summary>
     /// <remarks>A mirror that is still starting counts: the TV is already waiting for it.</remarks>
@@ -76,10 +94,10 @@ public sealed class ModeSessionCoordinator
     public async Task<bool> TakeAsync(TvSurfaceKind next, CancellationToken cancellationToken = default)
     {
         var current = Current;
-        if (Prompt is not null && current is not TvSurfaceKind.None && current != next)
+        if (AsksBeforeSwitching && current is not TvSurfaceKind.None && current != next)
         {
             var copy = SurfaceSwitchCopy.For(current, next, Cast.Report?.Device?.FriendlyName);
-            if (!await Prompt.AskAsync(copy).ConfigureAwait(true))
+            if (!await Prompt!.AskAsync(copy).ConfigureAwait(true))
             {
                 Flint.Core.FlintDiag.Info("FlintSession", $"surface kept current={current} declined={next}");
                 return false;
@@ -145,7 +163,7 @@ public sealed class ModeSessionCoordinator
         {
             case TvSurfaceKind.Browser:
                 await Browser.ActivateAsync().ConfigureAwait(true);
-                if (stillThere() && Current is TvSurfaceKind.Mirror or TvSurfaceKind.Media && Browser.CanNavigate)
+                if (AsksBeforeSwitching && stillThere() && Current is TvSurfaceKind.Mirror or TvSurfaceKind.Media && Browser.CanNavigate)
                 {
                     await Browser.ShowOnTvAsync().ConfigureAwait(true);
                 }
@@ -153,7 +171,7 @@ public sealed class ModeSessionCoordinator
                 break;
 
             case TvSurfaceKind.Mirror:
-                if (Current is TvSurfaceKind.Browser or TvSurfaceKind.Media && Cast.CanStartMirrorNow)
+                if (AsksBeforeSwitching && Current is TvSurfaceKind.Browser or TvSurfaceKind.Media && Cast.CanStartMirrorNow)
                 {
                     await Cast.StartScreenSessionCommand.ExecuteAsync(null).ConfigureAwait(true);
                 }

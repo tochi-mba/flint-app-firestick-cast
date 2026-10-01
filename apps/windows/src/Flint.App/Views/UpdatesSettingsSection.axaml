@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:settings="using:Flint.App.ViewModels.Settings"
+             x:Class="Flint.App.Views.UpdatesSettingsSection"
+             x:DataType="settings:UpdatesSectionViewModel">
+  <StackPanel Spacing="12">
+    <TextBlock Theme="{StaticResource HeadlineLarge}" Text="Updates" />
+    <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding Updates.Status}" />
+    <ToggleSwitch Theme="{StaticResource FlintToggleSwitch}"
+                  IsVisible="{Binding Updates.IsInstalled}"
+                  IsChecked="{Binding Updates.ChecksAutomatically, Mode=TwoWay}"
+                  Content="Check for updates when Flint starts"
+                  AutomationProperties.Name="Check for updates when Flint starts" />
+    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding Updates.IsInstalled}">
+      <Button Theme="{StaticResource OutlineAction}" Command="{Binding Updates.CheckCommand}"
+              IsEnabled="{Binding Updates.CanCheck}" Content="CHECK NOW" />
+      <Button Theme="{StaticResource OutlineAction}" Command="{Binding Updates.RestartCommand}"
+              Content="RESTART TO UPDATE" />
+    </StackPanel>
+    <TextBlock Theme="{StaticResource BodySmall}" Text="{Binding CheckText.Description}" />
+  </StackPanel>
+</UserControl>
