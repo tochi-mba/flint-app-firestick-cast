@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.Input;
 using Flint.App.Services;
 using Flint.Core;
 using Flint.Protocol;
+using Flint.Session;
 
 namespace Flint.App.ViewModels;
 
@@ -70,19 +71,25 @@ public sealed partial class CastPageViewModel
     [RelayCommand]
     private async Task LoadMediaFileAsync(string path)
     {
-        if (!IsSessionConnected || session is null)
+        if (!IsSessionConnected)
         {
             Failure = "The receiver session ended. Connect it again before choosing media.";
             RaiseDerived();
             return;
         }
 
+        // A connected page always has its session.
+        var sending = session!;
+
+        lastMediaPath = path;
         var fileName = System.IO.Path.GetFileName(path);
         var progress = new EndableProgress<double>(fraction =>
         {
             MediaStatus = $"Sending {fileName} to the TV ({(int)(fraction * 100)}%).";
             OnPropertyChanged(nameof(MediaStatus));
+            NowPlaying.ReportSendProgress(fraction);
         });
+        using var cancel = new CancellationTokenSource();
         try
         {
             // Asked, not assumed: the TV may be mirroring or showing the browser, and a person who
@@ -95,9 +102,12 @@ public sealed partial class CastPageViewModel
             var mimeType = GetMimeType(path);
             MediaStatus = $"Sending {fileName} to the TV.";
             OnPropertyChanged(nameof(MediaStatus));
+            sendCancellation = cancel;
+            NowPlaying.BeginSending(fileName, mimeType.StartsWith("image/", StringComparison.Ordinal));
             FlintDiag.Info("FlintCast", $"media push begin mime={mimeType} nameLen={fileName.Length}");
-            using var playbackTimeout = new CancellationTokenSource(MediaStartTimeout);
-            var playback = await session.PushMediaAndWaitForPlaybackStartAsync(
+            using var timeout = new CancellationTokenSource(MediaStartTimeout, time);
+            using var playbackTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token, timeout.Token);
+            var playback = await sending.PushMediaAndWaitForPlaybackStartAsync(
                 path,
                 fileName,
                 mimeType,
@@ -110,6 +120,7 @@ public sealed partial class CastPageViewModel
                 IsMediaPlaying = true;
                 MediaStatus = $"Playing {fileName} on the TV.";
                 Failure = null;
+                NowPlaying.SendFinished(ToSnapshot(playback));
                 FlintDiag.Info("FlintCast", "media playback started");
             }
             else
@@ -117,8 +128,19 @@ public sealed partial class CastPageViewModel
                 IsMediaPlaying = false;
                 MediaStatus = "The TV did not start playback.";
                 Failure = DescribePlaybackFailure(playback.Detail);
+                NowPlaying.ShowProblem(Failure);
                 FlintDiag.Warn("FlintCast", $"media playback not started state={playback.State}");
             }
+        }
+        catch (OperationCanceledException) when (cancel.IsCancellationRequested)
+        {
+            progress.End();
+            IsMediaPlaying = false;
+            MediaStatus = "Sending cancelled.";
+            Failure = null;
+            NowPlaying.Clear();
+            FlintDiag.Info("FlintCast", "media push cancelled");
+            await DropPartialFileAsync(sending).ConfigureAwait(true);
         }
         catch (OperationCanceledException)
         {
@@ -126,6 +148,7 @@ public sealed partial class CastPageViewModel
             IsMediaPlaying = false;
             MediaStatus = "The TV did not confirm playback.";
             Failure = FirewallGuidance;
+            NowPlaying.ShowProblem(FirewallGuidance);
             FlintDiag.Warn("FlintCast", "media push timed out waiting for playback");
         }
         catch (Exception exception)
@@ -134,19 +157,35 @@ public sealed partial class CastPageViewModel
             IsMediaPlaying = false;
             MediaStatus = "Media was not sent.";
             Failure = exception.Message;
+            NowPlaying.ShowProblem(exception.Message);
             FlintDiag.Error("FlintCast", $"media push failed: {exception.GetType().Name}");
+        }
+        finally
+        {
+            if (ReferenceEquals(sendCancellation, cancel))
+            {
+                sendCancellation = null;
+            }
         }
 
         RaiseDerived();
     }
 
-    /// <summary>Stops media playback on the TV and returns it toward idle.</summary>
-    [RelayCommand(CanExecute = nameof(CanStopMedia))]
-    private Task StopMediaAsync(CancellationToken cancellationToken) =>
-        StopMediaCoreAsync(cancellationToken);
+    /// <summary>Tells the TV to drop the part of a file it was sent before the send was cancelled.</summary>
+    internal static async Task DropPartialFileAsync(CastSession sending)
+    {
+        try
+        {
+            await sending.SendMediaAsync(new MediaCommandMessage(MediaAction.Clear)).ConfigureAwait(true);
+        }
+        catch (Exception exception) when (exception is IOException or ObjectDisposedException)
+        {
+            // The connection has gone too; the TV drops a partial file when its session ends.
+        }
+    }
 
     /// <summary>Stops media if this PC started it; safe no-op otherwise.</summary>
-    internal async Task StopMediaCoreAsync(CancellationToken cancellationToken = default)
+    internal async Task StopMediaAsync(CancellationToken cancellationToken = default)
     {
         if (!IsMediaPlaying)
         {
@@ -168,10 +207,9 @@ public sealed partial class CastPageViewModel
         finally
         {
             IsMediaPlaying = false;
+            NowPlaying.Clear();
             MediaStatus = "Playback stopped.";
             OnPropertyChanged(nameof(MediaStatus));
-            OnPropertyChanged(nameof(CanStopMedia));
-            StopMediaCommand.NotifyCanExecuteChanged();
         }
     }
 

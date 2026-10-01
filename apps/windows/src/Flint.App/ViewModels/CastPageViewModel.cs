@@ -53,6 +53,7 @@ public sealed partial class CastPageViewModel : ObservableObject
     private CancellationTokenSource? mirrorStop;
     private TaskCompletionSource? mirrorStopped;
     private ModeSessionCoordinator? coordinator;
+    private readonly TimeProvider time;
 
     public CastPageViewModel(
         CapabilityProber prober,
@@ -60,7 +61,8 @@ public sealed partial class CastPageViewModel : ObservableObject
         IReceiverLauncher? receiverLauncher = null,
         IMirrorEngine? mirrorEngine = null,
         IReceiverInstaller? receiverInstaller = null,
-        IBundledReceiverSource? bundledReceiver = null)
+        IBundledReceiverSource? bundledReceiver = null,
+        TimeProvider? time = null)
     {
         this.prober = prober ?? throw new ArgumentNullException(nameof(prober));
         this.addressStore = addressStore ?? new FileRecentAddressStore();
@@ -68,6 +70,8 @@ public sealed partial class CastPageViewModel : ObservableObject
         this.mirrorEngine = mirrorEngine ?? new NativeMirrorEngine();
         this.receiverInstaller = receiverInstaller ?? new AdbReceiverInstaller();
         this.bundledReceiver = bundledReceiver ?? BundledReceiverPackage.BesideTheApp();
+        this.time = time ?? TimeProvider.System;
+        NowPlaying = new NowPlayingViewModel(this, this.time);
 
         var recent = this.addressStore.Load();
         RecentAddresses = new ObservableCollection<RecentAddress>(recent);
@@ -110,7 +114,6 @@ public sealed partial class CastPageViewModel : ObservableObject
     private bool _isConnecting;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(StopMediaCommand))]
     private bool isMediaPlaying;
 
     [ObservableProperty]
@@ -119,9 +122,6 @@ public sealed partial class CastPageViewModel : ObservableObject
 
     [ObservableProperty]
     private string? _mirrorStatus;
-
-    /// <summary>Whether Media is actively playing on the TV from this PC.</summary>
-    public bool CanStopMedia => IsMediaPlaying && IsSessionConnected;
 
     /// <summary>The saved direct endpoints, newest first.</summary>
     public ObservableCollection<RecentAddress> RecentAddresses { get; }
@@ -230,7 +230,6 @@ public sealed partial class CastPageViewModel : ObservableObject
         OnPropertyChanged(nameof(IsBusy));
         OnPropertyChanged(nameof(PairingStatus));
         OnPropertyChanged(nameof(MediaStatus));
-        OnPropertyChanged(nameof(CanStopMedia));
         OnPropertyChanged(nameof(CanStopMirror));
         OnPropertyChanged(nameof(CanDisconnect));
         DisconnectCommand.NotifyCanExecuteChanged();

@@ -8,6 +8,7 @@
              x:DataType="vm:SettingsPageViewModel">
   <UserControl.DataTemplates>
     <DataTemplate DataType="{x:Type settings:GeneralSettingsViewModel}"><views:GeneralSettingsSection /></DataTemplate>
+    <DataTemplate DataType="{x:Type settings:MediaSettingsViewModel}"><views:MediaSettingsSection /></DataTemplate>
     <DataTemplate DataType="{x:Type settings:TvSettingsViewModel}"><views:TvSettingsSection /></DataTemplate>
     <DataTemplate DataType="{x:Type settings:PrivacySettingsViewModel}"><views:PrivacySettingsSection /></DataTemplate>
     <DataTemplate DataType="{x:Type settings:UpdatesSectionViewModel}"><views:UpdatesSettingsSection /></DataTemplate>

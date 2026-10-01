@@ -108,6 +108,7 @@ public sealed partial class CastPageViewModel
             session = nextSession;
             IsConnected = true;
             _ = WatchAsync(nextSession);
+            ListenForPlayback(nextSession);
             PairingStatus = "Paired and ready to cast.";
             FlintDiag.Info(
                 "FlintCast",

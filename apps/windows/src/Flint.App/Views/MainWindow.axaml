@@ -135,7 +135,7 @@
         <views:DiagnosticsPage DataContext="{Binding Cast}"
                                IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsDiagnosticsSelected}" />
 
-        <views:MediaPage DataContext="{Binding Cast}"
+        <views:MediaPage DataContext="{Binding Media}"
                  IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsMediaSelected}" />
 
         <views:ScreenPage DataContext="{Binding Cast}"

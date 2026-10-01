@@ -17,6 +17,9 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
     /// </summary>
     private const int PushChunkBytes = 512 * 1024;
 
+    /// <summary>How long closing waits for a frame already being written to finish.</summary>
+    private static readonly TimeSpan FrameFinishWait = TimeSpan.FromSeconds(2);
+
     private readonly TcpClient client;
     private readonly NetworkStream stream;
     private readonly CancellationTokenSource receiveCancellationTokenSource = new();
@@ -27,6 +30,7 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
     private volatile bool isConnected = true;
     private volatile bool closingHere;
     private int disposeStarted;
+    private long controlSequence;
 
     private CastSession(
         TcpClient client,
@@ -210,6 +214,10 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
     /// succeeded). Pushing the bytes over the connection that is proven to work sidesteps that
     /// restriction entirely, at the cost of buffering the whole file into memory on the receiver
     /// rather than streaming it — acceptable for the files this path is meant for.
+    /// <para>
+    /// Cancelling stops the send at the next chunk, leaving the connection usable; the caller then
+    /// tells the receiver to drop what it has with <see cref="MediaAction.Clear"/>.
+    /// </para>
     /// </remarks>
     public async Task<PlaybackStateMessage> PushMediaAndWaitForPlaybackStartAsync(
         string filePath,
@@ -240,9 +248,14 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
             {
                 sentBytes += bytesRead;
                 var isFinal = sentBytes >= totalBytes;
+
+                // Cancelled between chunks, never during one: a chunk cut off halfway would leave
+                // the TV reading the next frame from the middle of it, and the person who pressed
+                // Cancel would lose the connection along with the file.
+                cancellationToken.ThrowIfCancellationRequested();
                 await SendAsync(
                     new MediaDataMessage(BinaryData.From(buffer.AsSpan(0, bytesRead)), isFinal),
-                    cancellationToken).ConfigureAwait(false);
+                    CancellationToken.None).ConfigureAwait(false);
                 progress?.Report(totalBytes > 0 ? (double)sentBytes / totalBytes : 1.0);
             }
 
@@ -271,6 +284,47 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
     {
         ArgumentNullException.ThrowIfNull(control);
         return SendAsync(control, cancellationToken);
+    }
+
+    /// <summary>Tells the TV's player to play, pause, stop, seek or move through its queue.</summary>
+    /// <param name="action">What to do.</param>
+    /// <param name="positionMs">
+    /// Where to seek to, for <see cref="TransportAction.SeekTo"/>; ignored otherwise, and sent as -1.
+    /// </param>
+    /// <param name="cancellationToken">Abandons the send.</param>
+    /// <exception cref="ArgumentOutOfRangeException">A seek to a negative position.</exception>
+    public Task SendTransportAsync(
+        TransportAction action,
+        long positionMs = -1,
+        CancellationToken cancellationToken = default)
+    {
+        if (action is TransportAction.SeekTo)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(positionMs);
+        }
+        else
+        {
+            positionMs = -1;
+        }
+
+        return SendAsync(
+            new ControlMessage(NextControlSequence(), new TransportControl(action, positionMs)),
+            cancellationToken);
+    }
+
+    /// <summary>Sets the TV's volume, from 0 (silent) to 1 (loudest).</summary>
+    /// <remarks>A level outside that range is clamped to it rather than refused.</remarks>
+    /// <exception cref="ArgumentException">A level that is not a number.</exception>
+    public Task SetVolumeAsync(float level, CancellationToken cancellationToken = default)
+    {
+        if (float.IsNaN(level))
+        {
+            throw new ArgumentException("A volume level must be a number.", nameof(level));
+        }
+
+        return SendAsync(
+            new ControlMessage(NextControlSequence(), new VolumeControl(Math.Clamp(level, 0f, 1f))),
+            cancellationToken);
     }
 
     /// <summary>Waits until the receiver either starts, ends, or rejects the current media item.</summary>
@@ -350,17 +404,23 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
         closingHere = true;
         isConnected = false;
         receiveCancellationTokenSource.Cancel();
-        await sendGate.WaitAsync().ConfigureAwait(false);
+
+        // Let an already-started frame finish before closing the stream. New senders observe
+        // disposeStarted either before or after entering the gate and fail without writing. A TV
+        // that has stopped reading can hold a write open indefinitely, so the wait is bounded:
+        // past it, closing the stream is what ends that write.
+        var entered = await sendGate.WaitAsync(FrameFinishWait).ConfigureAwait(false);
         try
         {
-            // Let an already-started frame finish before closing the stream. New senders observe
-            // disposeStarted either before or after entering the gate and fail without writing.
             await stream.DisposeAsync().ConfigureAwait(false);
             client.Dispose();
         }
         finally
         {
-            sendGate.Release();
+            if (entered)
+            {
+                sendGate.Release();
+            }
         }
         try
         {
@@ -372,9 +432,18 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
         finally
         {
             receiveCancellationTokenSource.Dispose();
-            sendGate.Dispose();
+
+            // A write that outlasted the wait still holds the gate and releases it when its stream
+            // fails; disposing the gate under it would turn that failure into a different one.
+            if (entered)
+            {
+                sendGate.Dispose();
+            }
         }
     }
+
+    /// <summary>The next control's sequence number: one higher than the last, whoever sent it.</summary>
+    private long NextControlSequence() => Interlocked.Increment(ref controlSequence);
 
     private async Task SendAsync(WireMessage message, CancellationToken cancellationToken)
     {

@@ -95,7 +95,7 @@ public sealed class PageSnapshotTests
     [AvaloniaFact]
     public void MediaPage_BeforeProbing()
     {
-        var page = new MediaPage { DataContext = SnapshotFixtures.ViewModel() };
+        var page = new MediaPage { DataContext = SnapshotFixtures.Media(SnapshotFixtures.ViewModel()) };
 
         Snapshot.Matches("media-page-idle", page);
     }
@@ -103,7 +103,7 @@ public sealed class PageSnapshotTests
     [AvaloniaFact]
     public async Task MediaPage_WithACapableDevice()
     {
-        var page = new MediaPage { DataContext = await SnapshotFixtures.ProbedViewModel() };
+        var page = new MediaPage { DataContext = SnapshotFixtures.Media(await SnapshotFixtures.ProbedViewModel()) };
 
         Snapshot.Matches("media-page-ready", page);
     }
