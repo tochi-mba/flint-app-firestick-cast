@@ -49,11 +49,13 @@ public sealed partial class CastPageViewModel : IMediaRemote
     Task IMediaRemote.TryAgainAsync() =>
         lastMediaPath is { } path ? LoadMediaFileCommand.ExecuteAsync(path) : Task.CompletedTask;
 
-    /// <summary>The live session, or the same error a send on a closed one gives.</summary>
+    /// <summary>The session, or the same error a send on a closed one gives.</summary>
+    /// <remarks>
+    /// A session that has dropped but not yet been let go of is returned as it is: its own send
+    /// refuses with exactly this error, so checking here as well would be a second copy of the rule.
+    /// </remarks>
     private CastSession LiveSession() =>
-        session is { IsConnected: true } live
-            ? live
-            : throw new IOException("The receiver session is no longer connected.");
+        session ?? throw new IOException("The receiver session is no longer connected.");
 
     /// <summary>Passes the TV's playback reports to the card, on the thread the page was connected on.</summary>
     private void ListenForPlayback(CastSession watched)

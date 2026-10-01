@@ -414,6 +414,33 @@ public sealed class MediaPageTests
     }
 
     [AvaloniaFact]
+    public async Task ThePickersAnswer_IsTheFirstChosenFilesPath_OrNothing()
+    {
+        var chosen = Path.Combine(Path.GetTempPath(), $"flint-{Guid.NewGuid():N}.mp4");
+        var other = Path.Combine(Path.GetTempPath(), $"flint-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllBytesAsync(chosen, [1], TestContext.Current.CancellationToken);
+        await File.WriteAllBytesAsync(other, [1], TestContext.Current.CancellationToken);
+        var window = new Window();
+        window.Show();
+        try
+        {
+            // Files as the system picker hands them back: Avalonia's own, from this window.
+            var first = await window.StorageProvider.TryGetFileFromPathAsync(new Uri(chosen));
+            var second = await window.StorageProvider.TryGetFileFromPathAsync(new Uri(other));
+            first.ShouldNotBeNull("the headless platform should resolve a local file");
+
+            MediaPage.PathOf([first, second!]).ShouldBe(chosen);
+            MediaPage.PathOf([]).ShouldBeNull();
+        }
+        finally
+        {
+            window.Close();
+            File.Delete(chosen);
+            File.Delete(other);
+        }
+    }
+
+    [AvaloniaFact]
     public async Task TheSystemPicker_WithNothingChosen_GivesNoPath()
     {
         var window = new Window { Content = new MediaPage() };

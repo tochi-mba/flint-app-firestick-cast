@@ -42,6 +42,17 @@ public sealed class CastPageNowPlayingTests : IDisposable
     }
 
     [Fact]
+    public async Task ChoosingAFile_WithNoTvConnected_SaysToConnectFirst_AndSendsNothing()
+    {
+        var cast = MainWindowViewModel.CreateWith(BrowserFixtures.Prober(BrowserFixtures.EligibleDevice())).Cast;
+
+        await cast.LoadMediaFileCommand.ExecuteAsync(@"C:ideos\Holiday in Lisbon.mp4");
+
+        cast.Failure.ShouldBe("The receiver session ended. Connect it again before choosing media.");
+        cast.NowPlaying.IsActive.ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task ThePagesOwnReports_ReachTheCard()
     {
         await using var receiver = new LoopbackReceiver();
