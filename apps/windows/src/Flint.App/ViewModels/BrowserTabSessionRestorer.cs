@@ -68,8 +68,9 @@ internal sealed class BrowserTabSessionRestorer(IBrowserTabSessionHost host)
     /// </summary>
     /// <returns>
     /// True to send the tab wire command; false when this already reopened the page itself, which
-    /// is required after the surface closed and the receiver's tab ids went with it, or when the
-    /// person kept what the TV was showing.
+    /// is required after the surface closed and the receiver's tab ids went with it, when the
+    /// person kept what the TV was showing, or when the command named a tab that went with the
+    /// surface and there is nothing on the TV for it to act on.
     /// </returns>
     public async Task<bool> BeforeTabCommandAsync(
         BrowserTabRequest request,
@@ -100,7 +101,17 @@ internal sealed class BrowserTabSessionRestorer(IBrowserTabSessionHost host)
             return false;
         }
 
-        return await host.TakeBrowserGlassAsync(cancellationToken).ConfigureAwait(true);
+        if (request.Operation == BrowserTabOperation.Close)
+        {
+            // The receiver's tab went with the surface, so only the copy held here is left to close.
+            // Taking the TV to send that id would stop the mirror or the file and close nothing.
+            suspended = suspended.Where(tab => tab.Id != request.TabId).ToArray();
+            host.Tabs.RemoveHeld(request.TabId);
+        }
+
+        // Anything else names a tab the receiver no longer has; asking to take the TV for it would
+        // stop what is showing to do nothing.
+        return false;
     }
 
     /// <summary>Puts the held session back on the television, first tab in front; else the start page.</summary>

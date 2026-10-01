@@ -14,6 +14,76 @@ namespace Flint.App.Tests;
 public sealed class BrowserPageViewModelTabSurfaceTests
 {
     [Fact]
+    public async Task ClosedSurface_Move_DoesNotTakeTheTvOrSendADestroyedTabId()
+    {
+        var host = new ClosedTabHost(takeResult: false);
+        var restorer = new BrowserTabSessionRestorer(host);
+
+        var shouldSend = await restorer.BeforeTabCommandAsync(
+            new BrowserTabRequest(BrowserTabOperation.Move, TabId: 7, Position: 1),
+            TestContext.Current.CancellationToken);
+
+        shouldSend.ShouldBeFalse();
+        host.TakeCalls.ShouldBe(0);
+        host.Opened.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(1, 2)]
+    [InlineData(2, 1)]
+    [InlineData(99, 1)]
+    public async Task ClosedSurface_Close_RemovesOnlyTheHeldTabWithoutTakingTheTv(
+        long closing,
+        long expectedActive)
+    {
+        var host = new ClosedTabHost(takeResult: true);
+        host.Tabs.Apply(new BrowserTabsSnapshot(
+            Epoch: 1,
+            Revision: 1,
+            ActiveTabId: 1,
+            Tabs:
+            [
+                new BrowserTabSnapshotItem(1, "One", "https://example.test/one", 100, false, false, false, false),
+                new BrowserTabSnapshotItem(2, "Two", "https://example.test/two", 100, false, false, false, false),
+            ]));
+        var restorer = new BrowserTabSessionRestorer(host);
+        restorer.Capture();
+
+        var shouldSend = await restorer.BeforeTabCommandAsync(
+            new BrowserTabRequest(BrowserTabOperation.Close, TabId: closing),
+            TestContext.Current.CancellationToken);
+
+        shouldSend.ShouldBeFalse();
+        host.TakeCalls.ShouldBe(0);
+        host.Tabs.ActiveId.ShouldBe(expectedActive);
+        host.Tabs.Items.ShouldNotContain(tab => tab.Id == closing && closing != 99);
+        host.Tabs.Items.Count.ShouldBe(closing == 99 ? 2 : 1);
+    }
+
+    [Fact]
+    public async Task ClosedSurface_CloseOfTheOnlyTab_LeavesAnEmptyHeldStrip()
+    {
+        var host = new ClosedTabHost(takeResult: true);
+        host.Tabs.Apply(new BrowserTabsSnapshot(
+            Epoch: 1,
+            Revision: 1,
+            ActiveTabId: 1,
+            Tabs:
+            [
+                new BrowserTabSnapshotItem(1, "One", "https://example.test/one", 100, false, false, false, false),
+            ]));
+        var restorer = new BrowserTabSessionRestorer(host);
+        restorer.Capture();
+
+        await restorer.BeforeTabCommandAsync(
+            new BrowserTabRequest(BrowserTabOperation.Close, TabId: 1),
+            TestContext.Current.CancellationToken);
+
+        host.Tabs.Items.ShouldBeEmpty();
+        host.Tabs.ActiveId.ShouldBe(0);
+    }
+
+    [Fact]
     public async Task SelectTab_WhileMirroring_StopsMirrorAndReopensTabUrl()
     {
         var remote = new RecordingBrowserRemote();
@@ -227,5 +297,28 @@ public sealed class BrowserPageViewModelTabSurfaceTests
             BindingFlags.Instance | BindingFlags.NonPublic);
         field.ShouldNotBeNull();
         field!.SetValue(cast, value);
+    }
+
+    private sealed class ClosedTabHost(bool takeResult) : IBrowserTabSessionHost
+    {
+        public bool SurfaceOpen => false;
+
+        public BrowserTabsViewModel Tabs { get; } = new();
+
+        public int TakeCalls { get; private set; }
+
+        public List<string> Opened { get; } = [];
+
+        public Task<bool> TakeBrowserGlassAsync(CancellationToken cancellationToken)
+        {
+            TakeCalls++;
+            return Task.FromResult(takeResult);
+        }
+
+        public Task OpenAddressAsync(string url, CancellationToken cancellationToken)
+        {
+            Opened.Add(url);
+            return Task.CompletedTask;
+        }
     }
 }

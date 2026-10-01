@@ -90,6 +90,24 @@ public sealed partial class BrowserTabsViewModel : ObservableObject
         NotifyCounts();
     }
 
+    /// <summary>Removes a tab kept only by the Windows-side strip while the TV surface is closed.</summary>
+    internal void RemoveHeld(long tabId)
+    {
+        var tab = Items.FirstOrDefault(item => item.Id == tabId);
+        if (tab is null)
+        {
+            return;
+        }
+
+        Items.Remove(tab);
+        if (ActiveId == tabId)
+        {
+            ActiveId = Items.FirstOrDefault()?.Id ?? 0;
+        }
+
+        NotifyCounts();
+    }
+
     private void NotifyCounts()
     {
         OnPropertyChanged(nameof(CanCreate));
