@@ -52,12 +52,32 @@ public static class Snapshot
         string name,
         Control content,
         PixelSize? size = null,
+        double maximumDifferingPercent = ImageComparer.DefaultMaximumDifferingPercent) =>
+        Matches(name, content, prepare: null, size, maximumDifferingPercent);
+
+    /// <summary>
+    /// Holds <paramref name="content"/> to its approved image after <paramref name="prepare"/> has
+    /// run against the shown window.
+    /// </summary>
+    /// <param name="name">The image's name.</param>
+    /// <param name="content">What to render.</param>
+    /// <param name="prepare">
+    /// Runs once the window is shown and before the capture: the only point at which keyboard focus
+    /// can be given, because a control that is not yet in a window cannot hold it.
+    /// </param>
+    /// <param name="size">The window size.</param>
+    /// <param name="maximumDifferingPercent">How many pixels may differ.</param>
+    public static void Matches(
+        string name,
+        Control content,
+        Action<Window>? prepare,
+        PixelSize? size = null,
         double maximumDifferingPercent = ImageComparer.DefaultMaximumDifferingPercent)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(content);
 
-        Compare(name, Render(content, size ?? DefaultSize), maximumDifferingPercent);
+        Compare(name, Render(content, size ?? DefaultSize, prepare), maximumDifferingPercent);
     }
 
     /// <summary>Holds a captured frame to its approved image.</summary>
@@ -167,7 +187,7 @@ public static class Snapshot
     /// before the capture: the headless platform does not pump a layout pass on its own, and
     /// capturing without one photographs an unmeasured tree, which renders as an empty window.
     /// </remarks>
-    private static (byte[] Pixels, int Width, int Height) Render(Control content, PixelSize size)
+    private static (byte[] Pixels, int Width, int Height) Render(Control content, PixelSize size, Action<Window>? prepare = null)
     {
         var window = new Window
         {
@@ -178,6 +198,7 @@ public static class Snapshot
         };
 
         window.Show();
+        prepare?.Invoke(window);
         window.Measure(new Size(size.Width, size.Height));
         window.Arrange(new Rect(0, 0, size.Width, size.Height));
         window.UpdateLayout();
