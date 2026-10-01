@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
+using Flint.App.Services;
 using Flint.Core;
 using Flint.Protocol;
 
@@ -76,6 +77,12 @@ public sealed partial class CastPageViewModel
             return;
         }
 
+        var fileName = System.IO.Path.GetFileName(path);
+        var progress = new EndableProgress<double>(fraction =>
+        {
+            MediaStatus = $"Sending {fileName} to the TV ({(int)(fraction * 100)}%).";
+            OnPropertyChanged(nameof(MediaStatus));
+        });
         try
         {
             // Asked, not assumed: the TV may be mirroring or showing the browser, and a person who
@@ -86,14 +93,8 @@ public sealed partial class CastPageViewModel
             }
 
             var mimeType = GetMimeType(path);
-            var fileName = System.IO.Path.GetFileName(path);
             MediaStatus = $"Sending {fileName} to the TV.";
             OnPropertyChanged(nameof(MediaStatus));
-            var progress = new Progress<double>(fraction =>
-            {
-                MediaStatus = $"Sending {fileName} to the TV ({(int)(fraction * 100)}%).";
-                OnPropertyChanged(nameof(MediaStatus));
-            });
             FlintDiag.Info("FlintCast", $"media push begin mime={mimeType} nameLen={fileName.Length}");
             using var playbackTimeout = new CancellationTokenSource(MediaStartTimeout);
             var playback = await session.PushMediaAndWaitForPlaybackStartAsync(
@@ -102,6 +103,7 @@ public sealed partial class CastPageViewModel
                 mimeType,
                 progress: progress,
                 cancellationToken: playbackTimeout.Token).ConfigureAwait(true);
+            progress.End();
 
             if (playback.State is PlaybackState.Playing)
             {
@@ -120,6 +122,7 @@ public sealed partial class CastPageViewModel
         }
         catch (OperationCanceledException)
         {
+            progress.End();
             IsMediaPlaying = false;
             MediaStatus = "The TV did not confirm playback.";
             Failure = FirewallGuidance;
@@ -127,6 +130,7 @@ public sealed partial class CastPageViewModel
         }
         catch (Exception exception)
         {
+            progress.End();
             IsMediaPlaying = false;
             MediaStatus = "Media was not sent.";
             Failure = exception.Message;

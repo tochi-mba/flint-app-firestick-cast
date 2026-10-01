@@ -232,5 +232,7 @@ public sealed partial class CastPageViewModel : ObservableObject
         OnPropertyChanged(nameof(MediaStatus));
         OnPropertyChanged(nameof(CanStopMedia));
         OnPropertyChanged(nameof(CanStopMirror));
+        OnPropertyChanged(nameof(CanDisconnect));
+        DisconnectCommand.NotifyCanExecuteChanged();
     }
 }

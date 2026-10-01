@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using Flint.Core;
 using Flint.Protocol;
 
 namespace Flint.Session;
@@ -22,7 +23,9 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
     private readonly SemaphoreSlim sendGate = new(1, 1);
     private readonly Task receiveLoop;
     private readonly TaskCompletionSource<Exception?> closed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource<CastSessionClosed> ended = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private volatile bool isConnected = true;
+    private volatile bool closingHere;
     private int disposeStarted;
 
     private CastSession(
@@ -63,6 +66,17 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
 
     /// <summary>Raised whenever the receiver reports mirror decoder counters.</summary>
     public event Action<StatsMessage>? StatsReceived;
+
+    /// <summary>How the session ended, once it has.</summary>
+    /// <remarks>
+    /// A task rather than only an event, so a listener that attaches after the TV has already gone
+    /// still learns that it went, and why.
+    /// </remarks>
+    public Task<CastSessionClosed> WhenClosed => ended.Task;
+
+    /// <summary>Raised once, on the receive loop's thread, when the session ends.</summary>
+    /// <remarks>A handler that throws does not stop the session's own cleanup or the next handler.</remarks>
+    public event Action<CastSessionClosed>? Closed;
 
     /// <summary>Connects and completes the receiver handshake with a pairing code.</summary>
     public static async Task<CastSession> ConnectAsync(
@@ -300,6 +314,32 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
         }
     }
 
+    /// <summary>Says goodbye to the TV, then closes the session.</summary>
+    /// <remarks>
+    /// The goodbye lets the TV go back to waiting at once instead of noticing a dead socket later.
+    /// Safe to call twice, and on a session the TV has already closed: there is then nobody to tell.
+    /// </remarks>
+    public async Task DisconnectAsync(CancellationToken cancellationToken = default)
+    {
+        // Marked first: the TV may close its end as soon as it reads the goodbye, and that end must
+        // still read as this PC's doing rather than a lost connection.
+        closingHere = true;
+        if (IsConnected && Volatile.Read(ref disposeStarted) == 0)
+        {
+            try
+            {
+                await SendAsync(new ByeMessage(ByeReason.Normal, "Disconnected on Windows."), cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception exception) when (exception is IOException or ObjectDisposedException or OperationCanceledException)
+            {
+                // The TV went first, or the goodbye was abandoned. Closing is all that is left.
+            }
+        }
+
+        await DisposeAsync().ConfigureAwait(false);
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref disposeStarted, 1) != 0)
@@ -307,6 +347,7 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
             return;
         }
 
+        closingHere = true;
         isConnected = false;
         receiveCancellationTokenSource.Cancel();
         await sendGate.WaitAsync().ConfigureAwait(false);
@@ -372,6 +413,7 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
     private async Task ReceiveAsync(CancellationToken cancellationToken)
     {
         Exception? failure = null;
+        ByeMessage? goodbye = null;
         try
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -393,8 +435,9 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
                     StatsReceived?.Invoke(stats);
                 }
 
-                if (frame.Message is ByeMessage)
+                if (frame.Message is ByeMessage bye)
                 {
+                    goodbye = bye;
                     break;
                 }
             }
@@ -410,6 +453,36 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
         {
             isConnected = false;
             closed.TrySetResult(failure);
+            var outcome = Classify(goodbye, failure);
+            if (ended.TrySetResult(outcome))
+            {
+                FlintDiag.Info("FlintCast", $"session closed reason={outcome.Reason}");
+                RaiseClosed(outcome);
+            }
+        }
+    }
+
+    /// <summary>Why the session ended, from what the receive loop saw last.</summary>
+    private CastSessionClosed Classify(ByeMessage? goodbye, Exception? failure) =>
+        closingHere || Volatile.Read(ref disposeStarted) != 0 ? new CastSessionClosed(CastSessionEnd.ClosedByThisPc)
+        : goodbye is not null ? new CastSessionClosed(CastSessionEnd.EndedByTv, string.IsNullOrWhiteSpace(goodbye.Detail) ? null : goodbye.Detail)
+        : failure is WireFormatException ? new CastSessionClosed(CastSessionEnd.ProtocolError)
+        : new CastSessionClosed(CastSessionEnd.ConnectionLost);
+
+    private void RaiseClosed(CastSessionClosed outcome)
+    {
+        foreach (var handler in Closed?.GetInvocationList().Cast<Action<CastSessionClosed>>() ?? [])
+        {
+            try
+            {
+                handler(outcome);
+            }
+#pragma warning disable CA1031 // A listener's failure is the listener's; the session still has to finish closing.
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                FlintDiag.Warn("FlintCast", $"session closed handler failed: {exception.GetType().Name}");
+            }
         }
     }
 
