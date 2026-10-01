@@ -114,6 +114,43 @@ public sealed class AdbProbeClientPathTests
     }
 
     [Fact]
+    public async Task MakingThisPcsKey_IsNotCountedAgainstTheTvsReplyTime()
+    {
+        // The key takes longer to load than the whole handshake is allowed, as a first key can on
+        // a slow PC. Counted against the television, a healthy TV would read as timed out.
+        await using var peer = new ScriptedAdbPeer(async (stream, token) =>
+        {
+            await ChallengeTwiceAsync(stream, token);
+            await ScriptedAdbPeer.WriteAsync(stream, ScriptedAdbPeer.Banner(), token);
+            await ScriptedAdbPeer.StaySilentAsync(stream, token);
+        });
+        var identity = new AdbIdentity(RSA.Create(2048), "flint@test");
+        var client = new AdbProbeClient(new SlowIdentityProvider(identity, Short * 2), handshakeTimeout: Short);
+
+        var result = await client.ProbePortAsync(IPAddress.Loopback, peer.Port, Token);
+
+        result.State.ShouldBe(AdbConnectionState.Connected);
+    }
+
+    [Fact]
+    public async Task AnIdentityThatCannotBeRead_DoesNotStopATvThatAsksForNone()
+    {
+        await using var peer = new ScriptedAdbPeer(async (stream, token) =>
+        {
+            await ScriptedAdbPeer.ReadAsync(stream, token);
+            await ScriptedAdbPeer.WriteAsync(stream, ScriptedAdbPeer.Banner(), token);
+            await ScriptedAdbPeer.StaySilentAsync(stream, token);
+        });
+        var client = new AdbProbeClient(
+            new ThrowingIdentityProvider(new IOException("key store unreadable")),
+            handshakeTimeout: Short);
+
+        var result = await client.ProbePortAsync(IPAddress.Loopback, peer.Port, Token);
+
+        result.State.ShouldBe(AdbConnectionState.Connected);
+    }
+
+    [Fact]
     public async Task PropertiesThatNeverArrive_StillReportAConnectedTv()
     {
         await using var peer = new ScriptedAdbPeer(async (stream, token) =>
@@ -434,6 +471,16 @@ public sealed class AdbProbeClientPathTests
     private sealed class FixedIdentityProvider(AdbIdentity identity) : IAdbIdentityProvider
     {
         public AdbIdentity GetIdentity() => identity;
+    }
+
+    /// <summary>An identity that takes as long to load as a first key takes to make on a slow PC.</summary>
+    private sealed class SlowIdentityProvider(AdbIdentity identity, TimeSpan loading) : IAdbIdentityProvider
+    {
+        public AdbIdentity GetIdentity()
+        {
+            Thread.Sleep(loading);
+            return identity;
+        }
     }
 
     private sealed class ThrowingIdentityProvider(Exception failure) : IAdbIdentityProvider

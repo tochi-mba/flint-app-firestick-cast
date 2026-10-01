@@ -351,6 +351,10 @@ public sealed class AdbProbeClient
         int port,
         CancellationToken callerCancellation)
     {
+        // Loaded before the handshake's clock starts: the first load can create the key, which is
+        // this PC's work and not the television's, and must not be counted against its reply time.
+        var identity = TryGetIdentity();
+
         using var handshakeTimeout = CancellationTokenSource.CreateLinkedTokenSource(callerCancellation);
         handshakeTimeout.CancelAfter(_handshakeTimeout);
         var deadline = handshakeTimeout.Token;
@@ -371,21 +375,15 @@ public sealed class AdbProbeClient
                 throw new AdbProtocolException("The ADB peer sent an invalid authentication challenge.");
             }
 
-            AdbIdentity identity;
-            try
-            {
-                identity = _identities.GetIdentity();
-                await WriteAsync(
-                    stream,
-                    AdbAuthentication.SignatureMessage(identity, reply.Payload),
-                    deadline).ConfigureAwait(false);
-            }
-            catch (Exception exception) when (exception is IOException
-                or UnauthorizedAccessException
-                or CryptographicException)
+            if (identity is null)
             {
                 return (new AdbProbeResult(AdbConnectionState.Unauthorized, port, Banner: null), 0);
             }
+
+            await WriteAsync(
+                stream,
+                AdbAuthentication.SignatureMessage(identity, reply.Payload),
+                deadline).ConfigureAwait(false);
 
             reply = await ReadAsync(stream, deadline).ConfigureAwait(false);
             if (reply.Command is AdbCommand.Auth)
@@ -434,6 +432,25 @@ public sealed class AdbProbeClient
         // An older adbd announces 4096 here; a zero or absurd value gets the smallest safe chunk.
         var remoteMaxData = reply.Arg1 is > 0 and <= AdbMessage.MaxPayloadLength ? reply.Arg1 : 4096u;
         return (new AdbProbeResult(AdbConnectionState.Connected, port, banner), remoteMaxData);
+    }
+
+    /// <summary>This PC's ADB identity, or null when it cannot be read or made.</summary>
+    /// <remarks>
+    /// Null rather than a failure: a television that does not ask for a signature never needs it,
+    /// and one that does is then reported unauthorised, which is what it is.
+    /// </remarks>
+    private AdbIdentity? TryGetIdentity()
+    {
+        try
+        {
+            return _identities.GetIdentity();
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or CryptographicException)
+        {
+            return null;
+        }
     }
 
     private static void ValidatePort(int port)
