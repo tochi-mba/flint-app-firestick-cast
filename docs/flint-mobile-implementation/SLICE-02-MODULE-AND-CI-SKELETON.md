@@ -1,4 +1,4 @@
-# Slice 02 — module and CI skeleton
+# Slice 02 - module and CI skeleton
 
 **Governing ADRs:** [ADR-0026](adrs/ADR-0026-FLINT-MOBILE-CONSUMES-THE-PROTOCOL-IN-REPO.md) and
 [ADR-0028](adrs/ADR-0028-RELEASE-SCOPE-SIDELOADED-APK-FROM-GITHUB.md).
@@ -29,7 +29,7 @@ after the product is one that gets debugged under pressure.
 - `gradle/libs.versions.toml`, and the three new modules wired into `settings.gradle.kts`.
 - `:mobile` as an application: manifest, resources, adaptive icon layers emitted by the existing icon
   script, the R8 rules, and an activity that handles its own configuration changes.
-- `.github/workflows/mobile.yml` on `ubuntu-latest`, with path filters and Gradle caching — which
+- `.github/workflows/mobile.yml` on `ubuntu-latest`, with path filters and Gradle caching - which
   `ci.yml` has never had.
 - `paths-ignore` on `ci.yml` for `mobile/**`, `design/**` and `castcore/**`, and deliberately not for
   `protocol/**`, `testdata/golden/**` or the Gradle files, which both builds genuinely share.

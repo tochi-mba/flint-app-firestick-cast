@@ -12,7 +12,7 @@ namespace Flint.App.ViewModels;
 /// The Cast page and local receiver connection screen.
 /// </summary>
 /// <remarks>
-/// This page answers one question — what can this PC and this television actually do together — and
+/// This page answers one question - what can this PC and this television actually do together - and
 /// refuses to answer it before the probe has run.
 /// </remarks>
 [SuppressMessage(
@@ -26,7 +26,7 @@ public sealed partial class CastPageViewModel : ObservableObject
     /// before giving up locally.
     /// </summary>
     /// <remarks>
-    /// Covers the whole push — not just decode — because the file's bytes travel over this same
+    /// Covers the whole push - not just decode - because the file's bytes travel over this same
     /// connection before the receiver can even try to play them (see
     /// <see cref="Flint.Session.CastSession.PushMediaAndWaitForPlaybackStartAsync"/>). Kept well
     /// ahead of the receiver's own decode timeout so its own, more specific error reaches the user
@@ -189,7 +189,7 @@ public sealed partial class CastPageViewModel : ObservableObject
     /// </summary>
     /// <remarks>
     /// The Screen page's own control must read this rather than keep a separate opinion about
-    /// whether mirroring works — a second, independently-maintained gate is exactly how a page
+    /// whether mirroring works - a second, independently-maintained gate is exactly how a page
     /// ends up offering a button the underlying capability report already knows is empty.
     /// </remarks>
     public ModeVerdictViewModel? MirrorVerdict =>

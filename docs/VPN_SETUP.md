@@ -2,7 +2,7 @@
 
 Flint runs the tunnel **on the television** (ADR-0022). Windows is only where a WireGuard
 config is pasted, because a D-pad cannot reasonably enter one. Nothing about the tunnel is
-relayed through a Flint service, and the config text is opaque to Flint — stored per profile
+relayed through a Flint service, and the config text is opaque to Flint - stored per profile
 in the Android Keystore on the TV, never logged, never sent anywhere else.
 
 This document is for the person standing up the *other* end of that tunnel.
@@ -43,14 +43,14 @@ Peers are kept one per file under `/etc/wireguard/peers/`, so re-running for a s
 television cannot corrupt the first one's entry. Re-running for the *same* `-ClientName`
 reissues that peer's keys and keeps its tunnel address.
 
-The tunnel range defaults to `10.77.0.0/24`, deliberately not `10.0.0.0/24` — the latter is
+The tunnel range defaults to `10.77.0.0/24`, deliberately not `10.0.0.0/24` - the latter is
 the default OCI VCN subnet, and a tunnel address inside the server's own subnet does not
 route. `BrowserVpnProvisionedConfigTest` pins that choice.
 
 ### Memory on Always Free shapes
 
 The OCI Always Free instances have 1 GB of RAM, and the Oracle Linux images ship with no swap.
-Resolving EPEL metadata is enough to exhaust that, and it does not fail cleanly — the box
+Resolving EPEL metadata is enough to exhaust that, and it does not fail cleanly - the box
 thrashes until `sshd` can no longer complete a banner exchange, and the only way back is a
 reboot from the cloud console. The script now adds a 1 GB swapfile before installing anything
 whenever it finds under 2 GB of RAM and no swap.
@@ -86,5 +86,5 @@ any screen says.
 The script is an operator tool for a host you own. It is not shipped with the Windows
 installer and must not be: it would mean distributing an SSH private key, and pointing every
 user's traffic at one machine that is then, in practice, their ISP. What ships is the paste
-box — users bring a config from their own provider or their own server, the same way
+box - users bring a config from their own provider or their own server, the same way
 WireGuard's own Android app works.

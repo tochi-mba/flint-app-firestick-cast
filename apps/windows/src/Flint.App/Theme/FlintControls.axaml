@@ -221,7 +221,7 @@
     <!--
       A disabled primary loses its fill rather than fading it. Dimming a bright accent to 35% on a
       near-black ground leaves an olive shape that still reads as coloured and actionable, and it
-      multiplies the dark label into the background — the control looks pressable and cannot be
+      multiplies the dark label into the background - the control looks pressable and cannot be
       read. Flat surface plus muted text is unambiguous and keeps its contrast.
     -->
     <Style Selector="^:disabled">
@@ -264,7 +264,7 @@
     <!--
       Outline actions are already low emphasis, so 35% opacity took them close to invisible against
       the page. Muting the text and softening the border says "unavailable" while leaving the label
-      readable — a control nobody can read is not a control anyone can rule out.
+      readable - a control nobody can read is not a control anyone can rule out.
     -->
     <Style Selector="^:disabled">
       <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />

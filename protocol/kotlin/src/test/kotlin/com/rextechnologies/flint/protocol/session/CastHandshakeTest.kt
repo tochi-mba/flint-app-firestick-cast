@@ -80,7 +80,7 @@ class CastHandshakeTest {
         assertEquals("Phone", established.parameters.peer.deviceName)
         assertEquals(CodecId.H265, established.parameters.videoCodec)
         // The highest version both ends support, not a literal. Written against the constant so a
-        // protocol bump does not leave this asserting an old number that nothing else believes —
+        // protocol bump does not leave this asserting an old number that nothing else believes -
         // which is exactly how it came to expect 1 after the browser work moved CURRENT to 2.
         assertEquals(ProtocolVersion.CURRENT, established.parameters.protocolVersion)
         assertTrue(receiver.established)

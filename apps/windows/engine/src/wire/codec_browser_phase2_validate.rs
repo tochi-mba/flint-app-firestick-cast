@@ -1,7 +1,7 @@
 //! Bounds and shape checks for browser messages 21 through 31.
 //!
 //! Split from the encoder so the two halves can be read for different reasons. Everything here
-//! answers one question — is this payload allowed to exist — and it runs on both sides of the
+//! answers one question - is this payload allowed to exist - and it runs on both sides of the
 //! wire: before an encode, and again after a decode. A check that only guarded one direction
 //! would let a hostile or buggy peer put values into the receiver that Flint would never send.
 

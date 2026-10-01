@@ -260,7 +260,7 @@ class ModesTest {
         // something, and the answer for an unshipped mode is no.
         assertFalse(card.advisoryHeading.equals(card.statusWord, ignoreCase = true))
         assertEquals(
-            "Nothing to change on your phone or your TV — this arrives in a Flint update.",
+            "Nothing to change on your phone or your TV - this arrives in a Flint update.",
             card.advisoryBody,
         )
         assertEquals(ModePresentation.COMING_SOON_BODY, card.advisoryBody)

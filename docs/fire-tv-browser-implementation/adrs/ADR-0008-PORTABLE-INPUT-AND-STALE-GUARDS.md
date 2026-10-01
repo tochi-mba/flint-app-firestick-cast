@@ -1,4 +1,4 @@
-# ADR-0008 — portable input and stale-data guards
+# ADR-0008 - portable input and stale-data guards
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -99,6 +99,6 @@ override the typed-input boundary.
 
 ## References
 
-- [Slice 05 — secure remote controls and text](../SLICE-05-SECURE-REMOTE-CONTROLS-AND-TEXT.md)
-- [Slice 08 — preview interaction and accessibility](../SLICE-08-PREVIEW-INTERACTION-AND-ACCESSIBLE-POLISH.md)
-- [ADR-0005 — protocol v2 contract](ADR-0005-PROTOCOL-V2-CANONICAL-CONTRACT.md)
+- [Slice 05 - secure remote controls and text](../SLICE-05-SECURE-REMOTE-CONTROLS-AND-TEXT.md)
+- [Slice 08 - preview interaction and accessibility](../SLICE-08-PREVIEW-INTERACTION-AND-ACCESSIBLE-POLISH.md)
+- [ADR-0005 - protocol v2 contract](ADR-0005-PROTOCOL-V2-CANONICAL-CONTRACT.md)

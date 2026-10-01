@@ -1,4 +1,4 @@
-# ADR-0022 — profile-gated optional VPN on the receiver
+# ADR-0022 - profile-gated optional VPN on the receiver
 
 - **Status:** Accepted
 - **Implementation:** Superseded prototype; not release-ready
@@ -23,13 +23,13 @@ host proxy (explicit non-goal). Profiles today store library ownership, not netw
 - Supported provider for v1 schema: **WireGuard config text** only. Auto-connect runs **on browser
   (or mosaic) session start**, never on idle pairing alone.
 - Auto-connect only when `vpnEnabled`, provider configured, config validates, capability probe says
-  preparable, and the viewer has granted VPN consent via the system prompt — never bypassed.
+  preparable, and the viewer has granted VPN consent via the system prompt - never bypassed.
 - Soft-fail with a visible banner if connect fails; do not pretend the tunnel is up.
 - Tunnel implementation: official `com.wireguard.android:tunnel` **GoBackend**. The manifest
   registers `GoBackend$VpnService` (required by that library). `BrowserVpnTunnelImpl` parses config,
   refuses without consent, then brings the tunnel UP/DOWN. Never log config private keys.
 - Host (Windows) paste lives in Browser → **TV Network / VPN**; wire types **30/31** push settings
-  to the Stick. State snapshots never echo full config — only `configPresent` + session status.
+  to the Stick. State snapshots never echo full config - only `configPresent` + session status.
 - Offer disable/remove wherever enable is offered.
 - Do not call LAN traffic private/encrypted beyond what the tunnel actually provides (AGENTS.md).
 
@@ -43,7 +43,7 @@ host proxy (explicit non-goal). Profiles today store library ownership, not netw
 
 ### Trade-offs
 
-- One OS tunnel for the whole device — not per pane.
+- One OS tunnel for the whole device - not per pane.
 - Full-tunnel AllowedIPs may disrupt LAN cast; soak-test on target Fire OS; split-tunnel configs are
   the operator's responsibility.
 - Native `wg-go` ABI packaging and VPN OEM quirks remain device-dependent.

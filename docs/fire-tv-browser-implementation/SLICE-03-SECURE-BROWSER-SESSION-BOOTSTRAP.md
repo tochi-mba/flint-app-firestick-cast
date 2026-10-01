@@ -1,4 +1,4 @@
-# Slice 03 — secure BrowserSession bootstrap
+# Slice 03 - secure BrowserSession bootstrap
 
 **Governing ADRs:** [ADR-0003](adrs/ADR-0003-SEPARATE-PINNED-TLS-BROWSER-SESSION.md), [ADR-0004](adrs/ADR-0004-NONSECRET-ENDPOINT-DISCOVERY.md), [ADR-0005](adrs/ADR-0005-PROTOCOL-V2-CANONICAL-CONTRACT.md), and [ADR-0011](adrs/ADR-0011-TEST-EVIDENCE-AND-LATENCY-GOVERNANCE.md).
 
@@ -7,7 +7,7 @@
 A selected Windows host and receiver can establish exactly one **separate**, TLS-protected browser
 session. First pairing requires a human comparison of the TV and Windows fingerprint plus the
 existing pairing code inside TLS. Later sessions require an exact persisted pin. The host receives a
-secure browser capability response and shows “secure receiver ready — browser installation
+secure browser capability response and shows “secure receiver ready - browser installation
 continues in the next slice.”
 
 No URL, text, dialog, preview, browser command, or WebView object exists in the normal product path

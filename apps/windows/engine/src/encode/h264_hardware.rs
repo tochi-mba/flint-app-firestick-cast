@@ -53,7 +53,7 @@ pub struct HardwareH264Encoder {
     /// An asynchronous transform does not copy the frame during `ProcessInput`; it queues the
     /// sample and reads the pixels later, on its own thread. Dropping the caller's reference the
     /// moment `ProcessInput` returns is therefore a use-after-free whenever the transform does not
-    /// take a reference of its own — and the symptom is not a crash. The encoder reads whatever now
+    /// take a reference of its own - and the symptom is not a crash. The encoder reads whatever now
     /// occupies that memory, compresses it perfectly happily, and emits a valid H.264 stream of
     /// noise: correct parameter sets, correct dimensions, plausible bitrate, and a picture that
     /// decodes to nothing. On a television that is a flat green field.
@@ -64,8 +64,8 @@ pub struct HardwareH264Encoder {
     /// Whether the next frame fed must come out as an IDR.
     ///
     /// Held as intent rather than acted on immediately, because `ICodecAPI` applies the request to
-    /// the *next frame the encoder takes*. Setting it at a moment when no frame is pending — right
-    /// after a flush, say — leaves nothing for it to attach to, and the request evaporates.
+    /// the *next frame the encoder takes*. Setting it at a moment when no frame is pending - right
+    /// after a flush, say - leaves nothing for it to attach to, and the request evaporates.
     force_next_key_frame: bool,
     /// How many frames the encoder has asked for and not yet been given.
     ///
@@ -121,7 +121,7 @@ impl HardwareH264Encoder {
     ///
     /// # Errors
     /// [`EncodeError::InvalidConfig`] for a configuration that cannot produce a stream, and
-    /// [`EncodeError::Platform`] when the adapter has no usable hardware encoder — an ordinary
+    /// [`EncodeError::Platform`] when the adapter has no usable hardware encoder - an ordinary
     /// answer, which the caller handles by falling back to software.
     pub fn new(config: EncoderConfig, adapter_luid: i64) -> Result<Self, EncodeError> {
         Self::build(config, adapter_luid, None)
@@ -216,7 +216,7 @@ impl HardwareH264Encoder {
         let transform = self.hardware.transform().clone();
 
         // Before the media types, because latency properties stop being modifiable the moment a
-        // type is committed — and are then accepted with an OK that changes nothing. On the
+        // type is committed - and are then accepted with an OK that changes nothing. On the
         // software path this exact ordering mistake cost eighteen frames of startup delay.
         self.apply_low_latency_settings();
 
@@ -232,9 +232,9 @@ impl HardwareH264Encoder {
 
         // A hardware encoder usually has no sequence header to publish yet: unlike the software
         // MFT, it decides SPS and PPS when it encodes the first key frame and emits them in-band at
-        // the head of that access unit. Treating the absence as fatal — which is correct for the
-        // software path, where a missing header means the receiver could never configure a decoder
-        // — would reject every hardware encoder on the machine. So it is taken if offered, and
+        // the head of that access unit. Treating the absence as fatal - which is correct for the
+        // software path, where a missing header means the receiver could never configure a decoder -
+        // would reject every hardware encoder on the machine. So it is taken if offered, and
         // otherwise lifted out of the first key frame by `capture_parameter_sets`.
         self.codec_specific_data =
             crate::encode::h264::read_sequence_header(&transform).unwrap_or_default();
@@ -255,8 +255,8 @@ impl HardwareH264Encoder {
         self.streaming = true;
 
         // Prove the transform actually drives its event queue before reporting success. A hardware
-        // MFT that is configured but never raises `METransformNeedInput` — typically because the
-        // driver wants a D3D device manager this path does not supply — would otherwise be
+        // MFT that is configured but never raises `METransformNeedInput` - typically because the
+        // driver wants a D3D device manager this path does not supply - would otherwise be
         // discovered one frame at a time, at 250ms each, for the life of the session. Failing here
         // instead lets the caller fall back to software immediately.
         match self.hardware.next_event_within(Self::INPUT_TIMEOUT)? {
@@ -280,7 +280,7 @@ impl HardwareH264Encoder {
     /// The software encoder can be asked for its sequence header the moment it is configured. A
     /// hardware encoder cannot: it decides the parameter sets when it encodes its first key frame,
     /// and publishes them in-band. That difference would otherwise leak all the way out to the
-    /// wire, because Flint sends `VIDEO_CONFIG` *before* the first access unit — a receiver with no
+    /// wire, because Flint sends `VIDEO_CONFIG` *before* the first access unit - a receiver with no
     /// SPS and PPS cannot construct a decoder at all, and shows a black screen rather than an
     /// error. So the encoder is made to answer the question here, while there is still somewhere
     /// useful to put the answer.
@@ -336,7 +336,7 @@ impl HardwareH264Encoder {
     /// Same set as the software encoder, and for the same reasons: low-latency mode stops the
     /// encoder buffering frames before it emits anything, real-time mode makes it favour the
     /// deadline over quality, and B-pictures are removed because one cannot be emitted until a
-    /// later frame has been encoded — latency by construction.
+    /// later frame has been encoded - latency by construction.
     ///
     /// Every property is optional. The hardware path went without all of them until a key frame
     /// failed to appear at 720p and exposed the omission.
@@ -357,7 +357,7 @@ impl HardwareH264Encoder {
     /// rather than effectively infinite. The software encoder honours an on-demand key-frame
     /// request reliably, so it can afford to emit an intra frame only when one is asked for. This
     /// machine's hardware encoder does not always honour that request, and an unbounded GOP would
-    /// then mean a receiver that joins late — or loses a packet — never gets a frame it can start
+    /// then mean a receiver that joins late - or loses a packet - never gets a frame it can start
     /// decoding from, and stares at a frozen picture indefinitely. A bounded interval caps that
     /// worst case at a known number of seconds, and costs one intra frame per interval on a link
     /// that is behaving.
@@ -391,7 +391,7 @@ impl HardwareH264Encoder {
     ///
     /// The request has to be made here rather than wherever it was decided: `ICodecAPI` attaches it
     /// to the next frame the encoder takes, so a request made while the encoder holds nothing is
-    /// simply lost. Every route to a key frame — the caller's, and the one priming leaves behind —
+    /// simply lost. Every route to a key frame - the caller's, and the one priming leaves behind -
     /// therefore records intent and lets this apply it at the only moment that works.
     fn feed(&mut self, sample: &IMFSample) -> Result<(), EncodeError> {
         if self.force_next_key_frame {
@@ -572,9 +572,9 @@ impl HardwareH264Encoder {
     ///
     /// Hardware encoders routinely refuse to hand over the first access unit until the output type
     /// has been agreed a second time. The type set during configuration is a *request*; once the
-    /// encoder has seen real frames it publishes the type it will actually produce — filling in
-    /// details it could not know in advance, such as the exact profile and level the content needs
-    /// — and withholds all output until the caller accepts it. Treating that as a failure is what
+    /// encoder has seen real frames it publishes the type it will actually produce - filling in
+    /// details it could not know in advance, such as the exact profile and level the content needs -
+    /// and withholds all output until the caller accepts it. Treating that as a failure is what
     /// makes a perfectly good encoder look broken.
     fn renegotiate_output(&mut self) -> Result<(), EncodeError> {
         let transform = self.hardware.transform().clone();
@@ -643,8 +643,8 @@ impl VideoEncoder for HardwareH264Encoder {
     ) -> Result<Option<EncodedFrame>, EncodeError> {
         if force_key_frame {
             // The receiver asks for one after packet loss, and this is the only thing that ends a
-            // stream it can no longer decode. Ignoring the request — which this path did until the
-            // priming work exposed it — leaves the picture broken until the session restarts.
+            // stream it can no longer decode. Ignoring the request - which this path did until the
+            // priming work exposed it - leaves the picture broken until the session restarts.
             self.force_next_key_frame = true;
         }
 
@@ -818,7 +818,7 @@ const MAX_GOP_SIZE: u32 = 600;
 /// The key-frame interval in frames, for a given frame rate.
 ///
 /// Clamped at both ends. A frame rate of zero would otherwise produce a GOP of zero, which encoders
-/// disagree about the meaning of — some read it as "every frame is an IDR", others as "never" — and
+/// disagree about the meaning of - some read it as "every frame is an IDR", others as "never" - and
 /// a very high frame rate would push recovery after packet loss out to several seconds.
 #[must_use]
 fn gop_size(frame_rate: u32) -> u32 {

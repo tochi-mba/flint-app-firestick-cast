@@ -8,7 +8,7 @@ namespace Flint.Discovery.Tests;
 
 /// <summary>
 /// Every way a television can refuse, stall or misbehave during the ADB exchange, and what Flint
-/// reports for each. A probe must answer "not authorised" or "not ADB" — never hang and never guess.
+/// reports for each. A probe must answer "not authorised" or "not ADB" - never hang and never guess.
 /// </summary>
 public sealed class AdbProbeClientPathTests
 {

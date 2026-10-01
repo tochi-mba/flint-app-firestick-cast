@@ -132,7 +132,7 @@ public static class MulticastDnsCodec
     /// Extracts every instance of <paramref name="serviceType"/> that the packet fully describes.
     /// </summary>
     /// <remarks>
-    /// An instance is only returned when the packet carries enough to reach it — an SRV record for
+    /// An instance is only returned when the packet carries enough to reach it - an SRV record for
     /// the host and port, and an A record for the address. A PTR alone names something Flint cannot
     /// connect to, so it is dropped rather than reported as a half-found device.
     /// </remarks>

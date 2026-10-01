@@ -40,7 +40,7 @@ public sealed class ModeVerdictViewModel(ModeVerdict verdict)
     /// <remarks>
     /// "Coming soon" rather than "Not built yet" for an unimplemented mode: both are honest, but
     /// the first reads as a plan and the second as an apology. It is deliberately distinct from
-    /// "Blocked", which means the user could act — nobody should go hunting through settings for a
+    /// "Blocked", which means the user could act - nobody should go hunting through settings for a
     /// mode that has not shipped.
     /// </remarks>
     public string StatusLabel => Verdict.Status switch

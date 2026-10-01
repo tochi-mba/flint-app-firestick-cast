@@ -7,8 +7,8 @@ import kotlin.test.assertTrue
 /**
  * The pages must dominate the screen, and this is the arithmetic that says whether they do.
  *
- * Reported from a real television: with even one page open, the mosaic barely registered. Chrome —
- * a title row, a layout row, and a control card for every pane — was permanently on screen and took
+ * Reported from a real television: with even one page open, the mosaic barely registered. Chrome -
+ * a title row, a layout row, and a control card for every pane - was permanently on screen and took
  * roughly forty per cent of a 540dp panel, leaving a single page rendered into a strip about three
  * times wider than it was tall on a 16:9 display.
  */

@@ -219,7 +219,7 @@ public sealed class DevFileLogTests : IDisposable
     }
 
     /// <summary>
-    /// Reads while the append writer is still open — same share mode agents use when copying the live log.
+    /// Reads while the append writer is still open - same share mode agents use when copying the live log.
     /// </summary>
     private static string ReadShared(string filePath)
     {

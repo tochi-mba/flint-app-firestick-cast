@@ -42,6 +42,9 @@ BeforeAll {
 
     # Built from two pieces so this file does not trip the rule it tests.
     $script:Marker = 'TO' + 'DO'
+
+    # A code point for the same reason: this file must not hold the character it tests for.
+    $script:EmDash = [string][char]0x2014
 }
 
 Describe 'Get-SourceFiles' {
@@ -141,6 +144,39 @@ Describe 'Test-WorkMarkers' {
     }
 }
 
+Describe 'Test-EmDashes' {
+    BeforeEach { $root = New-ScratchRepository }
+    AfterEach { Remove-Item -LiteralPath $root -Recurse -Force }
+
+    It 'fails an em dash, naming the file and line' {
+        Write-ScratchFile $root 'docs/guide.md' "First line.`nA pause ${script:EmDash} then more.`n"
+
+        $failures = @(Test-EmDashes $root @(Get-SourceFiles $root))
+        $failures | Should -HaveCount 1
+        $failures[0] | Should -Match '^docs/guide.md:2: use a hyphen'
+    }
+
+    It 'reports every line that has one, in code as well as prose' {
+        Write-ScratchFile $root 'src/Thing.kt' "val a = `"x ${script:EmDash} y`"`nval b = 1`n// c ${script:EmDash} d`n"
+
+        $failures = @(Test-EmDashes $root @(Get-SourceFiles $root))
+        $failures | Should -HaveCount 2
+        $failures[1] | Should -Match '^src/Thing.kt:3:'
+    }
+
+    It 'accepts hyphens and the other dashes' {
+        Write-ScratchFile $root 'docs/guide.md' "A pause - then more, pages 3$([char]0x2013)5, and a minus$([char]0x2212)sign.`n"
+
+        Test-EmDashes $root @(Get-SourceFiles $root) | Should -BeNullOrEmpty
+    }
+
+    It 'leaves binary files alone' {
+        Write-ScratchFile $root 'art/logo.png' "binary ${script:EmDash} bytes"
+
+        Test-EmDashes $root @(Get-SourceFiles $root) | Should -BeNullOrEmpty
+    }
+}
+
 Describe 'Test-VersionAgreement' {
     BeforeEach { $root = New-ScratchRepository }
     AfterEach { Remove-Item -LiteralPath $root -Recurse -Force }
@@ -195,6 +231,13 @@ Describe 'Invoke-SourceCheck' {
 
     It 'throws when any rule fails' {
         Write-VersionTree $root -Cargo '0.0.1'
+
+        { Invoke-SourceCheck $root 6> $null } | Should -Throw '*1 problem*'
+    }
+
+    It 'throws on an em dash' {
+        Write-VersionTree $root
+        Write-ScratchFile $root 'README.md' "Flint ${script:EmDash} casting.`n"
 
         { Invoke-SourceCheck $root 6> $null } | Should -Throw '*1 problem*'
     }

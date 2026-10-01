@@ -1,7 +1,7 @@
 //! A Direct3D device manager, which is what makes a hardware encoder actually encode.
 //!
 //! A hardware MFT in asynchronous mode will accept `SetInputType`, `SetOutputType`, begin
-//! streaming, and raise `METransformNeedInput` exactly as a healthy encoder does — and then never
+//! streaming, and raise `METransformNeedInput` exactly as a healthy encoder does - and then never
 //! produce a single access unit, because it has no device to encode *on*. Intel's Quick Sync
 //! encoder behaves this way, and the failure is silent: no error code, no event, just an input
 //! queue that swallows frames. This project spent an afternoon on it, watching every frame cost
@@ -52,7 +52,7 @@ impl DeviceManager {
     /// PCIe bus, which costs more than the faster encoder saves.
     ///
     /// # Errors
-    /// [`EncodeError::Platform`] when the adapter is gone, or when it has no video support — an
+    /// [`EncodeError::Platform`] when the adapter is gone, or when it has no video support - an
     /// ordinary answer on a machine with no hardware encoder, and the caller's cue to use software.
     pub fn for_adapter(adapter_luid: i64) -> Result<Self, EncodeError> {
         let adapter = find_adapter(adapter_luid)?;
@@ -64,7 +64,7 @@ impl DeviceManager {
     ///
     /// This is how the encoder ends up on the *capture* device rather than one of its own. Two
     /// devices on the same adapter cannot pass textures to each other without shared handles, so a
-    /// pipeline that captures on one and encodes on another has to go through system memory —
+    /// pipeline that captures on one and encodes on another has to go through system memory -
     /// which is the readback this whole path exists to remove.
     ///
     /// # Errors
@@ -152,7 +152,7 @@ fn find_adapter(adapter_luid: i64) -> Result<IDXGIAdapter1, EncodeError> {
 /// Recombines a split DXGI LUID into the single signed value the rest of Flint uses.
 ///
 /// DXGI reports a LUID as a signed high word and an unsigned low word; treating the low word as
-/// signed — the obvious-looking cast — corrupts every LUID with the high bit set, and those compare
+/// signed - the obvious-looking cast - corrupts every LUID with the high bit set, and those compare
 /// unequal to the same adapter's LUID obtained anywhere else.
 #[must_use]
 fn luid_of(description: &DXGI_ADAPTER_DESC1) -> i64 {

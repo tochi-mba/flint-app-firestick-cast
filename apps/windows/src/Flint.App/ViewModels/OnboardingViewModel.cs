@@ -11,7 +11,7 @@ namespace Flint.App.ViewModels;
 /// <remarks>
 /// <para>
 /// Its job is to tell a first-time user the one thing that decides whether Flint can work for them
-/// at all — whether their device runs Fire OS or Vega — before they spend time wondering why
+/// at all - whether their device runs Fire OS or Vega - before they spend time wondering why
 /// nothing is found. Everything else here is secondary to that.
 /// </para>
 /// <para>
@@ -132,7 +132,7 @@ public sealed partial class OnboardingViewModel : ObservableObject
     /// </summary>
     /// <remarks>
     /// Ordered by what a first-time user most needs to know. The device-family step comes second,
-    /// before any instruction, because it is the only step that can end the conversation — and
+    /// before any instruction, because it is the only step that can end the conversation - and
     /// finding that out after following three pages of setup would be a worse experience than
     /// being told plainly at the start.
     /// </remarks>
@@ -169,7 +169,7 @@ public sealed partial class OnboardingViewModel : ObservableObject
                 + "step 4.",
             [
                 "Open Settings, then My Fire TV, then About.",
-                "Highlight your device's own name in that list — the Fire TV Stick entry itself, "
+                "Highlight your device's own name in that list - the Fire TV Stick entry itself, "
                     + "not Network or Storage.",
                 "Press Select on it about seven times. The TV counts down, then says you are now a "
                     + "developer.",

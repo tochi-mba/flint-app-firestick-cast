@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
  * What every button on the remote does, in every state the browser can be in.
  *
  * Exhaustive on purpose. A television browser has no second input device to fall back on, so a key
- * that does the wrong thing in one state is not a rough edge — it is the viewer stuck. The Back
+ * that does the wrong thing in one state is not a rough edge - it is the viewer stuck. The Back
  * ladder in particular has eight rungs and every one of them is asserted here.
  */
 class BrowserTvInputModelTest {
@@ -141,7 +141,7 @@ class BrowserTvInputModelTest {
     @Test
     fun `while the leave prompt is up the d-pad belongs to Keep browsing and Leave`() {
         // Without this the cursor moved behind the scrim, Select clicked the page, and Keep
-        // browsing never dismissed the prompt — reproduced on a Fire TV Stick 4K.
+        // browsing never dismissed the prompt - reproduced on a Fire TV Stick 4K.
         val leaving = browsing().copy(leaveConfirmVisible = true)
 
         assertEquals(TvKeyOutcome.PassThrough, model.onKeyDown(leaving, KeyEvent.KEYCODE_DPAD_RIGHT))
@@ -313,7 +313,7 @@ class BrowserTvInputModelTest {
     @Test
     fun `while a text field has focus select commits the text instead of clicking`() {
         // Fire OS opens its own keyboard the moment a page field takes focus. In that state the
-        // remote's Select is the "go" key, and a d-pad centre does not submit a form in Chromium —
+        // remote's Select is the "go" key, and a d-pad centre does not submit a form in Chromium -
         // Enter does. The same button therefore has to mean Enter while typing.
         val typing = browsing().copy(editingFocused = true)
 
@@ -329,7 +329,7 @@ class BrowserTvInputModelTest {
     @Test
     fun `typing does not steal the d-pad from the cursor`() {
         // Only Select changes meaning. Moving the pointer while a field is focused is still moving
-        // the pointer — someone may be aiming at a different field.
+        // the pointer - someone may be aiming at a different field.
         val typing = browsing().copy(editingFocused = true)
 
         assertEquals(

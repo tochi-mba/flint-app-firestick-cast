@@ -1,10 +1,10 @@
-//! Flint engine — the hot path.
+//! Flint engine - the hot path.
 //!
 //! A REX Technologies product.
 //!
 //! This crate owns everything that must happen between two frames: capture, colour conversion,
 //! encode, packetization and transmission. It is a separate language from the shell for one
-//! reason — a garbage-collector pause landing inside a 16.6 ms frame budget is a stutter the user
+//! reason - a garbage-collector pause landing inside a 16.6 ms frame budget is a stutter the user
 //! sees, and this side of the boundary has no collector to pause.
 //!
 //! # Invariants

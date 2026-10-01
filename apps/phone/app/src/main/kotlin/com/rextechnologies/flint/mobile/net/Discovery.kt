@@ -163,7 +163,7 @@ class DiscoveryRunner(context: Context) : ReceiverFinder {
      * Multicast DNS, held up by a lock Android will not give back on its own.
      *
      * Without a `MulticastLock` the Wi-Fi chip filters multicast out before it reaches the app, and
-     * the symptom is not an error — it is a rung that silently finds nothing.
+     * the symptom is not an error - it is a rung that silently finds nothing.
      */
     internal suspend fun multicastDns(step: DiscoveryStep.MulticastDns): RungResult = withContext(Dispatchers.IO) {
         val lock = wifi?.createMulticastLock(MULTICAST_LOCK_TAG)?.apply {

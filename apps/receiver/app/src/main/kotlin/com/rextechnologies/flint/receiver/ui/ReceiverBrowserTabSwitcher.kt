@@ -91,7 +91,7 @@ internal fun ReceiverBrowserTabSwitcher(
             //
             // In the header it sat to the right of a label with no card beneath it, and Compose's
             // two-dimensional focus search needs overlap on the perpendicular axis to move between
-            // controls — so from the first card, Up found nothing and the button was simply
+            // controls - so from the first card, Up found nothing and the button was simply
             // unreachable with a remote. Found on a Fire TV Stick 4K. As the last cell it is always
             // one step from the last page, which is also where a browser puts it.
             val slots: List<BrowserTab?> = tabs + listOf(null)

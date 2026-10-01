@@ -36,7 +36,7 @@ import com.rextechnologies.flint.design.SignalButton
  *
  * Full-bleed ink rather than cards, so it reads as a different kind of screen from the instrument
  * behind it. It ends by running the probe, which is why the last button is worded as an action
- * rather than as "Done" — the introduction finishes on an answer instead of an empty screen.
+ * rather than as "Done" - the introduction finishes on an answer instead of an empty screen.
  */
 @Composable
 fun OnboardingScreen(onFinish: () -> Unit, onSkip: () -> Unit) {

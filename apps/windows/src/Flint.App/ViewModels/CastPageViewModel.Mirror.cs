@@ -28,7 +28,7 @@ public sealed partial class CastPageViewModel
     /// <remarks>
     /// Both guards below are reachable by invoking the command directly rather than through the
     /// button, which is disabled in either case. They refuse rather than telling the receiver to
-    /// expect a stream that will never arrive — sending that message once left a TV sitting on a
+    /// expect a stream that will never arrive - sending that message once left a TV sitting on a
     /// black "ready for frames" screen with nothing to show for it and nothing on the host side
     /// saying why.
     /// </remarks>
@@ -93,7 +93,7 @@ public sealed partial class CastPageViewModel
                 Environment.MachineName,
                 mirrorStop.Token).ConfigureAwait(true);
 
-            // Nothing threw, so the session ran — but a mirror that sent no frames left the TV on
+            // Nothing threw, so the session ran - but a mirror that sent no frames left the TV on
             // an empty surface, and that must not read as success.
             MirrorStatus = stats.FramesEncoded > 0
                 ? $"Mirror stopped after {stats.FramesEncoded} frames."

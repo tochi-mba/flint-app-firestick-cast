@@ -1,4 +1,4 @@
-# Fire TV browser — go / no-go release checklist
+# Fire TV browser - go / no-go release checklist
 
 This checklist is the Slice 09 gate. A public Appstore release is **not** an automatic outcome of
 passing software tests. Sideload/developer use may proceed earlier when the security and device

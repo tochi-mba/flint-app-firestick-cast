@@ -18,6 +18,6 @@ public enum Tone
     /// <summary>Blocked, failed, recording. The warm accent.</summary>
     Live = 2,
 
-    /// <summary>Structural only — a hairline with no status meaning.</summary>
+    /// <summary>Structural only - a hairline with no status meaning.</summary>
     Line = 3,
 }

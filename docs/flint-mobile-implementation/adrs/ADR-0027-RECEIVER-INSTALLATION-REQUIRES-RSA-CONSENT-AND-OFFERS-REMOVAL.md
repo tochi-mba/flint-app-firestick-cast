@@ -1,4 +1,4 @@
-# ADR-0027 — receiver installation requires the television's RSA consent and always offers removal
+# ADR-0027 - receiver installation requires the television's RSA consent and always offers removal
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -19,7 +19,7 @@ The phone is the first Flint host that will actually install the receiver. The d
 `Flint.Receiver.apk` in its zip and hands the hardest step back to the user: `docs/INSTALL.md` says
 to install it "using your normal sideloading method". `AdbReceiverLauncher` can only start a package
 somebody else already put there. A phone already speaking ADB to the television has no excuse for
-that gap — `AdbConnection.installApk` streams the APK through `exec:cmd package install` and leaves
+that gap - `AdbConnection.installApk` streams the APK through `exec:cmd package install` and leaves
 no copy in the television's temporary storage, so a failed install cannot strand a file the user
 must then find and delete.
 
@@ -50,11 +50,11 @@ key is not available to that workflow, and the receiver's debug build type sets
 - Identification before installation is **read-only**: the banner, `ro.product.*` properties and
   package queries, each through `AdbConnection.shell`'s allowlist, which admits no metacharacter
   that could chain a second command.
-- Before anything is written, the screen states **exactly what will be installed and why** — package
+- Before anything is written, the screen states **exactly what will be installed and why** - package
   name, version name, version code and size **parsed from the bundled APK at runtime**, with the
   recorded commit and SHA-256. No build-time constant names the package, and the `.debug` suffix is
   shown literally rather than trimmed for tidiness.
-- **The screen that offers installation offers removal, in the same place, always** — not in a
+- **The screen that offers installation offers removal, in the same place, always** - not in a
   settings menu, not behind a developer toggle, and not only once something has failed. Removal is
   `pm uninstall` on the name the phone read, behind a confirmation that names it.
 - A Vega OS television is **Not possible, with no remedy**. It is not Android and cannot install an
@@ -81,7 +81,7 @@ key is not available to that workflow, and the receiver's debug build type sets
   rather than discovered.
 - The phone's APK carries the receiver's APK, so the download is larger.
 - A television with nobody in front of it cannot be installed to. There is no headless path.
-- Parsing the bundled package adds a failure mode — asset missing or unparsable — reported as
+- Parsing the bundled package adds a failure mode - asset missing or unparsable - reported as
   Blocked rather than filled in from a constant.
 - The emulator and physical-device tests for install, prompt handling and removal are written but
   have not been run.

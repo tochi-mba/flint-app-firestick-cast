@@ -1,6 +1,6 @@
 namespace Flint.Protocol;
 
-// The cockpit message families — tabs, view settings, favicons, library, profiles, network
+// The cockpit message families - tabs, view settings, favicons, library, profiles, network
 // and workspace. Split from the v1 browser messages because they are a separate compatibility
 // story: v1 ids 14-20 are what every receiver understands, while everything here arrives by
 // new type id and is enabled only after a receiver has demonstrably sent one.

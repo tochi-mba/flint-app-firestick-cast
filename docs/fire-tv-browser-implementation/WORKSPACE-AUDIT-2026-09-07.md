@@ -36,7 +36,7 @@ independent webpage workspace, profile isolation, or VPN policy is production-re
   Run it with `scripts/test-windows-app-headed.ps1 -AcknowledgeDesktopControl`.
 - The cross-device returning-trust pairing/Web flow is implemented with Windows UIA and TV ADB,
   but has not passed: earlier attempts timed out against `10.216.219.172:5555`. The Stick is now at
-  `10.175.171.172:5555` — use that serial for `scripts/test-fire-tv-app-pair.ps1` and log pulls.
+  `10.175.171.172:5555` - use that serial for `scripts/test-fire-tv-app-pair.ps1` and log pulls.
 - VPN software policy now distinguishes tunnel-up from Android-validated connectivity and gates
   workspace navigation. Real Fire TV route, DNS, handshake, revoke, Wi-Fi-change and LAN-control
   survival evidence is still required. Do not claim a packet kill switch.
@@ -69,7 +69,7 @@ independent webpage workspace, profile isolation, or VPN policy is production-re
 
 - The secure-receiver card used to appear whenever a device was selected, with a port box and a
   button, regardless of whether anything was missing. On a returning user with a remembered pin it
-  showed a next step — "enter the Cast pairing code" — beside no field that could accept one,
+  showed a next step - "enter the Cast pairing code" - beside no field that could accept one,
   because the pairing code lives on the Cast page.
 - The card is now driven by the first missing input (`BrowserSecureReceiverPrompt`). With trust
   remembered, routing known and a code present, it does not appear at all and the existing
@@ -192,7 +192,7 @@ can hang on this machine). Restore still reloads URLs only. An in-place APK upda
 the original debug signing key. The current work must not be described as the entire requested
 browser experience being complete.
 
-## Continuation — 2026-09-08 (named profiles, TV session, pane reorder)
+## Continuation - 2026-09-08 (named profiles, TV session, pane reorder)
 
 - Named Windows profiles: create/select up to eight, persisted with the library document. Each
   profile keeps its own tabs, workspace, bookmarks and history. Switching waits for a fresh
@@ -205,7 +205,7 @@ browser experience being complete.
   expose Move left/right. Renderers are not recreated.
 - Hardware verification remains blocked when the installed receiver debug APK is signed with a
   different key (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`). Do not uninstall the TV package without
-  the user asking — that would discard on-device profiles.
+  the user asking - that would discard on-device profiles.
 - Cold start: Browse (`openFromTv`) reloads the saved tab strip and workspace mode. Opening a URL
   from idle keeps that page in front and appends the other saved tabs. Restore still reloads URLs
-  only — not cookies, form text, or WebView history.
+  only - not cookies, form text, or WebView history.

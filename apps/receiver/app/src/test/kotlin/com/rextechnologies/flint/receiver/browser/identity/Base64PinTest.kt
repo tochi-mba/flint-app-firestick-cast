@@ -27,7 +27,7 @@ class Base64PinTest {
 
     @Test
     fun `a sha256 sized input encodes to the length the host expects`() {
-        // 32 bytes is not a multiple of three, so it exercises the padded tail every time — which is
+        // 32 bytes is not a multiple of three, so it exercises the padded tail every time - which is
         // the half of base64 that is usually wrong.
         val hash = ByteArray(32) { index -> index.toByte() }
 

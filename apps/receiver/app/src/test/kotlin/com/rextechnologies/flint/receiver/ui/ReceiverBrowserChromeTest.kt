@@ -19,8 +19,8 @@ import org.robolectric.annotation.Config
 /**
  * The behaviour of the chrome drawn over the television's browsing page.
  *
- * The chrome exists to answer three questions — what is this page, is anything happening, and what
- * went wrong — and then to get out of the way. These tests hold it to both halves of that: that it
+ * The chrome exists to answer three questions - what is this page, is anything happening, and what
+ * went wrong - and then to get out of the way. These tests hold it to both halves of that: that it
  * says the right thing, and that it actually leaves.
  */
 @RunWith(AndroidJUnit4::class)
@@ -144,7 +144,7 @@ class ReceiverBrowserChromeTest {
     @Test
     fun `navigating to another page brings the chrome back`() {
         // Without this the chrome hides once and never returns, so every page after the first one
-        // is anonymous — which is worse than having no chrome at all, because it is inconsistent.
+        // is anonymous - which is worse than having no chrome at all, because it is inconsistent.
         var page by mutableStateOf(BrowserSurfaceUi(url = "example.com", title = "Example Domain"))
         compose.setContent {
             ReceiverBrowserChrome(page = page, autoHideMillis = CHROME_AUTO_HIDE_MILLIS)
@@ -155,11 +155,11 @@ class ReceiverBrowserChromeTest {
 
         // `runOnIdle` rather than a bare assignment: a state write from the test thread is not
         // published to the composition until the snapshot is applied, and with the clock held still
-        // nothing else does that — the chrome would look permanently gone and the test would be
+        // nothing else does that - the chrome would look permanently gone and the test would be
         // reporting the harness rather than the code.
         compose.runOnIdle { page = BrowserSurfaceUi(url = "another.example", title = "Another", isLoading = true) }
         // Then a frame, by hand. With the clock held still nothing else produces one, and the
-        // recomposition that brings the chrome back only happens on a frame — without this the
+        // recomposition that brings the chrome back only happens on a frame - without this the
         // chrome looks permanently gone and the test reports the harness rather than the code.
         compose.mainClock.advanceTimeByFrame()
         compose.waitForIdle()

@@ -1,4 +1,4 @@
-# ADR-0025 — second screen on Android is app-owned Presentation content, not an OS display extension
+# ADR-0025 - second screen on Android is app-owned Presentation content, not an OS display extension
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -22,13 +22,13 @@ first frame. What is missing is a host that sends it.
 
 Windows cannot be that host. `CapabilityAssessor.cs` hard-codes `SecondScreenImplemented = false`:
 an extra desktop there is a mirror plus an indirect display driver Flint would have to ship and
-sign, and from build 26100 — Windows 11 24H2, unchanged in 25H2 — an IDD display cannot be made
+sign, and from build 26100 - Windows 11 24H2, unchanged in 25H2 - an IDD display cannot be made
 primary. None of that concerns the protocol, the television, or the encoder, so none of it travels
 to Android.
 
 Android offers a different mechanism. `DisplayManager.createVirtualDisplay` gives a display backed
 by a `Surface` this app supplies, and a `Presentation` is a window on a named `Display`. A virtual
-display created without `VIRTUAL_DISPLAY_FLAG_PUBLIC` is private to its creator — no permission and
+display created without `VIRTUAL_DISPLAY_FLAG_PUBLIC` is private to its creator - no permission and
 no consent dialog, because the public flag is what pulls the system permission in.
 
 That claim is load-bearing, and this repository has been burnt by one before. The Windows encoder
@@ -77,7 +77,7 @@ exists, not that a vendor's build of it honours the contract.
   another app's window, and the mode grows one designed surface at a time.
 - The receiver's on-screen text is not peer-type aware, so a phone-driven presentation reads exactly
   as a PC-driven one. Making it aware alters text pinned by 15 approved Robolectric snapshots that
-  cannot be regenerated without an Android SDK, so it is separate work with its own slice — as is
+  cannot be regenerated without an Android SDK, so it is separate work with its own slice - as is
   extracting `:design` out of the receiver's 36 UI files.
 - Windows and Android now differ on the same mode name. The asymmetry is explained on each platform
   rather than hidden by removing the mode from both.
@@ -89,7 +89,7 @@ exists, not that a vendor's build of it honours the contract.
 |---|---|
 | Back the second screen with `MediaProjection`. | Buys nothing the private display does not give, and costs consent every session, a `mediaProjection`-typed foreground service running before `getMediaProjection()` on API 34+, a mandatory `MediaProjection.Callback`, and per-capture consent on API 35+. It still cannot host another app's window. |
 | Create the display with `VIRTUAL_DISPLAY_FLAG_PUBLIC`. | That flag is the only difference between a display needing a system permission and one that does not, and a sideloaded APK cannot hold it. Android still has no API to move another app's window onto the display. |
-| A compile-time constant or an API-level check instead of a probe. | An API level says a method exists, not that this vendor's build works. A Kotlin `const val` also lets the compiler prove the other branch unreachable, failing `:castcore`'s `allWarningsAsErrors` — the trap `CapabilityAssessor.cs` records for C#. |
+| A compile-time constant or an API-level check instead of a probe. | An API level says a method exists, not that this vendor's build works. A Kotlin `const val` also lets the compiler prove the other branch unreachable, failing `:castcore`'s `allWarningsAsErrors` - the trap `CapabilityAssessor.cs` records for C#. |
 | Render Compose to an off-screen `Surface` with no `Presentation`. | No `Display` means no display metrics, no window, and no animation host. Every dp would be measured against the phone's density, and the television's size would be invisible to layout. |
 | Withhold the mode until Windows can offer it too. | Parity has no user. Suppressing a capability Android has, to match a platform defect elsewhere, is the same misreport as claiming one that does not exist. |
 

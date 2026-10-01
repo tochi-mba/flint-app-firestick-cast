@@ -8,8 +8,8 @@ namespace Flint.Protocol;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A frame is a four-byte big-endian body length followed by an eight-byte envelope — magic,
-/// protocol version, message type, flags — and a payload. Every integer is big-endian, because
+/// A frame is a four-byte big-endian body length followed by an eight-byte envelope - magic,
+/// protocol version, message type, flags - and a payload. Every integer is big-endian, because
 /// Java's <c>DataOutputStream</c> is and the Kotlin implementation came first.
 /// </para>
 /// <para>

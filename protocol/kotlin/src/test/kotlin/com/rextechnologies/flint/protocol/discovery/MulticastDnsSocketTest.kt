@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 /**
  * The mDNS socket, run for real.
  *
- * The receive side binds the multicast group itself, which Linux — and so Android — allows and
+ * The receive side binds the multicast group itself, which Linux - and so Android - allows and
  * Windows refuses. These tests therefore skip on a Windows host and nowhere else: on the Linux CI
  * runner a socket that cannot bind is a failure, not a reason to pass quietly.
  */

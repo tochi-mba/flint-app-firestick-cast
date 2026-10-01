@@ -1,8 +1,8 @@
 //! The encoder contract every mirror session runs through.
 //!
 //! Capture hands frames in, encoded access units come out, and the session pushes those onto the
-//! wire. Keeping that behind a trait is what lets the whole pipeline — session state, pacing,
-//! key-frame requests, transport — be tested on a machine with no GPU and no encoder at all, which
+//! wire. Keeping that behind a trait is what lets the whole pipeline - session state, pacing,
+//! key-frame requests, transport - be tested on a machine with no GPU and no encoder at all, which
 //! is most CI machines and every developer who is not sitting at the Windows box.
 
 use super::VideoCodec;
@@ -24,7 +24,7 @@ pub enum FrameData {
     /// A BGRA texture still on the GPU, where capture produced it.
     ///
     /// The fast path. A frame that stays on the GPU skips a readback, a colour conversion on the
-    /// processor and an upload — about three milliseconds a frame at 1080p on this project's
+    /// processor and an upload - about three milliseconds a frame at 1080p on this project's
     /// development machine, against a sixteen millisecond budget, and more than the encoder itself
     /// costs. An encoder that cannot take a texture should answer
     /// [`EncodeError::UnsupportedFrameData`] so the caller can fall back rather than guess.
@@ -75,7 +75,7 @@ impl EncoderConfig {
     /// Whether this configuration describes something an encoder could actually produce.
     ///
     /// Guards the session against asking for a zero-sized or zero-rate stream, which encoders
-    /// report in wildly different ways — some fail at configure time, some accept it and then
+    /// report in wildly different ways - some fail at configure time, some accept it and then
     /// produce nothing at all, which looks identical to a hung pipeline from the outside.
     #[must_use]
     pub fn is_valid(&self) -> bool {
@@ -153,7 +153,7 @@ pub trait VideoEncoder {
     ///
     /// Asked of the encoder rather than assumed from the handshake. A session that negotiated
     /// HEVC and then received H.264 would have the receiver build an HEVC decoder and fail on the
-    /// first access unit — a black screen whose cause is nowhere near where it was introduced.
+    /// first access unit - a black screen whose cause is nowhere near where it was introduced.
     fn codec(&self) -> VideoCodec;
 
     /// Offers one frame, returning an access unit when the encoder produces one.
@@ -244,7 +244,7 @@ impl VideoEncoder for NullEncoder {
             return Err(EncodeError::UnsupportedFrameData);
         };
         Ok(Some(EncodedFrame {
-            // Not a real bitstream, and deliberately so — a length that tracks the input is enough
+            // Not a real bitstream, and deliberately so - a length that tracks the input is enough
             // for pacing and transport tests, and anything more would invite mistaking this for an
             // encoder that could actually feed a decoder.
             data: vec![if key_frame { 0x65 } else { 0x41 }; pixels.len().clamp(1, 1024)],

@@ -1,4 +1,4 @@
-# ADR-0018 — Windows-current-user browser library with a session-only TV projection
+# ADR-0018 - Windows-current-user browser library with a session-only TV projection
 
 - **Status:** Accepted
 - **Implementation:** In progress
@@ -189,7 +189,7 @@ cross-language/session evidence.
 ## References
 
 - [Protocol reference](../../PROTOCOL.md)
-- [ADR-0001 — TV-resident browser ownership](ADR-0001-TV-RESIDENT-BROWSER-OWNERSHIP.md)
-- [ADR-0010 — native dialogs, data clear and recovery](ADR-0010-NATIVE-DIALOGS-DATA-CLEAR-AND-RECOVERY.md)
-- [ADR-0016 — superseded receiver-owned library](ADR-0016-RECEIVER-OWNED-BOOKMARKS-AND-HISTORY.md)
-- [ADR-0017 — additive cockpit message ids](ADR-0017-ADDITIVE-COCKPIT-MESSAGE-IDS.md)
+- [ADR-0001 - TV-resident browser ownership](ADR-0001-TV-RESIDENT-BROWSER-OWNERSHIP.md)
+- [ADR-0010 - native dialogs, data clear and recovery](ADR-0010-NATIVE-DIALOGS-DATA-CLEAR-AND-RECOVERY.md)
+- [ADR-0016 - superseded receiver-owned library](ADR-0016-RECEIVER-OWNED-BOOKMARKS-AND-HISTORY.md)
+- [ADR-0017 - additive cockpit message ids](ADR-0017-ADDITIVE-COCKPIT-MESSAGE-IDS.md)

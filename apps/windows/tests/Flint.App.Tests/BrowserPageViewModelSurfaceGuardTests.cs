@@ -4,11 +4,11 @@ using Shouldly;
 namespace Flint.App.Tests;
 
 /// <summary>
-/// Controls must either act or be plainly unavailable — never look live and do nothing.
+/// Controls must either act or be plainly unavailable - never look live and do nothing.
 /// </summary>
 /// <remarks>
 /// The receiver drops page commands when no browser surface is open. The host offered them anyway,
-/// so Reload and Stop were clickable over nothing, and — the one that mattered — CLEAR TV BROWSER
+/// so Reload and Stop were clickable over nothing, and - the one that mattered - CLEAR TV BROWSER
 /// DATA ran its destructive confirmation and then silently dropped the command. The receiver
 /// exempts clear-data from both of its own gates precisely so that erasing data always works; the
 /// host was the only thing standing in the way.

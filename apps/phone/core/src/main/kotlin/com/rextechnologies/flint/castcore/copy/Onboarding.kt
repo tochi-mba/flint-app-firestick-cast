@@ -11,7 +11,7 @@ data class OnboardingPoint(val text: String, val number: Int? = null) {
 
     /** What goes in the gutter: a number when the order matters, the letterform bullet when it does not. */
     val marker: String
-        get() = number?.toString() ?: "—"
+        get() = number?.toString() ?: "-"
 }
 
 /** One screen of the introduction. */
@@ -37,11 +37,11 @@ data class OnboardingStep(
  * The introduction, which is skippable and reachable again from Settings.
  *
  * Three steps, because the introduction is what stands between a person and Find my TV. What else
- * they might need — a hidden network, what each mode can do — is on the screen where the need
+ * they might need - a hidden network, what each mode can do - is on the screen where the need
  * arises rather than in a walkthrough they must read first.
  *
  * Step two is the important one and it is where it is on purpose. It carries the failure tone and it
- * states the one fact that decides whether the app can work at all — before asking anybody to turn on
+ * states the one fact that decides whether the app can work at all - before asking anybody to turn on
  * a hotspot or join a television to it. The desktop puts its equivalent in the same place for the
  * same reason: finding out on the last step that the device in the room can never work is a worse
  * experience than being told on step two.

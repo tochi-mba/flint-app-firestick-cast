@@ -7,7 +7,7 @@ import android.webkit.WebViewClient
  *
  * Pure and exhaustive on purpose. The driver previously mapped every main-frame error to
  * `DRIVER_FAILURE`, so "you typed the address wrong", "the Wi-Fi dropped" and "that server is down"
- * all rendered as *the browser could not start* — three different next steps collapsed into one
+ * all rendered as *the browser could not start* - three different next steps collapsed into one
  * that was wrong for all of them.
  *
  * The codes are compile-time constants, so this classifies without a device.

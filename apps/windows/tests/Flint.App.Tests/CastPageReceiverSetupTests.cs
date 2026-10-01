@@ -8,7 +8,7 @@ using Shouldly;
 namespace Flint.App.Tests;
 
 /// <summary>
-/// The receiver button does the right next thing — install, update or open — from what the
+/// The receiver button does the right next thing - install, update or open - from what the
 /// television reported and what this build carries, and never installs on a guess.
 /// </summary>
 public sealed class CastPageReceiverSetupTests

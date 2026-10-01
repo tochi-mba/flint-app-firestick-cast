@@ -91,7 +91,7 @@ sealed interface CastSessionState {
 
 /** Something the caller must do. The machine performs no I/O of its own. */
 sealed interface SessionEffect {
-    /** Write this frame, exactly as framed — the envelope version is part of the decision. */
+    /** Write this frame, exactly as framed - the envelope version is part of the decision. */
     data class SendFrame(val frame: WireFrame) : SessionEffect
 
     /** The handshake completed. [token] is present when the television granted one. */
@@ -113,7 +113,7 @@ sealed interface SessionEffect {
  * The first is envelope versions. HELLO goes out on the oldest supported envelope even though its
  * payload advertises the whole range, because a receiver too old to parse a newer envelope has to be
  * able to read the first exchange in order to say so. Everything after negotiation uses the
- * negotiated version — never [ProtocolVersion.CURRENT], which is this build's ceiling and not the
+ * negotiated version - never [ProtocolVersion.CURRENT], which is this build's ceiling and not the
  * agreement. The receiver applies exactly the same rule in the other direction.
  *
  * The second is that a BYE can arrive *after* authentication appears to have succeeded. The receiver

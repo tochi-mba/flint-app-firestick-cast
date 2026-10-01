@@ -27,7 +27,7 @@ internal interface IBrowserTabSessionHost
 /// <remarks>
 /// Bookmarks and history persist on disk, but the live strip belongs to the Windows session. When
 /// Mirror or Media claims the glass, the receiver closes the browser and destroys every tab id it
-/// held — so a chip clicked afterwards refers to a tab that no longer exists on the television.
+/// held - so a chip clicked afterwards refers to a tab that no longer exists on the television.
 ///
 /// Clicking that chip has to reopen the whole session, not just the one URL, or a five-tab strip
 /// silently collapses to one. That is the entire reason this class exists, and why the URLs are

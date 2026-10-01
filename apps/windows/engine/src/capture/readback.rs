@@ -3,7 +3,7 @@
 //! **This is the fallback path.** A hardware encoder sharing the capture device reads the captured
 //! texture directly and never comes through here; see [`DesktopFrameSource::enable_gpu_frames`] and
 //! `convert::gpu_nv12`. Measured per frame at 1920x1200, staying on the GPU costs about 1.9ms
-//! against about 7.4ms for this route, so what follows is what happens when that is unavailable —
+//! against about 7.4ms for this route, so what follows is what happens when that is unavailable -
 //! no hardware encoder on the capture adapter, or a device that will not allocate the textures.
 //!
 //! It is still needed. The software encoder cannot consume a texture: it converts colour on the
@@ -19,7 +19,7 @@
 //! staging texture and immediately mapping it makes the CPU wait for a GPU copy that has only just
 //! been queued, and that stall was measured here as roughly 80% of the entire frame cost. Writing
 //! into one texture while reading the one filled on the previous frame lets the two overlap, at the
-//! price of showing a frame one tick later than the newest one available — which for a mirror is a
+//! price of showing a frame one tick later than the newest one available - which for a mirror is a
 //! trade worth taking, because the alternative is every frame arriving late instead.
 
 use windows::Win32::Graphics::Direct3D11::{
@@ -362,7 +362,7 @@ pub fn outcome_needs_readback(outcome: FrameOutcome, has_texture: bool) -> bool 
 /// The desktop, as a source of encodable frames.
 ///
 /// Owns the duplication and the readback together, re-creating the duplication when Windows takes
-/// it away — which it does routinely, on every lock screen and UAC prompt — so the session above
+/// it away - which it does routinely, on every lock screen and UAC prompt - so the session above
 /// only has to decide what a recovery means rather than how to perform one.
 pub struct DesktopFrameSource {
     duplication: super::duplication::DesktopDuplication,
@@ -579,7 +579,7 @@ impl BgraTexturePool {
             Usage: D3D11_USAGE_DEFAULT,
             // No bind flags at all, which is what a video processor input view wants.
             //
-            // Counter-intuitively, `D3D11_BIND_SHADER_RESOURCE` on its own is *refused* here — the
+            // Counter-intuitively, `D3D11_BIND_SHADER_RESOURCE` on its own is *refused* here - the
             // input view is rejected with "the parameter is incorrect" and nothing about bind
             // flags. No flags works, and so does shader resource combined with render target;
             // shader resource alone is the one combination that does not.

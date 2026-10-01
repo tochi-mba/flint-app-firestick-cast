@@ -60,7 +60,7 @@ public sealed partial class BrowserWorkspaceViewModel : ObservableObject
     private Timer? pendingWatchdog;
     /// <summary>
     /// After SPLIT VIEW / STACK grows the pane count, apply this arrangement once the TV reports
-    /// enough pages — so the user does not have to press layout chips separately.
+    /// enough pages - so the user does not have to press layout chips separately.
     /// </summary>
     private BrowserWorkspaceLayout? arrangementAfterPaneCount;
 
@@ -176,7 +176,7 @@ public sealed partial class BrowserWorkspaceViewModel : ObservableObject
         Panes.Count,
         Layout);
 
-    /// <summary>Longer coach copy for tooltips — tabs vs split view.</summary>
+    /// <summary>Longer coach copy for tooltips - tabs vs split view.</summary>
     public string WorkspaceCoachHint =>
         IsAvailable ? BrowserWorkspaceCopy.CoachHint : BrowserWorkspaceCopy.Unavailable;
 
@@ -453,7 +453,7 @@ public sealed partial class BrowserWorkspaceViewModel : ObservableObject
             $"pending arrangement timed out after {PendingArrangementTimeout.TotalSeconds:0}s panes={Panes.Count}");
         ClearPendingArrangement(
             Panes.Count == 0
-                ? "SPLIT VIEW TIMED OUT — TV STAYED ON TABS. TRY AGAIN."
+                ? "SPLIT VIEW TIMED OUT - TV STAYED ON TABS. TRY AGAIN."
                 : "SPLIT VIEW TIMED OUT WAITING FOR THE TV. TRY AGAIN.");
     }
 
@@ -737,7 +737,7 @@ public sealed partial class BrowserWorkspaceViewModel : ObservableObject
         }
 
         // Progress / media snapshots often keep the previous layout while the TV is still applying.
-        // Do not treat those as rejection — that cleared pending immediately and left chips inert.
+        // Do not treat those as rejection - that cleared pending immediately and left chips inert.
         layoutConfirmationMisses++;
         if (layoutConfirmationMisses < PendingConfirmationMissLimit)
         {
@@ -798,7 +798,7 @@ public sealed partial class BrowserWorkspaceViewModel : ObservableObject
             }
             else if (Panes.Count >= desired.VisiblePaneCapacity())
             {
-                // Too many panes for this arrangement — stop coaching rather than closing pages.
+                // Too many panes for this arrangement - stop coaching rather than closing pages.
                 ClearPendingArrangement("CLOSE A PAGE BEFORE THAT LAYOUT CAN APPLY");
             }
 

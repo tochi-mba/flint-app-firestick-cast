@@ -71,14 +71,14 @@ private const val SAFE_AREA_FRACTION = 0.05f
  * * **What went wrong.** A failure that only reaches the desktop leaves whoever is watching the
  *   television staring at a blank page.
  *
- * Everything else — history, reload, the address bar — lives on the desktop, which has a keyboard
+ * Everything else - history, reload, the address bar - lives on the desktop, which has a keyboard
  * and a pointer. Putting controls here would mean building a browser UI operable by five buttons on
  * a remote, which is the thing this feature exists to avoid.
  *
  * # Why it hides itself
  *
- * Chrome that never leaves is a permanent bite out of the page. It shows while a page is loading —
- * exactly when a viewer needs to know something is happening — and withdraws once the page is
+ * Chrome that never leaves is a permanent bite out of the page. It shows while a page is loading -
+ * exactly when a viewer needs to know something is happening - and withdraws once the page is
  * readable, matching how the mirror surface treats its controls. A failure is the exception and
  * stays up, because it is the one state with nothing underneath worth looking at.
  *
@@ -86,7 +86,7 @@ private const val SAFE_AREA_FRACTION = 0.05f
  *
  * The page underneath can be any colour, so the chrome carries its own dark ground and border
  * rather than relying on contrast that may not exist. Muted grey text laid directly over a white
- * page — which is what this replaced — is unreadable.
+ * page - which is what this replaced - is unreadable.
  *
  * @param page what the receiver knows about the page being shown.
  * @param autoHideMillis how long after a page settles the chrome withdraws, or `null` to hold it
@@ -125,8 +125,8 @@ internal fun ReceiverBrowserChrome(
 
     // The chrome covers the whole panel, so the screen's own width is the width to size against.
     // Deliberately not `BoxWithConstraints`: it subcomposes during the measure pass, so content
-    // that appears in response to a later state change — a second navigation bringing the chrome
-    // back — composes but is never placed.
+    // that appears in response to a later state change - a second navigation bringing the chrome
+    // back - composes but is never placed.
     val panelWidth = LocalConfiguration.current.screenWidthDp.dp * CHROME_WIDTH_FRACTION
 
     Box(modifier = modifier.fillMaxSize()) {

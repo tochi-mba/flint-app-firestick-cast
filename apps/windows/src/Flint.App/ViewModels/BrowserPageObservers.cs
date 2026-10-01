@@ -6,8 +6,8 @@ namespace Flint.App.ViewModels;
 /// Wires the page to the four things it has to react to, and unwires them again.
 /// </summary>
 /// <remarks>
-/// Every handler here answers the same question — which of the page's computed properties stopped
-/// being true because something else changed — and the answer is nowhere in the type system.
+/// Every handler here answers the same question - which of the page's computed properties stopped
+/// being true because something else changed - and the answer is nowhere in the type system.
 /// Keeping them in one file makes the set readable as a set, which is the only way an omission
 /// shows up before a control is found stuck in the wrong state.
 /// </remarks>
@@ -56,7 +56,7 @@ internal sealed class BrowserPageObservers(BrowserPageViewModel page, CastPageVi
     /// <remarks>
     /// Typing on a television is the slowest thing this feature asks of anyone, and the remote's
     /// on-screen keyboard is why. When the receiver reports that an editable element has focus,
-    /// forwarding arms itself so the next keystroke simply lands — no capture pad to find, no Send
+    /// forwarding arms itself so the next keystroke simply lands - no capture pad to find, no Send
     /// button to press. It disarms when the field loses focus, because keystrokes aimed at a page
     /// with nothing listening are worse than none.
     /// </remarks>

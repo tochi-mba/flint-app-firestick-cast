@@ -32,7 +32,7 @@ internal enum class OmnibarAction { BACK, FORWARD, RELOAD_OR_STOP, HOME, ADDRESS
  * The band of controls over the page: history, reload, the address, and the way into everything
  * else.
  *
- * Replaces a passive panel that showed a title and a URL and had no controls at all — the previous
+ * Replaces a passive panel that showed a title and a URL and had no controls at all - the previous
  * design deliberately kept history and the address bar on the desktop, which left the television
  * unusable on its own.
  *
@@ -89,8 +89,8 @@ internal fun ReceiverBrowserOmnibar(
 
             // Focus lands here, not on Back.
             //
-            // Back is disabled whenever there is no history — which is the state a freshly opened
-            // page is always in — and a disabled control cannot take focus. Requesting it there left
+            // Back is disabled whenever there is no history - which is the state a freshly opened
+            // page is always in - and a disabled control cannot take focus. Requesting it there left
             // the chrome visible with nothing focused and the D-pad doing nothing at all, found on a
             // Fire TV Stick 4K. The address is also simply the right answer: it is always available
             // and it is what someone summoning the chrome most often wants.
@@ -109,7 +109,7 @@ internal fun ReceiverBrowserOmnibar(
             )
             OmnibarButton(
                 glyph = "▦",
-                name = "Browser workspace — several web pages side by side",
+                name = "Browser workspace - several web pages side by side",
                 onClick = { onAction(OmnibarAction.WORKSPACE) },
             )
             OmnibarButton(

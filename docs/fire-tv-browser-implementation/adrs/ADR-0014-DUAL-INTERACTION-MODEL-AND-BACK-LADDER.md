@@ -1,4 +1,4 @@
-# ADR-0014 — dual D-pad interaction model and the Back ladder
+# ADR-0014 - dual D-pad interaction model and the Back ladder
 
 - **Status:** Accepted
 - **Implementation:** Implemented (software); feel not yet validated on hardware
@@ -19,11 +19,11 @@ The D-pad reached the `WebView` unmediated. Chromium's arrow handling is not spa
 on most sites the arrows scrolled and nothing could be selected.
 
 Back was worse. It fell through to the media key handler, which treats any non-idle surface as
-something to tear down — so one press on the second page of a site ended the browsing session.
+something to tear down - so one press on the second page of a site ended the browsing session.
 
 The obvious fix, "make the arrows move focus", fails on the sites people actually open: canvas UIs,
 maps, video players, and anything with a broken tab order have no usable focus ring. The obvious
-alternative, a cursor, is what Amazon's own Silk browser does — and its weakness is well known: one
+alternative, a cursor, is what Amazon's own Silk browser does - and its weakness is well known: one
 constant speed is either too slow to cross a page or too fast to land on a link.
 
 ADR-0006 forbids injected JavaScript, so neither mode may be implemented by reaching into the page.
@@ -71,7 +71,7 @@ Both are therefore built from input events alone: `MotionEvent` for the cursor, 
 
 | Alternative | Why rejected |
 |---|---|
-| Focus-only navigation | Fails on canvas UIs, maps and any site with a poor tab order — a large share of the web. |
+| Focus-only navigation | Fails on canvas UIs, maps and any site with a poor tab order - a large share of the web. |
 | Cursor-only, one constant speed | Silk's weakness: too slow to cross a page or too fast to hit a link. |
 | Automatic mode switching per page | The remote would mean different things on each site, and change under the viewer as the DOM loads. |
 | Inject JavaScript to find focusable elements | Forbidden by ADR-0006, and a bridge into every page is a far larger risk than an imperfect cursor. |

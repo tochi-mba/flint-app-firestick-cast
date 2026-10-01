@@ -78,7 +78,7 @@ class BrowserCoordinator(
      *
      * Needed when activating a tab that already has its own address (host New with URL). Replaying
      * the pending OPEN into that WebView loads the wrong page, and [BrowserWebViewDriver.resume]
-     * used to refuse to overwrite a non-blank view — two different Google searches both became
+     * used to refuse to overwrite a non-blank view - two different Google searches both became
      * the OPEN query (2026-09-08).
      */
     fun discardPendingNavigation() {
@@ -111,7 +111,7 @@ class BrowserCoordinator(
      * These exist on [BrowserPort] and on the wire as BACK/FORWARD/RELOAD/STOP, but nothing routed
      * them: the service logged those four actions and dropped them, so every history button on the
      * host was inert while the transport reported success. Dropped silently with nothing attached,
-     * for the same reason input is — there is no page for the request to mean anything to yet.
+     * for the same reason input is - there is no page for the request to mean anything to yet.
      */
     fun goBack() {
         port?.goBack()
@@ -173,7 +173,7 @@ class BrowserCoordinator(
     /**
      * Cleans up after the host's session ends without closing the browser.
      *
-     * Called when the transport dies for any reason other than a CLOSE — the desktop quitting, the
+     * Called when the transport dies for any reason other than a CLOSE - the desktop quitting, the
      * laptop sleeping, the network dropping. Everything the session owned goes with it: the
      * surface claim, the page state the television is showing, and any navigation still waiting for
      * a view to arrive. Skipping this leaves the next session unable to open anything at all.
@@ -185,7 +185,7 @@ class BrowserCoordinator(
         pageState = BrowserState()
         publish(pageState)
         // The view is not torn down from here. The Activity owns it, and leaving the browser
-        // surface is what releases it — calling `close` would also fire a Closed event carrying
+        // surface is what releases it - calling `close` would also fire a Closed event carrying
         // command identifiers no host ever sent.
     }
 

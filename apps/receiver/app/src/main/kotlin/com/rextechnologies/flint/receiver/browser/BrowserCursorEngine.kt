@@ -168,7 +168,7 @@ class BrowserCursorEngine {
     /**
      * Page scroll deltas in the host/Avalonia convention used by [BrowserNativeInput.Scroll]:
      * positive Y scrolls up (finger travels down in the touch synthesizer). Pushing the cursor
-     * toward an edge must scroll the page the same way — down at the bottom reveals content below.
+     * toward an edge must scroll the page the same way - down at the bottom reveals content below.
      */
     private fun edgeScroll(direction: CursorDirection, distance: Int): Pair<Int, Int> = when (direction) {
         CursorDirection.UP -> 0 to distance

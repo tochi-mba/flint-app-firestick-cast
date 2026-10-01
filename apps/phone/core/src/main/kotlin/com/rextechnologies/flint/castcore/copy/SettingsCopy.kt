@@ -29,7 +29,7 @@ object SettingsCopy {
      * What the second-screen check does, in full, before it runs.
      *
      * It is the load-bearing platform claim in the whole design, so it is a check rather than an
-     * assertion — and a check somebody is asked to run has to say what it will do to their phone.
+     * assertion - and a check somebody is asked to run has to say what it will do to their phone.
      */
     const val SECOND_SCREEN_PROBE_EXPLANATION: String =
         "Flint creates a display only this app can see, draws one frame into it and reads that " +

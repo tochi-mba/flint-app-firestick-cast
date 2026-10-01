@@ -24,7 +24,7 @@ import com.rextechnologies.flint.design.FlintType
 /**
  * What the television shows while the phone is the cockpit.
  *
- * Flint's own screen, drawn into a display only Flint can see — which is the whole of what a second
+ * Flint's own screen, drawn into a display only Flint can see - which is the whole of what a second
  * screen is on Android, and the reason every card that offers the mode says so. It is not the
  * phone's home screen, it cannot host another app's window, and there is no version of Android in
  * which it could.

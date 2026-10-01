@@ -8,7 +8,7 @@ use crate::encode::VideoCodec;
 /// Flint tells the receiver a width and a height in `VIDEO_CONFIG`, and separately hands it the
 /// encoder's parameter sets. The receiver builds one decoder from both. If they disagree the
 /// decoder still configures, still accepts every access unit, still reports frames rendered, and
-/// still shows a flat green field — because that is what a wrongly-sized YUV surface looks like.
+/// still shows a flat green field - because that is what a wrongly-sized YUV surface looks like.
 /// Every counter on the host stays perfect. Nothing in the system notices except a person looking
 /// at the television.
 fn config(width: u32, height: u32) -> EncoderConfig {

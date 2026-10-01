@@ -1,8 +1,8 @@
 //! The mirror session: what turns a screen into a stream.
 //!
 //! Capture, convert, encode and hand out access units, one tick at a time. The session owns the
-//! policy decisions that sit between those stages — what to do when the desktop has not changed,
-//! when duplication is lost to a lock screen, when the receiver asks for a key frame — and none of
+//! policy decisions that sit between those stages - what to do when the desktop has not changed,
+//! when duplication is lost to a lock screen, when the receiver asks for a key frame - and none of
 //! those need a GPU to be tested, so the pieces it drives are traits rather than concrete types.
 
 use crate::capture::{CaptureError, FrameOutcome};
@@ -255,7 +255,7 @@ impl<S: FrameSource, E: VideoEncoder> MirrorSession<S, E> {
     /// Takes the scaling buffer back off a frame so the next tick reuses its allocation.
     ///
     /// Without this the resize allocates a full frame every tick, which on a 4K desktop is the
-    /// single largest allocation on the frame path — exactly what the engine exists to avoid.
+    /// single largest allocation on the frame path - exactly what the engine exists to avoid.
     fn reclaim_scaled(&mut self, frame: SourceFrame) {
         // Only ever called with a frame `scale_frame` produced, which is always system memory.
         if let FrameData::Bgra { pixels, .. } = frame.data {
@@ -315,7 +315,7 @@ mod stage_timing {
     /// Times the readback itself, never the wait for the desktop to change.
     ///
     /// `acquire` blocks until Windows has a new frame, so timing it measures how busy the screen
-    /// happened to be rather than anything about this code — which made an earlier version of this
+    /// happened to be rather than anything about this code - which made an earlier version of this
     /// harness report the same configuration at 25ms and at 80ms depending on nothing but whether
     /// the desktop was moving. Only the work between having a texture and having pixels is timed.
     fn measure(label: &str, gpu_scale: bool, wanted: usize) -> u64 {

@@ -63,7 +63,7 @@ public sealed class BrowserPageHudTests
                 .ShouldBe(0);
             // Asserted by control type, not by label text: the dense HUD legitimately labels its
             // own tab strip "TABS", and a word the new design reuses is the wrong way to detect the
-            // old cockpit. Effective visibility, not IsVisible — the bootstrap cards keep their own
+            // old cockpit. Effective visibility, not IsVisible - the bootstrap cards keep their own
             // IsVisible true while their container is hidden.
             page.GetVisualDescendants().OfType<Flint.App.Controls.InfoCard>()
                 .Count(card => card.IsEffectivelyVisible)
@@ -160,7 +160,7 @@ public sealed class BrowserPageHudTests
 
             Named(page, "TV workspace mosaic").ShouldNotBeNull();
             Named(page, "Latest TV preview frame").ShouldNotBeNull();
-            // Mosaic chrome must not replace the preview Image — both panes live in that JPEG.
+            // Mosaic chrome must not replace the preview Image - both panes live in that JPEG.
             page.FindControl<Border>("PreviewSurface")!
                 .GetVisualDescendants()
                 .OfType<Avalonia.Controls.Image>()

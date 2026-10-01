@@ -4,9 +4,9 @@ namespace Flint.App.ViewModels;
 /// What the mosaic panel says about itself, in one place.
 /// </summary>
 /// <remarks>
-/// The workspace has more waiting states than anything else on this page — a focus request the
+/// The workspace has more waiting states than anything else on this page - a focus request the
 /// television has not confirmed, a layout change in flight, panes being opened before a split can
-/// be applied — and each one has to say which of them it is. Held together so the set can be read
+/// be applied - and each one has to say which of them it is. Held together so the set can be read
 /// as a set: the failure this guards against is two of these states rendering the same words, and
 /// a viewer being unable to tell a request that is progressing from one that is stuck.
 ///
@@ -39,7 +39,7 @@ internal static class BrowserWorkspaceCopy
         };
 
     /// <summary>
-    /// Longer coach copy — the difference between tabs and the mosaic.
+    /// Longer coach copy - the difference between tabs and the mosaic.
     /// </summary>
     /// <remarks>
     /// Spelled out because the two look similar and are not: a tab replaces what is on the glass,

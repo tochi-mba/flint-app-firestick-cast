@@ -22,7 +22,7 @@ internal interface BrowserWorkspaceHostPort {
     fun render(state: BrowserWorkspaceState)
 
     /**
-     * Root view that shows every live pane together — used for the Windows JPEG preview so the host
+     * Root view that shows every live pane together - used for the Windows JPEG preview so the host
      * sees the same mosaic layout as the sofa, not only the focused WebView.
      */
     fun previewCaptureView(): View? = null

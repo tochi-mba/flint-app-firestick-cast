@@ -1,11 +1,11 @@
-# Slice 06 — second screen
+# Slice 06 - second screen
 
 **Governing ADR:** [ADR-0025](adrs/ADR-0025-SECOND-SCREEN-IS-APP-OWNED-PRESENTATION-CONTENT.md).
 
 ## Outcome
 
-The television shows a Flint-owned surface — a player, a photo, what is playing now, a connection
-dashboard — while the phone stays the cockpit. This is the mode Flint on Windows cannot ship, and the
+The television shows a Flint-owned surface - a player, a photo, what is playing now, a connection
+dashboard - while the phone stays the cockpit. This is the mode Flint on Windows cannot ship, and the
 first one that produces pixels.
 
 ## Entry criteria
@@ -72,12 +72,12 @@ call site.
 
 A codec test that only checks structure is not a codec test. This project has already shipped an
 encoder that produced correctly framed H.264 with correct parameter sets, correct dimensions and a
-plausible bitrate, every frame of which decoded to nothing — flat green on the television, and
+plausible bitrate, every frame of which decoded to nothing - flat green on the television, and
 `ffprobe` read all 59 frames without complaint. Every structural assertion passed throughout.
 
 So: render a known pattern into the display, encode it, decode the output with a second `MediaCodec`,
 read the pixels, and assert the pattern survived. This cannot run as a JVM unit test or under
-Robolectric — `MediaCodec` is real hardware and a real driver. It runs on the emulator nightly and on
+Robolectric - `MediaCodec` is real hardware and a real driver. It runs on the emulator nightly and on
 a physical device before any release, and the default suite does not pretend to cover it.
 
 ## Full-suite checkpoint
@@ -95,5 +95,5 @@ The default suite, plus the emulator job.
 
 Stop, and say so, if the spike fails on a mainstream device: the mode is then Not possible on that
 phone, which the verdicts already know how to report. Do not reach for
-`VIRTUAL_DISPLAY_FLAG_PUBLIC` to work around it — that is a system permission, and asking for it
+`VIRTUAL_DISPLAY_FLAG_PUBLIC` to work around it - that is a system permission, and asking for it
 would make this a different product.

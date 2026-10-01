@@ -4,7 +4,7 @@ package com.rextechnologies.flint.receiver.browser
  * What a lost tunnel means for pages that are already open.
  *
  * Blocking the next navigation is not the same as protecting the session. A page that is already
- * loaded keeps fetching — images, XHR, video segments — and those requests leave over whatever
+ * loaded keeps fetching - images, XHR, video segments - and those requests leave over whatever
  * network is left once the tunnel is gone. A profile that asked for a tunnel *before* browsing has
  * therefore not been served by a banner change alone.
  *

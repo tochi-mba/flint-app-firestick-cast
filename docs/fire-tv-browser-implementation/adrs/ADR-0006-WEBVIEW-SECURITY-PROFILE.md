@@ -1,4 +1,4 @@
-# ADR-0006 — fixed WebView security profile
+# ADR-0006 - fixed WebView security profile
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -82,5 +82,5 @@ instrumentation/physical evidence, bounded UX, and updated compatibility/privacy
 
 ## References
 
-- [Slice 04 — secure navigation](../SLICE-04-SECURE-TV-LOCAL-NAVIGATION.md)
+- [Slice 04 - secure navigation](../SLICE-04-SECURE-TV-LOCAL-NAVIGATION.md)
 - [Android WebView security guidance](https://developer.android.com/privacy-and-security/risks/insecure-webview-native-bridges)

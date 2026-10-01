@@ -5,8 +5,8 @@ namespace Flint.App.Services;
 
 /// <summary>The two things Flint does to a television's packages over ADB, without saying how.</summary>
 /// <remarks>
-/// An interface so the Cast page's decisions — which button to show, what to say when the
-/// television refuses — can be tested with a fake that never opens a socket.
+/// An interface so the Cast page's decisions - which button to show, what to say when the
+/// television refuses - can be tested with a fake that never opens a socket.
 /// </remarks>
 public interface IReceiverInstaller
 {

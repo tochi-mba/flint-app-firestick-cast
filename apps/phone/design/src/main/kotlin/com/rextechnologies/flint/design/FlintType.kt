@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.sp
  *
  * The desktop's sizes rather than the television's. `FlintTypography.axaml` records that Android `sp`
  * and Avalonia device-independent pixels map one for one, so these are the same numbers the Windows
- * shell uses — which is the point: a phone is held at the same distance as a laptop screen, and the
+ * shell uses - which is the point: a phone is held at the same distance as a laptop screen, and the
  * TV scale exists for a viewer ten feet away.
  *
  * The signature of the system is [LabelSmall]: 9sp, bold, heavily tracked, and always upper-cased by

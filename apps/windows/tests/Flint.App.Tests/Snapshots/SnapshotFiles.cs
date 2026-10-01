@@ -123,7 +123,7 @@ public static class SnapshotFiles
     /// The headless renderer hands back <c>Rgba8888</c> while this code works in BGRA throughout.
     /// Normalising here rather than threading a format through every caller matters because getting
     /// it wrong is invisible: both sides of every comparison would be wrong in the same way, so the
-    /// suite passes completely while every stored image has red and blue swapped — which is exactly
+    /// suite passes completely while every stored image has red and blue swapped - which is exactly
     /// what happened, and was caught only by looking at an approved image and noticing that the REX
     /// <c>Signal</c> yellow-green had rendered as teal.
     /// </remarks>

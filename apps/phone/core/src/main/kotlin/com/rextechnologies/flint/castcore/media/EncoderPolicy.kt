@@ -17,7 +17,7 @@ sealed interface KeyFrameStrategy {
      *
      * The documented exception. An encoder that ignores `PARAMETER_KEY_REQUEST_SYNC_FRAME` combined
      * with an unbounded group of pictures means a receiver that joins late or drops a packet never
-     * gets a frame it can start from — a frozen picture, indefinitely. The Windows hardware path
+     * gets a frame it can start from - a frozen picture, indefinitely. The Windows hardware path
      * already carries this fallback for the same reason.
      */
     data class BoundedInterval(val seconds: Int) : KeyFrameStrategy {

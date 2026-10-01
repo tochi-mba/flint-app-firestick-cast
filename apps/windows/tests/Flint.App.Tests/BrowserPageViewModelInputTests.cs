@@ -53,7 +53,7 @@ public sealed class BrowserPageViewModelInputTests
     public async Task SendKey_NumbersEachInputWithAStrictlyIncreasingSequence()
     {
         // The receiver drops any input whose sequence does not advance, so a repeated or reused
-        // number is a key that silently does nothing — and looks like a dropped packet.
+        // number is a key that silently does nothing - and looks like a dropped packet.
         var remote = new RecordingBrowserRemote();
         var viewModel = await BrowserFixtures.ReadyViewModelAsync(remote);
 
@@ -221,7 +221,7 @@ public sealed class BrowserPageViewModelInputTests
     public void ViewControls_WhenTheTvReportsAFocusedField_ArmsKeyboardForwardingAutomatically()
     {
         // Typing on a television is the slowest thing this feature asks of anyone. The moment the
-        // TV says a field has focus, the desktop keyboard should already be pointed at it — nobody
+        // TV says a field has focus, the desktop keyboard should already be pointed at it - nobody
         // should have to find and click a capture pad first.
         var page = BrowserFixtures.ViewModel();
         page.KeyboardCaptureEnabled.ShouldBeFalse();

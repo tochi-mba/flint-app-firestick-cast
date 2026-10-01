@@ -78,8 +78,8 @@ public sealed class AdbPackageInventoryTests
 }
 
 /// <summary>
-/// The install and inventory calls against a fake device, so the stream protocol they rely on —
-/// one OKAY per WRTE, chunks no larger than the peer announced — is exercised for real.
+/// The install and inventory calls against a fake device, so the stream protocol they rely on -
+/// one OKAY per WRTE, chunks no larger than the peer announced - is exercised for real.
 /// </summary>
 public sealed class AdbProbeClientPackageTests
 {

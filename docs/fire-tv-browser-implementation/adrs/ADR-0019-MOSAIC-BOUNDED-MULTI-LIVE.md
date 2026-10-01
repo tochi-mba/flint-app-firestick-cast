@@ -1,4 +1,4 @@
-# ADR-0019 — mosaic layout with bounded multi-live renderers
+# ADR-0019 - mosaic layout with bounded multi-live renderers
 
 - **Status:** Accepted
 - **Implementation:** In progress
@@ -23,7 +23,7 @@ on 1–2 GB sticks. One live WebView costs roughly 46–53 MB PSS on AFTMM
 
 - Introduce **mosaic mode**: a user-initiated grid of up to **4 panes**.
 - While mosaic is open, at most **2 panes are live** (same number as ADR-0012). Visible non-live
-  panes show a Suspended card — never a fake playing player.
+  panes show a Suspended card - never a fake playing player.
 - Prefer **refuse** over silently freezing a pane that is in pane-local fullscreen.
 - Adding panes is always user-initiated; page `window.open` remains banned (ADR-0006).
 - Raising `MAX_LIVE` above 2 requires a superseding ADR with measured PSS and decode evidence.

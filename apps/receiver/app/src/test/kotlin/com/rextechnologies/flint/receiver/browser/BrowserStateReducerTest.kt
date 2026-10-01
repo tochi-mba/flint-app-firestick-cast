@@ -95,7 +95,7 @@ class BrowserStateReducerTest {
     @Test
     fun `newer openAccepted reclaims a live page that was never closed`() {
         // Without this, command reclaim succeeds but the visible BrowserState keeps the orphan
-        // address — Windows shows a new URL while the TV still paints the old one.
+        // address - Windows shows a new URL while the TV still paints the old one.
         val orphan = reducer.reduce(BrowserState(), BrowserStateEvent.OpenAccepted(4, 1, url))
         val ready = reducer.reduce(
             orphan,

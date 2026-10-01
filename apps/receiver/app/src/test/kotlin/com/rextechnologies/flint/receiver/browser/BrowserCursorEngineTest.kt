@@ -92,7 +92,7 @@ class BrowserCursorEngineTest {
 
         val step = engine.hold(state, FRAME_MILLIS, viewport)
 
-        // Negative Y is Avalonia "scroll down" — the touch synthesizer moves the finger upward.
+        // Negative Y is Avalonia "scroll down" - the touch synthesizer moves the finger upward.
         assertTrue(step.scrollY < 0, "no downward scroll at the bottom edge: ${step.scrollY}")
         assertEquals(0, step.scrollX)
     }

@@ -37,7 +37,7 @@ impl DesktopDuplication {
     ///
     /// # Errors
     /// Returns [`CaptureError::NoDisplayAdapter`] when nothing on this host drives a display, and
-    /// [`CaptureError::Platform`] when Windows refuses — most often because a duplication is
+    /// [`CaptureError::Platform`] when Windows refuses - most often because a duplication is
     /// already held by another process, or the session is not an interactive desktop.
     pub fn open_primary() -> Result<Self, CaptureError> {
         Self::open(0)
@@ -64,7 +64,7 @@ impl DesktopDuplication {
                 // processor without an intermediate copy. Video support is what lets that
                 // processor exist at all: without it the device still exposes ID3D11VideoDevice,
                 // and every view it is asked to create is refused with "the parameter is
-                // incorrect" — which is how the GPU colour-conversion path fails when this flag is
+                // incorrect" - which is how the GPU colour-conversion path fails when this flag is
                 // missing, several layers away from the flag itself.
                 D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_VIDEO_SUPPORT,
                 Some(&[D3D_FEATURE_LEVEL_11_0]),
@@ -119,7 +119,7 @@ impl DesktopDuplication {
     /// Waits up to `timeout_ms` for the desktop to change, and takes the new frame if it does.
     ///
     /// The returned texture is owned by the duplication until [`Self::release`] is called, so the
-    /// caller must finish with it — copying or encoding — before asking for the next frame.
+    /// caller must finish with it - copying or encoding - before asking for the next frame.
     ///
     /// # Errors
     /// [`CaptureError::Interrupted`] means the duplication must be re-created; the caller should do
@@ -187,7 +187,7 @@ impl Drop for DesktopDuplication {
 /// Finds the requested output and the adapter that drives it.
 ///
 /// Outputs are counted across adapters in enumeration order, so index 0 is the first display on
-/// the first adapter that has one — which on a hybrid laptop is the integrated GPU, not the
+/// the first adapter that has one - which on a hybrid laptop is the integrated GPU, not the
 /// discrete card.
 fn find_output(target: u32) -> Result<(IDXGIAdapter1, IDXGIOutput1, i64), CaptureError> {
     // SAFETY: CreateDXGIFactory1 is callable on any thread and returns a checked HRESULT.
@@ -240,8 +240,8 @@ fn platform(error: windows::core::Error) -> CaptureError {
 /// Whether this host can capture the screen at all.
 ///
 /// Opens a duplication and immediately drops it. Probing by doing rather than by inspecting is
-/// deliberate: duplication fails for reasons no amount of enumeration reveals — another process
-/// already holds it, the session is not an interactive desktop, or group policy forbids it — and
+/// deliberate: duplication fails for reasons no amount of enumeration reveals - another process
+/// already holds it, the session is not an interactive desktop, or group policy forbids it - and
 /// a capability report that guessed would be wrong in exactly those cases.
 #[must_use]
 pub fn is_available() -> bool {

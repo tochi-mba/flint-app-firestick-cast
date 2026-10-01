@@ -76,7 +76,7 @@ public static class ImageComparer
     /// The share of pixels that may differ before a comparison fails, as a percentage.
     /// </summary>
     /// <remarks>
-    /// A tenth of one percent. On a 1280x800 page that is about a thousand pixels — far more than
+    /// A tenth of one percent. On a 1280x800 page that is about a thousand pixels - far more than
     /// antialiasing produces, and far less than any visible element occupies.
     /// </remarks>
     public const double DefaultMaximumDifferingPercent = 0.1d;

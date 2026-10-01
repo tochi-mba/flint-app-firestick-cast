@@ -23,7 +23,7 @@ class FixedVpnCapabilityProbe(
 /**
  * Reports whether this process can ask the user for VPN consent via [VpnService.prepare].
  *
- * Honesty: Robolectric and a missing context cannot prepare a real VPN — those paths return
+ * Honesty: Robolectric and a missing context cannot prepare a real VPN - those paths return
  * [VpnCapability.preparable] = false with a plain reason. A non-null prepare Intent means the
  * device supports VPN but still needs the RSA/system consent prompt; that remains preparable so
  * the coordinator can surface [BrowserVpnState.NeedsConsent] rather than claiming the feature works.

@@ -45,7 +45,7 @@ internal sealed class BrowserSessionCommands(BrowserPageViewModel page)
     /// </summary>
     /// <remarks>
     /// Preview is on by default where the receiver can capture, and a reconnect can adopt a page
-    /// that is already open — so the request has to be repeated at that point rather than assumed
+    /// that is already open - so the request has to be repeated at that point rather than assumed
     /// from the earlier session. Failure is logged, not surfaced: nobody asked for this one.
     /// </remarks>
     public async Task SyncPreferenceAsync(CancellationToken cancellationToken)

@@ -1,4 +1,4 @@
-# Slice 07 — screen mirror
+# Slice 07 - screen mirror
 
 **Governing ADRs:** [ADR-0024](adrs/ADR-0024-PHONE-BINDS-EVERY-SOCKET-TO-THE-SELECTED-INTERFACE.md)
 and [ADR-0025](adrs/ADR-0025-SECOND-SCREEN-IS-APP-OWNED-PRESENTATION-CONTENT.md).
@@ -41,7 +41,7 @@ surviving a rotation.
 ### Explicitly out of scope
 
 - Audio. `AudioPlaybackCaptureConfiguration` is slice 08's, and it captures only from apps that allow
-  it — which the UI will have to say rather than shipping silence that looks like a bug.
+  it - which the UI will have to say rather than shipping silence that looks like a bug.
 
 ## The manifest line that must differ
 
@@ -54,7 +54,7 @@ API 34 starting a `mediaProjection` service with no projection active throws.
 
 Every `VIDEO_CONFIG` is a hard decoder reset on the receiver: it releases the codec, clears its whole
 pending queue and re-arms its key-frame gate. The very next packet after one must be an intra frame,
-or it is counted as dropped and discarded — and the television shows the last frame it managed to
+or it is counted as dropped and discarded - and the television shows the last frame it managed to
 decode until something else happens to produce a key frame. Rotation is the ordinary way to hit this,
 because rotation re-sends the config. `VideoConfigPolicy` exists to state the rule at the call site.
 

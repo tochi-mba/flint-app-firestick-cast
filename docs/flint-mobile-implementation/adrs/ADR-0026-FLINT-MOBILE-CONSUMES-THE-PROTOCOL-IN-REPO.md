@@ -1,4 +1,4 @@
-# ADR-0026 — Flint Mobile consumes :protocol in-repo and never forks the wire
+# ADR-0026 - Flint Mobile consumes :protocol in-repo and never forks the wire
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -29,8 +29,8 @@ constants. A 256-to-512-byte MIME type therefore encodes on Windows and is rejec
 no vector catches it because every committed MIME type is short.
 
 A separate Flint-mobile repository was the obvious shape, since the phone shares no toolchain with
-the Windows job. It would have had to vendor the vectors and the manifest — a copy pinned to the
-revision it was taken at — or write a fourth codec with no cross-language check behind it. One
+the Windows job. It would have had to vendor the vectors and the manifest - a copy pinned to the
+revision it was taken at - or write a fourth codec with no cross-language check behind it. One
 repository's cost was measurable instead: `ci.yml` had no path filters, so every phone pull request
 would have run the forty-five-minute Windows job for a desktop it never touched.
 
@@ -39,8 +39,8 @@ would have run the forty-five-minute Windows job for a desktop it never touched.
 - `:mobile` and `:castcore` depend on `project(":protocol")`. No wire type, codec, handshake,
   discovery record or enum is reimplemented in phone sources. A phone need is met by using the
   module, or by a reviewed cross-language change to it, never by a private copy.
-- `:protocol` is consumed **unchanged** here. Widening it — bound UDP and multicast factories, a
-  converged MIME cap — is separate cross-language work with its own vectors.
+- `:protocol` is consumed **unchanged** here. Widening it - bound UDP and multicast factories, a
+  converged MIME cap - is separate cross-language work with its own vectors.
 - One repository. The push target is `tochi-mba/flint-app-firestick-cast` on branch
   `claude/flint-mobile-phone-host-pm9vsg`, not a separate Flint-mobile repository.
 - The CI cost is paid explicitly: `paths-ignore` on `ci.yml` for `mobile/**`, `design/**`,
@@ -72,7 +72,7 @@ would have run the forty-five-minute Windows job for a desktop it never touched.
 
 - The phone is held to the same committed bytes as the other three implementations, by tests already
   in the build.
-- A protocol change is one diff — vectors, manifest and every consumer — not a change here and a
+- A protocol change is one diff - vectors, manifest and every consumer - not a change here and a
   follow-up elsewhere.
 - `:castcore` is a plain `kotlin("jvm")` module, so the session machine, discovery ladder and media
   policy are tested with no Android SDK and no television.

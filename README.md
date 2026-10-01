@@ -25,7 +25,7 @@ This repository is under active construction. The current `0.1.0` build includes
   cross-language vector corpus;
 - connection-aware screens that do not present unavailable casting modes as working controls.
 
-Second-screen output — using the television as an extra desktop rather than a copy of this one — is
+Second-screen output - using the television as an extra desktop rather than a copy of this one - is
 not built. It needs an indirect display driver that Windows will install only once it carries a
 signature the machine already trusts, and Flint will not ask anyone to disable driver signing to
 work around that.
@@ -61,9 +61,9 @@ Full walkthrough, including the unsigned-build warning Windows will show you, is
 
 ## Why this shape
 
-Casting to a TV has two halves with opposite requirements. The frame path — capture, colour
-convert, encode, packetize, send — must never pause, so it is Rust with no allocation in the loop.
-The shell around it — discovery, pairing, installation, diagnostics, UI — is never in the frame
+Casting to a TV has two halves with opposite requirements. The frame path - capture, colour
+convert, encode, packetize, send - must never pause, so it is Rust with no allocation in the loop.
+The shell around it - discovery, pairing, installation, diagnostics, UI - is never in the frame
 path, so it is C# where the tooling and the tests are better.
 
 Flint does not use Miracast. Miracast is a fixed pipeline whose latency Flint cannot influence;
@@ -97,7 +97,7 @@ dotnet run --project apps/windows/src/Flint.Cli -- --address 192.168.1.42
 The `--services` scan exists to separate two failures that look identical from the Cast page: a
 television that is off or on another network, and a network where multicast never reaches this
 machine at all. If it lists nothing, the problem is client isolation, a firewall on UDP 5353, or a
-guest network — not Fire TV. Networks that suppress multicast can still use the direct-address
+guest network - not Fire TV. Networks that suppress multicast can still use the direct-address
 field in the Cast page or `--address`; leaving `--port` out checks only the bounded 5555–5585 range.
 
 ### Scripting it
@@ -115,7 +115,7 @@ separate absence from failure, and are worth branching on: `host.encodersProbed`
 encoder" from "never looked", and `path.throughputMeasured` distinguishes a slow network from one
 that was not measured.
 
-Exit codes are a contract — `tools/scripts/*.ps1` and CI branch on them:
+Exit codes are a contract - `tools/scripts/*.ps1` and CI branch on them:
 
 | Code | Meaning |
 |---:|---|
@@ -146,8 +146,8 @@ frame collapses into a smudge.
 
 ## Device support is conditional
 
-Fire TV devices released from October 2025 — the Fire TV Stick 4K Select and the 2026 Fire TV Stick
-HD — run **Vega OS**, which is not Android and cannot install APKs by any method. On those devices a
+Fire TV devices released from October 2025 - the Fire TV Stick 4K Select and the 2026 Fire TV Stick
+HD - run **Vega OS**, which is not Android and cannot install APKs by any method. On those devices a
 custom receiver is impossible, and so is Flint's mirroring path.
 
 Android-based Fire OS devices can install a receiver. Amazon currently maps Fire OS 5, 6, 7, 8, 14

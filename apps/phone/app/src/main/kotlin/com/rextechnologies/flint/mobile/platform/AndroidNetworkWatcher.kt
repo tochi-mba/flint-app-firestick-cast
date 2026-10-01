@@ -23,7 +23,7 @@ import java.io.Closeable
 /**
  * Watches which end of the local network this phone is on.
  *
- * There is no public API for "am I tethering" — `TetheringManager` is a system API — so the evidence
+ * There is no public API for "am I tethering" - `TetheringManager` is a system API - so the evidence
  * is the interface list, which an ordinary app can read. What [ConnectivityManager] is used for here
  * is only the nudge: it says something about connectivity changed, and the interfaces are re-read.
  * Its own idea of the current network is deliberately ignored, because while the phone is tethering
@@ -33,7 +33,7 @@ import java.io.Closeable
  * ## Where the sampling happens
  *
  * Reading the interface list is a JNI walk of every interface and every address on the device. It is
- * not expensive once; it is expensive many times a second, which is what a Wi-Fi scan produces —
+ * not expensive once; it is expensive many times a second, which is what a Wi-Fi scan produces -
  * `onCapabilitiesChanged` fires repeatedly as signal strength moves. Those callbacks arrive on a
  * binder thread, and an earlier version did the walk inline on it and again on the main thread from
  * the constructor. Every sample now happens on [Dispatchers.IO], no faster than [DEBOUNCE_MILLIS],
@@ -75,8 +75,8 @@ class AndroidNetworkWatcher(
     /**
      * One slot, keeping the newest request.
      *
-     * A nudge that arrives while a walk is running is not lost — it is remembered and satisfied by
-     * the next one — and ten nudges that arrive together become one walk, which is the entire point.
+     * A nudge that arrives while a walk is running is not lost - it is remembered and satisfied by
+     * the next one - and ten nudges that arrive together become one walk, which is the entire point.
      */
     private val nudges = MutableSharedFlow<Unit>(
         replay = 1,

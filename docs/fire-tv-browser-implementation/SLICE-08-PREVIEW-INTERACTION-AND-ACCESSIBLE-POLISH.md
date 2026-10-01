@@ -1,4 +1,4 @@
-# Slice 08 — preview interaction and accessible control-surface polish
+# Slice 08 - preview interaction and accessible control-surface polish
 
 **Governing ADRs:** [ADR-0005](adrs/ADR-0005-PROTOCOL-V2-CANONICAL-CONTRACT.md), [ADR-0007](adrs/ADR-0007-SURFACE-LIFECYCLE-AND-TV-FIRST-UX.md), [ADR-0008](adrs/ADR-0008-PORTABLE-INPUT-AND-STALE-GUARDS.md), [ADR-0009](adrs/ADR-0009-OPT-IN-BOUNDED-JPEG-PREVIEW.md), and [ADR-0011](adrs/ADR-0011-TEST-EVIDENCE-AND-LATENCY-GOVERNANCE.md).
 

@@ -38,8 +38,8 @@ data class OmniboxSuggestion(
  * keyboard under it needs the whole screen to be legible, and because taking over the screen makes
  * it obvious that the D-pad now belongs to the keyboard rather than to the page.
  *
- * The first suggestion is always the search, so the commonest thing anyone does here — look
- * something up — is one press away rather than a full URL of typing.
+ * The first suggestion is always the search, so the commonest thing anyone does here - look
+ * something up - is one press away rather than a full URL of typing.
  */
 @Composable
 internal fun ReceiverBrowserOmnibox(
@@ -100,7 +100,7 @@ internal fun ReceiverBrowserOmnibox(
             )
 
             // The desktop is genuinely faster, and saying so is worth more than pretending the
-            // remote is pleasant. It is an offer, never a requirement — everything here works
+            // remote is pleasant. It is an offer, never a requirement - everything here works
             // without a PC in the room.
             if (desktopTypingAvailable) {
                 Text(

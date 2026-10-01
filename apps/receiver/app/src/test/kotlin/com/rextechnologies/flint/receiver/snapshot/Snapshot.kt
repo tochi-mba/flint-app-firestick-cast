@@ -11,7 +11,7 @@ import java.io.File
  *
  * The receiver has a harder testing problem than the Windows app: it runs on a television across
  * the room, driven by a remote control, and nobody sees it during development except as a
- * screenshot pulled off a device. Its layout also has constraints the desktop does not — overscan
+ * screenshot pulled off a device. Its layout also has constraints the desktop does not - overscan
  * margins, focus outlines that must be visible from two metres away, text large enough to read at
  * that distance. Those are exactly the properties that assertions cannot check and a rendered image
  * can.
@@ -68,7 +68,7 @@ object Snapshot {
         require(name.isNotBlank()) { "a snapshot needs a name" }
 
         // Never `waitForIdle`. The receiver's idle screen runs an endless spinner, so the
-        // composition is never idle and the wait times out after two seconds — which is how this
+        // composition is never idle and the wait times out after two seconds - which is how this
         // suite failed on its first run, eleven tests at once, reporting a condition rather than
         // an animation. The clock is driven by hand to a fixed instant instead, which terminates
         // and makes the captured frame identical every run: an animation sampled at whatever moment
@@ -89,7 +89,7 @@ object Snapshot {
      * Draws the activity's view hierarchy into a bitmap.
      *
      * Compose's own `captureToImage` cannot be used here. It calls `forceRedraw`, which waits on the
-     * frame clock — the very clock these tests hold still to stop the spinner — so the two
+     * frame clock - the very clock these tests hold still to stop the spinner - so the two
      * requirements are mutually exclusive and the capture times out. Drawing the decor view is
      * synchronous and depends on no clock at all, which is what makes a frozen animation and a real
      * capture possible at the same time.

@@ -222,7 +222,7 @@ fn the_first_access_unit_of_a_session_is_always_a_key_frame() {
 #[test]
 fn parameter_sets_are_available_before_any_frame_is_submitted() {
     // Flint sends VIDEO_CONFIG before the first access unit, so an encoder that publishes SPS and
-    // PPS only mid-stream leaves the receiver unable to construct a decoder at all — a black screen
+    // PPS only mid-stream leaves the receiver unable to construct a decoder at all - a black screen
     // rather than an error. Priming exists entirely to make this true.
     let Some(luid) = capture_adapter() else {
         return;

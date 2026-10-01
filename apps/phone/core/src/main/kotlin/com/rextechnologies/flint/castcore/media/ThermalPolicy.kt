@@ -43,7 +43,7 @@ data class ThermalDecision(
  *
  * The alternative is what a phone does on its own: the SoC throttles, the encoder misses its
  * deadline, frames arrive late, and the television stutters for reasons the person holding the phone
- * cannot see. Degrading deliberately is not better for the picture — it is better because it can be
+ * cannot see. Degrading deliberately is not better for the picture - it is better because it can be
  * explained, which is the whole difference between a product that is struggling and one that appears
  * broken.
  *
@@ -98,7 +98,7 @@ object ThermalPolicy {
 
             // At these levels Android is already shedding load on its own. Continuing would mean
             // competing with the platform for a device that has decided the answer, and the session
-            // would stop anyway — just without having said why.
+            // would stop anyway - just without having said why.
             ThermalLevel.EMERGENCY, ThermalLevel.SHUTDOWN -> ThermalDecision(
                 bitrateCeiling = minOf(sessionMaximumBitrate, MINIMUM_BITRATE),
                 frameRateCeiling = 1,

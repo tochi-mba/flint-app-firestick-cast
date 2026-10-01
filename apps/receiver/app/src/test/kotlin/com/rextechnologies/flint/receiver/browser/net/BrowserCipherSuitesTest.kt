@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
  * The cipher suites the browser listener will accept.
  *
  * This choice is load-bearing rather than cosmetic. The receiver's key is signing-only, so a suite
- * that needs the server to decrypt cannot work — and when the platform picks one anyway, the
+ * that needs the server to decrypt cannot work - and when the platform picks one anyway, the
  * handshake fails inside OpenSSL with a message about RSA internals that names nothing useful.
  */
 class BrowserCipherSuitesTest {

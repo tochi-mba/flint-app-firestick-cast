@@ -1,4 +1,4 @@
-# ADR-0030 — the REX token set has one source of truth in :design
+# ADR-0030 - the REX token set has one source of truth in :design
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -24,8 +24,8 @@ reason, and its remarks block says why: drifting one of them would silently brea
 resemblance across three codebases, which no compiler would catch.
 
 The drift is not hypothetical. `ReceiverTheme.kt` carries `Muted = Color(0xFFA3ABA0)` while the
-desktop carries `#858D83`. That divergence is deliberate — the television value is lifted so
-secondary text survives a room's distance — but until this record it lived only in a code comment on
+desktop carries `#858D83`. That divergence is deliberate - the television value is lifted so
+secondary text survives a room's distance - but until this record it lived only in a code comment on
 one side of the repository, and a fourth copy of the palette written by hand inside `:mobile` would
 make the count four with no statement of which one is right for a phone. A new module is the moment
 that becomes cheap to prevent and expensive to fix later.
@@ -34,8 +34,8 @@ The receiver's system is also shaped for a remote control, not a thumb. `tvFocus
 lift and a 3dp Signal halo on focus change; `tvClickable` wraps it for buttons. Neither affordance
 means anything under a finger, because a touch surface has no persistent focus to show.
 `ReceiverOverscan.SAFE_FRACTION` reserves the outer 5% of every edge because Amazon asks for it on a
-television; on a phone that same margin is simply a wasted band, while the real hazard — a cutout, a
-gesture bar, a status bar — is a different shape entirely. And the receiver draws its text through
+television; on a phone that same margin is simply a wasted band, while the real hazard - a cutout, a
+gesture bar, a status bar - is a different shape entirely. And the receiver draws its text through
 `androidx.tv.material3`, a library whose focus and container semantics exist for ten-foot UI.
 
 ## Decision
@@ -53,7 +53,7 @@ gesture bar, a status bar — is a different shape entirely. And the receiver dr
 - **Two divergences from the television are deliberate and recorded.** `Muted` is the desktop's
   `#858D83` rather than the receiver's `#A3ABA0`, because a phone is held at near-field distance and
   the lifted value reads there as washed out rather than as secondary. The type scale is the
-  desktop's — 28/32, 18/22, 15/19, 13/19, 12/17, 9 with 1.4 tracking, and a 15 bold tabular Readout —
+  desktop's - 28/32, 18/22, 15/19, 13/19, 12/17, 9 with 1.4 tracking, and a 15 bold tabular Readout -
   rather than the television's ten-foot scale, on the same reasoning.
 - **Three things are deliberately not carried over.** `ReceiverOverscan` does not come with the
   tokens; the phone's equivalent is `WindowInsets.safeDrawing`, which describes the actual obstacles.
@@ -141,7 +141,7 @@ Revisit when the receiver migration slice lands: at that point the carve-out is 
 `Muted` divergence becomes a per-product override that must be stated in one place rather than in two
 comments. Revisit if Inter is bundled into `design/src/main/res/font/`, because the metrics the
 current tests pin were chosen against the platform sans-serif. Revisit on measured legibility
-evidence — a contrast measurement or a genuine accessibility finding — not on an opinion that a value
+evidence - a contrast measurement or a genuine accessibility finding - not on an opinion that a value
 looks better. A light variant, an off-palette colour, or a per-screen token override would each need
 a superseding record rather than an exception.
 
@@ -157,7 +157,7 @@ a superseding record rather than an exception.
 - [Kotlin token test](../../../apps/phone/design/src/test/kotlin/com/rextechnologies/flint/design/FlintTokenTest.kt)
 - [Desktop token test](../../../apps/windows/tests/Flint.App.Tests/RexDesignSystemTests.cs)
 - [Desktop pressed and hovered opacities](../../../apps/windows/src/Flint.App/Theme/FlintControls.axaml)
-- [`ReceiverTokens` — `tvFocus`, `tvClickable`, `ReceiverOverscan`](../../../apps/receiver/app/src/main/kotlin/com/rextechnologies/flint/receiver/ui/ReceiverTokens.kt)
+- [`ReceiverTokens` - `tvFocus`, `tvClickable`, `ReceiverOverscan`](../../../apps/receiver/app/src/main/kotlin/com/rextechnologies/flint/receiver/ui/ReceiverTokens.kt)
 - [The receiver's lifted `Muted`](../../../apps/receiver/app/src/main/kotlin/com/rextechnologies/flint/receiver/ui/ReceiverTheme.kt)
 - [Receiver snapshot harness](../../../apps/receiver/app/src/test/kotlin/com/rextechnologies/flint/receiver/snapshot/ReceiverSnapshotTest.kt)
 - [`:design` module build](../../../apps/phone/design/build.gradle.kts)

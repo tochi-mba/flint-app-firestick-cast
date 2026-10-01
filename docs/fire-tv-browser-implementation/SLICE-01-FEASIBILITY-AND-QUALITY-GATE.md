@@ -1,4 +1,4 @@
-# Slice 01 — feasibility, capability, and quality gate
+# Slice 01 - feasibility, capability, and quality gate
 
 **Governing ADRs:** [ADR-0001](adrs/ADR-0001-TV-RESIDENT-BROWSER-OWNERSHIP.md), [ADR-0002](adrs/ADR-0002-PLATFORM-AND-DISTRIBUTION-SCOPE.md), [ADR-0006](adrs/ADR-0006-WEBVIEW-SECURITY-PROFILE.md), [ADR-0009](adrs/ADR-0009-OPT-IN-BOUNDED-JPEG-PREVIEW.md), and [ADR-0011](adrs/ADR-0011-TEST-EVIDENCE-AND-LATENCY-GOVERNANCE.md).
 

@@ -130,7 +130,7 @@ public sealed class CapabilityAssessorTests
     public void Assess_PairedSessionWithUnknownPlatform_NoLongerBlocksMediaOnAdbInstallStory()
     {
         // Pair proved the Flint receiver is live. Repeating the ADB-install BLOCKED blurb on every
-        // mode card after that is a lie — Media at least must follow the live session.
+        // mode card after that is a lie - Media at least must follow the live session.
         var device = Build.Device(FireTvPlatform.Unknown, AdbConnectionState.Refused);
 
         var report = CapabilityAssessor.Assess(device, Build.Host(), Build.Path(), pairedSessionActive: true);
@@ -262,7 +262,7 @@ public sealed class CapabilityAssessorTests
     public void Assess_SecondScreen_IsStillUnbuiltEvenThoughMirroringWorks()
     {
         // A second screen is a mirror plus an indirect display driver. Proving the mirror works
-        // says nothing about that driver, which does not exist in this build — so the two are
+        // says nothing about that driver, which does not exist in this build - so the two are
         // judged separately rather than the second screen inheriting the mirror's verdict.
 
         // Act
@@ -505,7 +505,7 @@ public sealed class CapabilityAssessorTests
         // Act
         var report = CapabilityAssessor.Assess(Build.Device(), Build.Host(), path);
 
-        // Assert: an unmeasured capacity is not a failing one, so the mode is still offered — but
+        // Assert: an unmeasured capacity is not a failing one, so the mode is still offered - but
         // the gap in Flint's knowledge is stated rather than papered over, and the sentinel value
         // standing in for "unmeasured" never reaches the user.
         var mirror = report[CastMode.Mirror];

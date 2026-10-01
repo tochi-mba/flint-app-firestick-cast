@@ -12,7 +12,7 @@ namespace Flint.App.Tests;
 /// The empty stage is the largest thing on the Web page, and the first thing a new user reads.
 /// </summary>
 /// <remarks>
-/// It used to say "waiting for TV preview" for every frameless state — including the two where no
+/// It used to say "waiting for TV preview" for every frameless state - including the two where no
 /// frame is ever coming: preview switched off, and a receiver that cannot capture. Telling someone
 /// to wait for something that will never arrive is the specific failure these tests exist to stop.
 /// </remarks>

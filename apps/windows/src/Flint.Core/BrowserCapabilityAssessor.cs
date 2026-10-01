@@ -30,7 +30,7 @@ public static class BrowserCapabilityAssessor
         }
 
         // Unknown platform usually means ADB never identified the OS. A clean secure-browser
-        // advertisement still proves our Android receiver is running — that TXT only exists there —
+        // advertisement still proves our Android receiver is running - that TXT only exists there -
         // so eligibility may continue from evidence rather than waiting on ADB.
         if (receiver.Platform == FireTvPlatform.Unknown
             && receiver.BrowserEvidence is not { SecureEndpointAvailable: true })

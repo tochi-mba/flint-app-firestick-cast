@@ -6,7 +6,7 @@ namespace Flint.App.ViewModels;
 /// <remarks>
 /// Typing on a television is the slowest thing this feature asks of anyone, and the remote's
 /// on-screen keyboard is why. When the receiver reports that a page field has focus, forwarding
-/// arms itself so the next keystroke simply lands — no capture pad to find, no Send button.
+/// arms itself so the next keystroke simply lands - no capture pad to find, no Send button.
 ///
 /// The "why" matters as much as the "whether". Capture someone armed by hand must survive a field
 /// losing focus, and capture that armed itself must not outlive the field it was armed for. Keeping

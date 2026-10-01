@@ -5,7 +5,7 @@ package com.rextechnologies.flint.receiver.browser
  *
  * Pane-local by default: no Activity immersive mode unless the controller is told theater mode is
  * on (every other pane suspended). Generic over the view type so ordering is testable without a
- * device — production uses `android.view.View`, tests use a string.
+ * device - production uses `android.view.View`, tests use a string.
  */
 interface PaneFullscreenHost<V> {
     fun showInPane(view: V)
@@ -26,7 +26,7 @@ interface PaneFullscreenHost<V> {
 /**
  * One pane's page-requested fullscreen, honoured exactly once at a time for that pane.
  *
- * Differs from [BrowserFullscreenController] in that immersive chrome is off by default — the
+ * Differs from [BrowserFullscreenController] in that immersive chrome is off by default - the
  * custom view fills the pane's bounds only. Activity-wide immersive runs solely when
  * [theaterMode] reports true.
  *

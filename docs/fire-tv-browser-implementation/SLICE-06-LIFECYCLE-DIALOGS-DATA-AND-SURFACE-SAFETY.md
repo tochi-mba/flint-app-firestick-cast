@@ -1,4 +1,4 @@
-# Slice 06 — lifecycle, dialogs, data, and surface safety
+# Slice 06 - lifecycle, dialogs, data, and surface safety
 
 **Governing ADRs:** [ADR-0003](adrs/ADR-0003-SEPARATE-PINNED-TLS-BROWSER-SESSION.md), [ADR-0006](adrs/ADR-0006-WEBVIEW-SECURITY-PROFILE.md), [ADR-0007](adrs/ADR-0007-SURFACE-LIFECYCLE-AND-TV-FIRST-UX.md), [ADR-0010](adrs/ADR-0010-NATIVE-DIALOGS-DATA-CLEAR-AND-RECOVERY.md), and [ADR-0011](adrs/ADR-0011-TEST-EVIDENCE-AND-LATENCY-GOVERNANCE.md).
 
@@ -116,7 +116,7 @@ service shutdown, execute exactly this ordered effect list and test it with a re
 ### Disconnect policy
 
 - On authenticated host disconnect: stop remote writer/input immediately, drop future preview work
-  (none exists), show “Controller disconnected — TV controls remain available,” and start one
+  (none exists), show “Controller disconnected - TV controls remain available,” and start one
   bounded 30-second monotonic grace timer.
 - A reconnect during the grace period must re-pin/re-authenticate and acquire a new BrowserSession;
   it receives current bounded safe state but cannot replay pending input/dialog/data-clear work.

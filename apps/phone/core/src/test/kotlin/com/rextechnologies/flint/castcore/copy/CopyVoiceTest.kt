@@ -263,7 +263,7 @@ class OnboardingCopyTest {
 
         val unordered = OnboardingCopy.steps.first { !it.ordered && it.points.isNotEmpty() }
         assertTrue(unordered.displayPoints.all { it.number == null })
-        assertTrue(unordered.displayPoints.all { it.marker == "—" })
+        assertTrue(unordered.displayPoints.all { it.marker == "-" })
     }
 
     @Test
@@ -401,10 +401,10 @@ class SurfacesCopyTest {
 
     @Test
     fun `progress is a percentage of what is actually being sent`() {
-        assertEquals("Sending to the TV — 0%.", MediaCopy.pushing(0, 10))
-        assertEquals("Sending to the TV — 50%.", MediaCopy.pushing(5, 10))
-        assertEquals("Sending to the TV — 100%.", MediaCopy.pushing(10, 10))
-        assertEquals("Sending to the TV — 100%.", MediaCopy.pushing(99, 10))
+        assertEquals("Sending to the TV - 0%.", MediaCopy.pushing(0, 10))
+        assertEquals("Sending to the TV - 50%.", MediaCopy.pushing(5, 10))
+        assertEquals("Sending to the TV - 100%.", MediaCopy.pushing(10, 10))
+        assertEquals("Sending to the TV - 100%.", MediaCopy.pushing(99, 10))
         assertFailsWith<IllegalArgumentException> { MediaCopy.pushing(0, 0) }
     }
 
@@ -420,7 +420,7 @@ class SurfacesCopyTest {
         assertEquals("Not measured", Placeholders.NOT_MEASURED)
         assertEquals("Not probed", Placeholders.NOT_PROBED)
         assertEquals("Not reported", Placeholders.NOT_REPORTED)
-        assertEquals("—", Placeholders.NONE)
+        assertEquals("-", Placeholders.NONE)
         assertEquals("No receiver found", Placeholders.NO_RECEIVER)
     }
 }

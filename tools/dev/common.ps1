@@ -104,8 +104,8 @@ function Resolve-Cargo {
     # rustup's install need not be on PATH in IDE and non-interactive shells.
     $homes = @($env:CARGO_HOME, (Join-Path ([Environment]::GetFolderPath('UserProfile')) '.cargo')) | Where-Object { $_ }
 
-    # Then the checkout's own ancestors. A repository opened under another account's home directory —
-    # a second profile, or a path spelled with a different alias for the same user — has its cargo
+    # Then the checkout's own ancestors. A repository opened under another account's home directory -
+    # a second profile, or a path spelled with a different alias for the same user - has its cargo
     # under that home rather than under the one this process reports.
     $directory = [System.IO.DirectoryInfo]::new($script:RepoRoot)
     while ($null -ne $directory) {

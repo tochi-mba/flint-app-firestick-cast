@@ -25,7 +25,7 @@ object Placeholders {
     const val NOT_MEASURED: String = "Not measured"
     const val NOT_PROBED: String = "Not probed"
     const val NOT_REPORTED: String = "Not reported"
-    const val NONE: String = "—"
+    const val NONE: String = "-"
     const val NO_RECEIVER: String = "No receiver found"
 }
 

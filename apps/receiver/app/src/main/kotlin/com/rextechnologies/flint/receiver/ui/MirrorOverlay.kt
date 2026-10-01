@@ -7,7 +7,7 @@ import android.view.KeyEvent
  *
  * A mirror is the one surface with no controls of its own: the whole point is an unobstructed
  * picture. So the controls stay hidden until the viewer reaches for them, which on a television
- * means pressing the D-pad — the same gesture every streaming app uses to summon a HUD.
+ * means pressing the D-pad - the same gesture every streaming app uses to summon a HUD.
  */
 internal enum class MirrorKeyOutcome {
     /** Bring the controls up, swallowing the press that summoned them. */
@@ -72,7 +72,7 @@ internal fun mirrorKeyOutcome(keyCode: Int, controlsVisible: Boolean): MirrorKey
  * How a mirrored desktop is fitted to a television that is a different shape.
  *
  * A 16:10 laptop panel on a 16:9 television leaves bars on two sides. Which trade is right is a
- * matter of taste rather than correctness — see the whole picture, or fill the whole screen — so
+ * matter of taste rather than correctness - see the whole picture, or fill the whole screen - so
  * it is offered as a control instead of decided here.
  */
 internal enum class MirrorFitMode {

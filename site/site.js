@@ -1,5 +1,5 @@
 /*
-  Flint — REX Technologies. The page works without this file; with it, two things improve.
+  Flint - REX Technologies. The page works without this file; with it, two things improve.
 
   1. The download panel leads with the build for the device that is reading the page, and offers
      the others beneath. Detection uses the browser's own platform hints and nothing else, and a
@@ -375,7 +375,7 @@
 
     // The rolling Windows build first, as the phone's is: every merge replaces it. A tagged stable
     // release is only the fallback, for when the rolling one is missing or has no zip on it.
-    // The installer first, the zip only if a release carries no installer — an older one, or a build
+    // The installer first, the zip only if a release carries no installer - an older one, or a build
     // from before there was one.
     fetchJson(API + "/releases/tags/latest-windows").then(function (rel) {
       var asset = setupOf(rel) || zipOf(rel);

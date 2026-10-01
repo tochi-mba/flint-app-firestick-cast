@@ -1,4 +1,4 @@
-# ADR-0011 — test evidence and latency governance
+# ADR-0011 - test evidence and latency governance
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -110,7 +110,7 @@ of how the new rule retains or improves truthfulness and failure detection.
 
 ## References
 
-- [Slice 01 — feasibility and quality gate](../SLICE-01-FEASIBILITY-AND-QUALITY-GATE.md)
-- [Slice 09 — hardening and release evidence](../SLICE-09-HARDENING-RELEASE-EVIDENCE-AND-DOCUMENTATION.md)
+- [Slice 01 - feasibility and quality gate](../SLICE-01-FEASIBILITY-AND-QUALITY-GATE.md)
+- [Slice 09 - hardening and release evidence](../SLICE-09-HARDENING-RELEASE-EVIDENCE-AND-DOCUMENTATION.md)
 - [Project constraints](../../../AGENTS.md)
 - [Latency budget](../../LATENCY_BUDGET.md)

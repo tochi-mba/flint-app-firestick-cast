@@ -42,7 +42,7 @@ public static partial class BrowserAddressBarResolver
                 return builder.Uri.AbsoluteUri;
             }
 
-            // javascript:, file:, etc. — safer as a search than as a rejected scheme on the TV.
+            // javascript:, file:, etc. - safer as a search than as a rejected scheme on the TV.
             return ToGoogleSearch(input);
         }
 
@@ -67,7 +67,7 @@ public static partial class BrowserAddressBarResolver
     private static bool LooksLikeHostOrPath(string input)
     {
         // Single tokens without a dot are almost always search ("weather", "maps"), not hosts.
-        // A slash implies path intent ("example.com/a" or rarely "/path" — latter still searches if no host).
+        // A slash implies path intent ("example.com/a" or rarely "/path" - latter still searches if no host).
         if (!input.Contains('.', StringComparison.Ordinal) && !input.Contains('/', StringComparison.Ordinal))
         {
             return false;

@@ -1,4 +1,4 @@
-# Slice 05 — secure remote controls and explicit text
+# Slice 05 - secure remote controls and explicit text
 
 **Governing ADRs:** [ADR-0003](adrs/ADR-0003-SEPARATE-PINNED-TLS-BROWSER-SESSION.md), [ADR-0005](adrs/ADR-0005-PROTOCOL-V2-CANONICAL-CONTRACT.md), [ADR-0007](adrs/ADR-0007-SURFACE-LIFECYCLE-AND-TV-FIRST-UX.md), [ADR-0008](adrs/ADR-0008-PORTABLE-INPUT-AND-STALE-GUARDS.md), and [ADR-0011](adrs/ADR-0011-TEST-EVIDENCE-AND-LATENCY-GOVERNANCE.md).
 

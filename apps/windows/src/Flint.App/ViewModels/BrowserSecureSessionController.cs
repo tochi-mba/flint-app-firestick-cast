@@ -8,7 +8,7 @@ namespace Flint.App.ViewModels;
 /// Owns the life of the pinned TLS session: opening it, replacing it, watching it end.
 /// </summary>
 /// <remarks>
-/// The page's hardest bugs have all lived here, and they share a shape — the page believing in a
+/// The page's hardest bugs have all lived here, and they share a shape - the page believing in a
 /// session that is gone. A SecureReady phase over a dead transport left GO disabled with Verify
 /// hidden and nothing to click; a command counter reset on reconnect made the first tab click
 /// STALE_COMMAND. Both were fixed by being exact about what survives a transport and what does not,

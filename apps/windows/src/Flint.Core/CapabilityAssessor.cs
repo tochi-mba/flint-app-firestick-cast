@@ -39,7 +39,7 @@ public static class CapabilityAssessor
     /// Capture and hardware encoding are probed independently, and either can report itself
     /// present without this being true: on their own, neither produces a stream. This became true
     /// once the capture to encode to transport path was proven end to end against a Fire TV Stick
-    /// with the desktop visibly on screen, which is the only evidence that counts — an earlier
+    /// with the desktop visibly on screen, which is the only evidence that counts - an earlier
     /// build reported thousands of frames sent and a healthy receiver bitrate while the television
     /// showed flat colour, because the encoder was being handed blank buffers.
     /// </para>
@@ -171,7 +171,7 @@ public static class CapabilityAssessor
         // Every check above passed: the hardware and the network are both provably ready. What is
         // missing is Flint itself, and that is a fact about this build rather than about anything
         // fixable here or on the TV, so it is reported as its own outcome rather than folded into
-        // one of the hardware-shaped Blocked verdicts above — those exist for reasons a person can
+        // one of the hardware-shaped Blocked verdicts above - those exist for reasons a person can
         // act on, and "wait for an update" is not one of them.
         if (!MirrorStreamingImplemented)
         {
@@ -180,7 +180,7 @@ public static class CapabilityAssessor
                 ModeStatus.NotImplemented,
                 "This PC and this receiver are both ready: a hardware encoder is present, screen "
                     + "capture works, and the network path is sufficient." + capacity + " Flint has "
-                    + "not written the code that turns a captured frame into a stream yet, though — "
+                    + "not written the code that turns a captured frame into a stream yet, though - "
                     + "no setting here or on the TV changes that.",
                 Remedy: null);
         }
@@ -201,7 +201,7 @@ public static class CapabilityAssessor
 
         // A second screen is a mirror plus a virtual display, so it inherits every mirror
         // blocker. An impossibility or a genuine hardware/network problem is reported exactly as
-        // Mirror reports it — a driver-shaped or network-shaped fix belongs to that mode too.
+        // Mirror reports it - a driver-shaped or network-shaped fix belongs to that mode too.
         var mirror = AssessMirror(device, host, path, pairedSessionActive);
         if (mirror.Status is ModeStatus.Impossible or ModeStatus.Blocked)
         {
@@ -215,11 +215,11 @@ public static class CapabilityAssessor
 
         // Second screen needs an indirect display driver on top of everything mirroring needs,
         // and no such driver exists in this build. That stays true after the mirror path itself
-        // starts working, so it is judged on its own flag rather than inherited from the mirror's
-        // — which would have quietly promised a second screen the moment the mirror shipped.
+        // starts working, so it is judged on its own flag rather than inherited from the mirror's -
+        // which would have quietly promised a second screen the moment the mirror shipped.
         if (!SecondScreenImplemented)
         {
-            // Says what the mode would do, that the pair is capable of it, and what is missing —
+            // Says what the mode would do, that the pair is capable of it, and what is missing -
             // in that order. Leading with the missing driver made a mode that is merely unfinished
             // read as one this PC could never run.
             var readiness = mirror.Status is ModeStatus.NotImplemented
@@ -337,7 +337,7 @@ public static class CapabilityAssessor
         // Two different failures wear the same blocked badge, and telling them apart is the whole
         // value of this message.
         //
-        // A refusal means something is there and actively closed the port — genuinely ambiguous
+        // A refusal means something is there and actively closed the port - genuinely ambiguous
         // between Vega and debugging switched off, so the developer-options remedy is right.
         //
         // A timeout means nothing answered at all, which is overwhelmingly a wrong or stale

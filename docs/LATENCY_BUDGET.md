@@ -16,7 +16,7 @@ What has *not* been measured is the number that actually matters to a person wat
 between something changing on the laptop screen and the same change appearing on the television.
 That needs the camera procedure further down, and until it is done no end-to-end latency figure
 appears in this document. The host path being fast is a precondition for a good number, not evidence
-of one — the receiver's decoder and the panel's own processing are both larger terms than anything
+of one - the receiver's decoder and the panel's own processing are both larger terms than anything
 here, and neither is under Flint's control.
 
 The table below is what Flint is aiming at, and why each stage is bounded where it is.
@@ -88,7 +88,7 @@ display attached, 2560x1600 desktop reduced to 1920x1200 for encoding, Windows 1
 | Read back to system memory | ~7.4 ms | ~9-13 ms | ~12-16 ms |
 
 Both start from the same acquired desktop texture, over three runs of
-`report_processing_cost_of_the_gpu_path_against_readback`. The acquire is deliberately not timed —
+`report_processing_cost_of_the_gpu_path_against_readback`. The acquire is deliberately not timed -
 see below.
 
 ## Host pipeline: keeping the frame on the GPU
@@ -125,7 +125,7 @@ memory as before. That path reduces the frame before the bus copy, in three step
 
 1. **A mip chain**, for exact power-of-two halvings. Cheapest, and the narrowest: it expresses
    2560x1600 to 1280x800 and nothing in between.
-2. **The video processor**, for any other ratio. This is what actually covers the common case — a
+2. **The video processor**, for any other ratio. This is what actually covers the common case - a
    16:10 desktop capped at 1920 is a 0.75 ratio, which no number of halvings reaches. Before this,
    such a session fell through to *no* GPU reduction at all: a full-size readback followed by a
    resize on the processor.
@@ -138,13 +138,13 @@ Adding the second step nearly halved the fallback path, from about 15.6 ms per f
 
 `AcquireNextFrame` blocks until the desktop changes. A measurement that includes it reports how busy
 the screen is rather than how fast the pipeline is, and the two are unrelated. This project made
-exactly that mistake once — a benchmark that timed the acquire reported the same configuration at
+exactly that mistake once - a benchmark that timed the acquire reported the same configuration at
 25 ms and at 80 ms on consecutive runs, and the wrong conclusion drawn from it disabled the GPU
 downscale as a supposed regression for a while. Every figure in this document times the work only.
 
 ### Stage breakdown of the readback path
 
-From `report_stage_timings`, which reduces to half size — an exact halving, so the mip chain applies
+From `report_stage_timings`, which reduces to half size - an exact halving, so the mip chain applies
 and this is the best case for that path rather than the typical one:
 
 | Stage | Median | Worst |
@@ -183,7 +183,7 @@ capture, colour conversion and the network.
 An earlier version of this table reported hardware at a 5.4ms worst case and recommended it on that
 basis. The timings were real; the encoder was not. It was emitting H.264 with correct parameter
 sets, correct dimensions, correct Annex B framing and a plausible bitrate, every frame of which
-decoded to a field of zeroes — which a television renders as flat green. `ffprobe` read all 59
+decoded to a field of zeroes - which a television renders as flat green. `ffprobe` read all 59
 frames without complaint. Three independent decoders agreed on the result: Media Foundation's own,
 `ffmpeg`, and the MediaTek decoder in a Fire TV Stick.
 
@@ -200,7 +200,7 @@ Two smaller defects were found on the way and are worth keeping fixed regardless
 
 * **Submitted samples were released too early.** An asynchronous transform reads a frame after
   `ProcessInput` returns, so dropping the caller's reference immediately is a use-after-free with no
-  crash — the encoder compresses whatever now occupies the memory. The tell was a solid *black*
+  crash - the encoder compresses whatever now occupies the memory. The tell was a solid *black*
   frame encoding to 481KB while a solid white one took 32KB; both are uniform and neither should
   cost more than a few hundred bytes.
 * **Direct3D 11 will not create an NV12 texture with dynamic usage.** `CreateTexture2D` answers
@@ -256,7 +256,7 @@ correlation IDs used. Redact URLs, text, cookies, certificates, and preview pixe
 |---|---|---|---:|---:|---:|---:|---:|---|
 | _pending_ | _pending_ | _pending_ | | | | | | Use `tools/scripts/test-fire-tv-browser.ps1`. |
 
-### First device run — functional, not yet timed
+### First device run - functional, not yet timed
 
 2026-09-06, Fire TV Stick 4K (`AFTMM` / `mantis`), Fire OS 6.7.1.1, **API 25**, 2 GB RAM,
 WebView `com.amazon.webview.chromium` **118.0.5993.155**, host on the same hotspot LAN
@@ -265,28 +265,28 @@ WebView `com.amazon.webview.chromium` **118.0.5993.155**, host on the same hotsp
 Confirmed working end to end:
 
 - Browser TLS listener bound and advertised over mDNS. The Keystore identity was obtained and
-  `BrowserCipherSuites.select` found a forward-secret suite on real Conscrypt — the exact failure
+  `BrowserCipherSuites.select` found a forward-secret suite on real Conscrypt - the exact failure
   the cipher policy was written against.
 - Host pinned the receiver by its displayed short code and opened an HTTPS page. State flowed back
   as `Loading 0% -> 100% -> Loaded`, with the title arriving mid-load.
 - Chromium 118 launched a sandboxed renderer for the receiver process.
 - The TV-local cursor rendered and moved **pixel-accurately**: 5 taps up moved it exactly
   5 x `TAP_PIXELS` (120 px); 12 taps down moved it 288 px.
-- The persistent browser identity survived an app reinstall — the same short code, so a host that
+- The persistent browser identity survived an app reinstall - the same short code, so a host that
   trusted the receiver once does not have to verify again.
 
 **No timing figures are recorded.** Nothing in this run was instrumented or sampled, so every span in
 the table above remains a target. Do not quote the 66 ms ICMP RTT as a browser latency; it measures
 the network, not the feature.
 
-### Second device run — fullscreen, chrome, and memory
+### Second device run - fullscreen, chrome, and memory
 
 Same device. Confirmed additionally:
 
 - **Page-requested fullscreen works.** A real HTTPS video was driven with the D-pad cursor onto
   Chromium's own fullscreen control; the video filled the screen, the control flipped to "exit",
   and Flint's chrome and cursor correctly stood down.
-- **Back exits fullscreen** rather than the browser — rung 3 of the ladder, on hardware.
+- **Back exits fullscreen** rather than the browser - rung 3 of the ladder, on hardware.
 - **The screen is held awake while fullscreen**, confirmed by a `SCREEN_BRIGHT_WAKE_LOCK` held for
   the receiver's uid in `dumpsys power`.
 - The classified error page rendered for a real failing URL, with the retry action and the
@@ -304,7 +304,7 @@ So **one live renderer costs roughly 46–53 MB** on this device (2 GB total RAM
 two live renderers therefore extrapolates to about 160–175 MB, inside the 220 MB gate.
 
 **That two-tab figure is arithmetic, not a measurement.** A second live tab was not opened during
-this run — see the open issue below — so the plateau that the freeze policy is supposed to produce
+this run - see the open issue below - so the plateau that the freeze policy is supposed to produce
 has not been observed directly. Treat the gate as unverified.
 
 #### Open issue
@@ -333,7 +333,7 @@ Targets and probe status for ADR-0019. **Do not treat targets as measurements.**
 | Observation | Status | Notes |
 |---|---|---|
 | 1 live WebView PSS | Measured | 46–53 MB above idle (table above) |
-| 2 live WebViews PSS (tabs or mosaic) | **Unmeasured** | Arithmetic ~160–175 MB vs 220 MB gate — not observed |
+| 2 live WebViews PSS (tabs or mosaic) | **Unmeasured** | Arithmetic ~160–175 MB vs 220 MB gate - not observed |
 | 3 / 4 live WebViews PSS | **Unmeasured** | Required before raising mosaic `MAX_LIVE` |
 | 2 concurrent HTML5 video decodes | **Unmeasured** | Decoder contention unknown on AFTMM |
 | `VpnService.prepare` on Fire OS | Probe in software | `AndroidVpnCapabilityProbe`; hardware consent UX TBD per SKU |
@@ -356,7 +356,7 @@ the phone's own pipeline has been timed on real hardware. Every figure here is a
 one until a repeatable run against a named pair puts it in a measured table of its own.
 
 The phone path is not the desktop path with a different capture source. It has stages the desktop
-does not — a `VirtualDisplay` and, on the mirror path, a `MediaProjection` — and it runs on a shared
+does not - a `VirtualDisplay` and, on the mirror path, a `MediaProjection` - and it runs on a shared
 SoftAP link where the phone is the access point rather than a client, which changes what the network
 term is competing with.
 
@@ -389,7 +389,7 @@ slice that runs it does not have to invent it.
    capture stage and so measures the pipeline rather than the pipeline plus `MediaProjection`.
 3. Film the phone and the television in one frame at 240 fps.
 4. Count frames between the change on the phone and the change on the television. At 240 fps each
-   frame is 4.17 ms, and that is the resolution of the result — quote it as a range, not a point.
+   frame is 4.17 ms, and that is the resolution of the result - quote it as a range, not a point.
 5. Repeat at least five times and report the median and the spread. A single run is an anecdote.
 6. Repeat the whole thing in mirror mode. The difference between the two is the cost of
    `MediaProjection`, which is the one term this product can actually choose to avoid.

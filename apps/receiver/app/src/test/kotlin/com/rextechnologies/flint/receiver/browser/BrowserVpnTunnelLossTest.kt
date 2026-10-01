@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
  * Verification used to be a single check that unregistered itself on success, which latched
  * [BrowserVpnState.Connected] for the rest of the session. A Wi-Fi change, an endpoint that stopped
  * answering, or Android revoking consent all left Flint saying traffic was protected while pages
- * kept loading — on a profile whose whole reason for the setting was that they must not.
+ * kept loading - on a profile whose whole reason for the setting was that they must not.
  */
 class BrowserVpnTunnelLossTest {
     private class RecordingTunnel : BrowserVpnTunnel {

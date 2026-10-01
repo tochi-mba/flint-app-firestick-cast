@@ -36,7 +36,7 @@ val LocalFlintTextStyle: ProvidableCompositionLocal<TextStyle> =
  *
  * Nothing in this repository honoured it before, because the Windows shell has no motion to speak of
  * and a television is not where people turn animation off. A phone is, and the phone app has more
- * motion than either — so every animation in it is gated on this rather than on a preference of its
+ * motion than either - so every animation in it is gated on this rather than on a preference of its
  * own, because the person already told the system once.
  */
 val LocalReducedMotion: ProvidableCompositionLocal<Boolean> = staticCompositionLocalOf { false }

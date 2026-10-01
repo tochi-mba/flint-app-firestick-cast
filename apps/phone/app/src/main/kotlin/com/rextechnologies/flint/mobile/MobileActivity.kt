@@ -20,7 +20,7 @@ import com.rextechnologies.flint.mobile.ui.MobileApp
  *
  * One activity, and it handles every configuration change itself rather than being recreated. That
  * is not a convenience: rotating the phone during a cast has to reconfigure the encoder and re-send
- * VIDEO_CONFIG, and a recreation would tear the session down underneath it — the television would
+ * VIDEO_CONFIG, and a recreation would tear the session down underneath it - the television would
  * show a frozen frame and nobody would connect that to having turned the phone sideways.
  *
  * The two system dialogs live here rather than in the controller, because both are launched through
@@ -45,7 +45,7 @@ class MobileActivity : ComponentActivity() {
      * Notifications, asked for once.
      *
      * The manifest has declared this permission since the foreground service was written and nothing
-     * ever asked for it, so on API 33 and above the ongoing notification was silently suppressed —
+     * ever asked for it, so on API 33 and above the ongoing notification was silently suppressed -
      * and that notification is the only Stop control a locked phone has.
      */
     private val notificationPermission = registerForActivityResult(
@@ -141,7 +141,7 @@ class MobileActivity : ComponentActivity() {
      * Asks Android whether Flint may record this screen.
      *
      * The sentence explaining why is on the card behind this, shown before the dialog rather than
-     * after it — Android asks every session and cannot remember the answer, so the app that explains
+     * after it - Android asks every session and cannot remember the answer, so the app that explains
      * itself is the one a person is less annoyed by the fourth time.
      */
     private fun requestMirrorConsent() {

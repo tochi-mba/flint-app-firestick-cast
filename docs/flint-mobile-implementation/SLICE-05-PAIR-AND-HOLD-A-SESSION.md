@@ -1,4 +1,4 @@
-# Slice 05 — pair and hold a session
+# Slice 05 - pair and hold a session
 
 **Governing ADRs:** [ADR-0026](adrs/ADR-0026-FLINT-MOBILE-CONSUMES-THE-PROTOCOL-IN-REPO.md) and
 [ADR-0029](adrs/ADR-0029-SESSION-TOKENS-ARE-ENCRYPTED-AT-REST-AND-ARE-AUTHORISATION.md).
@@ -43,8 +43,8 @@ television shows the phone's name. Reconnecting afterwards needs no code.
 
 **Envelope versions.** `HELLO` goes out on the oldest supported envelope even though its payload
 advertises the whole range, because a receiver too old to parse a newer envelope has to be able to
-read the first exchange in order to say so. Everything after negotiation uses the negotiated version
-— never `ProtocolVersion.CURRENT`, which is this build's ceiling and not the agreement. The receiver
+read the first exchange in order to say so. Everything after negotiation uses the negotiated version -
+never `ProtocolVersion.CURRENT`, which is this build's ceiling and not the agreement. The receiver
 applies exactly the same rule in the other direction, and its pre-establishment refusals also ride a
 version-1 envelope.
 
@@ -52,7 +52,7 @@ version-1 envelope.
 time and refuses the second only once it has answered that phone's `HELLO` and validated its
 credential. A phone that treats any post-authentication `PROTOCOL_ERROR` as a defect will report a
 protocol failure for the most ordinary situation there is, which is somebody else already watching.
-The refusal is recognised by its detail string — `"This TV is already casting from another phone"` —
+The refusal is recognised by its detail string - `"This TV is already casting from another phone"` -
 because the reason id does not distinguish it.
 
 ## Planned files and boundaries

@@ -79,7 +79,7 @@ internal static class Program
                 .ConfigureAwait(false);
         }
 
-        // A probe has a deadline; a live session does not — it runs until Ctrl+C.
+        // A probe has a deadline; a live session does not - it runs until Ctrl+C.
         var runsUntilStopped = options.MediaPath is not null || options.Mirror || options.BrowseUrl is not null;
         using var cts = new CancellationTokenSource(runsUntilStopped ? Timeout.InfiniteTimeSpan : timeout);
 
@@ -93,7 +93,7 @@ internal static class Program
 
         // A browse run that was given both an address and a browser port needs nothing the probe
         // produces. Probing anyway spent about fifteen seconds before the page opened and printed
-        // an ADB verdict about a port that was never ADB — noise on top of a delay, in the one mode
+        // an ADB verdict about a port that was never ADB - noise on top of a delay, in the one mode
         // where the person is waiting to see something appear on a television.
         if (options.BrowseUrl is { } directUrl
             && options.PairingCode is { } directPairingCode
@@ -110,7 +110,7 @@ internal static class Program
         }
 
         // Progress goes wherever the banner went. With --json, stdout must carry the object and
-        // nothing else — a heading above it makes the whole stream unparseable.
+        // nothing else - a heading above it makes the whole stream unparseable.
         banner.WriteLine("  Capability probe");
         banner.WriteLine();
 
@@ -158,7 +158,7 @@ internal static class Program
             // there is no default to fall back on. Saying so is better than guessing a port and
             // reporting a connection refusal that names the wrong cause.
             // An explicit port wins, because the manual-address path never reads the mDNS record
-            // that carries the advertised one — and a scripted run against a known receiver should
+            // that carries the advertised one - and a scripted run against a known receiver should
             // not have to depend on discovery working.
             if ((options.BrowserPort ?? browseDevice.BrowserEvidence?.SecureEndpointPort) is not { } browserPort)
             {
@@ -182,7 +182,7 @@ internal static class Program
 
         // Pairing by code never needed ADB: the receiver's own handshake accepts or rejects the
         // code independently of whether adb authorized this host. Gating on IsReachable here would
-        // refuse the exact case the manual-address flow exists for — a TV whose adbd is offline or
+        // refuse the exact case the manual-address flow exists for - a TV whose adbd is offline or
         // unauthorized but whose receiver app is reachable and showing a code on screen.
         if (options.PairingCode is { } pairingCode && report.Device is { } device)
         {
@@ -261,7 +261,7 @@ internal static class Program
     /// </summary>
     /// <remarks>
     /// This is the path that proves the host half of a mirror on real hardware, so it prints what
-    /// the engine actually produced rather than only whether it finished — a mirror that reports
+    /// the engine actually produced rather than only whether it finished - a mirror that reports
     /// success while sending nothing is the failure worth catching here.
     /// </remarks>
     private static async Task<int> MirrorScreenAsync(
@@ -338,7 +338,7 @@ internal static class Program
 
         // Pushed over the already-open control connection rather than fetched by the receiver over
         // HTTP: several Fire OS builds silently drop an outbound connection the receiver app itself
-        // opens to a private LAN address, even though this exact connection — opened by this host —
+        // opens to a private LAN address, even though this exact connection - opened by this host -
         // works fine. Kept well ahead of the receiver's own 30s decode timeout so its own, more
         // specific error wins the race if playback still fails after the file arrives.
         using var playbackTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
@@ -452,7 +452,7 @@ internal static class Program
             Console.WriteLine();
             Console.WriteLine(Wrap(
                 "No multicast responder replied at all. That usually means client isolation on the "
-                + "access point, a firewall blocking UDP 5353, or a guest network — not that the "
+                + "access point, a firewall blocking UDP 5353, or a guest network - not that the "
                 + "television is missing. Check that this PC and the television are on the same "
                 + "SSID, and that it is not a guest network.",
                 "  "));
@@ -524,7 +524,7 @@ internal static class Program
         Section("NETWORK PATH");
         if (path is null)
         {
-            Row("Measured", "no — nothing reachable to measure against");
+            Row("Measured", "no - nothing reachable to measure against");
             Console.WriteLine();
             return;
         }

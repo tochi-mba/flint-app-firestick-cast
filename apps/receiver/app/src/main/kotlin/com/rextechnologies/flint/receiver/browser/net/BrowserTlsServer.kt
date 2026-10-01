@@ -79,7 +79,7 @@ class BrowserTlsServer(
     /**
      * How long a read may block before the socket reports a timeout.
      *
-     * A deadline, not a liveness signal — see [dispatchLoop]. Injectable so the idle-session tests
+     * A deadline, not a liveness signal - see [dispatchLoop]. Injectable so the idle-session tests
      * do not have to wait two real minutes to prove it.
      */
     private val readTimeoutMillis: Int = SOCKET_TIMEOUT_MILLIS,
@@ -106,7 +106,7 @@ class BrowserTlsServer(
             candidate.reuseAddress = true
             candidate.enabledProtocols = arrayOf("TLSv1.2")
             // Forward-secret suites only. The receiver's key is signing-only by design, so a suite
-            // that asks the server to decrypt cannot work — and Conscrypt, left to choose, picks one
+            // that asks the server to decrypt cannot work - and Conscrypt, left to choose, picks one
             // and fails inside OpenSSL after the socket is already open. See [BrowserCipherSuites].
             val suites = BrowserCipherSuites.select(candidate.supportedCipherSuites)
             check(suites.isNotEmpty()) {
@@ -166,7 +166,7 @@ class BrowserTlsServer(
         var authenticatedSessionId: Long? = null
         try {
             client.soTimeout = readTimeoutMillis
-            // A peer that vanishes without closing — a stick unplugged, a hotspot dropped — would
+            // A peer that vanishes without closing - a stick unplugged, a hotspot dropped - would
             // otherwise hold the single client slot forever now that a read timeout no longer ends
             // the session. Keep-alive is what still detects that.
             client.keepAlive = true
@@ -209,7 +209,7 @@ class BrowserTlsServer(
             activeClient.compareAndSet(client, null)
             runCatching { client.close() }
             // Teardown first, then the slot. Releasing the slot first lets the next host connect
-            // and open a page while this session's cleanup is still running — and that cleanup
+            // and open a page while this session's cleanup is still running - and that cleanup
             // then wipes the *new* session's state, leaving the television on a blank page with
             // chrome that names nothing. The slot is what serialises the two, so it has to be the
             // last thing released.
@@ -309,7 +309,7 @@ class BrowserTlsServer(
      * A read timeout here is **not** the end of the session. `SO_TIMEOUT` is a deadline on one read,
      * and after authentication silence is the normal state of a browser: someone is reading a page
      * and not pressing anything. Treating that as death is what a Fire TV Stick 4K reported as
-     * `SocketTimeoutException: Read timed out` exactly two minutes into a working session — the
+     * `SocketTimeoutException: Read timed out` exactly two minutes into a working session - the
      * television dropped to its idle screen while the desktop still showed "connected".
      *
      * The deadline still earns its place before authentication, where a silent peer is holding the
@@ -377,7 +377,7 @@ class BrowserTlsServer(
         secureEndpointPort = port,
         apiLevel = apiLevel.coerceIn(1, 0xffff),
         webViewVersion = webViewVersion.take(BrowserWireLimits.MAX_TITLE_BYTES),
-        // Honest capture limits from BrowserPreviewLoop / BrowserPreviewCapture — not aspirational.
+        // Honest capture limits from BrowserPreviewLoop / BrowserPreviewCapture - not aspirational.
         previewSupported = true,
         previewMaxWidth = BrowserPreviewLoop.MAX_WIDTH,
         previewMaxHeight = BrowserPreviewLoop.MAX_HEIGHT,
@@ -401,7 +401,7 @@ class BrowserTlsServer(
      * Key managers backed by the Android Keystore, for a key that cannot leave it.
      *
      * The private key is used in place: the factory is handed the Keystore itself and signs through
-     * it. Copying the key into a software keystore first is the obvious approach and cannot work —
+     * it. Copying the key into a software keystore first is the obvious approach and cannot work -
      * `getEncoded()` on a Keystore-backed key returns null, and the provider then fails with a
      * `KeyStoreException` wrapping a `NullPointerException` that names neither the key nor the
      * cause. That shipped, and it disabled the browser on every device that had a working Keystore.

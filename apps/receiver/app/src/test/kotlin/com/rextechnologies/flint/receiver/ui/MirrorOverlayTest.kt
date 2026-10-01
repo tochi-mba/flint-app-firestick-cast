@@ -30,7 +30,7 @@ class MirrorOverlayTest {
     @Test
     fun `the select button summons the controls rather than doing nothing`() {
         // Pressing OK on a bare picture is the most obvious thing to try, and it used to do
-        // nothing at all — the complaint that prompted this whole surface.
+        // nothing at all - the complaint that prompted this whole surface.
         assertEquals(
             MirrorKeyOutcome.REVEAL_CONTROLS,
             mirrorKeyOutcome(KeyEvent.KEYCODE_DPAD_CENTER, controlsVisible = false),

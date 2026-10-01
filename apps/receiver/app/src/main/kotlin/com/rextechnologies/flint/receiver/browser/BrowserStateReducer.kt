@@ -145,7 +145,7 @@ class BrowserStateReducer {
         if (event.epoch <= 0 || event.commandId <= 0) return state
         // First open requires IDLE. A later Open with a strictly newer epoch is a host reclaim of
         // an orphan/live browser (disconnect without CLOSE, or TV-opened page) and must replace
-        // the visible page — otherwise the wire accepts Open while the glass keeps the old one.
+        // the visible page - otherwise the wire accepts Open while the glass keeps the old one.
         if (state.phase != BrowserPhase.IDLE) {
             val currentEpoch = state.epoch ?: return state
             if (event.epoch <= currentEpoch) return state

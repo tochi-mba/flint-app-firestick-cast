@@ -153,7 +153,7 @@ public sealed class RecordingBrowserSessionConnector(RecordingBrowserRemote remo
 /// </summary>
 /// <remarks>
 /// Records rather than asserts, so each test states its own expectation. The ordering guarantees the
-/// receiver depends on — a strictly advancing sequence, a matching epoch — are only observable from
+/// receiver depends on - a strictly advancing sequence, a matching epoch - are only observable from
 /// the outside as the series of messages that arrived, which is exactly what this keeps.
 /// </remarks>
 public sealed class RecordingBrowserRemote : ISecureBrowserRemote

@@ -16,7 +16,7 @@ const LUMA_BLACK: i32 = 16;
 const CHROMA_NEUTRAL: i32 = 128;
 
 // Coefficients are Q8 fixed point: the real BT.709 luma weights (0.2126, 0.7152, 0.0722) scaled
-// for limited range (219/255) and then by 256. Integer maths here is not a shortcut — it is what
+// for limited range (219/255) and then by 256. Integer maths here is not a shortcut - it is what
 // keeps a full-screen conversion inside the frame budget, and it is exactly reproducible, which
 // floating point across machines is not.
 const LUMA_R: i32 = 47;
@@ -27,7 +27,7 @@ const LUMA_B: i32 = 16;
 // grey: if the weights do not cancel for R == G == B, every neutral shade drifts off-centre. The
 // unrounded BT.709 values do cancel; rounding each to Q8 independently does not, so the middle
 // weight is derived from the other two rather than rounded on its own. Getting this wrong tints
-// the whole picture by a step — visible on a grey desktop, and near-impossible to attribute.
+// the whole picture by a step - visible on a grey desktop, and near-impossible to attribute.
 const CB_R: i32 = -26;
 const CB_B: i32 = 112;
 const CB_G: i32 = -(CB_R + CB_B);
@@ -88,7 +88,7 @@ impl std::error::Error for ConvertError {}
 
 /// The number of bytes an NV12 frame of this size occupies.
 ///
-/// One byte of luma per pixel, plus one interleaved chroma pair per 2x2 block — three bytes for
+/// One byte of luma per pixel, plus one interleaved chroma pair per 2x2 block - three bytes for
 /// every two pixels.
 #[must_use]
 pub fn nv12_len(width: u32, height: u32) -> usize {
@@ -148,7 +148,7 @@ pub fn bgra_to_nv12(
     }
 
     // Chroma is sampled once per 2x2 block, averaging the four pixels rather than picking one of
-    // them: on the sharp edges that dominate a desktop — text, window borders — taking a single
+    // them: on the sharp edges that dominate a desktop - text, window borders - taking a single
     // corner makes colour fringes that averaging does not.
     for block_y in 0..height / 2 {
         for block_x in 0..width / 2 {
@@ -242,7 +242,7 @@ mod tests {
     #[test]
     fn the_chroma_weights_cancel_so_neutral_colours_cannot_drift() {
         // Rounding each BT.709 weight to Q8 on its own leaves Cb summing to -1, which pushed every
-        // grey one step off neutral — a whole-picture tint that is trivial to introduce and very
+        // grey one step off neutral - a whole-picture tint that is trivial to introduce and very
         // hard to attribute after the fact.
         assert_eq!(CB_R + CB_G + CB_B, 0);
         assert_eq!(CR_R + CR_G + CR_B, 0);
@@ -308,7 +308,7 @@ mod tests {
     #[test]
     fn padding_between_rows_is_skipped_rather_than_encoded() {
         // Desktop duplication routinely hands back a stride wider than the visible row. Treating
-        // that padding as pixels shears the picture diagonally — an unmistakable symptom, but only
+        // that padding as pixels shears the picture diagonally - an unmistakable symptom, but only
         // if a test catches it before a person does.
         let width = 2u32;
         let height = 2u32;

@@ -20,7 +20,7 @@ import kotlin.test.assertEquals
  * The chrome has to be operable the moment it appears.
  *
  * Found on a Fire TV Stick 4K: pressing Menu on a freshly opened page showed the omnibar with
- * nothing focused, and the D-pad then did nothing at all — the surface had handed focus to the
+ * nothing focused, and the D-pad then did nothing at all - the surface had handed focus to the
  * chrome, and the chrome had handed it to a control that could not accept it.
  *
  * A later Fire TV defect: Select showed a press animation and dropped the halo without firing
@@ -37,7 +37,7 @@ class ReceiverBrowserOmnibarTest {
     fun `the control focus lands on is reachable with no history to go back to`() {
         // The state every newly opened page is in: Back and Forward are both disabled. Whatever the
         // surface focuses first has to be something that can actually take focus and fire on a
-        // normal Select — not a long-press.
+        // normal Select - not a long-press.
         val first = FocusRequester()
         var action: OmnibarAction? = null
         compose.setContent {

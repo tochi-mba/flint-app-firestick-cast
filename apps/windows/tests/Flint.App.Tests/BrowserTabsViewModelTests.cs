@@ -27,7 +27,7 @@ public sealed class BrowserTabsViewModelTests
     public void Apply_FirstTabsSnapshot_EnablesNewTabCommand()
     {
         // Defect: IsAvailable flipped true and the strip rendered, but NewTabCommand stayed at the
-        // CanExecute=false evaluated while unavailable — the + button looked dead forever.
+        // CanExecute=false evaluated while unavailable - the + button looked dead forever.
         var tabs = new BrowserTabsViewModel();
         var cockpit = new RecordingCockpitRemote();
         cockpit.Announce(BrowserCockpitFeatures.Tabs);

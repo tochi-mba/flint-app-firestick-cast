@@ -78,7 +78,7 @@ fn report_captured_frame_as_a_bitmap() {
         total as f64 / pixels.len() as f64
     );
     if lowest == highest {
-        println!("UNIFORM: every byte is {lowest} — the capture is blank");
+        println!("UNIFORM: every byte is {lowest} - the capture is blank");
     }
 
     let path = std::env::temp_dir().join("flint-captured-frame.bmp");
@@ -116,7 +116,7 @@ fn report_captured_frame_as_a_bitmap() {
                 total as f64 / scaled.len() as f64
             );
             if lowest == highest {
-                println!("SCALED UNIFORM: every byte is {lowest} — the scale is blank");
+                println!("SCALED UNIFORM: every byte is {lowest} - the scale is blank");
             }
 
             let scaled_path = std::env::temp_dir().join("flint-scaled-frame.bmp");
@@ -420,7 +420,7 @@ fn summarise(label: &str, bytes: &[u8]) {
         total as f64 / bytes.len() as f64
     );
     if lowest == highest {
-        println!("  UNIFORM — {label} carries no picture");
+        println!("  UNIFORM - {label} carries no picture");
     }
 }
 
@@ -428,7 +428,7 @@ fn summarise(label: &str, bytes: &[u8]) {
 ///
 /// The honest comparison, and the one that answers whether keeping frames on the GPU was worth
 /// doing. Only the work is timed: acquiring a frame blocks until the desktop changes, and including
-/// that would measure how busy the screen is rather than how fast the pipeline is — a mistake this
+/// that would measure how busy the screen is rather than how fast the pipeline is - a mistake this
 /// project has already made once and corrected.
 #[test]
 #[ignore = "needs an interactive desktop; run deliberately"]

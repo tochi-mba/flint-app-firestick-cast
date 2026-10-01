@@ -1,4 +1,4 @@
-# Fire TV-resident browser controlled from Flint — detailed implementation plan
+# Fire TV-resident browser controlled from Flint - detailed implementation plan
 
 **Status:** planned; no browser capability is shipped or implied by this document.  
 **Audience:** Flint maintainers.  
@@ -61,9 +61,9 @@ product and documentation; it must not be disguised to pass Appstore review. [Am
   resources across pause/stop and destabilize navigation. [Amazon Fire TV FAQ](https://developer.amazon.com/docs/fire-tv/faq-general.html)
 
 > **Two of these non-goals have been superseded.** User-initiated tabs are now in scope, bounded to
-> 8 with at most 2 live renderers — see
+> 8 with at most 2 live renderers - see
 > [ADR-0012](fire-tv-browser-implementation/adrs/ADR-0012-USER-INITIATED-BOUNDED-TABS.md). The
-> page's own fullscreen request is now honoured — see
+> page's own fullscreen request is now honoured - see
 > [ADR-0013](fire-tv-browser-implementation/adrs/ADR-0013-PAGE-REQUESTED-FULLSCREEN.md). Neither
 > changes the ban on page-initiated pop-ups, and neither is a promise that a given site plays; that
 > remains a tested observation matrix.
@@ -406,7 +406,7 @@ Every numbered implementation task starts with the listed failing test(s), then 
 production code to pass, then a refactor with the same tests green. No “spike code” becomes product
 code without a test characterizing its result.
 
-### M0 — policy, device, and baseline audit
+### M0 - policy, device, and baseline audit
 
 **Purpose:** turn unknown platform claims into evidence before broad implementation.
 
@@ -422,7 +422,7 @@ code without a test characterizing its result.
    user agent/engine behaviour.
 4. Run a real AFTMM acceptance session: fixture, HTTPS, JavaScript, back/forward, D-pad/select,
    text entry, Home/pause/resume, Wi-Fi loss/restore, WebView destroy/recreate, CPU/memory sampling,
-   and a preview-capture candidate. Record facts—not estimates—in `docs/LATENCY_BUDGET.md` or a new
+   and a preview-capture candidate. Record facts-not estimates-in `docs/LATENCY_BUDGET.md` or a new
    browser measurement section.
 5. Request Amazon policy confirmation before any Appstore distribution work. Do not proceed on an
    assumption that an embedded browser escapes the policy.
@@ -433,7 +433,7 @@ tests, deterministic local fixture instrumentation test, and one `#[ignore]`/phy
 **Exit:** an evidence table declares the actual receiver supported or unavailable, preview viable or
 unavailable, and public distribution allowed or developer-only.
 
-### M1 — restore protocol discipline and define v2 contracts
+### M1 - restore protocol discipline and define v2 contracts
 
 **Purpose:** make every side agree before any browser socket is live.
 
@@ -463,7 +463,7 @@ unavailable, and public distribution allowed or developer-only.
 branches, mutation checks for decoders, and a v1 peer that still mirrors/media-casts safely but sees
 Web as unavailable.
 
-### M2 — secure browser listener, identity trust, and `BrowserSession`
+### M2 - secure browser listener, identity trust, and `BrowserSession`
 
 **Purpose:** make browser controls safe before implementing browser text or preview.
 
@@ -493,7 +493,7 @@ tests, and a real AFTMM TLS test marked hardware-only.
 not readable on the browser LAN channel; an invalid/mismatched certificate cannot be accepted; a
 secure browser session survives normal reconnect without a plaintext fallback.
 
-### M3 — pure browser domain and receiver command boundary
+### M3 - pure browser domain and receiver command boundary
 
 **Purpose:** create fully testable business logic independent of Android WebView.
 
@@ -530,7 +530,7 @@ secure browser session survives normal reconnect without a plaintext fallback.
 **Exit:** the entire browser state machine and security boundary are green without a device or
 WebView; all owned branches are covered before `AndroidView` is written.
 
-### M4 — Android WebView driver and TV surface
+### M4 - Android WebView driver and TV surface
 
 **Purpose:** turn the tested domain effects into an actual, secure, D-pad-friendly receiver browser.
 
@@ -558,7 +558,7 @@ WebView; all owned branches are covered before `AndroidView` is written.
 - Robolectric unit/integration tests for security-profile settings, driver effect routing, destruction
   order, dialog expiry, and API feature gates.
 - Compose snapshot tests for browser waiting/loading/ready/blocked/error/disconnected/menu/dialog
-  states using a deterministic fake browser surface—not live internet pages.
+  states using a deterministic fake browser surface-not live internet pages.
 - Android instrumentation with Espresso-Web over `WebViewAssetLoader`: title/progress/history/link,
   back/forward, blocked URI, mixed-content rejection, popup/file chooser/permission denial, SSL
   cancellation, input dispatch, and data clear.
@@ -570,7 +570,7 @@ WebView; all owned branches are covered before `AndroidView` is written.
 **Exit:** a real Fire TV can use the browser entirely with its remote and never gets trapped on a
 blank/no-focus surface. Unsafe WebView capabilities are proven denied in instrumentation.
 
-### M5 — Windows BrowserPage, preview, input, and accessibility
+### M5 - Windows BrowserPage, preview, input, and accessibility
 
 **Purpose:** make the PC a polished control surface without leaking browser ownership to Windows.
 
@@ -606,7 +606,7 @@ blank/no-focus surface. Unsafe WebView capabilities are proven denied in instrum
 the preview is opt-in, accurate enough for tested interaction, bounded, disposable, and never
 mistaken for a Windows-rendered page.
 
-### M6 — hardening, documentation, and release decision
+### M6 - hardening, documentation, and release decision
 
 1. Run the full test matrix below on clean machines without Fire TV/GPU; only explicitly tagged
    hardware suites may require the target stick.
@@ -633,7 +633,7 @@ is either released in the approved scope or remains a clearly labelled developer
 | `receiver/src/main/AndroidManifest.xml` | Add Safe Browsing metadata where supported; preserve TV touchscreen declaration; audit cleartext policy before modification. |
 | `receiver/.../ReceiverActivity.kt` | Preserve full key events, browser attach/detach lifecycle, and no Activity retention by service. |
 | `receiver/.../ReceiverService.kt` | Own browser coordinator/state, exclusive surface transitions, secure-session lifecycle; never own `WebView`. |
-| `receiver/.../ReceiverUiState.kt` | Add bounded browser presentation/capability/error data—no page/body/credential fields. |
+| `receiver/.../ReceiverUiState.kt` | Add bounded browser presentation/capability/error data-no page/body/credential fields. |
 | `receiver/.../ui/ReceiverScreen.kt` + new `ui/ReceiverBrowserSurface.kt` | Compose/AndroidView browser surface, D-pad-safe native chrome/dialog snapshots. |
 | new `receiver/.../browser/*` | URL policy, immutable commands/effects/state, driver, security profile, input router, preview producer, local dialog controller, capability probe. |
 | `receiver/.../net/ReceiverServer.kt` + new secure server files | Explicit secure listener, TLS session/authentication, bounded writer, browser dispatch/capability. |

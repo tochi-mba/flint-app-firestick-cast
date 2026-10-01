@@ -6,7 +6,7 @@
 .DESCRIPTION
     Flint runs the tunnel on the television (ADR-0022): the Windows app is only where a
     WireGuard config is pasted, because a D-pad cannot reasonably enter one. This script
-    builds the other end of that tunnel — a server the TV can dial — and prints the exact
+    builds the other end of that tunnel - a server the TV can dial - and prints the exact
     config text to paste into Web -> Network.
 
     Idempotent. Re-running with the same -ClientName reissues that peer's keys; a different
@@ -103,7 +103,7 @@ if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; else SUDO=""; fi
 MEM_MB="$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)"
 SWAP_MB="$(awk '/SwapTotal/ {print int($2/1024)}' /proc/meminfo)"
 if [ "$MEM_MB" -lt 2048 ] && [ "$SWAP_MB" -lt 512 ] && [ ! -f /swapfile ]; then
-    echo "Low memory (${MEM_MB} MB, no swap) — adding a 1 GB swapfile before installing." >&2
+    echo "Low memory (${MEM_MB} MB, no swap) - adding a 1 GB swapfile before installing." >&2
     $SUDO fallocate -l 1G /swapfile 2>/dev/null || $SUDO dd if=/dev/zero of=/swapfile bs=1M count=1024 status=none
     $SUDO chmod 600 /swapfile
     $SUDO mkswap /swapfile >/dev/null
@@ -232,7 +232,7 @@ PrivateKey = ${SERVER_PRIV}
 CONF
 
 # Only where this script owns forwarding. Under firewalld these lines would be a second,
-# conflicting NAT path — and an empty PostUp is a command wg-quick would still try to run.
+# conflicting NAT path - and an empty PostUp is a command wg-quick would still try to run.
 if [ -n "$FORWARD_UP" ]; then
     $SUDO sh -c "printf 'PostUp = %s\nPostDown = %s\n' '$FORWARD_UP' '$FORWARD_DOWN' >> $WG/wg0.conf"
 fi

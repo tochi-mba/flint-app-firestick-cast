@@ -151,7 +151,7 @@ public static class BrowserWorkspaceLayoutExtensions
         BrowserWorkspaceLayout.TwoColumns => "2 COL",
         BrowserWorkspaceLayout.TwoRows => "2 ROW",
         BrowserWorkspaceLayout.FourGrid => "4",
-        _ => "—",
+        _ => "-",
     };
 
     /// <summary>Longer name for tooltips and status lines.</summary>

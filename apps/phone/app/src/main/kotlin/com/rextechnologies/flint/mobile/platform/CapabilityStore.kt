@@ -27,7 +27,7 @@ interface CapabilityStore {
  * Keeps the phone's answers until the thing they were about changes.
  *
  * Whether this phone has a hardware encoder, and whether a frame survives it, is a fact about the
- * hardware and the system on it — it does not change between launches, and asking again on every
+ * hardware and the system on it - it does not change between launches, and asking again on every
  * launch means encoding and decoding a test frame every time the app opens. It was not being kept
  * at all: the flag saying the introduction had been read was persisted while the capability answers
  * were not, so from the second launch onward every streaming mode was Blocked until somebody went

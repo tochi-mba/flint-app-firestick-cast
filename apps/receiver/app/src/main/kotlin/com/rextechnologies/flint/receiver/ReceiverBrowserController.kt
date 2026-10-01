@@ -170,7 +170,7 @@ class ReceiverBrowserController(
         if (previewEnabled) {
             setPreviewEnabled(true)
         }
-        // Tell Windows the tab strip is gone — otherwise SPLIT VIEW leaves stale tabs + a single
+        // Tell Windows the tab strip is gone - otherwise SPLIT VIEW leaves stale tabs + a single
         // preview while the TV already shows mosaic panes.
         runCatching {
             cockpitPublisher.publishTabs(coordinator.snapshot(), tabs.state, allowEmpty = true)
@@ -193,7 +193,7 @@ class ReceiverBrowserController(
 
     /**
      * First OpenPane from Windows while still on tabs: leave the tab strip and open mosaic.
-     * Must never leave the host stuck in "WAITING" — always accept/reject loudly and republish.
+     * Must never leave the host stuck in "WAITING" - always accept/reject loudly and republish.
      */
     private fun enterMosaicFromHostOpenPane(command: BrowserWorkspaceCommandMessage) {
         val page = coordinator.snapshot()
@@ -351,7 +351,7 @@ class ReceiverBrowserController(
         // would leave over whatever network remains.
         vpn.onRequiredTunnelLost {
             if (uiState.value.browserWorkspaceVisible || coordinator.snapshot().epoch != null) {
-                showNotice("VPN connection lost — pages closed because this profile requires VPN.")
+                showNotice("VPN connection lost - pages closed because this profile requires VPN.")
                 closeFromTv()
             }
         }
@@ -453,13 +453,13 @@ class ReceiverBrowserController(
             profiles.connectDevice(sessionId, deviceName)
             // New host session ↔ new command stream. Keep the live browser epoch/surface so orphan
             // tabs stay selectable, but clear lastCommandId so Windows starting at cmdId=1 works.
-            // Tab page snapshots must be clamped too — otherwise Select hits activatePage with a
+            // Tab page snapshots must be clamped too - otherwise Select hits activatePage with a
             // watermark still above 0 and the TV shows "expired browser session" (2026-09-08).
             coordinator.resetHostCommandWatermark()
             tabs.clampCommandWatermark(0)
             publishProfileState()
             publishCockpitState()
-            // If tabs survived the previous TLS drop, put the browser back on the glass — otherwise
+            // If tabs survived the previous TLS drop, put the browser back on the glass - otherwise
             // Windows shows the strip while the TV idles on "PC CONNECTED".
             if (tabs.state.tabs.isNotEmpty() && coordinator.snapshot().phase != BrowserPhase.IDLE) {
                 enterSurface()
@@ -504,7 +504,7 @@ class ReceiverBrowserController(
 
         override fun onWorkspaceCommand(command: BrowserWorkspaceCommandMessage) {
             if (!allowBrowsingUnderVpnPolicy()) {
-                Log.w(TAG, "Workspace command ignored — VPN policy blocks browsing action=${command.action}")
+                Log.w(TAG, "Workspace command ignored - VPN policy blocks browsing action=${command.action}")
                 return
             }
             if (command.action == BrowserWorkspaceCommandAction.OPEN_PANE &&
@@ -692,7 +692,7 @@ class ReceiverBrowserController(
      * Reports that a page text field gained or lost focus.
      *
      * Published to the host so the desktop can start forwarding keystrokes on its own. The field's
-     * *contents* are never sent — the desktop needs to know where typing will land, not what is
+     * *contents* are never sent - the desktop needs to know where typing will land, not what is
      * already in the box.
      */
     fun setEditing(active: Boolean) {
@@ -974,7 +974,7 @@ class ReceiverBrowserController(
      * Handles a remote key while the browser owns the glass.
      *
      * Back used to reach the service's media key handler, which treats any non-idle surface as
-     * something to tear down — so a single Back on the first page of a site ended the browser
+     * something to tear down - so a single Back on the first page of a site ended the browser
      * session outright instead of walking history. Back belongs to the browser here, and the
      * smallest step back is a history entry.
      */
@@ -1215,7 +1215,7 @@ class ReceiverBrowserController(
         driver.applyViewSettings(viewSettings.state)
         if (page.address != null) {
             // Tab already has a destination (New with URL / restored session strip). Do not replay
-            // a pending OPEN from another tab into this WebView — that collapsed distinct Google
+            // a pending OPEN from another tab into this WebView - that collapsed distinct Google
             // searches into one query when Windows restored siblings after Mirror (2026-09-08).
             coordinator.discardPendingNavigation()
             coordinator.attachPort(driver)
@@ -1293,7 +1293,7 @@ class ReceiverBrowserController(
 
     /**
      * Points the opt-in JPEG capture loop at the mosaic root (every live pane) so Windows shows the
-     * same layout as the sofa — falling back to the focused WebView only when the host is absent.
+     * same layout as the sofa - falling back to the focused WebView only when the host is absent.
      */
     private fun attachWorkspacePreviewDriver(session: BrowserWorkspaceSession) {
         if (!uiState.value.browserWorkspaceVisible) return
@@ -1365,7 +1365,7 @@ class ReceiverBrowserController(
 
     /**
      * Reloads the active TV profile's tab strip after a cold start. Returns whether workspace
-     * mode was saved and should be re-entered — only when the start itself was a blank Browse.
+     * mode was saved and should be re-entered - only when the start itself was a blank Browse.
      */
     private fun restoreTvSessionAfterStart(keepCurrentPage: Boolean): Boolean {
         val saved = tvSessionToRestore()
@@ -1515,7 +1515,7 @@ class ReceiverBrowserController(
         val mosaicWidth = mosaic.width
         val mosaicHeight = mosaic.height
         if (mosaicWidth <= 0 || mosaicHeight <= 0) {
-            Log.i(TAG, "Workspace preview input ignored — mosaic size unknown")
+            Log.i(TAG, "Workspace preview input ignored - mosaic size unknown")
             return
         }
         val page = coordinator.snapshot()
@@ -1558,7 +1558,7 @@ class ReceiverBrowserController(
 
         /** Workspace messages exist only from protocol v3; older hosts must never be sent one. */
         const val WORKSPACE_PROTOCOL_MINIMUM = 3
-        const val IDLE_CONNECTED_DETAIL = "Connected — choose something to cast"
+        const val IDLE_CONNECTED_DETAIL = "Connected - choose something to cast"
         const val IDLE_DETAIL = "Ready on the hotspot LAN"
     }
 }

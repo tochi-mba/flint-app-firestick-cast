@@ -229,7 +229,7 @@ class BrowserCommandReducerTest {
 
     @Test
     fun `abandoning a dead session hands the surface back`() {
-        // The host's transport can die without ever sending CLOSE — the desktop quits, the laptop
+        // The host's transport can die without ever sending CLOSE - the desktop quits, the laptop
         // sleeps. Whatever the reason, the surface has to come back or nothing can open again.
         val open = reducer.reduce(BrowserCommandState(), BrowserCommand.Open(4, 9, url))
         assertEquals(BrowserSurfaceOwner.BROWSER, open.state.surface)

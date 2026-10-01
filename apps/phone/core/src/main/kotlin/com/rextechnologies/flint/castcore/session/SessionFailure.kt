@@ -20,7 +20,7 @@ enum class SessionFailureKind {
     /** The socket died. Nothing was said; it simply stopped. */
     TRANSPORT,
 
-    /** The television ended it deliberately — the app was closed, or the receiver stopped. */
+    /** The television ended it deliberately - the app was closed, or the receiver stopped. */
     RECEIVER_STOPPED,
 }
 
@@ -48,7 +48,7 @@ data class SessionFailure(
  *
  * The busy case is the one worth care. The receiver refuses a second phone with
  * `ByeReason.PROTOCOL_ERROR` rather than a reason of its own, and it does so *after* answering HELLO
- * and validating AUTH — so a phone that treats any post-authentication PROTOCOL_ERROR as a bug will
+ * and validating AUTH - so a phone that treats any post-authentication PROTOCOL_ERROR as a bug will
  * report a protocol failure for the most ordinary situation there is, which is somebody else already
  * watching. The detail string is what distinguishes it, so the detail is what is matched.
  */

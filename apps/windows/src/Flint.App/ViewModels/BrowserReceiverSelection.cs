@@ -8,8 +8,8 @@ namespace Flint.App.ViewModels;
 /// </summary>
 /// <remarks>
 /// Separated from the page because it is the one part of verification that is pure arithmetic over
-/// the Cast probe's result. Keeping it here lets the recovery path — typing the port the television
-/// is showing when multicast is blocked — be read and tested on its own, rather than inside a method
+/// the Cast probe's result. Keeping it here lets the recovery path - typing the port the television
+/// is showing when multicast is blocked - be read and tested on its own, rather than inside a method
 /// that is also opening a TLS session.
 /// </remarks>
 internal static class BrowserReceiverSelection
@@ -26,7 +26,7 @@ internal static class BrowserReceiverSelection
     /// </summary>
     /// <remarks>
     /// Typing the port the television already shows is how Web recovers when multicast TXT is
-    /// blocked and ADB never identified the platform. It supplies the endpoint and nothing more —
+    /// blocked and ADB never identified the platform. It supplies the endpoint and nothing more -
     /// the certificate pin is still compared, so a typed port cannot skip trust.
     /// </remarks>
     internal static FireTvDevice? Effective(FireTvDevice? device, int? manualPort)

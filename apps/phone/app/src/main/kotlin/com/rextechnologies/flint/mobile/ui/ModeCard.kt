@@ -22,7 +22,7 @@ import com.rextechnologies.flint.design.Pill
  * One mode's card.
  *
  * The presentation comes from `:castcore`, already decided. Nothing here chooses a tone, a word or
- * whether an advisory block appears — the point of putting that in a pure module was that the rule
+ * whether an advisory block appears - the point of putting that in a pure module was that the rule
  * "an impossible mode is never painted like an available one" could be unit-tested, and this
  * composable exists only to draw the answer.
  */

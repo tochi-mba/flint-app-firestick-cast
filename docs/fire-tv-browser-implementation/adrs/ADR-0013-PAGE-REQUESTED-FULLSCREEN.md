@@ -1,4 +1,4 @@
-# ADR-0013 — page-requested fullscreen
+# ADR-0013 - page-requested fullscreen
 
 - **Status:** Accepted
 - **Implementation:** Implemented (software); not yet exercised on hardware
@@ -14,7 +14,7 @@
 
 A `WebView` asks for fullscreen by handing the embedder a view plus a callback to invoke when the
 embedder is done with it. Nothing implemented that pair, and the `AndroidView` factory returned the
-bare `WebView` — so there was no container a fullscreen view could be added to even if something
+bare `WebView` - so there was no container a fullscreen view could be added to even if something
 had listened.
 
 The visible result was the loudest defect in the feature: on a television, whose entire purpose is
@@ -36,7 +36,7 @@ justify ignoring the request, which is a defect rather than a scope decision.
   is a second live layer for nothing.
 - **One fullscreen at a time.** A second request is refused and answered immediately, so the page
   can restore its inline player. Accepting it would orphan the first view along with a callback
-  nobody can invoke — a permanently black screen with no way back.
+  nobody can invoke - a permanently black screen with no way back.
 - The page's callback is invoked **at most once**, whichever of Back, `onHideCustomView` or teardown
   arrives first. Some WebView builds treat a second invocation as a crash.
 - Surface teardown **abandons** rather than exits: the renderer that owns the callback is going away,
@@ -76,7 +76,7 @@ justify ignoring the request, which is a defect rather than a scope decision.
   request, single invocation of the page callback, the no-op exit, and that abandon restores the
   window without telling the page.
 - The policy is generic over the view type, so the ordering is proven with no device present.
-- Hardware validation — entering and leaving fullscreen on a real video site — remains an open
+- Hardware validation - entering and leaving fullscreen on a real video site - remains an open
   release gate and is not claimed here.
 
 ## Revisit criteria

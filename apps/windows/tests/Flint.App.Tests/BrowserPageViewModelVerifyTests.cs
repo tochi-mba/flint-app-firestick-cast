@@ -38,7 +38,7 @@ public sealed class BrowserPageViewModelVerifyTests
     public async Task Verify_WithoutPairingCode_ReportsMismatch()
     {
         // The pairing code is what proves the two ends are talking about the same television. With
-        // no code there is nothing to compare, so the only honest outcome is a refusal — and no
+        // no code there is nothing to compare, so the only honest outcome is a refusal - and no
         // connection attempt at all, which is what ConnectCount asserts.
         var shell = MainWindowViewModel.CreateWith(BrowserFixtures.Prober(BrowserFixtures.EligibleDevice()));
         await shell.Cast.ProbeCommand.ExecuteAsync(null);

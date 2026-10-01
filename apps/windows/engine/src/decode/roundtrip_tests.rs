@@ -76,7 +76,7 @@ fn capture_adapter() -> Option<i64> {
 fn what_the_hardware_encoder_produces_decodes_back_into_a_picture() {
     // The software round trip below proves the colour conversion and the bitstream framing. This
     // proves the path a live session actually takes, which is the hardware encoder on the capture
-    // adapter — a different transform, a different driver, and its own chances to emit something
+    // adapter - a different transform, a different driver, and its own chances to emit something
     // that is structurally valid and visually blank.
     let Some(adapter) = capture_adapter() else {
         println!("NO DESKTOP");
@@ -137,7 +137,7 @@ fn what_the_hardware_encoder_produces_decodes_back_into_a_picture() {
 
     assert!(
         luma_high > luma_low,
-        "the hardware encoder's output decodes to a uniform field ({luma_low}) — a green screen"
+        "the hardware encoder's output decodes to a uniform field ({luma_low}) - a green screen"
     );
     assert!(
         luma_high > 150,
@@ -223,7 +223,7 @@ fn what_flint_encodes_decodes_back_into_a_picture() {
 #[test]
 #[ignore = "needs a real encoder and decoder; run deliberately"]
 fn the_decoded_picture_is_written_out_for_a_person_to_look_at() {
-    // Numbers can agree while a picture is still visibly wrong — shifted planes, swapped chroma,
+    // Numbers can agree while a picture is still visibly wrong - shifted planes, swapped chroma,
     // half a frame. This writes the round trip to disk so it can be judged by eye.
     // The hardware encoder where one exists, because that is the path a live session takes and the
     // one whose output has never been looked at.
@@ -535,7 +535,7 @@ fn report_what_the_hardware_transform_expects_of_its_input() {
 fn report_whether_the_hardware_encoder_reads_the_buffer_it_is_given() {
     // The narrowest possible question. A solid white frame and a solid black one differ in every
     // luma sample, so if the encoder reads its input at all the two must produce different output.
-    // If both come back identical — and identically empty — the encoder is not reading the buffer
+    // If both come back identical - and identically empty - the encoder is not reading the buffer
     // it was handed, and nothing about rate control, profiles or parameter sets matters yet.
     let Some(adapter) = capture_adapter() else {
         println!("NO DESKTOP");

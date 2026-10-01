@@ -42,7 +42,7 @@ internal object BrowserHelpTopics {
         ),
         BrowserHelpTopic(
             "Free WireGuard config",
-            "Flint does not run a free VPN service. For zero-cost egress, create a free-tier VPS, install WireGuard, open UDP 51820, export a peer config with AllowedIPs 0.0.0.0/0, then paste it from Windows under Web → MORE → TV NETWORK / VPN. Full-tunnel is fine — this TV keeps the local control network outside the tunnel.",
+            "Flint does not run a free VPN service. For zero-cost egress, create a free-tier VPS, install WireGuard, open UDP 51820, export a peer config with AllowedIPs 0.0.0.0/0, then paste it from Windows under Web → MORE → TV NETWORK / VPN. Full-tunnel is fine - this TV keeps the local control network outside the tunnel.",
         ),
     )
 }

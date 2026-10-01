@@ -7,7 +7,7 @@ namespace Flint.Discovery.Tests;
 
 /// <summary>
 /// The ADB handshake is how Flint tells a Fire OS device from a Vega one, so its parsing must be
-/// exact and its rejection of non-ADB peers must be reliable — the port scan meets both.
+/// exact and its rejection of non-ADB peers must be reliable - the port scan meets both.
 /// </summary>
 public sealed class AdbMessageTests
 {

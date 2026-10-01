@@ -12,8 +12,8 @@
 //! # Choosing the adapter
 //!
 //! On a hybrid laptop the encoder must live on the adapter that *drives the display*, not on the
-//! fastest one. Desktop duplication produces its texture on the display adapter — the integrated
-//! GPU on nearly every laptop — and a discrete-GPU encoder would need that frame copied across the
+//! fastest one. Desktop duplication produces its texture on the display adapter - the integrated
+//! GPU on nearly every laptop - and a discrete-GPU encoder would need that frame copied across the
 //! PCIe bus first, which costs more than the faster encoder saves. This machine is the textbook
 //! case: an Intel iGPU driving the panel next to an RTX 4070 with nothing attached to it. Picking
 //! by adapter LUID rather than by reputation is what makes this correct rather than merely fast.
@@ -52,7 +52,7 @@ impl TransformEvent {
     /// Classifies a raw Media Foundation event type.
     ///
     /// Anything unrecognised is [`TransformEvent::Other`] rather than an error: transforms raise
-    /// events this pump has no interest in — format changes, drain markers — and treating one of
+    /// events this pump has no interest in - format changes, drain markers - and treating one of
     /// those as a failure would end a session that is working perfectly well.
     #[must_use]
     pub fn from_event_type(event_type: u32) -> Self {
@@ -193,7 +193,7 @@ impl HardwareTransform {
         // The device manager, before any media type is set, and this time with frames to match it.
         //
         // The history is worth keeping. The manager was first added to make the transform produce
-        // output at all, which was a misdiagnosis — the real cause was the event pump discarding
+        // output at all, which was a misdiagnosis - the real cause was the event pump discarding
         // `METransformNeedInput`. It was then removed, on the grounds that a transform fed
         // system-memory buffers has no business being told to read from the GPU. Removing it
         // changed nothing: the encoder still emitted structurally perfect H.264 that decoded to a
@@ -242,8 +242,8 @@ impl HardwareTransform {
     /// Waits up to `timeout` for the transform's next event.
     ///
     /// Bounded rather than blocking. `IMFMediaEventGenerator::GetEvent` with a blocking flag waits
-    /// forever, and a hardware transform that never raises `METransformNeedInput` — because a
-    /// driver wants a D3D device manager it was not given, say — then hangs the calling thread with
+    /// forever, and a hardware transform that never raises `METransformNeedInput` - because a
+    /// driver wants a D3D device manager it was not given, say - then hangs the calling thread with
     /// no diagnostic at all. That happened on this project and cost more to find than the encoder
     /// was worth. A timeout turns it into a fallback to software instead of a frozen session.
     ///

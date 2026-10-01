@@ -5,7 +5,7 @@
 //! id and a host enables it only after a receiver has demonstrably sent one.
 //!
 //! The channel predicates stay in `browser.rs` with the v1 types. They enumerate every family at
-//! once, and a missing arm there is a security regression rather than a missing feature — the
+//! once, and a missing arm there is a security regression rather than a missing feature - the
 //! message stops being forbidden on the plaintext channel.
 
 use super::browser::BrowserLoadState;

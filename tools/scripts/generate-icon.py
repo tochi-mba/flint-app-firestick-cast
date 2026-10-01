@@ -149,15 +149,15 @@ def render(size: int):
 # What does differ is how much of the viewport is safe. A launcher may mask an adaptive icon to any
 # shape inside the central 72 units, and a circular mask is the common one, so the launcher layer
 # uses the frameless spark scaled to sit inside a 66-unit circle. The square frame that the desktop
-# icon draws at 21..87 would have its corners eaten by that mask, which is why the frameless variant
-# — the one the script already uses below 32 pixels — is the right one here too.
+# icon draws at 21..87 would have its corners eaten by that mask, which is why the frameless variant -
+# the one the script already uses below 32 pixels - is the right one here too.
 ADAPTIVE_SPARK_RADIUS_Y = 33.0
 ADAPTIVE_SPARK_RADIUS_X = 24.0
 ADAPTIVE_SPARK_WAIST = 7.0
 
 # The notification icon is a silhouette Android tints itself, so it has no frame and no palette. It
 # is drawn larger because a status bar renders it at 24 density-independent pixels and the mark needs
-# the whole tile to stay legible — the same rule as the script's own FRAME_MIN_SIZE.
+# the whole tile to stay legible - the same rule as the script's own FRAME_MIN_SIZE.
 NOTIFICATION_SPARK_RADIUS_Y = 41.0
 NOTIFICATION_SPARK_RADIUS_X = 30.0
 NOTIFICATION_SPARK_WAIST = 9.0

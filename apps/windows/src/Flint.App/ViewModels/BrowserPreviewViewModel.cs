@@ -90,7 +90,7 @@ public sealed partial class BrowserPreviewViewModel : ObservableObject, IDisposa
     /// </remarks>
     public string StageDetail => IsRequested && IsSupported && State != BrowserPreviewState.Unavailable
         ? "The TV is already showing the page. A preview mirrors it here so you can click and scroll with a mouse."
-        : "The TV is showing the page. Everything still works from here — this stage just cannot mirror it.";
+        : "The TV is showing the page. Everything still works from here - this stage just cannot mirror it.";
 
     /// <summary>Whether the first-run hints belong on screen, which is whenever there is no frame.</summary>
     public bool ShowStageHints => !HasFrame;
@@ -160,7 +160,7 @@ public sealed partial class BrowserPreviewViewModel : ObservableObject, IDisposa
 
     internal void Reset()
     {
-        // Session teardown — preference returns to the product default on the next Configure.
+        // Session teardown - preference returns to the product default on the next Configure.
         IsRequested = false;
         State = IsSupported ? BrowserPreviewState.Disabled : BrowserPreviewState.Unavailable;
         DroppedFrames = 0;

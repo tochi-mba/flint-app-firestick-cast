@@ -36,12 +36,12 @@ interface BrowserCustomViewController<V> {
  *
  * A WebView signals fullscreen by handing the embedder a view plus a callback to invoke when the
  * embedder is finished with it. Nothing in this app implemented that pair, so every fullscreen
- * button on every video site appeared to work and then did nothing — the loudest missing piece of
+ * button on every video site appeared to work and then did nothing - the loudest missing piece of
  * the television browser.
  *
  * Order matters in both directions and is asserted by tests. Going in: attach the view, then take
  * the screen, then hold it awake. Coming out: release the wake hold, give the system bars back,
- * then detach — so the page never becomes visible again underneath a still-immersive window.
+ * then detach - so the page never becomes visible again underneath a still-immersive window.
  */
 class BrowserFullscreenController<V>(
     private val host: BrowserFullscreenHost<V>,
@@ -57,7 +57,7 @@ class BrowserFullscreenController<V>(
      *
      * Returns false when something is already fullscreen. Chromium is entitled to ask twice, and
      * accepting the second request would orphan the first view along with a callback nobody can
-     * answer — which shows as a permanently black screen with no way back.
+     * answer - which shows as a permanently black screen with no way back.
      */
     override fun enter(view: V, onReleased: () -> Unit): Boolean {
         if (activeView != null || !canEnter()) {

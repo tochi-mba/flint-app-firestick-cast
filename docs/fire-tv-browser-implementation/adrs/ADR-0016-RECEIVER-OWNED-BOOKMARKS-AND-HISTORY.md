@@ -1,4 +1,4 @@
-# ADR-0016 — receiver-owned bookmarks and history
+# ADR-0016 - receiver-owned bookmarks and history
 
 - **Status:** Superseded
 - **Implementation:** Implemented (software); receiver persistence scheduled for removal
@@ -37,7 +37,7 @@ ADR-0001 puts the browser on the receiver. The library follows the browser, not 
 - Only URLs that pass `BrowserUrlPolicy` are stored, so the library can never become a route to an
   address the browser would refuse to open.
 - Writes are **atomic**: temporary file plus rename, so a power cut cannot leave the only copy
-  half-written — a real risk on the API-25 devices in scope.
+  half-written - a real risk on the API-25 devices in scope.
 - A malformed, truncated or future-version file **recovers to empty** rather than failing. A
   browser that will not start because its bookmark file is corrupt is worse than one that has
   forgotten them.
@@ -71,7 +71,7 @@ ADR-0001 puts the browser on the receiver. The library follows the browser, not 
 | Keep it in memory only | Lost on every restart, which is the same as not having it. |
 | Store it on Windows | Contradicts ADR-0001, and makes the television's browser depend on a PC being present. |
 | Unbounded history | Unbounded disk and parse cost on a device with neither to spare. |
-| Encrypt the file | Implies a threat model — a key, and somewhere to keep it — that this feature has not designed and must not imply it has. |
+| Encrypt the file | Implies a threat model - a key, and somewhere to keep it - that this feature has not designed and must not imply it has. |
 | Exclude it from Clear Data | Makes "clear browsing data" a false statement. |
 
 ## Invariants and validation
@@ -83,11 +83,11 @@ ADR-0001 puts the browser on the receiver. The library follows the browser, not 
 
 ## Revisit criteria
 
-A measured need for larger bounds on real usage, or a decision to sync the library to the desktop —
+A measured need for larger bounds on real usage, or a decision to sync the library to the desktop -
 which would be a new privacy commitment and needs its own ADR, not an extension of this one.
 
 ## References
 
 - [Master browser plan](../../FIRE_TV_BROWSER_PLAN.md)
 - [Project constraints](../../../AGENTS.md)
-- [ADR-0010 — native dialogs, data clear and recovery](ADR-0010-NATIVE-DIALOGS-DATA-CLEAR-AND-RECOVERY.md)
+- [ADR-0010 - native dialogs, data clear and recovery](ADR-0010-NATIVE-DIALOGS-DATA-CLEAR-AND-RECOVERY.md)

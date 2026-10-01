@@ -276,7 +276,7 @@ public sealed class CastSessionTests
             await using var session = await CastSession.ConnectAsync(
                 IPAddress.Loopback, port, "123456", cancellationToken: TestContext.Current.CancellationToken);
             // A plain Progress<T> marshals through SynchronizationContext.Post, which does not
-            // guarantee delivery before the awaited call returns — reporting straight into the list
+            // guarantee delivery before the awaited call returns - reporting straight into the list
             // keeps this assertion deterministic instead of racing the last callback's delivery.
             var reported = new List<double>();
             var state = await session.PushMediaAndWaitForPlaybackStartAsync(
@@ -449,8 +449,8 @@ public sealed class CastSessionTests
 /// <remarks>
 /// These pin a bug that cost an afternoon and produced no error anywhere. The host advertised
 /// H.265 first and chose it whenever the receiver could decode it, while the engine only ever
-/// produces H.264. Every counter on the host stayed healthy — sixty frames, 1.5 MB, zero
-/// recoveries — and the television sat on its pairing screen the whole time, because a decoder
+/// produces H.264. Every counter on the host stayed healthy - sixty frames, 1.5 MB, zero
+/// recoveries - and the television sat on its pairing screen the whole time, because a decoder
 /// configured for HEVC can do nothing with AVC.
 /// </remarks>
 public sealed class CodecNegotiationTests

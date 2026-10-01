@@ -19,7 +19,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  * Keeps a session alive while the app is not in front.
  *
  * Two service types are declared, and which one it starts with is decided by what the session is
- * actually doing. A mirror captures the screen and must run as `mediaProjection` — on API 34 and
+ * actually doing. A mirror captures the screen and must run as `mediaProjection` - on API 34 and
  * above the projection cannot even be obtained before such a service is running. A second screen
  * captures nothing at all: it draws into a display this app owns, and declaring that as a projection
  * would be a claim about what the app is doing that is not true, so it runs as `connectedDevice`
@@ -116,7 +116,7 @@ class CastService : Service() {
          *
          * Getting this wrong is not cosmetic. On API 34 and above, starting a `mediaProjection` service
          * without an active projection throws, and asking for a projection before such a service is
-         * running also throws — so a second screen declared as a projection would fail at start, and a
+         * running also throws - so a second screen declared as a projection would fail at start, and a
          * mirror declared as anything else would fail at consent.
          */
         internal fun foregroundTypeFor(mode: OutputMode): Int = when (mode) {

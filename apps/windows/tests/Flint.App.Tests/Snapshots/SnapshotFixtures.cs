@@ -11,7 +11,7 @@ namespace Flint.App.Tests.Snapshots;
 /// <remarks>
 /// <para>
 /// Every value here is a constant, and that is the point. A screenshot test compares pixels, so
-/// anything that varies between runs — a discovered device, a measured round-trip time, a clock —
+/// anything that varies between runs - a discovered device, a measured round-trip time, a clock -
 /// becomes a permanent false failure, and the usual response is to widen the threshold until the
 /// test cannot fail at all.
 /// </para>

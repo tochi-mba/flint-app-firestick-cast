@@ -16,7 +16,7 @@ import androidx.compose.ui.semantics.Role
 /**
  * The REX touch state.
  *
- * The receiver's `tvFocus` and `tvClickable` are D-pad affordances — a focus halo and a lift — and
+ * The receiver's `tvFocus` and `tvClickable` are D-pad affordances - a focus halo and a lift - and
  * neither means anything under a thumb. The nearest precedent that does is the desktop's, which drops
  * a control to 0.88 opacity on hover and 0.72 on press, so those are the numbers rather than a new
  * pair invented for this surface.

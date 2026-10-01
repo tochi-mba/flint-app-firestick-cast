@@ -67,7 +67,7 @@ sealed interface TvKeyOutcome {
     /**
      * Submit whatever is being typed.
      *
-     * Distinct from [ClickCursor] because a d-pad centre does not submit a form in Chromium — Enter
+     * Distinct from [ClickCursor] because a d-pad centre does not submit a form in Chromium - Enter
      * does. While Fire OS has its keyboard open over a focused field, Select is the "go" key, and
      * this is what makes it behave like one.
      */
@@ -95,7 +95,7 @@ sealed interface TvKeyOutcome {
  * The remote control, decided in one place.
  *
  * Two things make a television browser usable or not: what the D-pad means inside a page, and what
- * Back does. Both are here, as data, because both were previously either absent or wrong — Back in
+ * Back does. Both are here, as data, because both were previously either absent or wrong - Back in
  * particular reached the media key handler and tore the whole session down.
  *
  * Modelled on the existing `mirrorKeyOutcome`, which is this codebase's proven shape for remote
@@ -119,7 +119,7 @@ class BrowserTvInputModel {
 
         // A dialog, leave prompt, overlay, focused chrome, or fullscreen video each own the D-pad
         // while they are up. Stealing it for the cursor is how a television browser traps someone in
-        // a modal they cannot reach the buttons of — found on the leave prompt, where Keep browsing
+        // a modal they cannot reach the buttons of - found on the leave prompt, where Keep browsing
         // / Leave could not be focused and Select clicked the page behind the scrim.
         if (state.dialogOpen ||
             state.leaveConfirmVisible ||

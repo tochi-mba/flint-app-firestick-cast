@@ -1,6 +1,6 @@
 //! Downscaling a captured frame on the GPU, before it crosses the bus.
 //!
-//! Readback is the most expensive stage on the host path — measured on this project at a median of
+//! Readback is the most expensive stage on the host path - measured on this project at a median of
 //! 25ms against 5ms for colour conversion and 10ms for encode, because a 2560x1600 desktop is
 //! 16MB of BGRA every single frame. Almost all of that is wasted: a Fire TV renders 1080p, so the
 //! extra pixels are copied across the bus, converted, and encoded only to be thrown away by the
@@ -27,7 +27,7 @@ use super::CaptureError;
 /// How many times a frame must be halved to reach a target, when that is exact.
 ///
 /// Returns `None` unless both edges reduce by the same exact power of two, because a mip level is
-/// a halving of the whole image — accepting an approximate match would silently change the aspect
+/// a halving of the whole image - accepting an approximate match would silently change the aspect
 /// ratio, which shows up as a stretched picture rather than as an error.
 #[must_use]
 pub fn halvings_to_reach(source: (u32, u32), target: (u32, u32)) -> Option<u32> {

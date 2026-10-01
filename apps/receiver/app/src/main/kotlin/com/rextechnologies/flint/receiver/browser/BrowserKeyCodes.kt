@@ -5,7 +5,7 @@ import android.view.KeyEvent
 /**
  * Translates Flint's portable key vocabulary into Android key codes.
  *
- * The protocol carries a small, closed set of *semantic* keys — up, select, page down — rather than
+ * The protocol carries a small, closed set of *semantic* keys - up, select, page down - rather than
  * raw key codes, so the host never has to know what a Fire TV expects and a future receiver on
  * another platform can map the same set differently. This is the one place that mapping lives.
  *

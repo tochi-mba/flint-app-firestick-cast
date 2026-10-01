@@ -12,7 +12,7 @@ import android.widget.FrameLayout
  * The container the browser actually lives in: the page, with room above it for fullscreen.
  *
  * A `WebView` alone cannot host fullscreen. Chromium signals it by handing the embedder a view to
- * display *over* the page, which needs a real `ViewGroup` — and the surface used to hand Compose the
+ * display *over* the page, which needs a real `ViewGroup` - and the surface used to hand Compose the
  * bare `WebView`, so there was nowhere for that view to go and every fullscreen button silently did
  * nothing.
  *

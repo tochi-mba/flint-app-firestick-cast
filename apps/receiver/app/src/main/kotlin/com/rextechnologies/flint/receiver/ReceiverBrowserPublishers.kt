@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.update
  *
  * Gathered here because these publishes share one rule that is easy to break separately: a cockpit
  * family is enabled on Windows only once a snapshot of it has actually arrived, so a family that
- * never publishes is a panel that never turns on — not a panel that shows an error. That failure is
+ * never publishes is a panel that never turns on - not a panel that shows an error. That failure is
  * silent on both ends, which is why the whole set is kept where it can be read at once.
  *
  * Every publish is wrapped: a snapshot rejected by the wire rules must never take down the browser

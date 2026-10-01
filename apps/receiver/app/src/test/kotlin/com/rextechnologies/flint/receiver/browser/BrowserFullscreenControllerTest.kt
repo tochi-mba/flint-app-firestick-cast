@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
  * The page's own fullscreen button.
  *
  * A WebView asks for fullscreen by handing the embedder a view and a callback. Nothing was
- * listening, so every fullscreen control on every video site did nothing at all — the single most
+ * listening, so every fullscreen control on every video site did nothing at all - the single most
  * visible thing missing from the television browser.
  */
 class BrowserFullscreenControllerTest {

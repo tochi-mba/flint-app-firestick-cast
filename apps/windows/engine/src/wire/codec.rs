@@ -11,9 +11,9 @@
 //! ..   payload
 //! ```
 //!
-//! Every integer is big-endian. The decoder is deliberately strict — a trailing byte, a malformed
+//! Every integer is big-endian. The decoder is deliberately strict - a trailing byte, a malformed
 //! UTF-8 sequence, or a boolean that is not exactly 0 or 1 is an error rather than something to
-//! shrug at — because a frame arrives from an unauthenticated peer on the local network and a
+//! shrug at - because a frame arrives from an unauthenticated peer on the local network and a
 //! lenient parser is where such peers get their leverage.
 
 use std::fmt;

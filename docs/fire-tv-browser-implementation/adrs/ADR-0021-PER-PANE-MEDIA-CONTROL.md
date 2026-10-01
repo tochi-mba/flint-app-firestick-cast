@@ -1,4 +1,4 @@
-# ADR-0021 — per-pane media control (play / pause / mute)
+# ADR-0021 - per-pane media control (play / pause / mute)
 
 - **Status:** Accepted
 - **Implementation:** In progress
@@ -41,7 +41,7 @@ and play/pause without implying per-pane volume faders that do not exist.
 
 | Alternative | Why rejected |
 |---|---|
-| System mute per pane | Impossible — one stream. |
+| System mute per pane | Impossible - one stream. |
 | Injected page JS bridge | Violates ADR-0006 WebView security profile unless a reviewed, minimal path is added later. Prefer WebView media APIs / targeted key dispatch first. |
 
 ## Invariants and validation

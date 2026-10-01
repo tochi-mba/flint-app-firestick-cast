@@ -136,8 +136,8 @@ class BrowserCommandReducer {
     /**
      * Releases the surface after the host's session dies without a CLOSE.
      *
-     * The transport can end at any moment — the desktop app quits, the laptop sleeps, the hotspot
-     * drops — and none of those produce the CLOSE that [close] handles. Without this the surface
+     * The transport can end at any moment - the desktop app quits, the laptop sleeps, the hotspot
+     * drops - and none of those produce the CLOSE that [close] handles. Without this the surface
      * stays owned by a session that no longer exists, so the television keeps showing the dead
      * session's last page and every later OPEN is refused as `SURFACE_BUSY` until the app is
      * force-stopped. That is exactly the "why do I have to set it up again" failure, wearing a

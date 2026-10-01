@@ -238,7 +238,7 @@ fn output_roles(adapter: &IDXGIAdapter1) -> windows::core::Result<(bool, bool)> 
 /// # Why this no longer shuts Media Foundation down
 ///
 /// It used to pair every `MFStartup` with an `MFShutdown` on drop, on the reasoning that the
-/// platform reference counts them. It does — but the count is not the whole story. `MFShutdown`
+/// platform reference counts them. It does - but the count is not the whole story. `MFShutdown`
 /// tears down platform work queues that other threads may still be using, and a library has no
 /// coordination point at which it can know it is the last user. Two encoders and a decoder living
 /// on different threads is enough: the first to finish calls `MFShutdown`, and the others fault

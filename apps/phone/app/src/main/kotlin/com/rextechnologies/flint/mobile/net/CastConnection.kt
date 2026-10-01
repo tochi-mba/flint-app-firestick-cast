@@ -50,7 +50,7 @@ interface CastConnectionListener {
  * effects the machine returns.
  *
  * The socket is bound to the address the discovery ladder chose before it connects anywhere. That is
- * not belt and braces — on a phone tethering from mobile data, the process default network is the
+ * not belt and braces - on a phone tethering from mobile data, the process default network is the
  * cellular one, so a socket that binds nothing leaves over the wide-area network, connects to
  * nothing, and fails in a way that looks exactly like the television being switched off.
  */

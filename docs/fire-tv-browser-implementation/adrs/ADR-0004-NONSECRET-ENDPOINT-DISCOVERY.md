@@ -1,4 +1,4 @@
-# ADR-0004 — non-secret browser endpoint discovery
+# ADR-0004 - non-secret browser endpoint discovery
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -82,5 +82,5 @@ It needs a new ADR and target spoof/restart evidence.
 
 ## References
 
-- [Slice 03 — secure BrowserSession bootstrap](../SLICE-03-SECURE-BROWSER-SESSION-BOOTSTRAP.md)
-- [ADR-0003 — separate pinned TLS](ADR-0003-SEPARATE-PINNED-TLS-BROWSER-SESSION.md)
+- [Slice 03 - secure BrowserSession bootstrap](../SLICE-03-SECURE-BROWSER-SESSION-BOOTSTRAP.md)
+- [ADR-0003 - separate pinned TLS](ADR-0003-SEPARATE-PINNED-TLS-BROWSER-SESSION.md)

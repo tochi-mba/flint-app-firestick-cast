@@ -46,7 +46,7 @@ public static class FlintDiag
     }
 
     /// <summary>
-    /// Host + path + query/fragment lengths — enough to tell two Google searches apart in logs
+    /// Host + path + query/fragment lengths - enough to tell two Google searches apart in logs
     /// without recording the search text.
     /// </summary>
     public static string SafeTabRef(string? url)
@@ -83,7 +83,7 @@ public static class FlintDiag
     /// <summary>Formats one privacy-safe Trace line (single-line, length-capped message).</summary>
     public static string FormatLine(string level, string tag, string message)
     {
-        // Single-line only — multiline payloads are how secrets accidentally leak into log pulls.
+        // Single-line only - multiline payloads are how secrets accidentally leak into log pulls.
         var safeTag = tag.Replace('\r', ' ').Replace('\n', ' ').Trim();
         var safeMessage = message.Replace('\r', ' ').Replace('\n', ' ').Trim();
         if (safeMessage.Length > 480)

@@ -1,4 +1,4 @@
-# ADR-0003 — separate pinned TLS BrowserSession
+# ADR-0003 - separate pinned TLS BrowserSession
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -81,6 +81,6 @@ no-downgrade semantics. It requires a superseding ADR and packet/test evidence.
 
 ## References
 
-- [Slice 03 — secure BrowserSession bootstrap](../SLICE-03-SECURE-BROWSER-SESSION-BOOTSTRAP.md)
-- [Slice 02 — plain-channel rejection](../SLICE-02-PROTOCOL-V2-AND-PLAIN-CHANNEL-REJECTION.md)
+- [Slice 03 - secure BrowserSession bootstrap](../SLICE-03-SECURE-BROWSER-SESSION-BOOTSTRAP.md)
+- [Slice 02 - plain-channel rejection](../SLICE-02-PROTOCOL-V2-AND-PLAIN-CHANNEL-REJECTION.md)
 - [Master security design](../../FIRE_TV_BROWSER_PLAN.md#security-privacy-and-trust-design)

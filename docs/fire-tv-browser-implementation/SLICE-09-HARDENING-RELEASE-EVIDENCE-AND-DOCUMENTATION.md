@@ -1,4 +1,4 @@
-# Slice 09 — hardening, release evidence, and documentation
+# Slice 09 - hardening, release evidence, and documentation
 
 **Governing ADRs:** the complete [ADR index](adrs/README.md).
 

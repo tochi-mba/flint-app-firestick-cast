@@ -160,7 +160,7 @@
 
     <!-- ======================== HUD STAGE (verified) ======================== -->
     <Grid IsVisible="{Binding ShowNavigation}" RowDefinitions="Auto,*,Auto" Margin="8">
-      <!-- Top HUD: two dense rows — nav/address/actions, then tabs + workspace -->
+      <!-- Top HUD: two dense rows - nav/address/actions, then tabs + workspace -->
       <Border Grid.Row="0" Classes="hud-glass hud-dense" Margin="0,0,0,4" ZIndex="2"
               AutomationProperties.Name="Browser HUD chrome">
         <StackPanel Spacing="4">
@@ -213,7 +213,7 @@
               <StackPanel Orientation="Horizontal" Spacing="4" DataContext="{Binding Tabs}">
                 <TextBlock Theme="{StaticResource LabelSmall}" VerticalAlignment="Center"
                            Foreground="{StaticResource MutedBrush}" Text="TABS"
-                           ToolTip.Tip="One-at-a-time page switcher — not the mosaic." />
+                           ToolTip.Tip="One-at-a-time page switcher - not the mosaic." />
                 <ItemsControl ItemsSource="{Binding Items}" IsVisible="{Binding IsAvailable}">
                   <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -271,17 +271,17 @@
                 <Button Content="SPLIT VIEW" Theme="{StaticResource SignalButton}"
                         Command="{Binding SplitBesideCommand}"
                         ToolTip.Tip="Opens a second page beside this one (mosaic). Tabs stay a one-at-a-time strip."
-                        AutomationProperties.Name="Split view — open a second page beside this one" />
+                        AutomationProperties.Name="Split view - open a second page beside this one" />
                 <Button Content="STACK" Theme="{StaticResource OutlineAction}"
                         Command="{Binding StackBelowCommand}"
                         ToolTip.Tip="Opens a second page stacked above/below this one."
-                        AutomationProperties.Name="Stack view — open a second page above or below" />
+                        AutomationProperties.Name="Stack view - open a second page above or below" />
                 <Button Content="ADD PAGE" Theme="{StaticResource OutlineAction}"
                         Command="{Binding AddPaneCommand}"
                         ToolTip.Tip="Open another independent page without changing the layout yet."
                         AutomationProperties.Name="Open another independently browsing pane on the TV" />
                 <ItemsControl ItemsSource="{Binding LayoutOptions}"
-                              ToolTip.Tip="Advanced layouts — only enabled when the open page count fits.">
+                              ToolTip.Tip="Advanced layouts - only enabled when the open page count fits.">
                   <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                       <StackPanel Orientation="Horizontal" Spacing="2" />
@@ -369,7 +369,7 @@
                  AutomationProperties.Name="Latest TV preview frame" />
           <!--
             The empty stage does the introducing. It is the largest thing on the page and used to
-            be a bare "waiting" line — shown even when preview was off or the receiver could not
+            be a bare "waiting" line - shown even when preview was off or the receiver could not
             capture, so it waited for something that was never coming. It now names the real state
             and says how to drive the television regardless.
           -->
@@ -529,7 +529,7 @@
         </Panel>
       </Border>
 
-      <!-- Compact remote strip: one row — D-pad, keys, text, capture -->
+      <!-- Compact remote strip: one row - D-pad, keys, text, capture -->
       <Border Grid.Row="2" Margin="0,4,0,0" ZIndex="2" Classes="hud-glass hud-dense"
               AutomationProperties.Name="Browser remote HUD">
         <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="6">
@@ -665,7 +665,7 @@
                            Text="{Binding StatusLabel}" AutomationProperties.LiveSetting="Polite" />
                 <TextBlock IsVisible="{Binding !IsAvailable}" Theme="{StaticResource BodySmall}"
                            Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
-                           Text="Paste a WireGuard config once the television reports network support. The tunnel runs on the TV after system consent — never on this PC." />
+                           Text="Paste a WireGuard config once the television reports network support. The tunnel runs on the TV after system consent - never on this PC." />
                 <StackPanel IsVisible="{Binding IsAvailable}" Spacing="8">
                   <CheckBox Content="Enable VPN for this TV profile"
                             IsChecked="{Binding VpnEnabled}" IsEnabled="{Binding CanEdit}"
@@ -685,7 +685,7 @@
                              TextWrapping="Wrap" Text="{Binding ConfigHint}" />
                   <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
                              TextWrapping="Wrap"
-                             Text="Full-tunnel AllowedIPs (0.0.0.0/0) is fine — Flint keeps the TV↔PC LAN outside the tunnel. Approve the Android VPN prompt on the Stick when asked." />
+                             Text="Full-tunnel AllowedIPs (0.0.0.0/0) is fine - Flint keeps the TV↔PC LAN outside the tunnel. Approve the Android VPN prompt on the Stick when asked." />
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Content="SAVE TO TV" Theme="{StaticResource SignalButton}"
                             Command="{Binding SaveCommand}"

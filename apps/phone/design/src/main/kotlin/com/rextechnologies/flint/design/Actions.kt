@@ -22,7 +22,7 @@ import java.util.Locale
 /**
  * The primary action.
  *
- * Filled in Signal, because this is the one place the accent is allowed to carry weight — and there
+ * Filled in Signal, because this is the one place the accent is allowed to carry weight - and there
  * is at most one of these on a screen for exactly that reason.
  */
 @Composable
@@ -34,7 +34,7 @@ fun SignalButton(
 ) {
     Box(
         // A minimum rather than a fixed height. Both were set before, which made the minimum dead
-        // and clipped the label the moment a large font scale pushed it past 48dp — the one case
+        // and clipped the label the moment a large font scale pushed it past 48dp - the one case
         // the minimum exists for.
         modifier = modifier
             .defaultMinSize(minHeight = FlintSpace.TouchTarget)

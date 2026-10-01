@@ -7,7 +7,7 @@ package com.rextechnologies.flint.castcore.copy
  *
  * The cast link is authorised, not encrypted. A session token proves which phone is talking; it does
  * not hide what is said. Until an authenticated encrypted transport exists and has been verified, no
- * string anywhere may describe cast traffic as private, secure or encrypted — and the reason that is
+ * string anywhere may describe cast traffic as private, secure or encrypted - and the reason that is
  * a lint rule rather than a guideline is that the words are the easy ones to reach for, and a reader
  * who believes them behaves differently on a shared network.
  *

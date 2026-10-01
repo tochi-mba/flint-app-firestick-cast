@@ -1,4 +1,4 @@
-# ADR-XXXX — concise decision title
+# ADR-XXXX - concise decision title
 
 - **Status:** Proposed
 - **Implementation:** Planned

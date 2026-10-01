@@ -57,7 +57,7 @@ data class EncoderCheck(
  * Asks the phone what it can do, and remembers the answers.
  *
  * Nothing here infers a capability from the model name or the API level. Until something has asked,
- * every answer is [ProbeOutcome.NOT_PROBED] — which is a third thing, not a polite "no".
+ * every answer is [ProbeOutcome.NOT_PROBED] - which is a third thing, not a polite "no".
  *
  * The two platform calls are injected so the coordinator's own decisions -- what runs after what,
  * what is skipped and why, what the state says while a check is running -- can be tested without a

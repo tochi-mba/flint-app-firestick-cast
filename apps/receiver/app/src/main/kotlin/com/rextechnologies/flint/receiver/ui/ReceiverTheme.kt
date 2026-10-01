@@ -35,13 +35,13 @@ private val ReceiverScheme = darkColorScheme(
 )
 
 /**
- * Legacy Android font metrics reserve extra space above a glyph's ascent — a leftover from
+ * Legacy Android font metrics reserve extra space above a glyph's ascent - a leftover from
  * pre-Lollipop text rendering that Compose still defaults to for backward compatibility. Every
  * button and label in this app sets its own explicit `fontSize`/`lineHeight` rather than drawing
  * from a theme scale, and each one inherited that lopsided padding: short, bold, all-caps labels
  * in small pill buttons made it obvious, reading as text sitting noticeably above the visual
  * center of its container rather than centered in it. Centering the line box around the glyphs
- * and dropping the legacy padding here, once, fixes every `Text()` call in the app — none of them
+ * and dropping the legacy padding here, once, fixes every `Text()` call in the app - none of them
  * override `style` wholesale, so all of them inherit this through `LocalTextStyle`.
  */
 private val CenteredTextStyle = TextStyle(

@@ -62,7 +62,7 @@ public sealed class BrowserPageViewModelNavigateEpochTests
     public async Task Navigate_SearchText_ResolvesToGoogleHostOpen()
     {
         // Matches the 2026-09-07 session: typing a search becomes Open(www.google.com). If the TV
-        // refuses that Open, nothing appears on screen — covered on the receiver reclaim tests.
+        // refuses that Open, nothing appears on screen - covered on the receiver reclaim tests.
         var remote = new RecordingBrowserRemote();
         var viewModel = await BrowserFixtures.ReadyViewModelAsync(remote);
         viewModel.Address = "weather today";

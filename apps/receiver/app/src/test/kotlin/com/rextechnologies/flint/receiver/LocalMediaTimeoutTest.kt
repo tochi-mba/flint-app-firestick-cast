@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
  * read timeout, tuned for the open internet rather than a phone-hotspot LAN that this project has
  * independently observed re-leasing DHCP and briefly losing ADB under load. On that network, 8
  * seconds is not always enough for a fresh connection to land, and the resulting error is
- * indistinguishable from a genuinely blocked port — so a merely slow network and a firewalled one
+ * indistinguishable from a genuinely blocked port - so a merely slow network and a firewalled one
  * looked identical to the user.
  *
  * [ReceiverService] no longer uses Media3's default; this pins that it stays overridden.
@@ -22,7 +22,7 @@ class LocalMediaTimeoutTest {
     fun `receiver's configured timeout is longer than Media3's default`() {
         // No public getter exists on the factory, so the default is proven the way the Media3
         // source itself documents it: DEFAULT_CONNECT_TIMEOUT_MILLIS and
-        // DEFAULT_READ_TIMEOUT_MILLIS are both 8_000. This assertion is a canary — if a future
+        // DEFAULT_READ_TIMEOUT_MILLIS are both 8_000. This assertion is a canary - if a future
         // Media3 upgrade changes that default, this test explains why the exact multiple below
         // stops being the right comment, without silently losing its own meaning.
         val mediaThreeDefaultMillis = 8_000
@@ -44,7 +44,7 @@ class LocalMediaTimeoutTest {
 
     @Test
     fun `a data source factory built with the receiver's timeout actually accepts that value`() {
-        // Proves the factory API itself does not silently clamp or reject the configured value —
+        // Proves the factory API itself does not silently clamp or reject the configured value -
         // exercising the exact call the receiver makes, not just asserting a constant in isolation.
         val factory = DefaultHttpDataSource.Factory()
             .setConnectTimeoutMs(ReceiverService.LOCAL_MEDIA_TIMEOUT_MILLIS)

@@ -8,7 +8,7 @@ namespace Flint.App.Controls;
 /// </summary>
 /// <remarks>
 /// Ported from <c>InfoCard</c> in REX Cast. The border tone is the entire status language of the
-/// system — a card outlined in Signal is ready, in Live is blocked, in Line is merely structural —
+/// system - a card outlined in Signal is ready, in Live is blocked, in Line is merely structural -
 /// so cards never need a coloured fill or an icon to say the same thing twice.
 /// </remarks>
 public sealed class InfoCard : ContentControl

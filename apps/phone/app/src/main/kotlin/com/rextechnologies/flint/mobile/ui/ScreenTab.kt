@@ -114,7 +114,7 @@ fun ScreenTab(
  *
  * The button's enabled state is the verdict's, and whether a session is open. A second,
  * independently-maintained gate here is exactly how a page ends up offering a control the capability
- * report already knows is empty — so the only thing added to the verdict is the one fact the verdict
+ * report already knows is empty - so the only thing added to the verdict is the one fact the verdict
  * does not carry.
  */
 @Composable

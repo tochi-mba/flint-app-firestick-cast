@@ -1,4 +1,4 @@
-# Slice 01 — truthful capability verdict
+# Slice 01 - truthful capability verdict
 
 **Governing ADRs:** [ADR-0024](adrs/ADR-0024-PHONE-BINDS-EVERY-SOCKET-TO-THE-SELECTED-INTERFACE.md),
 [ADR-0025](adrs/ADR-0025-SECOND-SCREEN-IS-APP-OWNED-PRESENTATION-CONTENT.md), and
@@ -25,8 +25,8 @@ Everything after this slice is gated on a verdict this slice produces.
 
 1. The Cast tab shows which end of the local network this phone is on, in one sentence: it is the
    access point, it is a client of somebody else's network, or there is no local network at all.
-2. Three cards, one per mode, each carrying a status word, a reason, and — when there is something to
-   do — a block saying what.
+2. Three cards, one per mode, each carrying a status word, a reason, and - when there is something to
+   do - a block saying what.
 3. A mode that has not been probed reads Blocked with a remedy that runs the probe. It never reads
    Available, and it never reads Not possible.
 4. Nothing is startable. No control in this slice does anything, because nothing behind one exists.
@@ -55,7 +55,7 @@ Everything after this slice is gated on a verdict this slice produces.
 
 ## Planned files and boundaries
 
-`castcore/src/main/kotlin/com/rextechnologies/flint/castcore/capability/` — `Modes.kt`,
+`castcore/src/main/kotlin/com/rextechnologies/flint/castcore/capability/` - `Modes.kt`,
 `Evidence.kt`, `LocalNetwork.kt`, `MobileCapabilityAssessor.kt`. Nothing in the package imports
 `android.*`, and nothing performs I/O, reads a clock, or consults ambient state. The assessor takes
 its evidence as arguments and returns verdicts; that is the whole boundary.
@@ -64,7 +64,7 @@ its evidence as arguments and returns verdicts; that is the whole boundary.
 
 1. `ModeVerdict`'s four `require` guards, before any verdict exists to break them.
 2. `StatusWord` and `ModePresentation.toneOf`, asserting that Blocked and Impossible share the failure
-   tone and that Coming soon does not — live is the failure tone, and a planned feature is not a
+   tone and that Coming soon does not - live is the failure tone, and a planned feature is not a
    failure.
 3. `LocalNetworkAssessor` across every tether family, the client election, and the cases that must
    produce nothing: a down interface, a loopback, and a carrier-style address that is not site-local.

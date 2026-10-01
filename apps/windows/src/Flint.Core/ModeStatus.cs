@@ -7,7 +7,7 @@ public enum ModeStatus
     Available = 0,
 
     /// <summary>
-    /// Something this mode needs is missing, and the user can probably fix it — ADB debugging is
+    /// Something this mode needs is missing, and the user can probably fix it - ADB debugging is
     /// off, the network is too slow, a driver is absent.
     /// </summary>
     Blocked = 1,

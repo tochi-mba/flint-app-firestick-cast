@@ -25,7 +25,7 @@ internal static class FlintExitCode
     /// A required service was not there. <c>sysexits.h</c> EX_UNAVAILABLE.
     /// </summary>
     /// <remarks>
-    /// Used when the receiver answered but is not advertising a browser endpoint — a live device
+    /// Used when the receiver answered but is not advertising a browser endpoint - a live device
     /// that cannot serve this request, which is different from one that never answered.
     /// </remarks>
     public const int ReceiverUnavailable = 69;
@@ -42,6 +42,6 @@ internal static class FlintExitCode
     /// </remarks>
     public const int MirrorProducedNoFrames = 3;
 
-    /// <summary>This PC cannot mirror at all — no hardware encoder, or the engine refused.</summary>
+    /// <summary>This PC cannot mirror at all - no hardware encoder, or the engine refused.</summary>
     public const int MirrorUnsupported = 4;
 }

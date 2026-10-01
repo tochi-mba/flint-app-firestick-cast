@@ -15,7 +15,7 @@ namespace Flint.Session;
 /// </para>
 /// <para>
 /// Order matters and is not cosmetic. The surface is announced first so the television stops
-/// showing its idle screen, then the decoder configuration, then access units — a receiver that
+/// showing its idle screen, then the decoder configuration, then access units - a receiver that
 /// gets an access unit before its configuration has nothing to decode it against and shows black
 /// while reporting a healthy session.
 /// </para>

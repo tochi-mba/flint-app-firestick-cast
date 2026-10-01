@@ -14,7 +14,7 @@ import java.net.Inet4Address
  * Android has no public way to ask "am I tethering": `TetheringManager` is a system API. What a
  * normal app can see is its own interface list, and a phone running a hotspot has a tether interface
  * with an address on it. That evidence supports exactly three conclusions, and this type is all
- * three of them — there is deliberately no fourth case meaning "probably".
+ * three of them - there is deliberately no fourth case meaning "probably".
  */
 sealed interface LocalNetwork {
     /** The address every socket must be bound to, or `null` when there is no local network. */
@@ -50,7 +50,7 @@ sealed interface LocalNetwork {
     }
 
     /**
-     * Neither. Mobile data may well be up — this says nothing about internet access, only that there
+     * Neither. Mobile data may well be up - this says nothing about internet access, only that there
      * is no local network with a television on it.
      */
     data object NoLocalNetwork : LocalNetwork {
@@ -82,7 +82,7 @@ class LocalNetworkAssessor(
      * site-local at all, so neither reaches this branch. A VPN tunnel is excluded by shape too, and
      * has to be: its address is site-local and usually a /32, so it would win the comparison below
      * outright and send the sweep down a tunnel with no television on it. Where more than one
-     * candidate survives, the narrowest subnet wins — that is the one with a television on it rather than a corporate /8 —
+     * candidate survives, the narrowest subnet wins - that is the one with a television on it rather than a corporate /8 -
      * and enumeration order settles the rest so the answer is stable between samples.
      *
      * The platform's word beats the shape. Once it has confirmed a network the phone joined, an

@@ -91,7 +91,7 @@ fn nv12_target(device: &ID3D11Device, width: u32, height: u32) -> Option<ID3D11T
         },
         Usage: D3D11_USAGE_DEFAULT,
         // A video processor writes through a *render target* view, so an NV12 texture without this
-        // flag is rejected when the output view is created — with "the parameter is incorrect" and
+        // flag is rejected when the output view is created - with "the parameter is incorrect" and
         // no indication that the bind flags were the problem.
         BindFlags: D3D11_BIND_RENDER_TARGET.0 as u32,
         CPUAccessFlags: 0,

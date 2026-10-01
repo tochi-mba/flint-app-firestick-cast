@@ -244,7 +244,7 @@ class ReceiverBrowserE2ETest {
 
     @Test
     fun dpadCanReachLeaveThenReturnToKeepBrowsing() {
-        // Do not assert isFocused — Fire OS Compose nodes often omit the focused a11y flag.
+        // Do not assert isFocused - Fire OS Compose nodes often omit the focused a11y flag.
         launch(ReceiverPreviewActivity.PREVIEW_BROWSER_LEAVE)
         assertNotNull(waitForText("Keep browsing"))
         device.pressDPadRight()

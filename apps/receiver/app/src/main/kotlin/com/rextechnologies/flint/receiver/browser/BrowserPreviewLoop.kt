@@ -72,7 +72,7 @@ class BrowserPreviewLoop(
         if (value) start() else stop()
     }
 
-    /** The view currently being drawn, if any — useful for tests and attachment diagnostics. */
+    /** The view currently being drawn, if any - useful for tests and attachment diagnostics. */
     fun attachedTarget(): View? = target
 
     private fun start() {

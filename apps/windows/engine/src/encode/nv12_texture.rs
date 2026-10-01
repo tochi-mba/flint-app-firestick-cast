@@ -1,7 +1,7 @@
 //! Uploading NV12 frames into Direct3D textures for a hardware encoder to read.
 //!
 //! A hardware H.264 transform on Windows is a GPU object. Media Foundation lets it advertise a
-//! system-memory input type, and it will accept system-memory samples all day — but on at least
+//! system-memory input type, and it will accept system-memory samples all day - but on at least
 //! one Intel Quick Sync driver, what it actually encodes is whatever the corresponding GPU
 //! allocation happens to contain, not the bytes it was handed. The stream that comes out is
 //! impeccable in every structural respect and decodes to a field of zeroes, which a television
@@ -47,7 +47,7 @@ pub struct Nv12TexturePool {
     /// CPU-writable, and the only texture the processor ever touches.
     ///
     /// A separate staging texture rather than a writable pool, because Direct3D 11 refuses to
-    /// create an NV12 texture with dynamic usage at all — `CreateTexture2D` answers "the parameter
+    /// create an NV12 texture with dynamic usage at all - `CreateTexture2D` answers "the parameter
     /// is incorrect" and names nothing. Video formats are default or staging only, so a frame is
     /// written here and copied on the GPU into whichever pool texture is next.
     staging: ID3D11Texture2D,
@@ -60,8 +60,8 @@ pub struct Nv12TexturePool {
 impl Nv12TexturePool {
     /// How many textures to rotate through.
     ///
-    /// Comfortably deeper than any encoder's input queue. The cost is memory — about 1.4MB per
-    /// texture at 1080p — and the benefit is that a frame is never overwritten while in use.
+    /// Comfortably deeper than any encoder's input queue. The cost is memory - about 1.4MB per
+    /// texture at 1080p - and the benefit is that a frame is never overwritten while in use.
     pub const DEPTH: usize = 8;
 
     /// Builds a pool of NV12 textures on `device`.
@@ -206,7 +206,7 @@ impl Nv12TexturePool {
 
         // The GPU picks its own row pitch, which is rarely the frame width. Copying the buffer in
         // one block would work only when they happen to match, and would silently skew the picture
-        // when they do not — so rows are copied one at a time into the pitch the driver gave us.
+        // when they do not - so rows are copied one at a time into the pitch the driver gave us.
         // SAFETY: `mapped.pData` addresses at least `RowPitch * height * 3 / 2` writable bytes for
         // an NV12 texture, and every write below stays inside one row of that.
         unsafe {

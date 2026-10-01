@@ -10,7 +10,7 @@ enum class DiscoveryRung {
      * A plaintext line probe swept across the derived subnet.
      *
      * First on purpose. Multicast is the thing that fails on a SoftAP link, and this is the
-     * multicast-free fallback the receiver was built to answer — it treats a probe as a non-event, so
+     * multicast-free fallback the receiver was built to answer - it treats a probe as a non-event, so
      * a sweep cannot make the television flicker between screens.
      */
     LINE_PROBE,

@@ -1,4 +1,4 @@
-# ADR-0020 — pane-local fullscreen in mosaic
+# ADR-0020 - pane-local fullscreen in mosaic
 
 - **Status:** Accepted
 - **Implementation:** In progress

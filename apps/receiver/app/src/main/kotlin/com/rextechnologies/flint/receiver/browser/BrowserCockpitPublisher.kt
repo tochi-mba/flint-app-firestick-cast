@@ -226,7 +226,7 @@ class BrowserCockpitPublisher(
                         slot = pane.slot,
                         residency = pane.rendererResidency.toWireResidency(),
                         // Wire forbids blank URLs on LIVE/FAILED panes. A just-opened mosaic page
-                        // often has no address yet — publish about:blank so the host still learns
+                        // often has no address yet - publish about:blank so the host still learns
                         // pane count/layout (otherwise Split View leaves Windows stuck on tabs).
                         url = pane.page.url.ifBlank { "about:blank" },
                         title = pane.page.title,

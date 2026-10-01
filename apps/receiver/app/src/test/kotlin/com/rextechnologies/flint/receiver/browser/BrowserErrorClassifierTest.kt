@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
  * Why a page did not load.
  *
  * Every main-frame error used to become `DRIVER_FAILURE`, so a mistyped address, a dropped Wi-Fi
- * connection and a server outage all told the viewer "the browser could not start" — which is both
+ * connection and a server outage all told the viewer "the browser could not start" - which is both
  * wrong and unactionable. A television viewer cannot open a console; the classification is the only
  * diagnosis they get.
  */

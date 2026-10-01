@@ -3,7 +3,7 @@
 //! The golden corpus proves that the *messages* three implementations agree on encode to the same
 //! bytes. It cannot prove they agree on the values those messages may carry: a vector only exercises
 //! the enum values it happens to use, and 67 of them appear in none. C# in particular decodes enums
-//! reflectively, so a value added on one side works there and is rejected by the other two — on a
+//! reflectively, so a value added on one side works there and is rejected by the other two - on a
 //! real device, at the moment someone presses the button.
 //!
 //! This manifest closes that gap without hand-writing a vector per value. Rust generates it, and all
@@ -27,7 +27,7 @@ use flint_engine::wire::*;
 /// Every browser enum, as `name -> sorted wire values`.
 ///
 /// Keyed on the numbers, not the spellings. The three languages deliberately name the same value
-/// differently — `SetUa` and `SetUserAgent`, `Tv` and `Television` — and only the number crosses the
+/// differently - `SetUa` and `SetUserAgent`, `Tv` and `Television` - and only the number crosses the
 /// wire. What must never differ is which numbers are legal and how many there are.
 fn manifest() -> BTreeMap<String, Vec<u8>> {
     let mut all = BTreeMap::new();
@@ -226,7 +226,7 @@ fn no_enum_declares_a_duplicate_wire_value() {
     // receiver decodes the other, and nothing on either side reports a problem.
     //
     // Zero is deliberately allowed. `BrowserVpnProvider::None` is a real value meaning "no
-    // provider", not a marker for an absent field — nullability is carried by a presence byte
+    // provider", not a marker for an absent field - nullability is carried by a presence byte
     // beside the value, never by the value itself.
     for (name, values) in manifest() {
         let mut seen = values.clone();

@@ -13,7 +13,7 @@ import java.security.cert.X509Certificate
  *
  * # Why this exists rather than the Android Keystore
  *
- * The Keystore is the better home for a private key and this provider is not a preference — it is a
+ * The Keystore is the better home for a private key and this provider is not a preference - it is a
  * consequence of the hardware Flint targets. On Fire OS 6 (API 25) Conscrypt cannot complete a TLS
  * server handshake using a Keystore-resident RSA key: it fails inside OpenSSL with
  * `RSA routines: internal error`, after the socket is already open, regardless of the digests or
@@ -28,7 +28,7 @@ import java.security.cert.X509Certificate
  *
  * The identity *is* the thing a person verifies. A provider that generates a fresh key on every
  * launch produces a fresh fingerprint on every launch, so the desktop sees a receiver it has never
- * met each time and asks the user to compare codes again — turning a one-time setup into a chore
+ * met each time and asks the user to compare codes again - turning a one-time setup into a chore
  * repeated forever. Persisting it means the comparison happens once and every later connection is
  * recognised silently.
  */

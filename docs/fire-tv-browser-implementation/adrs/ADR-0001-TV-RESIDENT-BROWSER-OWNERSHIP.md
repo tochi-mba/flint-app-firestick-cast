@@ -1,4 +1,4 @@
-# ADR-0001 — TV-resident browser ownership
+# ADR-0001 - TV-resident browser ownership
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -82,6 +82,6 @@ A desire for “smoother preview” or a platform quirk is not enough to move th
 
 ## References
 
-- [Slice 04 — secure TV-local navigation](../SLICE-04-SECURE-TV-LOCAL-NAVIGATION.md)
-- [Slice 07 — passive preview](../SLICE-07-OPT-IN-PASSIVE-PREVIEW-AND-LATENCY-TUNING.md)
+- [Slice 04 - secure TV-local navigation](../SLICE-04-SECURE-TV-LOCAL-NAVIGATION.md)
+- [Slice 07 - passive preview](../SLICE-07-OPT-IN-PASSIVE-PREVIEW-AND-LATENCY-TUNING.md)
 - [Master architecture](../../FIRE_TV_BROWSER_PLAN.md#architecture)

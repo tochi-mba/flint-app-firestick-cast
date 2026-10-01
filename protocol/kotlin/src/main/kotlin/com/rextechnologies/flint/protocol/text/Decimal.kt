@@ -7,8 +7,8 @@ import kotlin.math.roundToLong
  * Numbers formatted for people, without a locale.
  *
  * `String.format` puts a comma in for half the world, and then the number in a sentence does not
- * match the number in the row above it. This existed three times over — once for throughput, once
- * for a package size, once for a bitrate — and every copy carried the same two defects: a large
+ * match the number in the row above it. This existed three times over - once for throughput, once
+ * for a package size, once for a bitrate - and every copy carried the same two defects: a large
  * value saturated `Long` and printed something like `922337203685477580.7`, and a negative one
  * printed `-1.-2` because the sign came out of the remainder as well as the quotient.
  */

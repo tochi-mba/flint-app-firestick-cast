@@ -23,7 +23,7 @@ fun interface BrowserVpnConnectionVerifier {
      * Watches an already-verified tunnel and reports when it stops being one.
      *
      * A single check at connect time proves the tunnel existed once. It does not survive a Wi-Fi
-     * change, an unreachable endpoint, or Android revoking VPN consent — and a latched "Connected"
+     * change, an unreachable endpoint, or Android revoking VPN consent - and a latched "Connected"
      * over a dead tunnel is worse than no VPN at all, because required-VPN browsing keeps loading
      * pages on the strength of it.
      *
@@ -109,7 +109,7 @@ class AndroidBrowserVpnConnectionVerifier(
      * Registers a lasting callback for the app's VPN network.
      *
      * Reports loss on two signals, because Android uses both: the network going away entirely, and
-     * the network staying up while losing VALIDATED — which is what a tunnel to an endpoint that
+     * the network staying up while losing VALIDATED - which is what a tunnel to an endpoint that
      * has stopped answering looks like.
      */
     @Synchronized

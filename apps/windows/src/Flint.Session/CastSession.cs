@@ -162,7 +162,7 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
     /// <summary>Sends the decoder configuration before the first video packet.</summary>
     /// <remarks>
     /// The codec is the caller's to state, because only the caller knows what its encoder actually
-    /// produced. Defaulting to <see cref="VideoCodec"/> — what the handshake negotiated — is what
+    /// produced. Defaulting to <see cref="VideoCodec"/> - what the handshake negotiated - is what
     /// let an H.264 mirror be announced as HEVC, which the receiver answered by building an HEVC
     /// decoder and failing on the first access unit.
     /// </remarks>
@@ -210,10 +210,10 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
     /// <remarks>
     /// Some receivers cannot reach the host at all: several Fire OS builds silently drop an outbound
     /// connection the receiver app itself opens to a private LAN address, even though the exact same
-    /// address works perfectly for this connection (host to receiver — which is how pairing already
+    /// address works perfectly for this connection (host to receiver - which is how pairing already
     /// succeeded). Pushing the bytes over the connection that is proven to work sidesteps that
     /// restriction entirely, at the cost of buffering the whole file into memory on the receiver
-    /// rather than streaming it — acceptable for the files this path is meant for.
+    /// rather than streaming it - acceptable for the files this path is meant for.
     /// <para>
     /// Cancelling stops the send at the next chunk, leaving the connection usable; the caller then
     /// tells the receiver to drop what it has with <see cref="MediaAction.Clear"/>.
@@ -564,7 +564,7 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
     /// <para>
     /// This list used to name H.265 first, and cost an afternoon. The receiver advertises H.265,
     /// so negotiation chose it, the handshake announced H.265, and the engine then sent H.264. Every
-    /// counter on the host stayed perfectly healthy — sixty frames, 1.5 MB, zero recoveries — while
+    /// counter on the host stayed perfectly healthy - sixty frames, 1.5 MB, zero recoveries - while
     /// the television never left its pairing screen, because a decoder configured for HEVC cannot
     /// do anything with AVC. Nothing failed anywhere near where the mistake was.
     /// </para>
@@ -604,7 +604,7 @@ public sealed class CastSession : IMirrorTransport, IMirrorFeedbackTransport, IA
     /// </summary>
     /// <remarks>
     /// The intersection of what the receiver decodes and what this host encodes, in the host's
-    /// order of preference — never simply the best thing the receiver claims. A receiver's
+    /// order of preference - never simply the best thing the receiver claims. A receiver's
     /// capabilities say what it could decode if it were sent one, and treating that as a choice is
     /// how a session ends up announcing a codec nothing is going to send.
     /// </remarks>

@@ -6,7 +6,7 @@ namespace Flint.Session.Tests;
 
 /// <summary>
 /// The mirror loop is where a working engine and a working receiver can still add up to a black
-/// television, so these assert on ordering and on what reaches the wire — not just on whether the
+/// television, so these assert on ordering and on what reaches the wire - not just on whether the
 /// loop finished.
 /// </summary>
 public sealed class ScreenMirrorRunnerTests
@@ -263,8 +263,8 @@ public sealed class ScreenMirrorRunnerTests
     [Fact]
     public async Task RunAsync_DisposesTheEngineSessionSoTheCaptureIsReleased()
     {
-        // Desktop duplication is exclusive. A session left open means no other program — including
-        // the next Flint mirror — can capture the screen.
+        // Desktop duplication is exclusive. A session left open means no other program - including
+        // the next Flint mirror - can capture the screen.
 
         // Arrange
         using var harness = Harness.WithFrames(1);

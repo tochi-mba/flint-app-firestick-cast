@@ -1,4 +1,4 @@
-# Slice 09 — media handoff
+# Slice 09 - media handoff
 
 **Governing ADRs:** [ADR-0026](adrs/ADR-0026-FLINT-MOBILE-CONSUMES-THE-PROTOCOL-IN-REPO.md) and
 [ADR-0029](adrs/ADR-0029-SESSION-TOKENS-ARE-ENCRYPTED-AT-REST-AND-ARE-AUTHORISATION.md).
@@ -26,7 +26,7 @@ re-encoded on the way, and no filesystem path ever reaches the wire.
 - The Storage Access Framework picker, and reading through the `ContentResolver` rather than through
   a path.
 - The push path: 512 KiB `MEDIA_DATA` chunks down the control socket, then
-  `MEDIA_COMMAND(LOAD, url = "")` — a blank URL, which is the receiver's own convention for "play
+  `MEDIA_COMMAND(LOAD, url = "")` - a blank URL, which is the receiver's own convention for "play
   what I just sent you".
 - `MediaHandoff` in `:castcore`: the chunk arithmetic, the MIME cap, and the title sanitiser.
 - Transport controls over `CONTROL`, and `PLAYBACK_STATE` back.
@@ -39,7 +39,7 @@ re-encoded on the way, and no filesystem path ever reaches the wire.
 
 Handing the receiver a URL and letting it pull is the elegant route, and on some Fire OS builds it
 silently does not work: an outbound connection the receiver initiates to a private LAN address is
-dropped — not refused, not reset, dropped — while the very same address works perfectly for the
+dropped - not refused, not reset, dropped - while the very same address works perfectly for the
 connection the phone initiated. So the push path is the default and the HTTP server is the option.
 The UI says this once, in the advisory block, because otherwise somebody watches a local file take
 time to start and reasonably wonders why.

@@ -49,10 +49,10 @@ public sealed partial class CastPageViewModel
     /// </summary>
     /// <remarks>
     /// The receiver reports Media3's error code name, lowercased with underscores turned to
-    /// spaces — for example "error code io network connection timeout". That text describes what
+    /// spaces - for example "error code io network connection timeout". That text describes what
     /// ExoPlayer saw, not what to do about it, so a network-shaped failure is translated into the
     /// same actionable guidance <see cref="FirewallGuidance"/> gives when this PC times out
-    /// waiting instead. Anything else — a bad file, an unsupported codec, a permission error — is
+    /// waiting instead. Anything else - a bad file, an unsupported codec, a permission error - is
     /// shown as the receiver reported it rather than guessed at.
     /// </remarks>
     internal static string DescribePlaybackFailure(string? detail)

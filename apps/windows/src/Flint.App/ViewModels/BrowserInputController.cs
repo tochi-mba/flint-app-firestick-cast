@@ -39,7 +39,7 @@ internal interface IBrowserInputHost
 /// the sending have to stay together. Holding them next to twenty unrelated bound properties made
 /// that easy to miss.
 ///
-/// Diagnostics live here for the same reason — the breadcrumbs are keyed to the sequence number.
+/// Diagnostics live here for the same reason - the breadcrumbs are keyed to the sequence number.
 /// </remarks>
 internal sealed class BrowserInputController(IBrowserInputHost host)
 {
@@ -109,7 +109,7 @@ internal sealed class BrowserInputController(IBrowserInputHost host)
         return SendAsync(new BrowserScrollInput(nav, frame, x, y, deltaX, deltaY), cancellationToken);
     }
 
-    /// <summary>Sends one semantic key — up, select, page down — never a platform key code.</summary>
+    /// <summary>Sends one semantic key - up, select, page down - never a platform key code.</summary>
     public Task SendKeyAsync(BrowserSemanticKey key, CancellationToken cancellationToken) =>
         SendAsync(new BrowserSemanticKeyInput(key), cancellationToken);
 

@@ -54,7 +54,7 @@ class BrowserHostBridge(
     }
 
     /**
-     * Points JPEG capture at [view] — a single WebView for tabs, or the workspace mosaic root so
+     * Points JPEG capture at [view] - a single WebView for tabs, or the workspace mosaic root so
      * Windows sees every live pane the sofa sees.
      */
     fun attachPreviewTarget(view: android.view.View) {

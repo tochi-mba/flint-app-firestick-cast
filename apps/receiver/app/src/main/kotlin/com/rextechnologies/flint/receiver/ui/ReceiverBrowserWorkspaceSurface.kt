@@ -93,7 +93,7 @@ internal fun ReceiverBrowserWorkspaceSurface(
         runCatching { addFocus.requestFocus() }
         if (!service.allowBrowserUnderVpnPolicy()) {
             service.ensureBrowserVpn()
-            service.showBrowserNotice("VPN required — connect before opening workspace pages.")
+            service.showBrowserNotice("VPN required - connect before opening workspace pages.")
             onClose()
             return@LaunchedEffect
         }
@@ -362,7 +362,7 @@ private fun WorkspaceChrome(
                 enabled = BrowserWorkspaceLayout.GRID_2X2 in allowedLayouts && state.panes.size in 3..4,
             )
             Spacer(Modifier.weight(1f))
-            // Explicit help only — never auto-open over panes or steal D-pad focus on entry.
+            // Explicit help only - never auto-open over panes or steal D-pad focus on entry.
             ReceiverHelp()
             WorkspaceChip("Add page", onAddPane, Modifier.focusRequester(addFocus))
             WorkspaceChip("Resize", onResize, enabled = state.panes.size > 1)

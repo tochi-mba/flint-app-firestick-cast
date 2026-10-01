@@ -3,7 +3,7 @@ package com.rextechnologies.flint.castcore.copy
 /** The Diagnostics sheet. Rows, never prose, and never a number nobody measured. */
 object DiagnosticsCopy {
     val empty: EmptyStateCopy = EmptyStateCopy(
-        glyph = "—",
+        glyph = "-",
         title = "Nothing measured yet",
         body = "Run a probe from the Cast tab and the results appear here.",
     )

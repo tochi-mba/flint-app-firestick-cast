@@ -42,7 +42,7 @@ class BrowserChromeClient(
     }
 
     /**
-     * The page wants the whole screen — a video going fullscreen, almost always.
+     * The page wants the whole screen - a video going fullscreen, almost always.
      *
      * Nothing implemented this pair before, which is why fullscreen buttons across every video site
      * appeared to do nothing at all.
@@ -196,5 +196,5 @@ enum class BrowserRefusal(val viewerSentence: String) {
     PERMISSION("This page asked for the camera or microphone, which is not granted here."),
     LOCATION("This page asked for your location, which is not shared."),
     EXTERNAL_APP("That link opens another app, which this browser does not launch."),
-    BLOCKED_ADDRESS("Blocked — this browser only opens secure https addresses."),
+    BLOCKED_ADDRESS("Blocked - this browser only opens secure https addresses."),
 }

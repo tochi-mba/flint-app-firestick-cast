@@ -6,7 +6,7 @@ package com.rextechnologies.flint.receiver.browser.net
  * # Why this is not left to the platform
  *
  * The receiver's private key lives in the Android Keystore and is generated for **signing only**.
- * That is deliberate — it is what keeps the key non-exportable — but it rules out the classic RSA
+ * That is deliberate - it is what keeps the key non-exportable - but it rules out the classic RSA
  * key-transport suites, where the server has to *decrypt* the client's premaster secret. Left to
  * pick for itself, Conscrypt on Fire OS negotiates exactly such a suite and then fails inside
  * OpenSSL with `RSA routines: internal error`, which says nothing about key purposes and aborts the

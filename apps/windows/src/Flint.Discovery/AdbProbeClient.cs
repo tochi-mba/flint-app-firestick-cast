@@ -11,8 +11,8 @@ namespace Flint.Discovery;
 /// A first connection may offer Flint's public key and cause the television's normal RSA prompt.
 /// Flint waits for a bounded period so an explicit acceptance can finish that same probe; it never
 /// bypasses the prompt or assumes consent. Once authorised, a probe reads only Android build
-/// properties. The three things that do change the television — opening the receiver, asking what
-/// is installed, and installing the bundled receiver — are separate calls, each behind its own
+/// properties. The three things that do change the television - opening the receiver, asking what
+/// is installed, and installing the bundled receiver - are separate calls, each behind its own
 /// explicit action in the shell, and each names exactly what it does.
 /// </remarks>
 public sealed class AdbProbeClient

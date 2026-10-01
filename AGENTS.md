@@ -12,7 +12,7 @@
   on-demand key-frame request reliably and so emits an intra frame only when the receiver asks. The
   hardware encoder on this project's development machine does *not* always honour that request, and
   an unbounded GOP there means a receiver that joins late or drops a packet never gets a frame it
-  can start from — a frozen picture, indefinitely. That path therefore runs a bounded two-second
+  can start from - a frozen picture, indefinitely. That path therefore runs a bounded two-second
   interval. Prefer on demand; fall back to a bounded interval only where the request is proven
   unreliable, and say so in the code where it is done.
 - The managed shell never runs per frame. C# starts a session, polls telemetry, and stops it.
@@ -47,7 +47,7 @@
 
 ## Debugging logs (agents)
 
-When the user reports a Fire TV / Windows browser, cast, pairing, VPN, or workspace problem —
+When the user reports a Fire TV / Windows browser, cast, pairing, VPN, or workspace problem -
 **pull and read the latest logs before guessing**.
 
 ```powershell
@@ -57,9 +57,9 @@ When the user reports a Fire TV / Windows browser, cast, pairing, VPN, or worksp
 
 Then read, in order:
 
-1. `artifacts/logs/session-meta.txt` — serial, pull time, receiver package timestamps
-2. `artifacts/logs/firetv-latest.log` — filtered logcat (`Flint*`, `BrowserTlsServer`)
-3. `artifacts/logs/windows-latest.log` — copy of `%LOCALAPPDATA%\Flint\logs\windows-latest.log`
+1. `artifacts/logs/session-meta.txt` - serial, pull time, receiver package timestamps
+2. `artifacts/logs/firetv-latest.log` - filtered logcat (`Flint*`, `BrowserTlsServer`)
+3. `artifacts/logs/windows-latest.log` - copy of `%LOCALAPPDATA%\Flint\logs\windows-latest.log`
 
 Windows `Flint.App` opens that LocalAppData file automatically via `DevFileLog` (Avalonia
 `LogToTrace` included). Continuous Stick capture (optional):
@@ -89,7 +89,7 @@ gitignored.
   default test run must pass on a machine with no GPU and no Fire TV attached.
 - A codec test that only checks structure is not a codec test. An encoder can produce correctly
   framed H.264 with correct parameter sets, correct dimensions and a plausible bitrate, every frame
-  of which decodes to nothing — that shipped here, and looked like a working encoder to every
+  of which decodes to nothing - that shipped here, and looked like a working encoder to every
   structural assertion in the crate. Anything that produces pixels is held to a round trip that
   decodes the output and asserts a picture survived.
 - A latency regression fails the build the same way a broken test does.

@@ -5,7 +5,7 @@ namespace Flint.Core;
 /// </summary>
 /// <remarks>
 /// An interface so the mirror loop can be driven and asserted on without a GPU, an encoder, or a
-/// television — none of which exist on a machine running the test suite.
+/// television - none of which exist on a machine running the test suite.
 /// </remarks>
 public interface IMirrorEngine
 {

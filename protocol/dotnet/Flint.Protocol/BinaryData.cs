@@ -12,7 +12,7 @@ namespace Flint.Protocol;
 /// protocol messages are records whose whole point is value equality, and neither
 /// <see cref="ImmutableArray{T}"/> nor an array gives that. <see cref="ImmutableArray{T}"/> in
 /// particular compares the underlying array <em>reference</em>, so two identical payloads decoded
-/// from the same bytes would compare unequal — which silently makes every round-trip assertion
+/// from the same bytes would compare unequal - which silently makes every round-trip assertion
 /// vacuous rather than failing loudly.
 /// </para>
 /// <para>

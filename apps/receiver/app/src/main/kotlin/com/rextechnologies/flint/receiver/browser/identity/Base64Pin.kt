@@ -52,7 +52,7 @@ internal object Base64Pin {
 
         // The tail: one or two bytes short of a group, padded to four characters. Getting this wrong
         // is the classic base64 defect, and it only shows on inputs whose length is not a multiple
-        // of three — which a SHA-256 hash never is, so it would have failed every single time.
+        // of three - which a SHA-256 hash never is, so it would have failed every single time.
         when (bytes.size - index) {
             1 -> {
                 val chunk = bytes[index].toInt() and 0xFF shl 16

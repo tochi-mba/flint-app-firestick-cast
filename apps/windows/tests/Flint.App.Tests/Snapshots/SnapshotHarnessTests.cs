@@ -258,7 +258,7 @@ public sealed class SnapshotHarnessTests
         // The channel order has to be established rather than assumed. Getting it wrong is
         // invisible from inside the suite: both sides of every comparison are wrong the same way,
         // so everything passes, while every stored image has red and blue swapped. That is exactly
-        // what happened here, and only looking at an approved image caught it — the REX Signal
+        // what happened here, and only looking at an approved image caught it - the REX Signal
         // yellow-green had rendered as teal.
 
         // Arrange: the Signal accent, #D7FF3F.

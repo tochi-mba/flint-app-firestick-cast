@@ -10,7 +10,7 @@ fn microseconds_and_hundred_nanosecond_units_round_trip() {
 #[test]
 fn packing_puts_width_in_the_high_half_as_media_foundation_expects() {
     // Swapping these produces a 1080x1920 encoder that accepts every frame and emits a stream
-    // no receiver can render — the failure is far away from the mistake.
+    // no receiver can render - the failure is far away from the mistake.
     assert_eq!(pack(1920, 1080), (1920u64 << 32) | 1080);
     assert_eq!(pack(30, 1), (30u64 << 32) | 1);
 }
@@ -164,7 +164,7 @@ fn live_config() -> EncoderConfig {
 /// A frame whose content changes with `index`, so the encoder has real motion to compress.
 ///
 /// A static frame is the one case an encoder can compress to almost nothing, which would let a
-/// broken pipeline look healthy — every frame after the first would legitimately be tiny.
+/// broken pipeline look healthy - every frame after the first would legitimately be tiny.
 pub(super) fn moving_frame(index: u32, width: u32, height: u32) -> SourceFrame {
     let mut pixels = vec![0u8; (width * height * 4) as usize];
     let bar = (index * 17) % width;
@@ -302,7 +302,7 @@ fn a_frame_of_the_wrong_size_is_refused_by_the_live_encoder_too() {
 fn the_encoder_emits_its_first_access_unit_almost_immediately() {
     // The single most valuable assertion in this file. Left at its defaults, and equally if
     // the low-latency settings are applied after the media types are committed, this encoder
-    // buffers eighteen frames before emitting anything — six hundred milliseconds of latency
+    // buffers eighteen frames before emitting anything - six hundred milliseconds of latency
     // baked in before a single pixel reaches the network, which no downstream tuning recovers.
     // Applying them first brings it to one frame. Both orderings compile, both "succeed", and
     // only the delay tells them apart, so it is measured here rather than trusted.
@@ -384,7 +384,7 @@ fn a_detailed_key_frame_is_not_quantised_down_to_a_few_hundred_bytes() {
     // Measured on a Fire TV Stick 4K: selecting CBR without also stating a target bitrate left
     // this encoder emitting ~400-byte access units for a full desktop. The stream was valid and
     // the television decoded it happily, so the host reported thousands of frames and the
-    // receiver reported a healthy 2-14 kbps — while the picture was flat blocks of colour.
+    // receiver reported a healthy 2-14 kbps - while the picture was flat blocks of colour.
     //
     // Only the size tells the two apart, so it is measured rather than trusted.
     const MIN_PLAUSIBLE_KEY_FRAME_BYTES: usize = 2_000;
@@ -438,8 +438,8 @@ pub(super) fn noisy_frame(index: u32, width: u32, height: u32) -> SourceFrame {
 fn a_requested_key_frame_actually_arrives_rather_than_being_quietly_ignored() {
     // The parameter was accepted and discarded for the whole life of this encoder, so
     // MirrorSession::request_key_frame did nothing on the real thing. A receiver can only
-    // start decoding at a key frame, so the cost was a permanently stalled mirror — a green
-    // video plane — any time the receiver lost its reference chain.
+    // start decoding at a key frame, so the cost was a permanently stalled mirror - a green
+    // video plane - any time the receiver lost its reference chain.
     let Ok(mut encoder) = H264Encoder::new(live_config()) else {
         return;
     };
@@ -494,7 +494,7 @@ fn a_requested_key_frame_actually_arrives_rather_than_being_quietly_ignored() {
 fn an_encoder_can_be_created_and_dropped_repeatedly_without_wedging_the_platform() {
     // Each encoder starts and shuts down Media Foundation. Unbalanced counts, or releasing the
     // transform after shutdown, surface here as a failure on a later iteration rather than the
-    // first — which is exactly the shape of bug that survives a single-run smoke test.
+    // first - which is exactly the shape of bug that survives a single-run smoke test.
     for _ in 0..3 {
         if let Ok(mut encoder) = H264Encoder::new(live_config()) {
             let _ = encoder.submit(&moving_frame(0, 320, 240), false);

@@ -121,7 +121,7 @@ internal fun ReceiverBrowserSurface(
             .semantics { contentDescription = "Secure browser" }
             // Root preview, same shape as the mirror surface: while a tab/menu button holds focus,
             // Back must still hit the ladder here. Handling keys only on the WebView wrapper left
-            // overlays stranded — remote Back fell through to the Activity and did nothing.
+            // overlays stranded - remote Back fell through to the Activity and did nothing.
             .onPreviewKeyEvent { event ->
                 when (event.type) {
                     KeyEventType.KeyDown -> {
@@ -167,7 +167,7 @@ internal fun ReceiverBrowserSurface(
 
                 // An overlay owns its own focus. Pulling it back to the page here left the tab
                 // switcher on screen with focus behind it, so the D-pad moved nothing and the sheet
-                // could not be used at all — found on a Fire TV Stick 4K.
+                // could not be used at all - found on a Fire TV Stick 4K.
                 controller.overlay != BrowserOverlay.NONE -> {
                     controller.chromeFocused = false
                     service.setBrowserPageFocusEnabled(false)
@@ -478,7 +478,7 @@ internal fun ReceiverBrowserLeavePrompt(onLeave: () -> Unit, onStay: () -> Unit)
     // A frame is waited for before the request.
     //
     // Requesting focus during first composition happens before the node is placed, so it fails
-    // silently and focus falls to whatever the default traversal picks — which here was *Leave*.
+    // silently and focus falls to whatever the default traversal picks - which here was *Leave*.
     // A destructive default on a remote whose Back and Select sit next to each other is the exact
     // accident this prompt exists to prevent, and it was reproduced on a Fire TV Stick 4K.
     LaunchedEffect(Unit) {

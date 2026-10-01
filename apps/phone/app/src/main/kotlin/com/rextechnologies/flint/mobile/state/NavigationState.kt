@@ -30,7 +30,7 @@ data class Navigation(
  * Where the app is, and how back gets out of it.
  *
  * The introduction is remembered on disk. In memory it replayed all six steps on every cold start,
- * which is not an introduction — it is an obstacle between somebody and the thing they opened.
+ * which is not an introduction - it is an obstacle between somebody and the thing they opened.
  */
 class NavigationState(
     context: Context,

@@ -388,7 +388,7 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
         /// Blocks of codec setup data the engine may publish.
         /// </summary>
         /// <remarks>
-        /// H.264 publishes two — SPS and PPS. The cap bounds the walk so a malformed engine cannot
+        /// H.264 publishes two - SPS and PPS. The cap bounds the walk so a malformed engine cannot
         /// spin this loop, and matches what the wire format is willing to carry.
         /// </remarks>
         private const int MaxCodecDataBlocks = 16;

@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
  * admits.
  *
  * Every gate between a paste and a tunnel is exercised here against the exact shape that script
- * produces — full tunnel, preshared key, DNS line, keepalive — because each gate was written
+ * produces - full tunnel, preshared key, DNS line, keepalive - because each gate was written
  * against a hand-made fixture and none of them had seen a real server's output. A config the
  * generator emits and the receiver then rejects is indistinguishable, from a sofa, from a VPN
  * that does not work.

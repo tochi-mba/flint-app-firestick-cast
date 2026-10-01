@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets
  *
  * The byte budget is the part that was wrong in both. A budget counted in bytes cannot be applied by
  * removing UTF-16 code units: a string ending in an emoji loses its low surrogate first, and Java
- * then encodes the orphaned high surrogate as a question mark — so the string that goes on the wire
+ * then encodes the orphaned high surrogate as a question mark - so the string that goes on the wire
  * is not the string that was measured, and a receiver decoding strict UTF-8 sees something different
  * again.
  */

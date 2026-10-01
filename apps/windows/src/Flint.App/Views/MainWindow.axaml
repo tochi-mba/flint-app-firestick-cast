@@ -5,7 +5,7 @@
         xmlns:controls="using:Flint.App.Controls"
         x:Class="Flint.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="Flint — REX Technologies"
+        Title="Flint - REX Technologies"
         Icon="avares://Flint.App/Assets/flint.ico"
         Width="1180" Height="780"
         MinWidth="{Binding MinimumWidth}" MinHeight="{Binding MinimumHeight}"
@@ -153,7 +153,7 @@
                                   Title="{Binding SelectedLabel}"
                                   Trailing=""
                                   TrailingTone="Neutral" />
-            <controls:EmptyState Glyph="—"
+            <controls:EmptyState Glyph="-"
                                  Title="No tool connected"
                                  Body="This area is ready for a local receiver connection. Return to Cast to connect your Fire TV." />
           </StackPanel>

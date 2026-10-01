@@ -30,7 +30,7 @@ import org.robolectric.annotation.Config
  *
  * This suite exists because of a specific failure earlier in this project: the receiver was checked
  * on an emulator, looked correct, and then looked wrong on the actual Fire TV, because the screen
- * geometry is nothing alike. Rendering at the television's real resolution is the point — a
+ * geometry is nothing alike. Rendering at the television's real resolution is the point - a
  * receiver layout verified at phone size proves nothing about the panel it runs on.
  *
  * What these images are asked to show, which no assertion in the receiver's other tests can:
@@ -39,13 +39,13 @@ import org.robolectric.annotation.Config
  */
 @RunWith(AndroidJUnit4::class)
 // A 1080p television, not a phone. 960x540dp at xhdpi is exactly 1920x1080 pixels, and the
-// `television` qualifier is what makes Android apply the TV resource set and the leanback theme —
+// `television` qualifier is what makes Android apply the TV resource set and the leanback theme -
 // so this renders the configuration a Fire TV actually reports rather than an approximation of it.
 @Config(qualifiers = "w960dp-h540dp-television-xhdpi")
 class ReceiverSnapshotTest {
     // The one deprecated call left in this repository, and the narrowest form of keeping it: this
     // declaration, not the file. Every other Compose test here has moved to junit4.v2. Under that
-    // rule the components on four of these screens never take focus at all — the focused button
+    // rule the components on four of these screens never take focus at all - the focused button
     // renders with an unfocused fill under its focus ring, differing from the approved image by the
     // same pixel count however far the clock is advanced, so it is not a matter of waiting longer.
     // Approving those frames would retire the one thing this suite exists to prove: that focus is
@@ -57,7 +57,7 @@ class ReceiverSnapshotTest {
     @Before
     fun takeControlOfTheClock() {
         // Set before any content is composed. The receiver's idle screen animates forever, and an
-        // auto-advancing clock means the composition never reaches idle — every capture would race
+        // auto-advancing clock means the composition never reaches idle - every capture would race
         // the spinner and no two runs would agree.
         compose.mainClock.autoAdvance = false
     }
@@ -242,7 +242,7 @@ class ReceiverSnapshotTest {
     fun `a focused mirror control shows an outline a viewer can see from a sofa`() {
         // The complaint this pins, in the reporter's own words: "there are no outlines when I move
         // around to select options on the bottom menu". A remote user navigates entirely by focus,
-        // so a control that does not visibly change when focused makes the whole surface unusable —
+        // so a control that does not visibly change when focused makes the whole surface unusable -
         // and nothing but a rendered image can show whether the change is actually visible.
         compose.setContent {
             Surface(
@@ -267,7 +267,7 @@ class ReceiverSnapshotTest {
     @Test
     fun `the browser chrome while a page is loading`() {
         // Over white, deliberately. The chrome this replaced was muted grey text laid straight onto
-        // the page, which was invisible on every light site — a defect only an image can show.
+        // the page, which was invisible on every light site - a defect only an image can show.
         compose.setContent {
             PageStandIn {
                 ReceiverBrowserChrome(

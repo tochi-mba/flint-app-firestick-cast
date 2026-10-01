@@ -22,7 +22,7 @@ public enum EncoderVendor
     /// A hardware encoder whose registered name Flint does not recognise.
     /// </summary>
     /// <remarks>
-    /// Still usable — the platform proved it exists, and only the vendor label is missing. Ranked
+    /// Still usable - the platform proved it exists, and only the vendor label is missing. Ranked
     /// last when choosing between encoders, because Flint cannot reason about its characteristics.
     /// Never folded into a named vendor: claiming an unknown encoder is Quick Sync would put a
     /// guess into the capture strategy and, worse, into the diagnostics the user reads.

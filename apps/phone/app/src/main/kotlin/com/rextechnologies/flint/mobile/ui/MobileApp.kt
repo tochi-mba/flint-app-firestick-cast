@@ -40,8 +40,8 @@ import com.rextechnologies.flint.mobile.MobileUiState
 /**
  * The app's one screen.
  *
- * The desktop's left rail becomes a bottom bar of four, and the page grid is carried over unchanged
- * — a heading, then cards twelve apart inside a twenty-eight margin. It goes full width instead of
+ * The desktop's left rail becomes a bottom bar of four, and the page grid is carried over unchanged -
+ * a heading, then cards twelve apart inside a twenty-eight margin. It goes full width instead of
  * stopping at 820, which is the only thing about the layout a phone actually changes.
  */
 @Composable
@@ -113,7 +113,7 @@ private fun MainScreen(
         }
 
         // Above the bar rather than at the end of the page. A notice appears in response to a press,
-        // and at the bottom of a scrolling page it appeared below the fold — out of sight of the
+        // and at the bottom of a scrolling page it appeared below the fold - out of sight of the
         // button that raised it, which is the one place it needed to be.
         state.notice?.let { notice -> NoticeBanner(notice, controller::dismissNotice) }
 

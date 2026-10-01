@@ -11,7 +11,7 @@
 
     Fire TV lines are filtered to Flint* tags (and BrowserTlsServer). Windows log is copied from
     %LOCALAPPDATA%\Flint\logs\windows-latest.log when present. Expect granular FlintDiag / Log
-    breadcrumbs (cast, trust, browser commands/input, workspace, VPN, TLS handshake) — not only
+    breadcrumbs (cast, trust, browser commands/input, workspace, VPN, TLS handshake) - not only
     freeze/UI stall lines. The Windows file is size-capped (trim oldest, keep newest). Secrets and
     page text must never appear.
 

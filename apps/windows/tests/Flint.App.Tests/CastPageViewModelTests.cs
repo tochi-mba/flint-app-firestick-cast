@@ -21,7 +21,7 @@ public sealed class CastPageViewModelTests
     {
         // This is what the receiver actually sends: Media3's error code name, lowercased with
         // underscores turned to spaces. The raw text describes what ExoPlayer saw, not what a
-        // person standing at their PC should do about it — and what they should do is check
+        // person standing at their PC should do about it - and what they should do is check
         // Windows Firewall, because the TV dialling in to fetch the file is the one direction
         // pairing's outbound connection never proves works.
 
@@ -117,7 +117,7 @@ public sealed class CastPageViewModelTests
 
         // Assert
         page.DeviceName.ShouldBe("No receiver found");
-        page.DeviceAddress.ShouldBe("—");
+        page.DeviceAddress.ShouldBe("-");
     }
 
     [Fact]
@@ -308,7 +308,7 @@ public sealed class CastPageViewModelTests
         // Regression test for the bug this pins: entering a valid code used to be rejected with
         // "Connect to the TV first" purely because ADB had not authorised, even though the code
         // path never uses ADB. There is no real receiver listening in this test, so the attempt
-        // still fails — but it must fail on the network, not on the removed ADB guard.
+        // still fails - but it must fail on the network, not on the removed ADB guard.
         //
         // The device sits on loopback with a port nothing listens on, so each connection attempt
         // is refused immediately rather than timing out. The test is still not fast: production
@@ -451,7 +451,7 @@ public sealed class CastPageViewModelTests
     public async Task ProbeAsync_WithNothingAtTheAddress_BlamesTheAddressRatherThanTheTelevision()
     {
         // The failure people actually hit: a mistyped or stale address. Telling them to enable
-        // Developer Options sends them to a television that was never the problem — and on a wrong
+        // Developer Options sends them to a television that was never the problem - and on a wrong
         // address there may not even be a television there.
         var page = PageFor(Fake.Device() with
         {
@@ -484,8 +484,8 @@ public sealed class CastPageViewModelTests
     [Fact]
     public async Task MirrorVerdict_AfterAProbe_MatchesTheMirrorEntryInModes()
     {
-        // The Screen page must read the exact same verdict the Cast page's own Mirror card shows
-        // — a second, independently-computed opinion is what let the old button drift out of sync
+        // The Screen page must read the exact same verdict the Cast page's own Mirror card shows -
+        // a second, independently-computed opinion is what let the old button drift out of sync
         // with the truth in the first place.
 
         // Arrange
@@ -522,7 +522,7 @@ public sealed class CastPageViewModelTests
     [Fact]
     public async Task StartScreenSessionAsync_WhenMirrorIsNotOfferable_NeverTouchesTheReceiver()
     {
-        // No SurfaceMessage, no session I/O of any kind — refusing must be silent to the TV.
+        // No SurfaceMessage, no session I/O of any kind - refusing must be silent to the TV.
         // Proven here by needing no paired session at all: if this reached the receiver it would
         // need one, and this test deliberately never creates one.
 
@@ -530,7 +530,7 @@ public sealed class CastPageViewModelTests
         var page = PageFor(Fake.Device(), Fake.HostThatCannotMirror(), Fake.Path());
         await page.ProbeCommand.ExecuteAsync(null);
 
-        // Act & Assert — a network call here would hang or throw against the nonexistent session;
+        // Act & Assert - a network call here would hang or throw against the nonexistent session;
         // finishing promptly with a plain refusal is the proof.
         await page.StartScreenSessionCommand.ExecuteAsync(null);
         page.IsConnected.ShouldBeFalse();
@@ -615,7 +615,7 @@ public sealed class CastPageViewModelTests
     {
         // These must never read alike: one is a fact about the device, the other about Flint. This
         // test's own body once asserted NotImplemented and Available shared a label ("Ready"),
-        // silently contradicting the test's name — the same mislabeling this pins against.
+        // silently contradicting the test's name - the same mislabeling this pins against.
 
         // Arrange
         var verdict = new ModeVerdict(CastMode.Mirror, status, "reason");

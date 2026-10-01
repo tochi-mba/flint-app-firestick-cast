@@ -13,7 +13,7 @@ import kotlin.test.fail
  * Every browser enum here must agree with the committed manifest, value for value.
  *
  * The golden corpus proves the three implementations encode the same *messages* identically. It
- * cannot prove they agree on the values those messages may carry — a vector exercises only the
+ * cannot prove they agree on the values those messages may carry - a vector exercises only the
  * values it happens to use, and most are used by none. A value present on one side and missing on
  * another therefore passes every test it has, and fails on a real television at the moment someone
  * presses the button.
@@ -26,7 +26,7 @@ class BrowserEnumManifestTest {
      * Kotlin's enum name paired with the manifest's name for it.
      *
      * Written out rather than derived, because a reflective sweep would silently skip an enum that
-     * was renamed — which is the failure this test exists to catch.
+     * was renamed - which is the failure this test exists to catch.
      */
     private val enums: Map<String, List<Int>> = mapOf(
         "BrowserCapabilityStatus" to BrowserCapabilityStatus.entries.map { it.id },

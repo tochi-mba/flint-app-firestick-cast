@@ -25,7 +25,7 @@ public sealed class ScreenPageTests
     [AvaloniaFact]
     public async Task StartButton_IsDisabled_WhenMirrorIsNotOfferable()
     {
-        // The regression this pins had the opposite XAML binding — enabled whenever a session
+        // The regression this pins had the opposite XAML binding - enabled whenever a session
         // happened to be connected, regardless of what the capability report said.
 
         // Arrange: a PC with no hardware encoder, which blocks mirroring.
@@ -44,7 +44,7 @@ public sealed class ScreenPageTests
     public async Task ReasonText_MatchesTheMirrorVerdictExactly()
     {
         // The page must show the capability report's own words, not a hand-written caption that
-        // can drift out of sync with what actually happened — which is exactly how the old copy
+        // can drift out of sync with what actually happened - which is exactly how the old copy
         // ("not available in this build") kept describing a permanently broken state as routine.
 
         // Arrange

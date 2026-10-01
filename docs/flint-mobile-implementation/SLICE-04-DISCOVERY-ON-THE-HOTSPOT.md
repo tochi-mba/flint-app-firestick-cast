@@ -1,4 +1,4 @@
-# Slice 04 — discovery on the hotspot
+# Slice 04 - discovery on the hotspot
 
 **Governing ADRs:** [ADR-0024](adrs/ADR-0024-PHONE-BINDS-EVERY-SOCKET-TO-THE-SELECTED-INTERFACE.md)
 and [ADR-0026](adrs/ADR-0026-FLINT-MOBILE-CONSUMES-THE-PROTOCOL-IN-REPO.md).
@@ -42,7 +42,7 @@ on and what it tried. Discovery is never the only route: an address can always b
 
 Multicast is the thing that fails on a SoftAP link. The plaintext probe is the multicast-free
 fallback the receiver was built to answer, and answering one produces no state change and no listener
-callback on the receiver side — deliberately, so that a phone sweeping a subnet cannot make the
+callback on the receiver side - deliberately, so that a phone sweeping a subnet cannot make the
 television flicker between screens.
 
 ## Bounds, and why they are bounds

@@ -504,7 +504,7 @@ public sealed class BrowserWorkspaceViewModelTests
 
         workspace.IsAvailable.ShouldBeTrue();
         workspace.LayoutOptions.Single(option => option.Layout == BrowserWorkspaceLayout.TwoColumns)
-            .SelectCommand.CanExecute(null).ShouldBeFalse(); // 0 panes — need Split View / second page first
+            .SelectCommand.CanExecute(null).ShouldBeFalse(); // 0 panes - need Split View / second page first
 
         workspace.InvalidateIfStale(11);
 

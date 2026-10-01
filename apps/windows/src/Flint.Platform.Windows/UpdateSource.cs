@@ -6,7 +6,7 @@ namespace Flint.Platform.Windows;
 /// <summary>Where a newer Flint comes from, and how it is applied.</summary>
 /// <remarks>
 /// An interface so the update flow can be tested without a network, an installed application or a
-/// process restart — none of which a unit test may do.
+/// process restart - none of which a unit test may do.
 /// </remarks>
 public interface IUpdateSource
 {

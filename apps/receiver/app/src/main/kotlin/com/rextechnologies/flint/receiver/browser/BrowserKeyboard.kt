@@ -39,7 +39,7 @@ data class BrowserKeyboardState(
  * Pure, so the grid is proven complete and escape-proof by tests instead of by pressing every key on
  * a television.
  *
- * The desktop remains the faster way to type, and the sheet says so — but it is never the only way.
+ * The desktop remains the faster way to type, and the sheet says so - but it is never the only way.
  */
 class BrowserKeyboard {
     companion object {

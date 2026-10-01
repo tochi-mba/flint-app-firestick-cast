@@ -7,7 +7,7 @@ namespace Flint.Cli.Tests;
 /// </summary>
 /// <remarks>
 /// It exists mostly so the browser feature can be exercised end to end without driving the desktop
-/// UI by hand — a scripted run against a real television is worth more than any number of fakes,
+/// UI by hand - a scripted run against a real television is worth more than any number of fakes,
 /// and it needs something to run.
 /// </remarks>
 public sealed class CliOptionsBrowseTests

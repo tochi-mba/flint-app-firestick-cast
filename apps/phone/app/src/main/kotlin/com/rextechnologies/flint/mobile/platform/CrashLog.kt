@@ -15,14 +15,14 @@ import java.util.IdentityHashMap
  * What the app has to say about the last time it failed.
  *
  * Nobody developing this app can reach the phones it runs on. There is no store listing, no crash
- * service and no way to read another app's logcat without a computer attached — so when the app
+ * service and no way to read another app's logcat without a computer attached - so when the app
  * closes on somebody's phone, the only record of why is the one it keeps for itself. Without this,
  * a fault found on hardware is diagnosed by guessing, and every guess costs the person holding the
  * phone a rebuild and a reinstall.
  *
  * Two things are recorded, most recent only: a failure that killed the process, caught on the way
  * down by [install], and a failure that was survived, handed over by [record]. Neither is sent
- * anywhere — it is written to this app's own preferences and shown in Settings for a person to read
+ * anywhere - it is written to this app's own preferences and shown in Settings for a person to read
  * or copy, and it goes no further unless they choose to pass it on.
  */
 object CrashLog {

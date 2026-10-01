@@ -122,7 +122,7 @@ public sealed class CastPageComingSoonTests
     /// <remarks>
     /// Filtered by <c>Visual.IsEffectivelyVisible</c>, which is the whole point of this
     /// helper. A control hidden by <c>IsVisible="false"</c> stays in the visual tree in Avalonia,
-    /// so collecting every descendant reports hidden panels as though they were on screen — and an
+    /// so collecting every descendant reports hidden panels as though they were on screen - and an
     /// assertion that a panel is absent would pass no matter what the binding did.
     /// </remarks>
     private static List<string> Texts(Control root) =>

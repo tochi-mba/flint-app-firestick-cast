@@ -110,7 +110,7 @@ public sealed partial class BrowserNetworkViewModel : ObservableObject
         ? string.Empty
         : "VPN settings apply to named TV profiles only. Switch to a TV profile first.";
 
-    /// <summary>Structural hint under the paste box — never echoes secrets.</summary>
+    /// <summary>Structural hint under the paste box - never echoes secrets.</summary>
     public string ConfigHint
     {
         get

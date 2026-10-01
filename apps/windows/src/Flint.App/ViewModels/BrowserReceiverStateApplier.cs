@@ -13,7 +13,7 @@ namespace Flint.App.ViewModels;
 /// Two authorities report the active page and they do not always agree. A
 /// <see cref="BrowserStateMessage"/> describes the surface; a tab snapshot describes the strip, and
 /// arrives when a state message was missed or when Navigate never produced one. Both land here so
-/// the reconciliation is in one place — the HUD stuck at a mid-load percentage on a page the
+/// the reconciliation is in one place - the HUD stuck at a mid-load percentage on a page the
 /// television had already finished was the two of them being applied in different ways.
 ///
 /// Everything here runs on the UI thread. Avalonia bindings do not reliably refresh when

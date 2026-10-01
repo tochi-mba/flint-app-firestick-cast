@@ -3,7 +3,7 @@
 //! Flint sends the receiver a `VIDEO_CONFIG` carrying a width, a height, and the encoder's SPS and
 //! PPS. The receiver builds a decoder from all three. Nothing checks that they agree, and if they
 //! do not, the failure is silent in the worst possible way: the decoder configures happily, accepts
-//! every access unit, reports frames rendered, and puts a flat green field on the television —
+//! every access unit, reports frames rendered, and puts a flat green field on the television -
 //! green being what an incorrectly-configured YUV surface looks like. Every counter on the host
 //! stays perfect throughout.
 //!

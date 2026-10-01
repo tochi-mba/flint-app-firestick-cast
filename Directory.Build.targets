@@ -7,7 +7,7 @@
     The documentation file exists so the compiler reports unused usings; shipping it would put every
     internal comment in this codebase inside the download. It is redirected to the intermediate
     folder here rather than in Directory.Build.props, where $(IntermediateOutputPath) and
-    $(AssemblyName) are both still empty — which wrote a file named ".xml" into every project.
+    $(AssemblyName) are both still empty - which wrote a file named ".xml" into every project.
   -->
   <PropertyGroup>
     <DocumentationFile>$(IntermediateOutputPath)$(AssemblyName).xml</DocumentationFile>

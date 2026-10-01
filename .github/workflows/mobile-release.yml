@@ -4,7 +4,7 @@
 # the download link on a phone's browser never changes and always points at the newest build; a
 # `v*` tag cuts an immutable release that will still be exactly these bytes in five years.
 #
-# Sideloading is the whole distribution story for this app — there is no store listing — so the APK
+# Sideloading is the whole distribution story for this app - there is no store listing - so the APK
 # has to be signed with a key that never changes. An install signed by a different key is not an
 # update, it is a different app, and Android refuses to upgrade across it.
 name: Mobile release
@@ -226,10 +226,10 @@ jobs:
 
             **Android 8.0 or newer.** Download the APK on the phone, open it, and allow installation
             from your browser when Android asks. This is not a Play Store listing, so Android will
-            warn you about an unknown developer — that warning is accurate, not a formality.
+            warn you about an unknown developer - that warning is accurate, not a formality.
 
             The phone becomes the host: turn on its hotspot, join the Fire TV to it, and Flint casts
-            over that link. Check the TV first — **Settings → My Fire TV → About**. Fire OS 7 or 8
+            over that link. Check the TV first - **Settings → My Fire TV → About**. Fire OS 7 or 8
             works; Vega OS cannot, and no future version will change that.
 
       # After the release, not before. action-gh-release will not move a tag that already exists, so
@@ -271,7 +271,7 @@ jobs:
             Android will warn you about an unknown developer.
 
             The phone becomes the host: turn on its hotspot, join the Fire TV to it, and Flint casts
-            over that link. Check the TV first — **Settings → My Fire TV → About**. Fire OS 7 or 8
+            over that link. Check the TV first - **Settings → My Fire TV → About**. Fire OS 7 or 8
             works; Vega OS cannot, and no future version will change that.
 
             See the [installation guide](docs/INSTALL.md).

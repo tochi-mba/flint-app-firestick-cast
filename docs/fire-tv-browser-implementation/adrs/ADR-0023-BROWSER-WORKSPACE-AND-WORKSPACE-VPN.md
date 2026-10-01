@@ -1,4 +1,4 @@
-# ADR-0023 — independent-page browser workspace and workspace-scoped VPN
+# ADR-0023 - independent-page browser workspace and workspace-scoped VPN
 
 - **Status:** Accepted
 - **Implementation:** In progress

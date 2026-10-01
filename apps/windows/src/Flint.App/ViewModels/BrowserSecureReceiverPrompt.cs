@@ -25,7 +25,7 @@ internal enum BrowserSecureReceiverStep
 /// <remarks>
 /// The card used to be unconditional: a heading, an instruction, a port box and a button, shown
 /// whenever a device was selected. That put a form in front of people at moments when every input
-/// was already present and Windows was about to reconnect by itself, and — worse — it printed a next
+/// was already present and Windows was about to reconnect by itself, and - worse - it printed a next
 /// step ("enter the Cast pairing code") next to no field that could accept one, because the pairing
 /// code lives on the Cast page.
 ///
@@ -92,7 +92,7 @@ internal static class BrowserSecureReceiverPrompt
     /// </remarks>
     internal static bool ShowsPortEntry(bool portWasAdvertised) => !portWasAdvertised;
 
-    /// <summary>The next step, naming where it is done — or null when there is nothing to do.</summary>
+    /// <summary>The next step, naming where it is done - or null when there is nothing to do.</summary>
     /// <param name="step">Where the person is in connecting to a secure receiver.</param>
     /// <param name="capabilityRemedy">
     /// The capability verdict's own words, used verbatim for a receiver Flint has not accepted, so
@@ -131,5 +131,5 @@ internal static class BrowserSecureReceiverPrompt
 
     /// <summary>What the page says about itself while an unattended reconnect is in flight.</summary>
     internal const string ReconnectingReason =
-        "Reconnecting the pinned TLS browser session — this receiver was verified before, so no codes are compared again.";
+        "Reconnecting the pinned TLS browser session - this receiver was verified before, so no codes are compared again.";
 }

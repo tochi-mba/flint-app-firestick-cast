@@ -111,7 +111,7 @@ public sealed class BrowserPageTests
             page.GetVisualDescendants().OfType<Button>().ShouldContain(button =>
                 AutomationProperties.GetName(button) == "Verify or reconnect secure receiver");
             shell.Browser.CanNavigate.ShouldBeFalse();
-            // Eligible but no Cast pairing code yet — Verify stays off until the code is entered.
+            // Eligible but no Cast pairing code yet - Verify stays off until the code is entered.
             shell.Browser.CanVerify.ShouldBeFalse();
             shell.Cast.PairingCode = "123456";
             shell.Browser.CanVerify.ShouldBeTrue();

@@ -60,7 +60,7 @@ internal interface BrowserSurfaceActions {
  *
  * Kept out of the composable so the wiring is readable and so the composable stays a rendering of
  * state rather than a place decisions are made. Every decision it takes comes from a pure model that
- * is already tested — [BrowserTvInputModel] for what a key means, [BrowserCursorEngine] for where
+ * is already tested - [BrowserTvInputModel] for what a key means, [BrowserCursorEngine] for where
  * the pointer goes, [BrowserKeyboard] for typing, [BrowserQueryResolver] for address-or-search.
  * This class only carries the result across the Android boundary.
  */
@@ -142,7 +142,7 @@ internal class BrowserSurfaceController(
             return true
         }
         // Only defer Select for page focus-mode clicks. While chrome owns the remote, Compose must
-        // see a normal press — holding Select here used to toggle pointer/link mode instead.
+        // see a normal press - holding Select here used to toggle pointer/link mode instead.
         if (isSelectKey(keyCode) && mode == BrowserInteractionMode.FOCUS &&
             overlay == BrowserOverlay.NONE && !dialogOpen && !fullscreen &&
             !leaveConfirmVisible &&
@@ -419,9 +419,9 @@ internal class BrowserSurfaceController(
             // silently changing what a remote means is how a browser feels broken.
             actions.notice(
                 if (mode == BrowserInteractionMode.CURSOR) {
-                    "Pointer mode — the arrows move a pointer"
+                    "Pointer mode - the arrows move a pointer"
                 } else {
-                    "Link mode — the arrows step between links"
+                    "Link mode - the arrows step between links"
                 },
             )
             true
@@ -481,7 +481,7 @@ internal class BrowserSurfaceController(
         leaveConfirmVisible = false
     }
 
-    /** Affirmative leave from the guard prompt — not a deferred Back key. */
+    /** Affirmative leave from the guard prompt - not a deferred Back key. */
     fun confirmLeave() {
         leaveConfirmVisible = false
         actions.closeBrowser()
@@ -569,7 +569,7 @@ internal class BrowserSurfaceController(
      * Tells the page where the TV cursor is, as a mouse hover.
      *
      * Without this the Compose crosshair moves but YouTube (and anything else that waits on
-     * `:hover` / `mouseover`) never sees a pointer — controls stay hidden until Select taps.
+     * `:hover` / `mouseover`) never sees a pointer - controls stay hidden until Select taps.
      */
     private fun publishCursorHover() {
         actions.dispatch(

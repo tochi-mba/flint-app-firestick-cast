@@ -11,7 +11,7 @@ import android.webkit.WebView
  *
  * Android asks a view for an [InputConnection] exactly when the input method needs to send it text,
  * and a `WebView` answers with one only while an editable element is focused. That makes this the
- * one signal for "the viewer is typing" that costs nothing and needs no injected JavaScript —
+ * one signal for "the viewer is typing" that costs nothing and needs no injected JavaScript -
  * ADR-0006 forbids reaching into the page, and reaching into it would not work on every site anyway.
  *
  * Knowing it matters twice over: the remote's Select becomes Enter while a field is focused, and the

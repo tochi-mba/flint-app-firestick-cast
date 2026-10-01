@@ -1,4 +1,4 @@
-# ADR-0007 — surface lifecycle and TV-first UX
+# ADR-0007 - surface lifecycle and TV-first UX
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -77,5 +77,5 @@ shortcut does not justify violating service/UI separation.
 
 ## References
 
-- [Slice 06 — lifecycle and surface safety](../SLICE-06-LIFECYCLE-DIALOGS-DATA-AND-SURFACE-SAFETY.md)
+- [Slice 06 - lifecycle and surface safety](../SLICE-06-LIFECYCLE-DIALOGS-DATA-AND-SURFACE-SAFETY.md)
 - [Fire TV design guidance](https://developer.amazon.com/docs/fire-tv/design-and-user-experience-guidelines.html)

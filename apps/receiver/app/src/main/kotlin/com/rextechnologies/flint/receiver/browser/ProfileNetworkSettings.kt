@@ -31,7 +31,7 @@ data class ProfileNetworkSettings(
             WireGuardConfigValidator.isValid(configText)
 
     /**
-     * True when browsing must wait for a verified VPN session. Incomplete config still blocks —
+     * True when browsing must wait for a verified VPN session. Incomplete config still blocks -
      * fail closed rather than browsing on the normal network.
      */
     val requiresVpnBeforeBrowse: Boolean

@@ -23,7 +23,7 @@ enum class ModeStatus {
     AVAILABLE,
 
     /**
-     * Something this mode needs is missing, and the person holding the phone can probably fix it —
+     * Something this mode needs is missing, and the person holding the phone can probably fix it -
      * the hotspot is off, the TV has not authorised this phone, a probe has not been run yet.
      */
     BLOCKED,
@@ -173,13 +173,13 @@ data class ModePresentation(
         const val WHAT_TO_DO: String = "WHAT TO DO"
 
         /**
-         * Not "COMING SOON" again — the pill above already says that. The block's job is to answer the
+         * Not "COMING SOON" again - the pill above already says that. The block's job is to answer the
          * question the pill provokes, which is whether the reader should go and do something.
          */
         const val NO_ACTION_NEEDED: String = "NO ACTION NEEDED"
 
         const val COMING_SOON_BODY: String =
-            "Nothing to change on your phone or your TV — this arrives in a Flint update."
+            "Nothing to change on your phone or your TV - this arrives in a Flint update."
 
         fun of(verdict: ModeVerdict): ModePresentation = ModePresentation(
             mode = verdict.mode,

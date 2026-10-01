@@ -1,4 +1,4 @@
-# Fire TV browser — implementation progress
+# Fire TV browser - implementation progress
 
 Two passes are recorded here. The first delivered the browser as a *transport*: TLS session, URL
 policy, WebView driver, input routing, dialogs, preview plumbing. The second turned it into
@@ -16,8 +16,8 @@ Governing decisions: [ADR index](adrs/README.md).
 
 **Everything in the plan is implemented and green in software**, and it has now been
 **run on a real Fire TV Stick 4K** (API 25, Chromium 118): the pinned TLS
-session, page load, and TV-local cursor all work end to end. That run found two defects — a CLI that
-could open the browser only once per receiver launch, and an idle session dying after 120 s — both
+session, page load, and TV-local cursor all work end to end. That run found two defects - a CLI that
+could open the browser only once per receiver launch, and an idle session dying after 120 s - both
 fixed with tests. Details in `docs/LATENCY_BUDGET.md`.
 
 What remains is **measurement**: that run proved the feature works, not how fast it is.
@@ -32,7 +32,7 @@ What remains is **measurement**: that run proved the feature works, not how fast
 | .NET (`dotnet test Flint.slnx`) | 1,034 passed across 8 assemblies |
 | Golden corpus | 75 committed vectors, byte-identical across Rust / C# / Kotlin |
 
-## Pass 2 — what changed
+## Pass 2 - what changed
 
 ### Defects fixed
 
@@ -57,7 +57,7 @@ ladder, tabs (8 max, 2 live, rest frozen to saved state), tab strip and switcher
 menu and library sheets, find bar, error page, notices, zoom / user-agent / dark mode, favicons, a
 bounded bookmark and history store, and a design-token layer with one focus visual.
 
-**Protocol.** Ids 21–27 for tabs, view settings, favicons and the library — additive, never new
+**Protocol.** Ids 21–27 for tabs, view settings, favicons and the library - additive, never new
 fields, since every browser decoder asserts no trailing bytes. Capability is *discovered* from
 received snapshots rather than declared, because a receiver that does not know a type id closes the
 session rather than ignoring it.
@@ -71,13 +71,13 @@ the receiver proves the family, rather than showing controls that would end the 
 `ReceiverService` 1099 → 877 lines via `ReceiverBrowserController`; `BrowserPageViewModel` split
 across five cockpit view models. No file exceeds 1,000 lines.
 
-## Not done — and why
+## Not done - and why
 
 | Item | Status |
 |---|---|
 | Timing evidence | The feature now **runs on a real Fire TV Stick 4K** (see `docs/LATENCY_BUDGET.md`), but nothing was instrumented or sampled. Every span in the budget is still a target |
-| Tab RAM budget | One live renderer measured at ~46–53 MB on a 2 GB stick, so two extrapolates to ~160–175 MB — inside the 220 MB gate, but **the two-tab figure is arithmetic, not a measurement** |
-| Second Select press | Activating a focused control needs two Select presses; the first after a focus move does not fire. Reproduced on hardware, **not yet diagnosed** — and the reason the multi-tab memory reading is incomplete |
+| Tab RAM budget | One live renderer measured at ~46–53 MB on a 2 GB stick, so two extrapolates to ~160–175 MB - inside the 220 MB gate, but **the two-tab figure is arithmetic, not a measurement** |
+| Second Select press | Activating a focused control needs two Select presses; the first after a focus move does not fire. Reproduced on hardware, **not yet diagnosed** - and the reason the multi-tab memory reading is incomplete |
 | Preview frame reference | The receiver still compares pointer input against the navigation id, because the Windows touchpad sends that in both reference fields. Changing one side alone would reject every pointer event that works today; the two move together when the preview pane is exercised on hardware |
 | Appstore | Sideload/developer only, pending written Amazon approval |
 

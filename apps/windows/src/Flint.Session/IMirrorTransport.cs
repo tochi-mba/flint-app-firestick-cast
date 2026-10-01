@@ -7,8 +7,8 @@ namespace Flint.Session;
 /// </summary>
 /// <remarks>
 /// <see cref="CastSession"/> is the real implementation. This exists so the mirror loop can be
-/// driven and asserted on without a socket, because the interesting failures in that loop — a
-/// dropped key frame, a stall reported as a success, a surface never announced — are all logic and
+/// driven and asserted on without a socket, because the interesting failures in that loop - a
+/// dropped key frame, a stall reported as a success, a surface never announced - are all logic and
 /// none of them need a network to reproduce.
 /// </remarks>
 public interface IMirrorTransport

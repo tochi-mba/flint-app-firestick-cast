@@ -1,4 +1,4 @@
-# Flint Mobile — the finishing plan, as executed
+# Flint Mobile - the finishing plan, as executed
 
 This is the concrete plan for taking the phone app from "compiles and pairs" to a product with a
 working Second Screen, Mirror and Media Handoff, a receiver it can install, and gates that say what
@@ -38,7 +38,7 @@ proof that the production path produces pixels.
 
 ---
 
-## Step 1 — prove the production encoder produces pixels, and choose the codec deliberately
+## Step 1 - prove the production encoder produces pixels, and choose the codec deliberately
 
 **Why first.** This project has already shipped an encoder whose every structural check passed and
 whose every frame decoded to nothing. Until a frame has gone through `ScreenEncoder` and come out of
@@ -46,13 +46,13 @@ a decoder looking like what went in, "Ready" on a mode card is a guess.
 
 **Code.**
 
-- `castcore/.../media/PatternCheck.kt` — a four-quadrant test pattern (four saturated colours), the
+- `castcore/.../media/PatternCheck.kt` - a four-quadrant test pattern (four saturated colours), the
   expected colour at each quadrant centre, `YuvToRgb.convert` (BT.601 limited range), and
   `PatternCheck.verdict(samples)` which requires every quadrant to match within a tolerance wide
   enough for chroma subsampling and codec loss and narrow enough that a flat frame of any colour
   fails. Pure, unit-tested against exact values, a flat green frame, a flat black frame and a
   swapped-quadrant frame.
-- `mobile/.../platform/EncoderRoundTrip.kt` — on the main thread, creates a private `VirtualDisplay`
+- `mobile/.../platform/EncoderRoundTrip.kt` - on the main thread, creates a private `VirtualDisplay`
   on `ScreenEncoder.inputSurface` and shows a `Presentation` painting the pattern; collects the
   `VIDEO_CONFIG` and the first key frame plus a few packets on the encoder thread; stops; then off
   the main thread decodes them with a second `MediaCodec` into a `YUV_420_888` `ImageReader`, samples
@@ -65,17 +65,17 @@ a decoder looking like what went in, "Ready" on a mode card is a guess.
   this phone, and reports IMPOSSIBLE with the detail when frames decoded to nothing. When the phone
   refused a private display the round trip is reported as not run rather than failed, because a
   mirror through a projection may still work.
-- `castcore/.../media/CodecChoice.kt` — the session's negotiated codec wins when the phone can
+- `castcore/.../media/CodecChoice.kt` - the session's negotiated codec wins when the phone can
   encode it; otherwise H.264 before H.265; and a fallback to the other hardware codec when the
   encoder refuses to start. `OutputCoordinator.startEncoder` uses it instead of the first element
   of a set. `LiveOutput.codec` is shown on the live strip.
-- `mobile/src/androidTest/.../EncoderRoundTripTest.kt` — the same harness under the instrumentation
+- `mobile/src/androidTest/.../EncoderRoundTripTest.kt` - the same harness under the instrumentation
   runner, for an emulator or device lane. It is not part of the PR gate and says so.
 
 **Evidence.** CI: `PatternCheck`, `YuvToRgb`, `CodecChoice` and the assessor's new gate. Hardware: the
 encoder check in Settings reports "a test frame survived the trip through H.264" on a named phone.
 
-## Step 2 — make Mirror and Second Screen survive what happens to them
+## Step 2 - make Mirror and Second Screen survive what happens to them
 
 **Code.**
 
@@ -85,7 +85,7 @@ encoder check in Settings reports "a test frame survived the trip through H.264"
   encoder's own `VIDEO_CONFIG` followed by the sync-frame request `publishConfig` already makes. The
   projection and the display are reused; consent is never asked for twice. Second Screen ignores
   rotation entirely.
-- `castcore/.../media/PresentationGeometry.kt` — the second screen is a landscape 1920×1080 canvas
+- `castcore/.../media/PresentationGeometry.kt` - the second screen is a landscape 1920×1080 canvas
   regardless of how the phone is held, bounded by `EncoderPolicy`. Tested for a portrait phone.
 - Key-frame fallback: `OutputCoordinator` restarts the encoder once per session with
   `KeyFrameStrategy.BoundedInterval`, retargeting the display or projection surface, guarded by a
@@ -96,7 +96,7 @@ encoder check in Settings reports "a test frame survived the trip through H.264"
 - The notification's Stop is observed: when `CastService.isForeground` drops while output is live,
   `OutputCoordinator.stop()` runs, so a stop from the lock screen releases the encoder rather than
   leaving it encoding into a socket nobody reads.
-- `castcore/.../screen/SecondScreenScene.kt` — a sealed scene model (`Dashboard`, `NowPlaying`) with
+- `castcore/.../screen/SecondScreenScene.kt` - a sealed scene model (`Dashboard`, `NowPlaying`) with
   no Android in it; `SecondScreenContent` renders it; the live strip becomes a cockpit with the scene,
   the size, the codec, the link word and Stop.
 
@@ -104,7 +104,7 @@ encoder check in Settings reports "a test frame survived the trip through H.264"
 a pure sequence. Hardware: a mirror rotated portrait → landscape → portrait without the television
 dropping the session; a stop from the notification with the phone locked leaves no service behind.
 
-## Step 3 — degrade deliberately when the phone is hot
+## Step 3 - degrade deliberately when the phone is hot
 
 **Code.** `mobile/.../platform/ThermalWatch.kt` adapts `PowerManager.OnThermalStatusChangedListener`
 to `ThermalLevel`. `BitrateController` gains a ceiling that is a fraction of the session's own
@@ -118,7 +118,7 @@ Settings diagnostics card shows them. No latency figure appears anywhere.
 at the platform's own emergency levels. Hardware: a thermal step-down observed and its sentence
 recorded, or its absence recorded as not yet observed.
 
-## Step 4 — Media Handoff, end to end
+## Step 4 - Media Handoff, end to end
 
 **Code.**
 
@@ -139,7 +139,7 @@ recorded, or its absence recorded as not yet observed.
   `ReceiverService` into a class with tests: one transfer at a time, a new transfer discards a
   previous pending file, a size cap against usable cache space, partial files deleted on error and
   disconnect, and the same bytes out as in, checked by hash.
-- `castcore/.../screen/SurfaceReducer.kt` — one authority for `Idle | Presentation | Mirror | Media`.
+- `castcore/.../screen/SurfaceReducer.kt` - one authority for `Idle | Presentation | Mirror | Media`.
   Starting media while a second screen is live stops the presentation stream before the LOAD;
   clearing media that displaced a second screen tells the person rather than restarting it silently.
 
@@ -148,7 +148,7 @@ and refusal mid-transfer; the empty-file refusal; the reducer's every transition
 hash equality and cleanup. Hardware: a real MP4 chosen on the phone plays on the Fire TV, is paused,
 seeked and stopped from the phone, and the temporary file is gone afterwards.
 
-## Step 5 — mirror audio, honestly
+## Step 5 - mirror audio, honestly
 
 **Code.** `mobile/.../media/AudioCapture.kt` uses `AudioPlaybackCaptureConfiguration` and
 `AudioRecord` on API 29 and above, encodes AAC-LC with a `MediaCodec`, sends `AudioConfigMessage`
@@ -161,21 +161,21 @@ Video never waits for audio.
 capture produces synchronised sound on the television; an app that opts out mirrors video with the
 strip saying why there is no sound.
 
-## Step 6 — install and remove the receiver from the phone
+## Step 6 - install and remove the receiver from the phone
 
 **Code.**
 
-- `mobile/.../platform/AdbIdentityStore.kt` — one RSA key pair per phone, generated once, stored
+- `mobile/.../platform/AdbIdentityStore.kt` - one RSA key pair per phone, generated once, stored
   encrypted with the same keystore-held AES key the session tokens use, so the television's accepted
   identity survives reinstalls of nothing and restarts of everything.
-- `castcore/.../setup/FireOsPlatformResolver.kt` — the Windows host's rules ported exactly: known
+- `castcore/.../setup/FireOsPlatformResolver.kt` - the Windows host's rules ported exactly: known
   Vega build models first, then documented API-level ranges, and Unknown for anything undocumented.
-- `mobile/.../net/AdbClient.kt` — a socket bound to the hotspot interface, the bounded 5555–5585 port
+- `mobile/.../net/AdbClient.kt` - a socket bound to the hotspot interface, the bounded 5555–5585 port
   scan for the selected television only, `AdbConnection` from `:protocol`, read-only identification
   (banner, `ro.build.version.sdk`, `ro.build.version.release`, `ro.product.model`, `pm list
   packages` for the receiver), then `installApk` of the staged bundled package and
   `uninstallPackage`. `AdbAuthorizationRequiredException` becomes `AwaitingAuthorisation`.
-- `castcore/.../setup/InstallFlow.kt` — a pure reducer from events to `ReceiverInstallStage`, so the
+- `castcore/.../setup/InstallFlow.kt` - a pure reducer from events to `ReceiverInstallStage`, so the
   card's every transition is a table with a test. The Settings card's Install and Remove become live,
   Remove needs a second press that names the package and the television.
 
@@ -191,7 +191,7 @@ answers that way joins the list with what it said about itself. And a television
 whose receiver is not answering used to be assessed as ready to cast; it is blocked now, with the
 install remedy.
 
-## Step 7 — the receiver stops calling every peer a PC
+## Step 7 - the receiver stops calling every peer a PC
 
 **Code.** The idle, mirror and playback surfaces use the peer's own name from `HELLO` where they have
 it and peer-neutral wording where they do not. The approved snapshots that pin those strings are
@@ -199,7 +199,7 @@ regenerated through the Snapshots workflow, looked at, and committed.
 
 **Evidence.** CI: the receiver snapshot suite green against the new images.
 
-## Step 8 — documentation that matches the code
+## Step 8 - documentation that matches the code
 
 The implementation README's "what is not in this change" is rewritten to what is actually not in it.
 `HARDWARE-EVIDENCE.md` records every physical run: phone model and Android version, Fire TV model

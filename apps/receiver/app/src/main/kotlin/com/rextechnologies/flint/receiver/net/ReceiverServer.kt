@@ -353,7 +353,7 @@ class ReceiverServer(
          *
          * The TV is a hotspot client rather than its host, so these are ordinary site-local Wi-Fi
          * or Ethernet addresses rather than a tether interface. Point-to-point interfaces are left
-         * out, because that is the shape of a VPN tunnel — including this receiver's own browser
+         * out, because that is the shape of a VPN tunnel - including this receiver's own browser
          * tunnel. Binding the cast listener inside a tunnel puts it somewhere the phone in the same
          * room cannot reach, and [BrowserVpnRoutePolicy] already draws the same line.
          */

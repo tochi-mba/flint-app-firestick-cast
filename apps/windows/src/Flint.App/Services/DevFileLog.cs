@@ -199,7 +199,7 @@ internal static class DevFileLog
     {
         if (Interlocked.Exchange(ref watchdogInFlight, 1) != 0)
         {
-            Warn("FlintUi", "ui watchdog previous ping still outstanding — dispatcher may be stalled");
+            Warn("FlintUi", "ui watchdog previous ping still outstanding - dispatcher may be stalled");
             return;
         }
 

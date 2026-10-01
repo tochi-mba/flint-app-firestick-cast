@@ -1,4 +1,4 @@
-# ADR-0002 — platform and distribution scope
+# ADR-0002 - platform and distribution scope
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -76,6 +76,6 @@ written Amazon approval linked in the release evidence; a verbal assumption is i
 
 ## References
 
-- [Slice 01 — feasibility and quality gate](../SLICE-01-FEASIBILITY-AND-QUALITY-GATE.md)
-- [Slice 09 — release evidence](../SLICE-09-HARDENING-RELEASE-EVIDENCE-AND-DOCUMENTATION.md)
+- [Slice 01 - feasibility and quality gate](../SLICE-01-FEASIBILITY-AND-QUALITY-GATE.md)
+- [Slice 09 - release evidence](../SLICE-09-HARDENING-RELEASE-EVIDENCE-AND-DOCUMENTATION.md)
 - [Amazon device filtering and browser policy](https://developer.amazon.com/docs/app-submission/device-filtering-and-compatibility.html)

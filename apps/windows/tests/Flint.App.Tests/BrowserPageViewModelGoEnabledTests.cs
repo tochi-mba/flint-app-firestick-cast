@@ -6,7 +6,7 @@ using Shouldly;
 namespace Flint.App.Tests;
 
 /// <summary>
-/// GO / Navigate must track a *live* TLS session — SecureReady with a dead remote leaves the HUD
+/// GO / Navigate must track a *live* TLS session - SecureReady with a dead remote leaves the HUD
 /// up and the button disabled forever (seen after receiver reinstall + re-pair).
 /// </summary>
 public sealed class BrowserPageViewModelGoEnabledTests
@@ -21,7 +21,7 @@ public sealed class BrowserPageViewModelGoEnabledTests
             viewModel.CanNavigate.ShouldBeTrue();
             viewModel.NavigateCommand.CanExecute(null).ShouldBeTrue();
 
-            // Without a pairing code, auto-reconnect cannot run — GO must stay off, not stuck
+            // Without a pairing code, auto-reconnect cannot run - GO must stay off, not stuck
             // SecureReady with a dead socket.
             cast.PairingCode = string.Empty;
             remote.EndSession();
@@ -59,7 +59,7 @@ public sealed class BrowserPageViewModelGoEnabledTests
     public async Task ReconnectPass_WhenSecureReadyButDisconnected_ReenablesGo()
     {
         // Cast re-pair updates the browser port while the UI is still SecureReady against a dead
-        // socket — the reconnect pass must notice !IsConnected before requiring Idle.
+        // socket - the reconnect pass must notice !IsConnected before requiring Idle.
         var remote = new RecordingBrowserRemote();
         var (viewModel, _, connector) = await ReadyWithRememberedTrustAsync(remote);
         using (viewModel)

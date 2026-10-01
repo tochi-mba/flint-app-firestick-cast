@@ -65,7 +65,7 @@ internal fun ReceiverBrowserNetworkSheet(
             Text(text = "NETWORK", style = ReceiverType.Label, color = ReceiverColors.Muted)
             Text(
                 text = if (vpnAvailable) {
-                    "Optional VPN for this TV profile. Applies to every page in this workspace. Paste a WireGuard config from Windows (Browser → MORE → TV NETWORK / VPN). Full-tunnel 0.0.0.0/0 is fine — Flint keeps the local control network outside the tunnel."
+                    "Optional VPN for this TV profile. Applies to every page in this workspace. Paste a WireGuard config from Windows (Browser → MORE → TV NETWORK / VPN). Full-tunnel 0.0.0.0/0 is fine - Flint keeps the local control network outside the tunnel."
                 } else {
                     "VPN is not available on this device (${capability.reason})."
                 },
@@ -76,7 +76,7 @@ internal fun ReceiverBrowserNetworkSheet(
                 text = if (hasConfig) {
                     "WireGuard config saved on this TV (private key never shown here)."
                 } else {
-                    "No config on this TV yet — use Windows to paste one."
+                    "No config on this TV yet - use Windows to paste one."
                 },
                 style = ReceiverType.Caption,
                 color = ReceiverColors.Muted,
@@ -139,18 +139,18 @@ internal fun ReceiverBrowserNetworkSheet(
 internal fun ReceiverVpnBanner(state: BrowserVpnState, requireVpn: Boolean = false) {
     val message = when (state) {
         BrowserVpnState.Idle -> return
-        BrowserVpnState.NeedsConsent -> "VPN needs system permission — confirm on the next screen."
+        BrowserVpnState.NeedsConsent -> "VPN needs system permission - confirm on the next screen."
         BrowserVpnState.Connecting -> "Connecting VPN…"
         BrowserVpnState.TunnelUpUnverified ->
             "VPN tunnel is up; checking that traffic is actually protected…"
         BrowserVpnState.Connected -> "VPN connected for this browser session."
         is BrowserVpnState.Failed -> if (requireVpn) {
-            "VPN did not connect — pages stay blocked until it does. ${state.message}"
+            "VPN did not connect - pages stay blocked until it does. ${state.message}"
         } else {
-            "VPN did not connect — browsing uses the normal network. ${state.message}"
+            "VPN did not connect - browsing uses the normal network. ${state.message}"
         }
         BrowserVpnState.Unavailable -> if (requireVpn) {
-            "VPN unavailable on this TV — pages stay blocked."
+            "VPN unavailable on this TV - pages stay blocked."
         } else {
             "VPN unavailable on this TV."
         }

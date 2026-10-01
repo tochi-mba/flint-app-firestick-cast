@@ -81,7 +81,7 @@ class BrowserCoordinatorTest {
 
     @Test
     fun `a replayed navigation is not delivered twice`() {
-        // Attaching a second time — a configuration change recreates the view — must not reload the
+        // Attaching a second time - a configuration change recreates the view - must not reload the
         // page and throw away whatever the user had done on it.
         val coordinator = BrowserCoordinator()
         coordinator.handleOpen(1, 1, "https://example.test/a")
@@ -376,7 +376,7 @@ class BrowserCoordinatorTest {
             address = BrowserAddress("https://one.test/", "one.test"),
         )
         coordinator.resetHostCommandWatermark()
-        // Tab layer clamps before activate — same as ReceiverBrowserController on reconnect.
+        // Tab layer clamps before activate - same as ReceiverBrowserController on reconnect.
         val clamped = orphanTab.copy(lastAcceptedCommandId = 0)
 
         assertTrue(coordinator.activatePage(clamped))

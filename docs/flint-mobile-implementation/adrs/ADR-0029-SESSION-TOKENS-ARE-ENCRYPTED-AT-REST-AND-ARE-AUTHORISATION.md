@@ -1,4 +1,4 @@
-# ADR-0029 — session tokens are stored encrypted at rest and are authorisation, never encryption
+# ADR-0029 - session tokens are stored encrypted at rest and are authorisation, never encryption
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -47,7 +47,7 @@ everything.
 ## Decision
 
 - A granted `SessionToken` is stored **per receiver**, keyed by the receiver address, in
-  `flint-mobile-tokens` — a `MODE_PRIVATE` file `:mobile` owns. The token's characters never reach
+  `flint-mobile-tokens` - a `MODE_PRIVATE` file `:mobile` owns. The token's characters never reach
   that file. What is written is Base64 of a length-prefixed initialisation vector followed by
   AES-256-GCM ciphertext with a 128-bit tag.
 - The key is **generated in the Android keystore and never leaves it**, under alias
@@ -137,7 +137,7 @@ everything.
 One thing retires the language ban: an authenticated encrypted transport for the cast wire, agreed
 byte for byte across Kotlin, C# and Rust with regenerated golden vectors, and verified on real
 hardware. A superseding record would then name exactly which traffic it covers and which wording
-becomes true. Nothing less qualifies — not a stored token, not a pairing step, not a hotspot the user
+becomes true. Nothing less qualifies - not a stored token, not a pairing step, not a hotspot the user
 believes is theirs, and not a release note that wants a stronger word. The storage decision itself is
 revisited if Android ships a maintained first-party encrypted preference API, or if device evidence
 shows key invalidation is common enough on target handsets that the fail-closed path becomes the

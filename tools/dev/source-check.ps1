@@ -3,13 +3,15 @@
     Repository-wide source rules that no single language's toolchain can hold.
 
 .DESCRIPTION
-    Three rules over every file git knows about, tracked or newly added:
+    Four rules over every file git knows about, tracked or newly added:
 
       Length    No authored file may exceed 1,000 lines. Code is expected to reach 500 lines in
                 main sources and 800 in tests; files above those targets are listed but do not fail
                 the check until the decompositions that bring them down have landed.
       Markers   A TODO, FIXME or HACK names the issue that tracks it, as TODO(#123): or with the
                 issue's URL in the parentheses. A marker nobody tracks is a comment nobody acts on.
+      Dashes    No em dash, anywhere: text uses a plain hyphen. The rule exists so a dash typed out
+                of habit fails here rather than reaching a page, a log line or a commit.
       Version   VERSION is the one version. Cargo cannot read a file, so Cargo.toml and Cargo.lock
                 must agree with it; the .NET and Gradle builds read it directly and may not carry a
                 literal of their own.
@@ -105,6 +107,24 @@ function Test-WorkMarkers([string]$Root, [string[]]$Files) {
     $failures
 }
 
+function Test-EmDashes([string]$Root, [string[]]$Files) {
+    $failures = [System.Collections.Generic.List[string]]::new()
+    # Written as a code point so this file does not hold the character it forbids.
+    $dash = [string][char]0x2014
+
+    foreach ($file in $Files) {
+        $number = 0
+        foreach ($line in [System.IO.File]::ReadLines((Join-Path $Root $file))) {
+            $number++
+            if ($line.Contains($dash)) {
+                $failures.Add("${file}:${number}: use a hyphen, not an em dash - $($line.Trim())")
+            }
+        }
+    }
+
+    $failures
+}
+
 function Test-VersionAgreement([string]$Root) {
     $failures = [System.Collections.Generic.List[string]]::new()
     $version = (Get-Content -LiteralPath (Join-Path $Root 'VERSION') -Raw).Trim()
@@ -153,7 +173,7 @@ function Test-VersionAgreement([string]$Root) {
 function Invoke-SourceCheck([string]$Root) {
     $files = @(Get-SourceFiles $Root)
     $length = Test-LineCeiling $Root $files
-    $failures = @($length.Failures) + @(Test-WorkMarkers $Root $files) + @(Test-VersionAgreement $Root)
+    $failures = @($length.Failures) + @(Test-WorkMarkers $Root $files) + @(Test-EmDashes $Root $files) + @(Test-VersionAgreement $Root)
 
     if ($length.OverTarget.Count -gt 0) {
         Write-Host "  $($length.OverTarget.Count) code files are above their line target (not yet enforced):" -ForegroundColor DarkYellow

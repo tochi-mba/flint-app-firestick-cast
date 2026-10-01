@@ -5,7 +5,7 @@ namespace Flint.Core;
 /// </summary>
 /// <remarks>
 /// This is the only evidence Flint has for whether a device is Android-based. A refusal is
-/// genuinely ambiguous — see <see cref="Refused"/> — and must not be reported as a Vega device.
+/// genuinely ambiguous - see <see cref="Refused"/> - and must not be reported as a Vega device.
 /// </remarks>
 public enum AdbConnectionState
 {

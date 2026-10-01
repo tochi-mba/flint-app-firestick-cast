@@ -125,7 +125,7 @@ public sealed partial class UpdatesViewModel : ObservableObject
             Status = $"Downloading version {version}.";
             // Never backwards. Progress<T> hands its callbacks to the scheduler rather than running
             // them where Report was called, so a late one can arrive after the download has already
-            // finished — and a bar that jumps back to half is a download that looks stuck.
+            // finished - and a bar that jumps back to half is a download that looks stuck.
             var progress = new Progress<int>(percent => DownloadedPercent = Math.Max(DownloadedPercent, percent));
             await source.DownloadAsync(progress, cancellationToken).ConfigureAwait(false);
 

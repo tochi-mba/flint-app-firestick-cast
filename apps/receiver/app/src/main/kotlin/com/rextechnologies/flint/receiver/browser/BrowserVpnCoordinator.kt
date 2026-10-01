@@ -43,7 +43,7 @@ class NoOpBrowserVpnTunnel : BrowserVpnTunnel {
  * WireGuard tunnel via the official `com.wireguard.android:tunnel` Go backend.
  *
  * Never logs [configText]. Soft-fails on parse/consent/backend errors. Does not bypass
- * [VpnService.prepare] — the coordinator must surface NeedsConsent first.
+ * [VpnService.prepare] - the coordinator must surface NeedsConsent first.
  */
 class BrowserVpnTunnelImpl(
     context: Context,
@@ -136,7 +136,7 @@ class BrowserVpnTunnelImpl(
 /**
  * Profile-gated VPN coordinator for browser sessions.
  *
- * Soft-fails into banner states. Honours the system VPN consent prompt — never bypasses it.
+ * Soft-fails into banner states. Honours the system VPN consent prompt - never bypasses it.
  * [clearSettings] is the disable path: drop stored auto-connect prefs for a profile.
  */
 class BrowserVpnCoordinator(
@@ -286,7 +286,7 @@ class BrowserVpnCoordinator(
      * Handles a verified tunnel that stopped being one.
      *
      * Drops out of Connected and tears the tunnel down. Browsing is gated on Connected, so this is
-     * what re-blocks pages on a profile that requires VPN — the alternative is Flint continuing to
+     * what re-blocks pages on a profile that requires VPN - the alternative is Flint continuing to
      * say traffic is protected when it is not.
      */
     private fun onTunnelLost(attemptId: Long, profileId: String) {

@@ -1,4 +1,4 @@
-# ADR-0010 — native dialogs, data clearing, and bounded recovery
+# ADR-0010 - native dialogs, data clearing, and bounded recovery
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -96,6 +96,6 @@ state-machine tests, UI evidence, and target soak results.
 
 ## References
 
-- [Slice 06 — lifecycle, dialogs, data, and surface safety](../SLICE-06-LIFECYCLE-DIALOGS-DATA-AND-SURFACE-SAFETY.md)
-- [ADR-0006 — WebView security profile](ADR-0006-WEBVIEW-SECURITY-PROFILE.md)
-- [ADR-0007 — surface lifecycle](ADR-0007-SURFACE-LIFECYCLE-AND-TV-FIRST-UX.md)
+- [Slice 06 - lifecycle, dialogs, data, and surface safety](../SLICE-06-LIFECYCLE-DIALOGS-DATA-AND-SURFACE-SAFETY.md)
+- [ADR-0006 - WebView security profile](ADR-0006-WEBVIEW-SECURITY-PROFILE.md)
+- [ADR-0007 - surface lifecycle](ADR-0007-SURFACE-LIFECYCLE-AND-TV-FIRST-UX.md)

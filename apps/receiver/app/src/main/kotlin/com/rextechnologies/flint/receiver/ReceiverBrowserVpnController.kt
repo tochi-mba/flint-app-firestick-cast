@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
  *
  *  * Settings are per TV profile. The television is shared; a tunnel is not.
  *  * Consent belongs to Android and to a person. This never bypasses `VpnService.prepare`, and a
- *    consent request is single-flight and invalidated by a profile or session change — a callback
+ *    consent request is single-flight and invalidated by a profile or session change - a callback
  *    arriving for a profile nobody is using any more must not connect anything.
  *  * The browsing gate fails closed. When a profile requires VPN, pages stay blocked in every
  *    state except Connected, including the states that look like progress.
@@ -78,7 +78,7 @@ internal class ReceiverBrowserVpnController(
      * Runs [onLost] when a verified tunnel stops being verified on a profile that requires one.
      *
      * Re-blocking new navigations is not enough on its own. A page that is already open keeps
-     * fetching, and those requests leave over whatever network is left — so the profile that asked
+     * fetching, and those requests leave over whatever network is left - so the profile that asked
      * for a tunnel before browsing has to have its pages stopped, not merely its next click
      * refused.
      */
@@ -182,15 +182,15 @@ internal class ReceiverBrowserVpnController(
                 false
             }
             is BrowserVpnState.Failed -> {
-                showNotice("VPN required — pages stay blocked. ${session.message}")
+                showNotice("VPN required - pages stay blocked. ${session.message}")
                 false
             }
             BrowserVpnState.Unavailable -> {
-                showNotice("VPN required but unavailable on this TV — pages stay blocked.")
+                showNotice("VPN required but unavailable on this TV - pages stay blocked.")
                 false
             }
             BrowserVpnState.Idle -> {
-                showNotice("VPN required — connect VPN before browsing.")
+                showNotice("VPN required - connect VPN before browsing.")
                 false
             }
         }
@@ -231,7 +231,7 @@ internal class ReceiverBrowserVpnController(
         if (consentInFlight) return
         val host = consentHost
         if (host == null) {
-            showNotice("VPN needs system permission — open Network again after granting it in Settings.")
+            showNotice("VPN needs system permission - open Network again after granting it in Settings.")
             publishNetworkState(profileId)
             return
         }
@@ -279,7 +279,7 @@ internal class ReceiverBrowserVpnController(
     fun publishNetworkState(profileId: String = activeProfileId()) {
         val page = coordinator.snapshot()
         if (page.epoch == null || page.epoch <= 0L) {
-            Log.i(TAG, "Browser network publish skipped — no live browser epoch yet")
+            Log.i(TAG, "Browser network publish skipped - no live browser epoch yet")
             return
         }
         val settings = networkStore?.get(profileId) ?: ProfileNetworkSettings()
@@ -312,7 +312,7 @@ internal class ReceiverBrowserVpnController(
         return true
     }
 
-    /** Enabled, WireGuard, and carrying a config — the precondition every other toggle shares. */
+    /** Enabled, WireGuard, and carrying a config - the precondition every other toggle shares. */
     private fun ProfileNetworkSettings.isReady(): Boolean =
         vpnEnabled && provider == VpnProvider.WIREGUARD && configText.isNotBlank()
 

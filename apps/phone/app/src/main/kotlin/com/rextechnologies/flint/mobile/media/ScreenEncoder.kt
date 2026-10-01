@@ -45,8 +45,8 @@ interface EncodedVideoSink {
  * The capture-encode loop.
  *
  * It owns a `MediaCodec` in surface-input mode: whatever draws into [inputSurface] is what gets
- * encoded, with no copy through application memory at any point. Both modes feed it the same way —
- * the second screen through a `VirtualDisplay`, the mirror through a `MediaProjection` — which is why
+ * encoded, with no copy through application memory at any point. Both modes feed it the same way -
+ * the second screen through a `VirtualDisplay`, the mirror through a `MediaProjection` - which is why
  * slice 06 proving this path against the simpler surface was worth doing first.
  *
  * Nothing in the steady state allocates. One `BufferInfo` is reused for every frame, the output
@@ -59,7 +59,7 @@ interface EncodedVideoSink {
  * Three touch this object. [start] and [stop] come from the session; [requestKeyFrame] and
  * [setBitrate] come from the control-socket reader, which is a different one; and everything inside
  * [drain] is the encoder thread this class starts. Only the last of those may touch the codec's
- * buffers, and none of the others may be running while the codec is released — a `MediaCodec` freed
+ * buffers, and none of the others may be running while the codec is released - a `MediaCodec` freed
  * underneath a thread that is inside one of its methods is a native use-after-free, which is not an
  * exception anything can catch. [lifecycle] is what makes that true rather than likely.
  */
@@ -156,7 +156,7 @@ class ScreenEncoder(
      * `KEY_MAX_B_FRAMES` arrived in API 29. Below it the profile is the only lever, and Main is not
      * that lever: Main permits B-frames and every H.264 profile above it does too. Constrained
      * Baseline is the one that forbids them in the bitstream syntax, so that is what an old device
-     * gets — at the cost of CABAC, which is a real quality loss and the price of the rule in
+     * gets - at the cost of CABAC, which is a real quality loss and the price of the rule in
      * AGENTS.md being absolute rather than a preference.
      *
      * HEVC has no B-frame-free profile at all. Below API 29 there is therefore no structural
@@ -283,7 +283,7 @@ class ScreenEncoder(
      * There is no parameter that changes a running codec's key-frame interval, so the fallback is a
      * restart rather than a setting. An unbounded group of pictures on a device that ignores the
      * request means a receiver which joins late or drops a packet never gets a frame it can start
-     * from — a frozen picture, indefinitely. The Windows hardware path carries the same fallback for
+     * from - a frozen picture, indefinitely. The Windows hardware path carries the same fallback for
      * the same reason, and says so in the same place.
      */
     private var fallbackReported = false
@@ -320,7 +320,7 @@ class ScreenEncoder(
      * `getOutputBuffer` or `sink.onVideoPacket` frees memory it is reading, which crashes the
      * process rather than throwing.
      *
-     * If the thread does not exit — the sink is blocked on a socket that has stopped draining, say —
+     * If the thread does not exit - the sink is blocked on a socket that has stopped draining, say -
      * the codec is deliberately left unreleased and the sink is told. One leaked encoder is
      * recoverable; a native crash in a background service is not.
      */
@@ -361,8 +361,8 @@ class ScreenEncoder(
          * Generous on purpose.
          *
          * The drain loop checks whether it has been asked to stop every DEQUEUE_TIMEOUT_MICROS, so
-         * it normally exits in about ten milliseconds. This is the budget for the abnormal case —
-         * one last frame in the sink, writing to a socket — and overrunning it means declining to
+         * it normally exits in about ten milliseconds. This is the budget for the abnormal case -
+         * one last frame in the sink, writing to a socket - and overrunning it means declining to
          * release the codec, so it is worth more than a couple of frames.
          */
         const val THREAD_JOIN_MILLIS = 2_000L

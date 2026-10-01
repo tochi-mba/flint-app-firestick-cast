@@ -22,7 +22,7 @@ Devices known to ship with it are the **Fire TV Stick 4K Select** (October 2025)
 ## What you need
 
 - Windows 10 or 11, 64-bit
-- A Fire TV on the same network as this PC — the same Wi-Fi name, and not a guest network
+- A Fire TV on the same network as this PC - the same Wi-Fi name, and not a guest network
 - Nothing else. The download includes everything it needs; there is no .NET runtime to install
   first
 
@@ -48,8 +48,8 @@ started from an extracted zip, so an old build never keeps running beside the ne
 folder itself is left alone: it is yours to delete. Opening Flint while it is already running does
 nothing; the copy that is running keeps the television.
 
-Either way, what Flint remembers about you — that you have seen the introduction, the televisions
-you have typed in, the browser trust store — lives under `%LOCALAPPDATA%\REX Technologies\Flint`.
+Either way, what Flint remembers about you - that you have seen the introduction, the televisions
+you have typed in, the browser trust store - lives under `%LOCALAPPDATA%\REX Technologies\Flint`.
 The installed program itself lives under `%LOCALAPPDATA%\Flint`; uninstalling removes that folder
 and takes the PATH entry with it.
 
@@ -59,14 +59,14 @@ is on the TV and which version, and its one receiver button does the next thing:
 ON TV** when it is missing, **UPDATE FLINT ON TV** when the TV has an older build than this
 download carries, and **OPEN RECEIVER ON TV** otherwise. Before installing, it names the package,
 version and size it will copy. It never downgrades a newer build on the TV, and it never replaces
-a Flint package that was installed under a different name — it says so instead. You do not need
+a Flint package that was installed under a different name - it says so instead. You do not need
 Android Studio, the Android SDK, or any sideloading tool.
 
 ## Windows will warn you
 
 The first time you run it, Windows shows:
 
-> **Windows protected your PC** — Microsoft Defender SmartScreen prevented an unrecognised app
+> **Windows protected your PC** - Microsoft Defender SmartScreen prevented an unrecognised app
 > from starting.
 
 Click **More info**, then **Run anyway**.
@@ -74,7 +74,7 @@ Click **More info**, then **Run anyway**.
 This happens because the build is not code-signed. A signing certificate costs money and has to be
 tied to a verified legal identity, and Flint does not have one yet. The warning is Windows telling
 you the truth: it does not recognise this publisher. If that is not a trade you want to make,
-[build it from source](#build-it-yourself) instead — the result is the same program, compiled by
+[build it from source](#build-it-yourself) instead - the result is the same program, compiled by
 you.
 
 ## First run
@@ -114,8 +114,8 @@ without an explicit action in Flint.
 ## What Flint does today
 
 Flint reports the truth about your hardware, mirrors your screen to a paired receiver, and hands
-selected local files to it for full-quality playback. Second screen — using the television as an
-extra desktop rather than a copy of this one — is the one mode that is not built yet.
+selected local files to it for full-quality playback. Second screen - using the television as an
+extra desktop rather than a copy of this one - is the one mode that is not built yet.
 
 | Mode | Status |
 |---|---|
@@ -158,7 +158,7 @@ future version of Flint will change that. Nothing below will help on a Vega devi
 
 The phone's own hotspot is the arrangement Flint is built around, and not only because it needs no
 router. An access point can always reach its own clients, so the setting that silently breaks casting
-on somebody else's Wi-Fi — client isolation — does not apply. Joining both devices to the same Wi-Fi
+on somebody else's Wi-Fi - client isolation - does not apply. Joining both devices to the same Wi-Fi
 also works, and Flint will say so and warn you about that setting if it is what you have done.
 
 ### Installing the receiver from the phone
@@ -168,8 +168,8 @@ switched on, which is the same setting described under **Turning on ADB debuggin
 needs you to accept the authorisation prompt the television shows. Flint waits for that prompt rather
 than working around it: it is the television owner's only say in what runs on it.
 
-Before it installs anything, the phone shows exactly what it will install — the package name, the
-version, the size and where it came from — and the screen that offers to install it also offers to
+Before it installs anything, the phone shows exactly what it will install - the package name, the
+version, the size and where it came from - and the screen that offers to install it also offers to
 remove it.
 
 ### What Flint Mobile does not ask for

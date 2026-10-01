@@ -1,4 +1,4 @@
-# ADR-0009 — opt-in bounded JPEG preview
+# ADR-0009 - opt-in bounded JPEG preview
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -10,7 +10,7 @@
 ## Context
 
 The product benefits from the Windows app showing what the TV WebView is currently doing, but the
-TV—not Windows—is the browser renderer and canonical display. A reverse visual channel introduces
+TV-not Windows-is the browser renderer and canonical display. A reverse visual channel introduces
 capture, bitmap, JPEG, network, decode, UI, privacy, and scheduling work on constrained Fire OS
 hardware. Reusing the video mirror pipeline would create a second streaming system with latency and
 resource costs disproportionate to browser control feedback.
@@ -89,6 +89,6 @@ control responsiveness. A desire for smoother video is not enough to remove the 
 
 ## References
 
-- [Slice 07 — passive preview and latency tuning](../SLICE-07-OPT-IN-PASSIVE-PREVIEW-AND-LATENCY-TUNING.md)
-- [Slice 08 — interactive preview](../SLICE-08-PREVIEW-INTERACTION-AND-ACCESSIBLE-POLISH.md)
-- [ADR-0001 — TV-resident browser ownership](ADR-0001-TV-RESIDENT-BROWSER-OWNERSHIP.md)
+- [Slice 07 - passive preview and latency tuning](../SLICE-07-OPT-IN-PASSIVE-PREVIEW-AND-LATENCY-TUNING.md)
+- [Slice 08 - interactive preview](../SLICE-08-PREVIEW-INTERACTION-AND-ACCESSIBLE-POLISH.md)
+- [ADR-0001 - TV-resident browser ownership](ADR-0001-TV-RESIDENT-BROWSER-OWNERSHIP.md)

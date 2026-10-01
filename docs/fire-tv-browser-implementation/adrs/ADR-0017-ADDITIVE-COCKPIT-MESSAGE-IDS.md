@@ -1,4 +1,4 @@
-# ADR-0017 — additive cockpit message ids 21–27
+# ADR-0017 - additive cockpit message ids 21–27
 
 - **Status:** Accepted
 - **Implementation:** In progress; id 26/27 transport directions are being migrated under ADR-0018
@@ -15,8 +15,8 @@
 
 Tabs, view settings and favicons need to reach the desktop. A personal library needs a secure path
 in both directions: native TV actions reach its Windows-profile owner, and a bounded projection
-returns to the TV. None of them fit the existing browser messages, and the obvious move — adding
-fields to `BROWSER_STATE` — is not available.
+returns to the TV. None of them fit the existing browser messages, and the obvious move - adding
+fields to `BROWSER_STATE` - is not available.
 
 Every browser decoder in all three languages ends by asserting there are no trailing bytes. An
 appended field is therefore not "ignored by old peers"; it is read as corruption and the entire
@@ -26,7 +26,7 @@ Unknown *type ids* are different: the envelope already carries them opaquely and
 which is the extension point the format was built with.
 
 That tolerance is asymmetric in one important way. A receiver that has never heard of a type id does
-not silently ignore it — it treats it as a protocol error and closes. So a host cannot probe by
+not silently ignore it - it treats it as a protocol error and closes. So a host cannot probe by
 sending.
 
 ## Decision
@@ -90,8 +90,8 @@ sending.
   contains 75 vectors; implementation remains in progress until every language manifest covers all
   75 and the cross-language gate passes.
 - `browser_wire` proves v1 rejection and plaintext-channel rejection for the new ids.
-- The four range bounds — `is_browser_type`, `isBrowserType`, `IsBrowserType`, and the golden
-  generator's `requires_v2` list — all cover 14–27.
+- The four range bounds - `is_browser_type`, `isBrowserType`, `IsBrowserType`, and the golden
+  generator's `requires_v2` list - all cover 14–27.
 - Direction is not present in encoded bytes. Existing id 26/27 vectors remain byte-identical under
   ADR-0018, while host and receiver loopback tests enforce the reversed sender allow-lists.
 - The C# decoder resolves enums reflectively, so a value added to C# alone would pass there and fail
@@ -99,13 +99,13 @@ sending.
 
 ## Revisit criteria
 
-A family that genuinely cannot be expressed as a new id would justify a v3 bump — with a migration
+A family that genuinely cannot be expressed as a new id would justify a v3 bump - with a migration
 plan, not just a schema. Convenience is not a trigger, and neither is a wish to avoid writing three
 codecs.
 
 ## References
 
 - [Protocol reference](../../PROTOCOL.md)
-- [ADR-0005 — protocol v2 canonical contract](ADR-0005-PROTOCOL-V2-CANONICAL-CONTRACT.md)
-- [ADR-0018 — Windows-profile browser library](ADR-0018-WINDOWS-PROFILE-BROWSER-LIBRARY.md)
+- [ADR-0005 - protocol v2 canonical contract](ADR-0005-PROTOCOL-V2-CANONICAL-CONTRACT.md)
+- [ADR-0018 - Windows-profile browser library](ADR-0018-WINDOWS-PROFILE-BROWSER-LIBRARY.md)
 - [Project constraints](../../../AGENTS.md)

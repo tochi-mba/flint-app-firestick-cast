@@ -1,4 +1,4 @@
-# ADR-0015 — TV-local address entry and search
+# ADR-0015 - TV-local address entry and search
 
 - **Status:** Accepted
 - **Implementation:** Implemented (software)
@@ -20,8 +20,8 @@ Typing with a remote is genuinely unpleasant, so that reasoning is understandabl
 wrong conclusion: it makes a PC a prerequisite for browsing at all, on a device most people will
 use from a sofa with the remote in their hand.
 
-There was a second gap. `BrowserUrlPolicy` rejects a bare word twice over — once for not being
-absolute, once for having no dot — which is exactly right for a security policy and useless as a
+There was a second gap. `BrowserUrlPolicy` rejects a bare word twice over - once for not being
+absolute, once for having no dot - which is exactly right for a security policy and useless as a
 browser. Searching for something was impossible, not merely awkward.
 
 ## Decision
@@ -44,7 +44,7 @@ browser. Searching for something was impossible, not merely awkward.
   **shift releases after one letter**; and a `.com` key exists because that suffix is four presses
   nobody should have to make.
 - Typed text is bounded to the wire's address limit, so nothing typed can fail to send.
-- The desktop stays the faster way to type and the sheet says so — as an offer, never a requirement.
+- The desktop stays the faster way to type and the sheet says so - as an offer, never a requirement.
 
 ## Consequences
 
@@ -75,7 +75,7 @@ browser. Searching for something was impossible, not merely awkward.
 ## Invariants and validation
 
 - `BrowserQueryResolverTest` covers the full rule table and asserts that **every engine's output is
-  accepted by `BrowserUrlPolicy`** — the contract that keeps search inside the security profile.
+  accepted by `BrowserUrlPolicy`** - the contract that keeps search inside the security profile.
 - Dangerous schemes (`javascript:`, `file:`, `data:`, `intent:`) resolve to a search, never a
   navigation and never silence.
 - Search terms are percent-encoded, so a query cannot alter the URL it is placed in.

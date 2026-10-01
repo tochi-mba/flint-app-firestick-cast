@@ -6,7 +6,7 @@ namespace Flint.Core;
 /// <remarks>
 /// Every value here is measured. Nothing on this type may be estimated from link speed, radio band,
 /// or any other proxy. Throughput is separable because latency can be measured against any open
-/// port, while throughput needs a receiver willing to sink traffic — so the two become available at
+/// port, while throughput needs a receiver willing to sink traffic - so the two become available at
 /// different connection capabilities and must be reported independently.
 /// </remarks>
 /// <param name="RoundTripMs">Median round-trip time.</param>

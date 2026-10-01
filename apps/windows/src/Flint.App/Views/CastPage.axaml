@@ -180,13 +180,13 @@
                   <StackPanel Spacing="5">
                     <!--
                       Not "COMING SOON" again: the pill above already says that, and the panel's
-                      job is to answer the question the pill provokes — whether the reader is
+                      job is to answer the question the pill provokes - whether the reader is
                       supposed to go and do something about it.
                     -->
                     <TextBlock Theme="{StaticResource LabelSmall}" Text="NO ACTION NEEDED" />
                     <TextBlock Theme="{StaticResource BodySmall}"
                                Foreground="{StaticResource TextBrush}"
-                               Text="Nothing to change on your PC or your TV — this arrives in a Flint update." />
+                               Text="Nothing to change on your PC or your TV - this arrives in a Flint update." />
                   </StackPanel>
                 </Border>
                 <Border IsVisible="{Binding HasRemedy}"

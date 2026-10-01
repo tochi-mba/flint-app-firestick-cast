@@ -66,8 +66,8 @@ object PhoneProbes {
      * Whether this codec runs on the CPU.
      *
      * `isSoftwareOnly` arrived in API 29. Below that the only signal is the naming convention every
-     * Android build has followed since the platform codecs were written — `OMX.google.` for the old
-     * stack and `c2.android.` for Codec2 — which is a convention rather than a contract, so it is
+     * Android build has followed since the platform codecs were written - `OMX.google.` for the old
+     * stack and `c2.android.` for Codec2 - which is a convention rather than a contract, so it is
      * used only where the API that would answer properly does not exist.
      */
     private fun isSoftwareOnly(info: MediaCodecInfo): Boolean =
@@ -108,8 +108,8 @@ object PhoneProbes {
     } catch (cancelled: CancellationException) {
         throw cancelled
     } catch (_: Throwable) {
-        // Deliberately broad. This is a capability question, and every way of answering "no" —
-        // a SecurityException, a vendor NPE inside DisplayManager, a timeout — is the same answer.
+        // Deliberately broad. This is a capability question, and every way of answering "no" -
+        // a SecurityException, a vendor NPE inside DisplayManager, a timeout - is the same answer.
         ProbeOutcome.UNSUPPORTED
     }
 
@@ -120,7 +120,7 @@ object PhoneProbes {
      * drawn on the main looper, and its first frame is produced by a message posted to that same
      * looper. An earlier version of this polled for the frame with `Thread.sleep` on the main
      * thread, which meant the message that would have drawn it could not run until the polling gave
-     * up — so the probe answered `UNSUPPORTED` on every phone ever made, after freezing the UI for
+     * up - so the probe answered `UNSUPPORTED` on every phone ever made, after freezing the UI for
      * two seconds to do it. Suspending frees the looper to draw.
      */
     private suspend fun runVirtualDisplayProbe(activity: Activity): ProbeOutcome =

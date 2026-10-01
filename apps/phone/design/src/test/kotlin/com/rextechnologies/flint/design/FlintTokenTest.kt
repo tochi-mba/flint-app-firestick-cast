@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
  * The mirror image of `apps/windows/tests/Flint.App.Tests/RexDesignSystemTests.cs`, which asserts
  * the same values on the desktop. The tokens are shared with that shell and with the Fire TV
  * receiver, and drifting one of them here would silently break the family resemblance across three
- * codebases — nothing fails to compile, the products simply stop looking like one product. So they
+ * codebases - nothing fails to compile, the products simply stop looking like one product. So they
  * are asserted directly, as literals, rather than compared against another copy of themselves.
  */
 class FlintColorsTest {

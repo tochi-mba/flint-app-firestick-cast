@@ -320,7 +320,7 @@ object ReceiverSetup {
         return ReceiverSetupPlan(
             stage = ReceiverInstallStage.NotInstalled,
             headline = "Install Flint on $deviceName",
-            body = "Flint is not on this TV yet. This phone can install it over ADB — nothing is " +
+            body = "Flint is not on this TV yet. This phone can install it over ADB - nothing is " +
                 "downloaded, because the package is already inside this app and was built from the " +
                 "same source.",
             disclosure = disclosureFor(bundled),

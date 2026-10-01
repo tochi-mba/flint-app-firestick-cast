@@ -27,8 +27,8 @@ import com.rextechnologies.flint.receiver.browser.BrowserKeyboardState
  * The keyboard someone types an address on with a remote.
  *
  * Selection is drawn from the model's cursor rather than from Compose focus. A grid this dense
- * confuses two-dimensional focus search — a wide `space` key sitting under three narrow ones has no
- * single correct answer — and the model already guarantees wrap-around and that every cell exists.
+ * confuses two-dimensional focus search - a wide `space` key sitting under three narrow ones has no
+ * single correct answer - and the model already guarantees wrap-around and that every cell exists.
  * Nothing here is focusable, so the sheet keeps the key events and the selection can never disagree
  * with what a press will do.
  */

@@ -2,7 +2,7 @@
 //!
 //! Media Foundation exposes encoders as MFTs, and they come in two flavours. Hardware MFTs are
 //! asynchronous: they only accept input when they raise `METransformNeedInput`, and drive an event
-//! loop the caller has to service. Software MFTs are synchronous — feed a sample, drain a sample —
+//! loop the caller has to service. Software MFTs are synchronous - feed a sample, drain a sample -
 //! and that is what this uses, because a mirror that works is worth more than one that is fast and
 //! doesn't exist. The trait boundary in [`super::video`] is what keeps that a swap rather than a
 //! rewrite: the session never learns which kind it got.
@@ -59,7 +59,7 @@ pub struct H264Encoder {
     nv12: Vec<u8>,
     streaming: bool,
     // Declared last on purpose. Rust drops fields in declaration order, so the transform is
-    // released while Media Foundation is still running — releasing a transform after MFShutdown is
+    // released while Media Foundation is still running - releasing a transform after MFShutdown is
     // undefined behaviour, and the crash it produces lands nowhere near the cause.
     _platform: MediaFoundationPlatform,
 }
@@ -106,7 +106,7 @@ impl H264Encoder {
     /// Configures an already-created transform.
     ///
     /// Split out from [`Self::new`] so a diagnostic can drive a specific encoder rather than only
-    /// whichever one Windows ranks first — the difference that matters when one of the encoders on
+    /// whichever one Windows ranks first - the difference that matters when one of the encoders on
     /// a machine produces a flat picture and another does not.
     fn from_transform(
         config: EncoderConfig,
@@ -135,7 +135,7 @@ impl H264Encoder {
     fn configure(&mut self) -> Result<(), EncodeError> {
         // Before the media types, not after. The encoder reports AVLowLatencyMode as supported but
         // no longer modifiable once a type is committed, so setting it later is accepted with an
-        // OK that changes nothing — measured on this project as a first access unit arriving only
+        // OK that changes nothing - measured on this project as a first access unit arriving only
         // after eighteen frames, six hundred milliseconds of latency that no amount of network
         // tuning downstream could recover.
         self.apply_low_latency_settings();
@@ -262,7 +262,7 @@ impl H264Encoder {
             // The buffer's capacity, which is its *maximum* length. Its current length is zero
             // until we set it below, so asking for that instead would bound the copy to nothing
             // and hand the encoder a blank frame that still encodes into a plausible-looking
-            // stream — the reason this reads the second out-parameter and not the third.
+            // stream - the reason this reads the second out-parameter and not the third.
             let mut capacity = 0u32;
             buffer
                 .Lock(&raw mut destination, Some(&raw mut capacity), None)
@@ -329,7 +329,7 @@ impl H264Encoder {
 
     /// Tunes the encoder for a live mirror rather than for a file.
     ///
-    /// Left to its defaults, the Media Foundation H.264 encoder buffers deeply — measured on this
+    /// Left to its defaults, the Media Foundation H.264 encoder buffers deeply - measured on this
     /// project at roughly seventeen frames before the first access unit appears, which is over half
     /// a second of latency before a single pixel reaches the television, and it never catches up.
     /// These four settings are what turn it from a file encoder into a streaming one:

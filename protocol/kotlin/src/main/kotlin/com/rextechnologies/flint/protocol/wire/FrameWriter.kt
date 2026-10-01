@@ -17,14 +17,14 @@ import java.nio.ByteBuffer
  * header array.
  *
  * The bytes produced are identical to the ones [WireCodec] produces for the same message, which is
- * asserted rather than assumed — this is a second way of writing the same format, not a second
+ * asserted rather than assumed - this is a second way of writing the same format, not a second
  * format, and the golden corpus stays the authority on what that format is.
  *
  * **One writer at a time.** Every method here reuses one header array and writes it to the stream in
  * two calls, so two threads sharing a writer would interleave one frame's header with another's
  * payload and desynchronise the receiver for the rest of the session. Two threads sharing a *socket*
- * would do the same even with a writer each. The caller owns that exclusion — in this codebase the
- * session holds a single write lock across both calls and the encoder is the only producer — and
+ * would do the same even with a writer each. The caller owns that exclusion - in this codebase the
+ * session holds a single write lock across both calls and the encoder is the only producer - and
  * nothing in this class attempts to provide it, because a lock on the frame path is a lock taken
  * sixty times a second for a contention that a correct caller never has.
  */

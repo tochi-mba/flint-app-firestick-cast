@@ -64,8 +64,8 @@ import java.nio.ByteBuffer
  *
  * The two differ in exactly one place: where the pixels come from. A second screen draws Flint's own
  * Compose content into a private display this app created; a mirror points a `MediaProjection` at
- * the same encoder surface. Everything downstream of that surface — the encoder, the framing, the
- * bitrate control, the foreground service, the telemetry — is shared, which is why the second screen
+ * the same encoder surface. Everything downstream of that surface - the encoder, the framing, the
+ * bitrate control, the foreground service, the telemetry - is shared, which is why the second screen
  * was built first: it proves the whole path without a consent dialog or an API-level minefield.
  *
  * Three things end a session from inside this class, and each says so through [notices]: the
@@ -148,7 +148,7 @@ class OutputCoordinator(
      *
      * Must be called from the main thread: a `Presentation` is a Dialog. The foreground service is
      * started first and typed `connectedDevice` rather than `mediaProjection`, because a second
-     * screen captures nothing — declaring it as a projection would be a claim about what this app is
+     * screen captures nothing - declaring it as a projection would be a claim about what this app is
      * doing that is not true, and on API 34 and above it would also fail to start.
      *
      * The canvas is landscape 1080p whatever way the phone is held. It is a television.
@@ -191,7 +191,7 @@ class OutputCoordinator(
      *
      * The ordering is the whole of this method. On API 34 and above `getMediaProjection` throws
      * unless a `mediaProjection`-typed foreground service is already running, and starting such a
-     * service throws unless a projection is active — which is only not circular because the consent
+     * service throws unless a projection is active - which is only not circular because the consent
      * result counts as the projection for the purpose of starting the service. So: service first,
      * wait until it is genuinely in the foreground, then take the projection.
      */

@@ -185,7 +185,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
     // Some Fire OS builds silently drop an outbound connection this app initiates to a private LAN
     // address, even though the exact same address works perfectly for the connection the host
     // opened to us. When a MediaCommandMessage arrives with no URL, it means the host pushed the
-    // file's bytes over that already-working connection instead — reassembled by the sink, which
+    // file's bytes over that already-working connection instead - reassembled by the sink, which
     // also owns the rules: one transfer at a time, a bound on free space, no partial file left
     // behind a failure.
     private val pushedMedia by lazy { PushedMediaSink(cacheDir) }
@@ -202,9 +202,9 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
         // tuned for the open internet, not for a phone-hotspot LAN under load: this project has
         // repeatedly seen DHCP re-leasing and ADB going briefly unresponsive on exactly this kind
         // of network, and 8 seconds is not always enough for a fresh TCP connection to land in
-        // that environment. The failure this produces is misleading — Media3 reports
+        // that environment. The failure this produces is misleading - Media3 reports
         // ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT, indistinguishable from a genuinely blocked
-        // port — so a slow-but-working network and a firewalled one look identical to the user.
+        // port - so a slow-but-working network and a firewalled one look identical to the user.
         // A longer, explicit timeout removes that false positive without hiding a real block: a
         // truly closed port still fails, just after a fairer wait.
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
@@ -214,7 +214,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
         // A pushed file plays from a file:// URI (see MediaDataMessage), not http://, so the
         // player needs a data source that dispatches by scheme rather than one hardwired to HTTP.
         // DefaultHttpDataSource.openConnection() unconditionally casts to HttpURLConnection, which
-        // throws ClassCastException the instant it opens a file:// URL — DefaultDataSource.Factory
+        // throws ClassCastException the instant it opens a file:// URL - DefaultDataSource.Factory
         // is the wrapper that routes file:// to FileDataSource and only hands http(s):// to
         // httpDataSourceFactory, so both loading paths work through the one player.
         val dataSourceFactory = DefaultDataSource.Factory(this, httpDataSourceFactory)
@@ -349,7 +349,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
             true
         }
         // The basic Fire TV remote has no dedicated fast-forward/rewind keys, so scrubbing during
-        // playback is the D-pad's job — the same convention YouTube and Netflix's TV apps use.
+        // playback is the D-pad's job - the same convention YouTube and Netflix's TV apps use.
         // Gated to the player surface: on every other screen, left/right is ordinary focus
         // navigation between on-screen controls and must not be swallowed here.
         KeyEvent.KEYCODE_DPAD_RIGHT -> {
@@ -378,7 +378,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
     /**
      * Resumes playback, restarting from the beginning if the item already finished.
      *
-     * `Player.play()` alone is a no-op once `playbackState` is `STATE_ENDED` — there is nothing
+     * `Player.play()` alone is a no-op once `playbackState` is `STATE_ENDED` - there is nothing
      * left to render at the current position, so setting `playWhenReady = true` changes nothing.
      * The remote's play/pause button pressed after a clip finishes looked like it did nothing at
      * all for exactly this reason; seeking back to the start first is what actually resumes it.
@@ -487,7 +487,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                 }
                 .onFailure { failure ->
                     // Reported, because without the advertisement a host can only reach this
-                    // receiver by having its address typed in — which looks like the feature not
+                    // receiver by having its address typed in - which looks like the feature not
                     // working rather than like discovery being unavailable.
                     Log.w(TAG, "Receiver advertisement unavailable; discovery will not find this TV", failure)
                     responder.close()
@@ -578,7 +578,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
     override fun onMediaData(chunk: MediaDataMessage) {
         // Deliberately synchronous, with no coroutine launch: this is called once per chunk, in
         // wire order, from the connection's own read loop, which is exactly the ordering the bytes
-        // on disk must preserve. An earlier version wrapped each chunk in scope.launch — since a
+        // on disk must preserve. An earlier version wrapped each chunk in scope.launch - since a
         // launched coroutine only *starts* in launch order and can then suspend at its own
         // withContext(Dispatchers.IO) hop, two chunks' writes could interleave or land out of
         // order, corrupting the reassembled file in a way that only surfaced as ExoPlayer being
@@ -672,7 +672,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                     mirrorFrameReceived = false,
                     detail = surface.caption.ifBlank {
                         when (surface.mode) {
-                            SurfaceMode.IDLE -> "Connected — choose something to cast"
+                            SurfaceMode.IDLE -> "Connected - choose something to cast"
                             SurfaceMode.PLAYER -> "Preparing media"
                             SurfaceMode.MIRROR -> "Preparing screen mirror"
                             SurfaceMode.PRESENTATION -> "Preparing second screen"
@@ -857,7 +857,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                 mirrorFrameReceived = false,
                 browser = BrowserSurfaceUi(),
                 browserCursor = BrowserCursorUi(),
-                detail = if (it.connected) "Connected — choose something to cast" else "Ready on the hotspot LAN",
+                detail = if (it.connected) "Connected - choose something to cast" else "Ready on the hotspot LAN",
                 error = null,
             )
         }
@@ -978,7 +978,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
  *
  * `Player.play()` is a no-op at `STATE_ENDED`: there is nothing left to render at the current
  * (end-of-item) position, so setting `playWhenReady = true` alone changes nothing observable. Every
- * other state can resume in place — `STATE_IDLE`/`STATE_BUFFERING` because there is no "current
+ * other state can resume in place - `STATE_IDLE`/`STATE_BUFFERING` because there is no "current
  * position" restart would need to skip past, and `STATE_READY` because play is already meaningful
  * from wherever playback currently sits (mid-clip pause, seek, etc.).
  */
@@ -990,7 +990,7 @@ internal fun needsSeekToStartBeforeResuming(playbackState: Int): Boolean =
  *
  * Callers pass an already-sanitized [durationMs] (see the private `Long.safeDuration()` on
  * [ReceiverService], which maps an unknown/unset duration to [Long.MAX_VALUE] rather than a
- * negative sentinel) — clamping to a genuinely negative upper bound would make every rewind land
+ * negative sentinel) - clamping to a genuinely negative upper bound would make every rewind land
  * on 0 and every fast-forward silently do nothing.
  */
 internal fun seekTargetMs(positionMs: Long, deltaMs: Long, durationMs: Long): Long =

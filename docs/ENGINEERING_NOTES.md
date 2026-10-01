@@ -11,7 +11,7 @@ proven end to end on real hardware (AFTMM, Fire OS 6.7.1.1).
 It finds advertised Fire TV devices on the local network, identifies an authorised Android device
 through ADB build properties, foregrounds the installed Flint receiver through that same authorised
 connection, and negotiates a paired TCP session. Media files are **pushed down that connection** in
-ordered chunks rather than fetched by the receiver — see the protocol notes for the Fire OS
+ordered chunks rather than fetched by the receiver - see the protocol notes for the Fire OS
 behaviour that forces this. Desktop capture, colour conversion, hardware H.264 encoding and frame
 transmission are implemented; the receiver decodes and renders them.
 
@@ -39,7 +39,7 @@ constant in `:phone:core` pinned by a test to the catalogue value, so raising `r
 fails the build until the copy and the verdicts move with it.
 
 Vega OS is a Linux system Amazon built in-house. It is not Android, it does not run APKs, and no
-sideloading path exists — not ADB, not Downloader, not a sideload helper app. Devices known to ship
+sideloading path exists - not ADB, not Downloader, not a sideload helper app. Devices known to ship
 with it are the Fire TV Stick 4K Select (October 2025) and the Fire TV Stick HD (2026). On these
 devices Flint's mirroring and second-screen capabilities are impossible, and the prober says so
 rather than failing later with a confusing install error.
@@ -56,8 +56,8 @@ per-user RSA key so an accepted identity survives application restarts.
 
 DXGI Desktop Duplication requires the capturing process to run on the adapter that drives the
 display being captured. On hybrid laptops the desktop is commonly driven by the integrated GPU while
-the discrete GPU holds the better encoder, so the naive pairing — capture and encode both on the
-discrete GPU — fails or silently falls back.
+the discrete GPU holds the better encoder, so the naive pairing - capture and encode both on the
+discrete GPU - fails or silently falls back.
 
 Windows Graphics Capture works across adapters and is what the capability prober prefers when the
 two differ. **The engine implements Desktop Duplication only**, so a host whose capture and encode
@@ -78,8 +78,8 @@ again.
 
 Two constraints make or break it. The encoder must run on the *capture* device, because two D3D11
 devices on one adapter cannot pass textures without shared handles. And a video processor input
-texture created with `D3D11_BIND_SHADER_RESOURCE` alone is refused — no bind flags works, shader
-resource with render target works, shader resource alone does not — with a rejection that names no
+texture created with `D3D11_BIND_SHADER_RESOURCE` alone is refused - no bind flags works, shader
+resource with render target works, shader resource alone does not - with a rejection that names no
 parameter.
 
 Neither API is a guarantee of frame delivery. Both can stall under full-screen exclusive
@@ -108,7 +108,7 @@ path runs a bounded two-second interval instead. Prefer on demand; measure befor
 
 Finally, a hardware encoder that configures without error is not a working encoder. One shipped here
 that produced correctly framed H.264 with correct parameter sets, correct dimensions and a plausible
-bitrate, every frame of which decoded to a field of zeroes — a flat green television. Anything that
+bitrate, every frame of which decoded to a field of zeroes - a flat green television. Anything that
 produces pixels is held to a round trip that decodes its output and asserts a picture survived.
 
 ## Decoder latency on the receiver

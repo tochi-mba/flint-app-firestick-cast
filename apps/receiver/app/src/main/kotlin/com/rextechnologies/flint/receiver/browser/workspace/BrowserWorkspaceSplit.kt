@@ -4,13 +4,13 @@ package com.rextechnologies.flint.receiver.browser.workspace
  * Where the dividers sit in a mosaic, as fractions of the whole.
  *
  * The mosaic used to be four fixed arrangements with every pane an equal share. People want one
- * page bigger than another — a video beside a smaller feed, a reference page narrower than the
+ * page bigger than another - a video beside a smaller feed, a reference page narrower than the
  * thing being read.
  *
  * Adjustable dividers rather than free rectangles, deliberately:
  *
  *  * A divider cannot produce an overlapping, gapped, or zero-area pane. Free rectangles can, and
- *    then every consumer — hit testing, capture, focus — has to decide what to do about it.
+ *    then every consumer - hit testing, capture, focus - has to decide what to do about it.
  *  * One number moves with Left and Right on a remote. A rectangle needs a pointer, and the
  *    television only reliably has a D-pad.
  *  * It survives a layout change. Switching from side-by-side to grid keeps the column the person

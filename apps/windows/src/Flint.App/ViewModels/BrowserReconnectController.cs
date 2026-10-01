@@ -22,7 +22,7 @@ internal sealed class VerifyClickTrustPrompter(Action<string> onFingerprint) : I
 /// </summary>
 /// <remarks>
 /// A silent reconnect must never invent a pin. If the certificate does not match the store, the
-/// only honest outcome is a mismatch the user can see — trusting it on first sight would make an
+/// only honest outcome is a mismatch the user can see - trusting it on first sight would make an
 /// unattended path do the one thing that requires a person.
 /// </remarks>
 internal sealed class RejectFirstUseTrustPrompter : IBrowserTrustPrompter
@@ -37,8 +37,8 @@ internal sealed class RejectFirstUseTrustPrompter : IBrowserTrustPrompter
 /// Reconnects a receiver that was verified before, without asking anyone anything.
 /// </summary>
 /// <remarks>
-/// Requests arrive from several directions at once — discovery reports, a pairing code being typed,
-/// a port being edited, a transport ending — so they are coalesced rather than run in parallel. A
+/// Requests arrive from several directions at once - discovery reports, a pairing code being typed,
+/// a port being edited, a transport ending - so they are coalesced rather than run in parallel. A
 /// pass that is already running absorbs a new request instead of starting a second connect against
 /// the same receiver.
 ///
@@ -90,7 +90,7 @@ internal sealed class BrowserReconnectController(BrowserPageViewModel page)
                 .ConfigureAwait(true);
             page.ApplyRememberedTrust(remembered is not null);
 
-            // A SecureReady phase over a dead TLS session — a receiver restart or reinstall — has
+            // A SecureReady phase over a dead TLS session - a receiver restart or reinstall - has
             // to fall back to Idle first, or CanNavigate and CanVerify both stay false and the page
             // is stuck with nothing to click.
             if (page.SessionPhase is BrowserUiPhase.SecureReady && !page.HasLiveSession)

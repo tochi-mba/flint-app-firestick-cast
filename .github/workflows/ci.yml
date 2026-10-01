@@ -45,7 +45,7 @@ jobs:
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           filters: |
-            # The shared things — the protocol, the version, the build logic and the runner — are
+            # The shared things - the protocol, the version, the build logic and the runner - are
             # deliberately in every list. A change to any of them can break any half.
             shared: &shared
               - 'protocol/**'

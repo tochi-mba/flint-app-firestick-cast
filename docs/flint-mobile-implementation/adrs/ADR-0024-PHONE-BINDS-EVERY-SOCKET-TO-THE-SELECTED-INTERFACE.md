@@ -1,4 +1,4 @@
-# ADR-0024 — the phone binds every socket to the selected tether interface
+# ADR-0024 - the phone binds every socket to the selected tether interface
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -15,14 +15,14 @@
 
 The phone-host app inverts the topology the desktop host was written for. The expected setup is a
 phone running its own hotspot with the television joined to it, and the phone's upstream is mobile
-data — that is the point, because it needs no existing Wi-Fi and no router the user controls. It
+data - that is the point, because it needs no existing Wi-Fi and no router the user controls. It
 is also the configuration in which obvious socket code silently does the wrong thing.
 
 While the phone tethers from mobile data, the process default network is cellular. Java takes an
 unbound socket's source address from the default route, so that socket leaves over the WAN. A probe
 aimed at `192.168.43.7` reaches the carrier rather than the television two metres away; it finds
 neither the TV nor anything else useful, it is metered, and where the carrier uses private address
-space it is aimed at somebody else's host. The failure is silent — sockets open, writes succeed,
+space it is aimed at somebody else's host. The failure is silent - sockets open, writes succeed,
 and discovery finds nothing.
 
 `ConnectivityManager.bindProcessToNetwork` cannot fix this. An app may only bind to a `Network` the
@@ -55,7 +55,7 @@ listener on a phone publishes the control port on the cellular interface as well
   wildcard bind wearing a short name.
 - Multicast uses `MulticastSocket(null)`, an explicit bind, then
   `setNetworkInterface(NetworkInterface.getByInetAddress(localAddress))` and a `joinGroup` taking
-  that same interface — the shape `ReceiverMdnsResponder` already uses on the television. Binding
+  that same interface - the shape `ReceiverMdnsResponder` already uses on the television. Binding
   alone is not enough, because the kernel otherwise picks the multicast egress interface from the
   routing table, and that table points at cellular. The mDNS rung also holds a `WifiManager`
   `MulticastLock` for its lifetime.
@@ -99,8 +99,8 @@ listener on a phone publishes the control port on the cellular interface as well
 ## Invariants and validation
 
 - A source-guard test in `:castcore` reads the `:mobile` and `:castcore` Kotlin sources from disk
-  and fails on any wildcard bind — `ServerSocket(`, `DatagramSocket(` or `MulticastSocket(` taking
-  a port, a single-argument `InetSocketAddress(port)`, or the literal `0.0.0.0` — and on any
+  and fails on any wildcard bind - `ServerSocket(`, `DatagramSocket(` or `MulticastSocket(` taking
+  a port, a single-argument `InetSocketAddress(port)`, or the literal `0.0.0.0` - and on any
   dotted-quad literal outside test sources. It must go red the moment somebody adds a convenience
   constructor, and it needs no device, emulator or network to run.
 - A sweep test asserts the probe host list is exactly `Ipv4Subnet(selected).hosts()` across a range

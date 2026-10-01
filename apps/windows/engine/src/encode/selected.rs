@@ -10,12 +10,12 @@
 //! A hardware encoder can be absent (no supported GPU), present but unusable (a driver that
 //! enumerates an encoder it will not stream from), or usable but already claimed by another
 //! process. All three are ordinary on real machines, and none of them should mean "no mirroring".
-//! So hardware is *attempted*, and any failure — of enumeration, configuration, or the transform's
-//! first request for a frame — falls through to software rather than ending the session.
+//! So hardware is *attempted*, and any failure - of enumeration, configuration, or the transform's
+//! first request for a frame - falls through to software rather than ending the session.
 //!
 //! The software encoder is genuinely viable here, which is what makes this a fallback rather than a
 //! consolation: it is within about half a millisecond of hardware on the median. The hardware
-//! path's advantage is its tail — a tighter worst case is what a viewer perceives as smoothness —
+//! path's advantage is its tail - a tighter worst case is what a viewer perceives as smoothness -
 //! and that its work happens on the GPU's dedicated encode block, leaving the CPU for capture,
 //! colour conversion and the network.
 //!
@@ -55,7 +55,7 @@ impl SelectedEncoder {
     ///
     /// `adapter_luid` should be the adapter the *frames are captured on*, not the fastest GPU in
     /// the machine. On a hybrid laptop those differ, and an encoder on the other adapter needs
-    /// every frame copied across the PCIe bus first — which costs more than the faster encoder
+    /// every frame copied across the PCIe bus first - which costs more than the faster encoder
     /// saves.
     ///
     /// # Errors
@@ -65,7 +65,7 @@ impl SelectedEncoder {
         // Hardware first, software when there is none or when it declines.
         //
         // The hardware path was briefly demoted while it produced a stream that decoded to a field
-        // of zeroes — a green television, with correct parameter sets, correct dimensions, correct
+        // of zeroes - a green television, with correct parameter sets, correct dimensions, correct
         // framing and a plausible bitrate. The cause was that a hardware transform reads its frames
         // from GPU memory whatever its media type advertises, so system-memory buffers were being
         // accepted and ignored. Frames now go into NV12 textures on the encoder's own device, and
@@ -119,8 +119,8 @@ impl SelectedEncoder {
 
     /// Opens the software encoder, skipping hardware entirely.
     ///
-    /// For callers that need output identical across machines — golden-vector tests, and anything
-    /// comparing two runs — because hardware encoders on different GPUs produce different, equally
+    /// For callers that need output identical across machines - golden-vector tests, and anything
+    /// comparing two runs - because hardware encoders on different GPUs produce different, equally
     /// valid bitstreams from the same frames.
     ///
     /// # Errors
@@ -283,7 +283,7 @@ mod live_selection {
     #[test]
     fn selection_prefers_hardware_on_the_capture_adapter_when_one_exists() {
         let Some(adapter) = capture_adapter() else {
-            // No desktop to duplicate — a headless build agent. Nothing to prove here.
+            // No desktop to duplicate - a headless build agent. Nothing to prove here.
             return;
         };
 

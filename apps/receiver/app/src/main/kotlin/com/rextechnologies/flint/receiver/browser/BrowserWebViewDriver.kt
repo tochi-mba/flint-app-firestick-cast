@@ -157,7 +157,7 @@ class BrowserWebViewDriver(
             /**
              * The page's renderer process died.
              *
-             * Returning true claims the crash so the whole app is not taken down with it — without
+             * Returning true claims the crash so the whole app is not taken down with it - without
              * this, a page that runs out of memory kills the receiver. The API arrived in 26 and
              * the floor here is 25, so it is gated rather than assumed.
              */
@@ -303,7 +303,7 @@ class BrowserWebViewDriver(
     /**
      * Requests play/pause from this workspace pane's WebView only.
      *
-     * Site-dependent — Chromium maps the media key onto the focused media element when one exists,
+     * Site-dependent - Chromium maps the media key onto the focused media element when one exists,
      * so dispatch is never presented as proof that playback changed.
      */
     fun dispatchPlayPause() {
@@ -367,7 +367,7 @@ class BrowserWebViewDriver(
      *
      * `KeyCharacterMap` turns a string into the key events a real keyboard would have produced,
      * which is what a web input field listens for. There is no API to hand a string to a WebView
-     * directly, and the alternatives — a JavaScript bridge, or reaching for the input connection —
+     * directly, and the alternatives - a JavaScript bridge, or reaching for the input connection -
      * are respectively a security hole this project has ruled out and undefined across Android
      * versions.
      *
@@ -391,7 +391,7 @@ class BrowserWebViewDriver(
      * Coordinates arrive already resolved to page pixels by the caller, which is the only layer
      * that knows how the host's preview maps onto this view.
      *
-     * Hover moves (MOVE with no button) are mouse [ACTION_HOVER_MOVE] events, not touch MOVE —
+     * Hover moves (MOVE with no button) are mouse [ACTION_HOVER_MOVE] events, not touch MOVE -
      * touch MOVE would latch a gesture and break double-tap, but without a hover the page never
      * sees the TV cursor and `:hover` UI (video controls, menus) stays hidden until a click.
      */
@@ -434,7 +434,7 @@ class BrowserWebViewDriver(
             0,
         )
         // Declared as a touch device: WebView routes touch through the same path a finger takes, so
-        // pages that only handle touch events — which on a television is most of them — respond.
+        // pages that only handle touch events - which on a television is most of them - respond.
         event.source = InputDevice.SOURCE_TOUCHSCREEN
         try {
             webView.dispatchTouchEvent(event)
@@ -460,7 +460,7 @@ class BrowserWebViewDriver(
      * Scrolls the page with a short touch drag.
      *
      * Fire OS WebViews routinely ignore synthesised mouse-wheel ACTION_SCROLL events, and
-     * [WebView.scrollBy] only moves the outer viewport — nested page scrollers stay put. A brief
+     * [WebView.scrollBy] only moves the outer viewport - nested page scrollers stay put. A brief
      * touch drag is what those pages already handle for a finger on the glass.
      */
     private fun dispatchScroll(scroll: BrowserNativeInput.Scroll) {

@@ -52,8 +52,8 @@ data class BrowserFingerprint(
  *   Keystore, or `null` when the key is an ordinary in-process one.
  *
  *   This distinction is not cosmetic. A Keystore-backed private key is deliberately
- *   **non-exportable**: `getEncoded()` returns null, and copying it into a software keystore — the
- *   obvious way to build an [javax.net.ssl.SSLContext] — fails deep inside the provider with a
+ *   **non-exportable**: `getEncoded()` returns null, and copying it into a software keystore - the
+ *   obvious way to build an [javax.net.ssl.SSLContext] - fails deep inside the provider with a
  *   `KeyStoreException` wrapping a `NullPointerException` that names nothing. The key has to be
  *   used *where it lives*, so the listener needs to know where that is.
  */
@@ -77,8 +77,8 @@ interface ReceiverIdentityProvider {
          * The Keystore alias the receiver's browser identity lives under.
          *
          * Version-suffixed on purpose. A Keystore entry is created once and reused forever, so a
-         * key generated under a spec that turns out to be unusable — as `v1` was, being restricted
-         * to SHA-256 and therefore unable to sign a TLS handshake — would otherwise be picked up
+         * key generated under a spec that turns out to be unusable - as `v1` was, being restricted
+         * to SHA-256 and therefore unable to sign a TLS handshake - would otherwise be picked up
          * again on every launch, and the fix would never take effect on a device that had already
          * run the broken build. Changing this string retires the old key and generates a correct
          * one; the receiver's fingerprint changes with it, so hosts verify again once.

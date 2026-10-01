@@ -20,7 +20,7 @@ namespace Flint.App.Tests.Snapshots;
 /// <para>
 /// Every tone of every control appears, because the tones are the part of the design system that
 /// carries meaning. <c>Signal</c> means ready, <c>Live</c> means blocked, and a control that renders
-/// the wrong one is not a cosmetic problem — it tells the user the opposite of the truth.
+/// the wrong one is not a cosmetic problem - it tells the user the opposite of the truth.
 /// </para>
 /// </remarks>
 public sealed class ControlSnapshotTests

@@ -52,7 +52,7 @@ fun InfoCard(
  * The inset block under a card's reason.
  *
  * One step further off the ground than the card, and its body is painted in the primary text colour
- * rather than the muted one — brighter than the reason above it, because the reason explains and this
+ * rather than the muted one - brighter than the reason above it, because the reason explains and this
  * tells somebody what to do.
  */
 @Composable

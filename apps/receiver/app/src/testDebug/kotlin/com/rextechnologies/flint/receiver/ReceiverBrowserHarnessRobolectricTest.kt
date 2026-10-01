@@ -23,8 +23,8 @@ import org.robolectric.annotation.Config
  * Runs under Robolectric (`testDebugUnitTest`) so the Back ladder and leave-prompt ownership can be
  * proven without a Stick. Device UiAutomator remains the physical gate.
  *
- * Back is applied through [BrowserSurfaceController] — the same path the surface's
- * `onPreviewKeyEvent` uses — because Robolectric focus injection does not reliably deliver
+ * Back is applied through [BrowserSurfaceController] - the same path the surface's
+ * `onPreviewKeyEvent` uses - because Robolectric focus injection does not reliably deliver
  * KEYCODE_BACK through Compose preview when an overlay owns focus.
  */
 @RunWith(AndroidJUnit4::class)

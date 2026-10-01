@@ -33,7 +33,7 @@ public sealed record OnboardingPoint(string Text, int? Number = null)
 /// </param>
 /// <param name="Ordered">
 /// Whether <paramref name="Points"/> is a sequence that must be followed in order. Numbered when it
-/// is, because a procedure rendered as bullets invites people to do the steps in the wrong order —
+/// is, because a procedure rendered as bullets invites people to do the steps in the wrong order -
 /// which is exactly how the Fire TV developer-options unlock goes wrong.
 /// </param>
 public sealed record OnboardingStep(

@@ -29,7 +29,7 @@ import java.io.Closeable
  *
  * The display is created with no flags. `VIRTUAL_DISPLAY_FLAG_PUBLIC` is the one that would pull in
  * `CAPTURE_VIDEO_OUTPUT`, a system permission this app has no business holding, and a private display
- * needs none — which is the whole reason the second screen is the lower-friction of the two modes and
+ * needs none - which is the whole reason the second screen is the lower-friction of the two modes and
  * the reason it ships first.
  *
  * What it cannot do is as important as what it can. A `VirtualDisplay` shows only what its owner
@@ -114,7 +114,7 @@ class SecondScreenHost(
  * A `Presentation` that can host Compose.
  *
  * The trap this exists to close: a `Presentation` is a `Dialog`, so its decor view has none of the
- * three owners a `ComposeView` looks for — `ViewTreeLifecycleOwner`,
+ * three owners a `ComposeView` looks for - `ViewTreeLifecycleOwner`,
  * `ViewTreeSavedStateRegistryOwner` and `ViewTreeViewModelStoreOwner`. Without all three, the first
  * composition throws, and the exception names a lifecycle rather than a dialog, so it reads as a
  * problem somewhere else entirely. It is wrapped once, here, rather than remembered at each call

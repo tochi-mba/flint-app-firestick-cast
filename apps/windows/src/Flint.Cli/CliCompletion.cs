@@ -3,8 +3,8 @@ namespace Flint.Cli;
 /// <summary>The shell completion script `flint completion powershell` prints.</summary>
 /// <remarks>
 /// Printed rather than installed. Writing to somebody's PowerShell profile without being asked is
-/// not something a diagnostics tool should do, and the usual idiom — piping the script into the
-/// profile — leaves them in charge of it.
+/// not something a diagnostics tool should do, and the usual idiom - piping the script into the
+/// profile - leaves them in charge of it.
 /// </remarks>
 internal static class CliCompletion
 {

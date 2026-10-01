@@ -13,7 +13,7 @@ sealed interface ResolvedQuery {
 }
 
 /**
- * Address or search — the decision every omnibox makes, and the one this browser could not.
+ * Address or search - the decision every omnibox makes, and the one this browser could not.
  *
  * [BrowserUrlPolicy] rejects a bare word twice: once for not being absolute, once for having no dot.
  * That is right for a security policy and useless as a browser, which is why the television had no

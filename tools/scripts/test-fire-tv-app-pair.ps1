@@ -63,7 +63,7 @@ if (-not ($devices | Where-Object { $_ -match ('^' + [regex]::Escape($Serial) + 
     throw "Serial '$Serial' is not visible to adb. Open Flint Receiver on the TV first."
 }
 
-Write-Host '[hardware-e2e] Leave Flint Receiver on the READY pairing panel — a real Flint window will open.' -ForegroundColor Cyan
+Write-Host '[hardware-e2e] Leave Flint Receiver on the READY pairing panel - a real Flint window will open.' -ForegroundColor Cyan
 
 $env:FLINT_HARDWARE_E2E = '1'
 $env:FLINT_ACKNOWLEDGE_PHYSICAL_DEVICE = '1'

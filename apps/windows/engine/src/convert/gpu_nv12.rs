@@ -1,10 +1,10 @@
 //! Converting a captured desktop texture to NV12 on the GPU.
 //!
-//! The frame starts on the GPU — desktop duplication hands back a texture — and the encoder wants
+//! The frame starts on the GPU - desktop duplication hands back a texture - and the encoder wants
 //! it on the GPU. Everything in between was going the long way round: read the texture back to
 //! system memory, convert BGRA to NV12 with the processor, then upload the result to a texture
 //! again. That is two bus crossings and a colour conversion on the CPU, and on this machine it costs
-//! about three milliseconds a frame against a sixteen millisecond budget — comfortably more than
+//! about three milliseconds a frame against a sixteen millisecond budget - comfortably more than
 //! the encoder itself.
 //!
 //! `ID3D11VideoProcessor` is the hardware built for exactly this. It does the colour conversion and
@@ -15,7 +15,7 @@
 //!
 //! The video processor will convert BGRA to NV12 without being told anything, and it will pick a
 //! colour space when it does. Left to itself it tends to assume full-range BT.601, while Flint's
-//! receiver decodes limited-range BT.709 — the difference is washed-out, slightly green-shifted
+//! receiver decodes limited-range BT.709 - the difference is washed-out, slightly green-shifted
 //! output that looks like a bad capture rather than like a bug. Both ends are stated explicitly
 //! here so the conversion is defined rather than inherited.
 
@@ -213,7 +213,7 @@ impl GpuNv12Converter {
         };
 
         // SAFETY: the processor is live; both calls take a colour space by reference and cannot
-        // fail in a way worth acting on — a driver that ignores them produces a defined picture in
+        // fail in a way worth acting on - a driver that ignores them produces a defined picture in
         // the wrong range, which the round-trip test catches.
         unsafe {
             self.video_context.VideoProcessorSetStreamColorSpace(

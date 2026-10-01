@@ -545,7 +545,7 @@ class BrowserWorkspaceSession(
             "A Windows-device profile cannot restore a saved TV workspace."
         BrowserWorkspaceRefusal.EXCLUSIVE_PRESENTATION_ACTIVE ->
             "Finish fullscreen or theater mode first."
-        BrowserWorkspaceRefusal.RENDERER_NOT_RESIDENT -> "That page is not loaded — select it to load it again."
+        BrowserWorkspaceRefusal.RENDERER_NOT_RESIDENT -> "That page is not loaded - select it to load it again."
         BrowserWorkspaceRefusal.INVALID_SLOT -> "That page slot is not available."
         BrowserWorkspaceRefusal.PANE_ID_EXHAUSTED,
         BrowserWorkspaceRefusal.MEDIA_REQUEST_ID_EXHAUSTED,

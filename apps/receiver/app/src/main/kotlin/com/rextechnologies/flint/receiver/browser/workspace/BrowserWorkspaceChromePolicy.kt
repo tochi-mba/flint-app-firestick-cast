@@ -11,7 +11,7 @@ package com.rextechnologies.flint.receiver.browser.workspace
  * without a screen:
  *
  *  * While someone is driving a page, chrome is not on screen. Returning to workspace controls
- *    brings it back — the same bargain the single-page browser's omnibar already makes.
+ *    brings it back - the same bargain the single-page browser's omnibar already makes.
  *  * Per-pane controls belong to the focused pane only. Four panes' worth of media, theater and
  *    close chips stacked above the mosaic is what made the chrome tall in the first place.
  */
@@ -19,7 +19,7 @@ object BrowserWorkspaceChromePolicy {
     /**
      * The least share of the content height the mosaic may be left with.
      *
-     * Not a layout instruction — a stated intent that [BrowserWorkspaceChromePolicyTest] holds the
+     * Not a layout instruction - a stated intent that [BrowserWorkspaceChromePolicyTest] holds the
      * chrome to, so a future row added to the chrome fails a test rather than quietly shrinking the
      * pages.
      */

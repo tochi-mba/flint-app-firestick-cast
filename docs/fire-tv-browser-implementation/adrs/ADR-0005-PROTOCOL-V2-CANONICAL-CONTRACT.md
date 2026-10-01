@@ -1,4 +1,4 @@
-# ADR-0005 — protocol v2 canonical contract
+# ADR-0005 - protocol v2 canonical contract
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -79,5 +79,5 @@ proof. Convenience fields or host-platform raw input cannot bypass this ADR.
 
 ## References
 
-- [Slice 02 — v2 contract](../SLICE-02-PROTOCOL-V2-AND-PLAIN-CHANNEL-REJECTION.md)
+- [Slice 02 - v2 contract](../SLICE-02-PROTOCOL-V2-AND-PLAIN-CHANNEL-REJECTION.md)
 - [Wire protocol documentation](../../PROTOCOL.md)

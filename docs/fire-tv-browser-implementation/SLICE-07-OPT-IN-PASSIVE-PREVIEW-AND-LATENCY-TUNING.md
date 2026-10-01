@@ -1,4 +1,4 @@
-# Slice 07 — opt-in passive preview and latency tuning
+# Slice 07 - opt-in passive preview and latency tuning
 
 **Governing ADRs:** [ADR-0001](adrs/ADR-0001-TV-RESIDENT-BROWSER-OWNERSHIP.md), [ADR-0003](adrs/ADR-0003-SEPARATE-PINNED-TLS-BROWSER-SESSION.md), [ADR-0005](adrs/ADR-0005-PROTOCOL-V2-CANONICAL-CONTRACT.md), [ADR-0009](adrs/ADR-0009-OPT-IN-BOUNDED-JPEG-PREVIEW.md), and [ADR-0011](adrs/ADR-0011-TEST-EVIDENCE-AND-LATENCY-GOVERNANCE.md).
 

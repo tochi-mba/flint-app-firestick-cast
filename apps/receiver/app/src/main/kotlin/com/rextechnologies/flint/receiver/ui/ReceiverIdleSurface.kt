@@ -237,8 +237,8 @@ private fun ReceiverConnectionDetails(
 
 @Composable
 private fun PairingCode(groups: PairingCodeGroups?) {
-    val first = groups?.first ?: "———"
-    val second = groups?.second ?: "———"
+    val first = groups?.first ?: "---"
+    val second = groups?.second ?: "---"
     val description = groups?.let { "Pairing code ${it.spoken}" } ?: "Pairing code is not ready"
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(

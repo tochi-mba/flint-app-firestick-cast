@@ -22,12 +22,12 @@ public sealed partial class CastPageViewModel
 
     /// <summary>The device's platform, spelled out.</summary>
     public string DevicePlatform =>
-        Report?.Device?.Platform.ToDisplayLabel() ?? "—";
+        Report?.Device?.Platform.ToDisplayLabel() ?? "-";
 
     /// <summary>The device address and port, when known.</summary>
     public string DeviceAddress => Report?.Device is { } device
         ? device.AdbPort is { } port ? $"{device.Address}:{port}" : device.Address.ToString()
-        : "—";
+        : "-";
 
     /// <summary>The receiver model exactly as reported, without guessing from its name.</summary>
     public string DeviceModel => Report?.Device?.Model ?? "Not reported";
@@ -46,7 +46,7 @@ public sealed partial class CastPageViewModel
     /// <summary>The Windows build used for platform gates.</summary>
     public string WindowsBuild => Report is { } report
         ? report.Host.WindowsBuild.ToString(System.Globalization.CultureInfo.InvariantCulture)
-        : "—";
+        : "-";
 
     /// <summary>Whether the native engine actually answered the encoder query.</summary>
     public string EncoderProbeStatus => Report?.Host.EncodersProbed switch
@@ -70,12 +70,12 @@ public sealed partial class CastPageViewModel
         ? report.Host.Adapters
             .FirstOrDefault(adapter => adapter.Luid == report.Host.PrimaryDisplayAdapterLuid)
             ?.Description ?? "Not identified"
-        : "—";
+        : "-";
 
     /// <summary>Hardware encoders and the exact codec set each one advertised.</summary>
     public string HardwareEncoders => Report switch
     {
-        null => "—",
+        null => "-",
         { Host.EncodersProbed: false } => "Not probed",
         { Host.Encoders.Count: 0 } => "None found",
         { } report => string.Join(

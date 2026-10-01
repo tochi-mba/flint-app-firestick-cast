@@ -25,15 +25,15 @@ public sealed partial class BrowserPageViewModel
     private long nextCommandId = 1;
     /// <summary>
     /// Browser epoch for the active surface. Each OPEN must be strictly newer than any epoch the
-    /// receiver has already observed — including after CLOSE or a dead TLS session — so this value
+    /// receiver has already observed - including after CLOSE or a dead TLS session - so this value
     /// only ever advances and is never reset to 1 on reconnect.
     /// </summary>
     private long browserEpoch;
     /// <summary>
     /// The number carried by the next input, and never reused.
     ///
-    /// The receiver drops any input whose sequence does not advance — that is how it discards a
-    /// duplicate or a replay — so a repeated number here is a key that silently does nothing.
+    /// The receiver drops any input whose sequence does not advance - that is how it discards a
+    /// duplicate or a replay - so a repeated number here is a key that silently does nothing.
     /// </summary>
     private bool browserSurfaceOpen;
 
@@ -62,7 +62,7 @@ public sealed partial class BrowserPageViewModel
     private bool hasRememberedTrust;
     /// <summary>
     /// URLs for the profile session strip captured when Close yields the glass (Mirror/Media).
-    /// Used to rebuild distinct tabs after TV ids die — including two Google searches that only
+    /// Used to rebuild distinct tabs after TV ids die - including two Google searches that only
     /// differ by query string.
     /// </summary>
     /// <summary>
@@ -131,7 +131,7 @@ public sealed partial class BrowserPageViewModel
     /// <summary>Bookmarks and history owned by the selected TV profile or this Windows device.</summary>
     public BrowserLibraryViewModel Library { get; }
 
-    /// <summary>Per-TV-profile WireGuard settings — paste lives here; the tunnel runs on the TV.</summary>
+    /// <summary>Per-TV-profile WireGuard settings - paste lives here; the tunnel runs on the TV.</summary>
     public BrowserNetworkViewModel Network { get; }
 
     /// <summary>Receiver-owned multi-pane workspace projection; enabled only after a snapshot arrives.</summary>
@@ -188,7 +188,7 @@ public sealed partial class BrowserPageViewModel
         HasUsablePairingCode,
         BrowserEndpointResolver.TryResolve(EffectiveDevice(), TryParseManualBrowserPort()) is not null);
 
-    /// <summary>The exact safe next step, naming where it is taken — or null when there is none.</summary>
+    /// <summary>The exact safe next step, naming where it is taken - or null when there is none.</summary>
     public string? Remedy => SessionPhase is BrowserUiPhase.Mismatch or BrowserUiPhase.SecureReady
         ? BrowserVerdictCopy.Remedy(SessionPhase, Capability)
         : BrowserSecureReceiverPrompt.Remedy(SecureReceiverStep, Capability.Remedy);
@@ -352,7 +352,7 @@ public sealed partial class BrowserPageViewModel
     /// <summary>Text being composed for the page on the television.</summary>
     /// <remarks>
     /// Owned here rather than read out of the text box, so the page never reaches into its own
-    /// visual tree by name — which is both fragile and the reason the same control name could
+    /// visual tree by name - which is both fragile and the reason the same control name could
     /// collide across two instances of this page.
     /// </remarks>
     [ObservableProperty]
@@ -424,7 +424,7 @@ public sealed partial class BrowserPageViewModel
     /// Sends one navigation key to the page on the television.
     /// </summary>
     /// <remarks>
-    /// The keys the protocol carries are semantic — up, select, page down — rather than key codes,
+    /// The keys the protocol carries are semantic - up, select, page down - rather than key codes,
     /// so the desktop never has to know what a Fire TV expects. The receiver maps them to whatever
     /// its platform uses.
     /// </remarks>
@@ -684,8 +684,8 @@ public sealed partial class BrowserPageViewModel
     /// </summary>
     /// <remarks>
     /// One list, called wherever a session appears or disappears. The faults it prevents are all
-    /// the same shape — a control left disabled, or a card left hidden, long after the thing it
-    /// reflects has changed — and the stuck-GO failure after a receiver reinstall was one missing
+    /// the same shape - a control left disabled, or a card left hidden, long after the thing it
+    /// reflects has changed - and the stuck-GO failure after a receiver reinstall was one missing
     /// line from this set. Keeping them together is what makes an omission visible.
     /// </remarks>
     internal void RaiseSessionSurfaceProperties()

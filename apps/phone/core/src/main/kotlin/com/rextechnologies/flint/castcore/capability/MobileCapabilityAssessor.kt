@@ -47,14 +47,14 @@ data class AssessmentInput(
  * in the room.
  *
  * Verdict precedence is deliberate. A device that can never run a receiver outranks a probe that has
- * not been run, which outranks a network that is merely slow — because telling someone to go and
+ * not been run, which outranks a network that is merely slow - because telling someone to go and
  * enable a setting on a television that could never have worked wastes the one thing Flint is
  * supposed to be saving them.
  *
  * The second screen is not judged as "mirror plus something". On Windows it is, because there it is
- * a mirror plus an indirect display driver. On Android the two modes need genuinely different things
- * — the second screen renders into a private display this app owns and needs no capture consent at
- * all — so a phone that refuses screen capture can still drive a second screen, and this assessor
+ * a mirror plus an indirect display driver. On Android the two modes need genuinely different things -
+ * the second screen renders into a private display this app owns and needs no capture consent at
+ * all - so a phone that refuses screen capture can still drive a second screen, and this assessor
  * has to be able to say so.
  */
 object MobileCapabilityAssessor {
@@ -198,7 +198,7 @@ object MobileCapabilityAssessor {
                     else ->
                         "Check that the Fire TV is awake and on this same network, then probe again. " +
                             "If the network keeps its clients from reaching each other, the probe will " +
-                            "never arrive — this phone's own hotspot does not do that."
+                            "never arrive - this phone's own hotspot does not do that."
                 },
             )
         }
@@ -258,7 +258,7 @@ object MobileCapabilityAssessor {
         // Two different failures wear the same badge, and telling them apart is the whole value of
         // the message. A refusal means something is there and closed the port, which is genuinely
         // ambiguous between Vega and debugging switched off. A timeout means nothing answered, which
-        // is overwhelmingly a wrong address — and sending someone into Developer Options on a
+        // is overwhelmingly a wrong address - and sending someone into Developer Options on a
         // television that was never the problem wastes their time on the easiest failure to fix.
         return if (device.adbState == AdbConnectionState.REFUSED) {
             VerdictTemplate(
@@ -380,7 +380,7 @@ object MobileCapabilityAssessor {
      * one.
      */
     const val SECOND_SCREEN_BOUNDARY: String =
-        "The television shows Flint's own screens — a player, photos, what is playing now — not the " +
+        "The television shows Flint's own screens - a player, photos, what is playing now - not the " +
             "phone's home screen and not other apps. Android gives an app no way to move another " +
             "app's window onto a second display."
 

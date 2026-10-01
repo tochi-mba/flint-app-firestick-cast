@@ -124,7 +124,7 @@ class HotspotInterfaceSelectorTest {
 
     @Test
     fun `the jvm source reports the point-to-point flag`() {
-        // Nothing here asserts a tunnel exists on the build machine — only that the field is
+        // Nothing here asserts a tunnel exists on the build machine - only that the field is
         // populated from the interface rather than left at its permissive default.
         val snapshots = JvmNetworkInterfaceSource().snapshots()
         val expected = NetworkInterface.getNetworkInterfaces().toList()

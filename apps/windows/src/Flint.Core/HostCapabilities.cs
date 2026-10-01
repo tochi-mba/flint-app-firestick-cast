@@ -28,7 +28,7 @@ public sealed record HostCapabilities(
     /// <summary>Whether this build can capture the screen at all.</summary>
     /// <remarks>
     /// Mirroring and second-screen output both consume captured frames, so neither can be offered
-    /// when this is <see langword="false"/> — regardless of how good the encoder or network is.
+    /// when this is <see langword="false"/> - regardless of how good the encoder or network is.
     /// </remarks>
     public bool CanCaptureScreen => ScreenCaptureBackend is not null;
 

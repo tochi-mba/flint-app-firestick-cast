@@ -28,7 +28,7 @@ data class ReceiverAnnouncement(
  *
  * Multicast is the thing that fails on a SoftAP link, so this exists as the designed fallback: a
  * single request line, a single response line, one exchange per connection or datagram. It rides the
- * receiver's ordinary TCP port, multiplexed by the first byte, and — for the broadcast rung — the same
+ * receiver's ordinary TCP port, multiplexed by the first byte, and - for the broadcast rung - the same
  * port number on UDP, which is a separate namespace and so costs nothing.
  *
  * The request is compared for exact equality on the receiver, so there is no tolerance here for
@@ -79,9 +79,9 @@ object ReceiverProbe {
      *
      * `BufferedReader.readLine` is the obvious way to do this and the wrong one: its buffer-size
      * argument bounds the buffer, not the line, so it accumulates without limit until a line feed
-     * arrives. Both ends of this exchange read a line from something they have not authenticated —
+     * arrives. Both ends of this exchange read a line from something they have not authenticated -
      * a phone sweeping a subnet talks to whatever has the port open, and a television answers
-     * anyone who connects — so the side doing the allocating has to be the side that stops. That is
+     * anyone who connects - so the side doing the allocating has to be the side that stops. That is
      * what [MAX_RESPONSE_BYTES] has always claimed and what nothing was doing.
      *
      * A line over the limit returns `null`, which every caller already treats as "not a Flint

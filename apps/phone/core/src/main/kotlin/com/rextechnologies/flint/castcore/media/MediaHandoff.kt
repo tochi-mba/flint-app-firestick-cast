@@ -11,7 +11,7 @@ import com.rextechnologies.flint.protocol.wire.MediaCommandMessage
  * HTTP server and hand the receiver a URL, which is the elegant one; or it can push the bytes down
  * the control socket it already owns and then say "play what I just sent you", which is the one that
  * works. Some Fire OS builds silently drop an outbound connection the receiver initiates to a private
- * LAN address — not refused, not reset, dropped — while the very same address works perfectly for the
+ * LAN address - not refused, not reset, dropped - while the very same address works perfectly for the
  * connection the phone initiated. So the push path is the default and the HTTP path is the option.
  */
 object MediaHandoff {

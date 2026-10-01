@@ -15,8 +15,8 @@ namespace Flint.Cli;
 /// something to run.
 /// </para>
 /// <para>
-/// The browser has its own separately authenticated, certificate-pinned session — it does not share
-/// the cast channel — so this connects independently of any mirroring session and never borrows the
+/// The browser has its own separately authenticated, certificate-pinned session - it does not share
+/// the cast channel - so this connects independently of any mirroring session and never borrows the
 /// cast session's trust.
 /// </para>
 /// </remarks>
@@ -38,7 +38,7 @@ internal static class BrowseRunner
         var endpoint = new BrowserEndpoint(address, browserPort, address.ToString());
         // The same store the desktop app uses, not a fresh one per run. A pin that evaporates when
         // the process exits means the person re-verifies the same television every single time,
-        // which trains them to accept the prompt without reading it — the one thing certificate
+        // which trains them to accept the prompt without reading it - the one thing certificate
         // pinning exists to prevent.
         var trustStore = BrowserTrustStoreLocation.Open();
         var prompter = new ConsoleTrustPrompter();
@@ -67,7 +67,7 @@ internal static class BrowseRunner
         // The receiver remembers the highest epoch it has seen and refuses anything at or below it,
         // deliberately, so a command replayed from a dead session cannot reopen a surface. A
         // hardcoded epoch therefore works exactly once per receiver launch and is refused for the
-        // rest of it — which is what a real Fire TV reported as STALE_EPOCH. Wall-clock
+        // rest of it - which is what a real Fire TV reported as STALE_EPOCH. Wall-clock
         // milliseconds always advance, which is the same rule the Windows app follows.
         var epoch = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         await session.SendCommandAsync(
@@ -113,7 +113,7 @@ internal static class BrowseRunner
     /// </summary>
     /// <remarks>
     /// The desktop app asks a person to compare the code on the television with the code on screen.
-    /// A command-line run has nobody to ask, so it prints the fingerprint and continues — which is
+    /// A command-line run has nobody to ask, so it prints the fingerprint and continues - which is
     /// trust on first use with the comparison left to whoever reads the output.
     ///
     /// That is weaker than the app's flow and is stated plainly rather than hidden: this runner is a

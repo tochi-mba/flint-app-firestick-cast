@@ -8,7 +8,7 @@ namespace Flint.App.Tests;
 /// </summary>
 /// <remarks>
 /// Reported from a real screen: a returning user saw a SECURE RECEIVER card with an empty port box,
-/// a greyed-out CONNECT button, and a next step reading "enter the Cast pairing code" — on a page
+/// a greyed-out CONNECT button, and a next step reading "enter the Cast pairing code" - on a page
 /// with no pairing-code field. Every input that mattered was either already known or lived on
 /// another page, and nothing said which.
 /// </remarks>

@@ -190,7 +190,7 @@ public sealed partial class BrowserWorkspacePaneViewModel : ObservableObject
                 ? "FOCUSED, INPUT NOT AVAILABLE"
                 : "NOT FOCUSED";
 
-    /// <summary>Short visual badge for the mosaic tile — long copy stays in <see cref="FocusLabel"/>.</summary>
+    /// <summary>Short visual badge for the mosaic tile - long copy stays in <see cref="FocusLabel"/>.</summary>
     public string FocusBadge => IsFocusPending
         ? "WAITING"
         : IsFocused

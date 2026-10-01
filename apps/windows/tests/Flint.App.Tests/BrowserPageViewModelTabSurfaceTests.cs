@@ -123,7 +123,7 @@ public sealed class BrowserPageViewModelTabSurfaceTests
             c.Action == BrowserCommandAction.Open && c.Url == "https://example.test/one");
         remote.Cockpit.TabRequests.ShouldNotContain(r =>
             r.Operation == BrowserTabOperation.Select && r.TabId == 1);
-        // Sibling URLs from the app-held profile session must come back too — not only the click.
+        // Sibling URLs from the app-held profile session must come back too - not only the click.
         remote.Cockpit.TabRequests.ShouldContain(r =>
             r.Operation == BrowserTabOperation.New
             && r.Url == "https://example.test/search?q=bunda");

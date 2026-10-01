@@ -5,7 +5,7 @@ using Flint.Session.Browser;
 namespace Flint.App.Services;
 
 /// <summary>
-/// Carries the additive cockpit families — tabs, view settings and the library — over an existing
+/// Carries the additive cockpit families - tabs, view settings and the library - over an existing
 /// authenticated browser session.
 /// </summary>
 /// <remarks>
@@ -15,7 +15,7 @@ namespace Flint.App.Services;
 ///
 /// It also does the translation. The UI works in <see cref="BrowserTabsSnapshot"/> and friends
 /// rather than in positional wire records, so a wire field moving does not reach a XAML binding, and
-/// a UI concept the wire has no field for — an unsupported dark mode, say — has somewhere to live.
+/// a UI concept the wire has no field for - an unsupported dark mode, say - has somewhere to live.
 /// </remarks>
 public sealed class SecureBrowserCockpitRemote : IBrowserCockpitRemote, IDisposable
 {
@@ -72,7 +72,7 @@ public sealed class SecureBrowserCockpitRemote : IBrowserCockpitRemote, IDisposa
     /// message type closes the session rather than ignoring it, so sending a tab command
     /// speculatively would disconnect the very people it was meant to help.
     ///
-    /// A family therefore turns on when the receiver sends its first snapshot of it — the receiver
+    /// A family therefore turns on when the receiver sends its first snapshot of it - the receiver
     /// volunteers what it can do, and until then the panel says so instead of offering controls
     /// that would end the session.
     /// </remarks>

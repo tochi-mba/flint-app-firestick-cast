@@ -326,7 +326,7 @@ enum class MediaAction(val id: Int) {
  * server, or from the internet over the same hotspot, so nothing is
  * transcoded on the way. When [url] is blank, the receiver instead plays the
  * file most recently pushed to it in full over this same connection via
- * [MediaDataMessage] — the fallback for a receiver whose platform silently
+ * [MediaDataMessage] - the fallback for a receiver whose platform silently
  * drops outbound connections it initiates to a private LAN address (observed
  * on some Fire OS builds), even though the same address works perfectly for
  * this connection, which the phone initiated.

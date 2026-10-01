@@ -1,4 +1,4 @@
-# Research record — Fire TV-resident browser controlled by Flint
+# Research record - Fire TV-resident browser controlled by Flint
 
 **Audience:** Flint maintainers  
 **Date:** 2026-09-04  

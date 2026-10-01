@@ -129,8 +129,8 @@ private fun NetworkCard(state: MobileUiState) {
 /**
  * The dead end with a way out of it.
  *
- * There is no API an ordinary app may call to turn a hotspot on — `TetheringManager` is a system
- * API — so this opens the settings page rather than pretending to do it, and says which switch to
+ * There is no API an ordinary app may call to turn a hotspot on - `TetheringManager` is a system
+ * API - so this opens the settings page rather than pretending to do it, and says which switch to
  * look for.
  */
 @Composable

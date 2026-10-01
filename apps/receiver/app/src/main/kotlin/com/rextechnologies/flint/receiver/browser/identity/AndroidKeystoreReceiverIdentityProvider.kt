@@ -18,7 +18,7 @@ import javax.security.auth.x500.X500Principal
  * A Keystore key is the right home for a private key: it never leaves secure storage. But on
  * Fire OS 6 (API 25) Conscrypt cannot complete a TLS **server** handshake with a Keystore-resident
  * RSA key. It fails inside OpenSSL with `RSA routines: internal error` after the socket is already
- * open, whatever digests, paddings or purposes the key was created with. The key is not misused —
+ * open, whatever digests, paddings or purposes the key was created with. The key is not misused -
  * it is unusable for this job on that platform.
  *
  * So the Keystore is used from API 28, where it works, and below that the [fallback] provides a
@@ -70,7 +70,7 @@ class AndroidKeystoreReceiverIdentityProvider(
             // key-exchange struct with a *raw* PKCS#1 signature over a digest the protocol has
             // already computed, so a key restricted to SHA-256 refuses the operation. Conscrypt
             // reports that refusal as `RSA routines: internal error` from inside OpenSSL, with
-            // nothing about digests, purposes or keys — and the handshake dies after the socket is
+            // nothing about digests, purposes or keys - and the handshake dies after the socket is
             // open. SHA-1 and SHA-256 are kept alongside it for ordinary signing.
             .setDigests(
                 KeyProperties.DIGEST_NONE,

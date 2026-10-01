@@ -50,7 +50,7 @@ sealed interface LinkState {
  * granted token exists to remove.
  *
  * Nothing in here draws or encodes. What it owns is the socket, the state machine behind it, and the
- * credential that opened it — the media path is [OutputCoordinator]'s, and it drives this one
+ * credential that opened it - the media path is [OutputCoordinator]'s, and it drives this one
  * through [send].
  */
 class SessionCoordinator(
@@ -70,7 +70,7 @@ class SessionCoordinator(
      * Closing a connection does not call back on the closing thread: `CastConnection.close` puts
      * the goodbye and the teardown on its own dispatcher, so the old connection's `onClosed`
      * lands some time after [open] has already built its replacement. Without this it would then
-     * null the new connection and move the state to Closed — killing the attempt the user had
+     * null the new connection and move the state to Closed - killing the attempt the user had
      * just started. Retyping a mistyped pairing code is exactly that sequence, which made it the
      * most reachable way to break pairing in this class.
      */
@@ -114,7 +114,7 @@ class SessionCoordinator(
     /**
      * Reopens a session with the token this television granted earlier, if it granted one.
      *
-     * @return whether there was a token to try. `false` is not a failure — it is a television this
+     * @return whether there was a token to try. `false` is not a failure - it is a television this
      *   phone has never paired with.
      */
     suspend fun reconnect(

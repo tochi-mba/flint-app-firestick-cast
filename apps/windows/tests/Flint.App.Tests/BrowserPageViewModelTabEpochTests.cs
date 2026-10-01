@@ -114,7 +114,7 @@ public sealed class BrowserPageViewModelTabEpochTests
                 PreviewState: BrowserPreviewState.Disabled));
 
             viewModel.BrowserEpochForTests.ShouldBe(42);
-            // Past the receiver's watermark is the invariant — anything at or below it is
+            // Past the receiver's watermark is the invariant - anything at or below it is
             // discarded as STALE_COMMAND. The exact number also moves with the default-on preview
             // request that an adopted surface sends, which is not what this test is about.
             viewModel.NextCommandIdForTests.ShouldBeGreaterThan(7);

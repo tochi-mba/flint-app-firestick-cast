@@ -299,8 +299,8 @@ pub mod capture_backend {
 /// Probes whether this host can capture the screen, and how.
 ///
 /// Probes by opening a duplication and closing it, rather than by inspecting adapters. Capture
-/// fails for reasons no enumeration reveals — another process already holds the duplication, the
-/// session is not an interactive desktop, policy forbids it — and a report that guessed would be
+/// fails for reasons no enumeration reveals - another process already holds the duplication, the
+/// session is not an interactive desktop, policy forbids it - and a report that guessed would be
 /// wrong in exactly those cases.
 ///
 /// An unavailable host is a success with `available` set to zero. That is an answer, not an error.
@@ -480,7 +480,7 @@ pub unsafe extern "C" fn flint_mirror_start(
         // irrelevant to it.
         //
         // On the readback path this decides whether the frame is reduced before or after the bus
-        // copy, which `report_stage_timings` measures at roughly 6.8ms per frame against 12.8ms —
+        // copy, which `report_stage_timings` measures at roughly 6.8ms per frame against 12.8ms -
         // the copy carries four times the pixels when the reduction happens afterwards. The source
         // reduces by whatever means it can and silently declines when it cannot, so asking is
         // always safe.
@@ -681,7 +681,7 @@ pub unsafe extern "C" fn flint_mirror_codec_data(
 /// `out_codec` receives the wire protocol's own codec identifier, so the value can go straight
 /// into the decoder configuration the receiver is sent.
 ///
-/// This exists because the alternative — assuming the codec the handshake negotiated — produces a
+/// This exists because the alternative - assuming the codec the handshake negotiated - produces a
 /// receiver that builds a decoder for one codec and is fed another. That fails on the first access
 /// unit as a black screen, nowhere near the mistake.
 ///
@@ -763,8 +763,8 @@ pub unsafe extern "C" fn flint_mirror_stats(
 
 /// Ends a mirror session and releases it.
 ///
-/// A null handle is a no-op rather than an error, so a shell that tears down twice — which a
-/// cancelled start followed by a dispose does — is safe.
+/// A null handle is a no-op rather than an error, so a shell that tears down twice - which a
+/// cancelled start followed by a dispose does - is safe.
 ///
 /// # Safety
 /// `handle` must come from [`flint_mirror_start`] and must not be used again afterwards.

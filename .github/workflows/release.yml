@@ -106,7 +106,7 @@ jobs:
           "tagged=$isTagged" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Version $version (tagged: $isTagged)"
 
-      # A release must never ship code that does not pass its own gate — including the receiver,
+      # A release must never ship code that does not pass its own gate - including the receiver,
       # whose APK goes inside the package this job publishes.
       - name: Build and test
         shell: pwsh
@@ -240,10 +240,10 @@ jobs:
             `Flint.App.exe`. Nothing else is installed, and nothing updates itself.
 
             The build is not code-signed, so Windows will say "Windows protected your PC": choose
-            **More info**, then **Run anyway**. That warning is accurate — Windows does not
+            **More info**, then **Run anyway**. That warning is accurate - Windows does not
             recognise this publisher. Building from source avoids it.
 
-            Check your Fire TV first — **Settings → My Fire TV → About**. Fire OS 7 or 8 works;
+            Check your Fire TV first - **Settings → My Fire TV → About**. Fire OS 7 or 8 works;
             Vega OS cannot, and no future version will change that.
 
             See the [installation guide](https://github.com/tochi-mba/flint-app-firestick-cast/blob/master/docs/INSTALL.md).
@@ -279,7 +279,7 @@ jobs:
             The build is not code-signed, so Windows will show an unrecognised-publisher warning:
             choose **More info**, then **Run anyway**. Building from source avoids it.
 
-            Check your Fire TV first — **Settings → My Fire TV → About**. Fire OS 7 or 8 works;
+            Check your Fire TV first - **Settings → My Fire TV → About**. Fire OS 7 or 8 works;
             Vega OS cannot, and no future version will change that.
 
             See the [installation guide](https://github.com/tochi-mba/flint-app-firestick-cast/blob/master/docs/INSTALL.md).

@@ -4,7 +4,7 @@ namespace Flint.Core;
 /// A live capture-and-encode session owned by the engine.
 /// </summary>
 /// <remarks>
-/// The managed side never runs per frame in the sense of doing work between two frames — it only
+/// The managed side never runs per frame in the sense of doing work between two frames - it only
 /// drains what the engine has already produced and puts it on the wire. Everything that must
 /// happen between two frames lives behind this boundary.
 /// </remarks>

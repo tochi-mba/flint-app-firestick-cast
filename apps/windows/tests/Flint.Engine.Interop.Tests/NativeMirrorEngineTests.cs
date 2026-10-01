@@ -75,8 +75,8 @@ public sealed class NativeMirrorEngineTests
     [Fact]
     public void DescribeStartFailure_APlatformRefusal_ExplainsWhatOnThisMachineWouldCauseIt()
     {
-        // "Status -3" tells a person nothing they can act on. The two real causes — another
-        // program holding the capture, or no encoder installed — are both worth naming.
+        // "Status -3" tells a person nothing they can act on. The two real causes - another
+        // program holding the capture, or no encoder installed - are both worth naming.
         var message = NativeMirrorEngine.DescribeStartFailure(FlintStatus.PlatformError);
 
         message.ShouldContain("encoder");
@@ -130,7 +130,7 @@ public sealed class NativeMirrorEngineTests
         // each live test returns early, and the suite reports green having exercised nothing.
         //
         // So the tolerance is bounded here. If the engine loads at all, it must expose the mirror
-        // ABI this wrapper was compiled against — anything else is a stale build, not a machine
+        // ABI this wrapper was compiled against - anything else is a stale build, not a machine
         // without a screen.
         if (!EngineIsLoadable())
         {
@@ -144,7 +144,7 @@ public sealed class NativeMirrorEngineTests
         catch (MirrorEngineException exception)
         {
             exception.InnerException.ShouldNotBeOfType<EntryPointNotFoundException>(
-                "the engine binary is older than this wrapper — rebuild flint-engine");
+                "the engine binary is older than this wrapper - rebuild flint-engine");
         }
     }
 
@@ -417,7 +417,7 @@ public sealed class NativeMirrorEngineTests
     public void Next_WithABufferTooSmallForAnAccessUnit_SaysSoRatherThanSendingHalfAFrame()
     {
         // Half an access unit decodes to garbage, and a decoder fed garbage stays broken until the
-        // next key frame — far from where the mistake was made.
+        // next key frame - far from where the mistake was made.
         IMirrorEngineSession session;
         try
         {

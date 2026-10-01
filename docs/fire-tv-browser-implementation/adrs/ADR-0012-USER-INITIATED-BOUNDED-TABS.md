@@ -1,4 +1,4 @@
-# ADR-0012 — user-initiated, memory-bounded tabs on the receiver
+# ADR-0012 - user-initiated, memory-bounded tabs on the receiver
 
 - **Status:** Accepted
 - **Implementation:** Implemented (software); RAM budget not yet measured on hardware
@@ -22,7 +22,7 @@ something up, or returning to a search result after following a link are ordinar
 without tabs each of them costs the page you were on.
 
 The constraint that shapes the answer is memory. A Fire TV stick has one to two gigabytes for the
-whole system. Eight live `WebView`s is not a tight budget, it is an out-of-memory kill — and the
+whole system. Eight live `WebView`s is not a tight budget, it is an out-of-memory kill - and the
 renderer that dies takes the page with it.
 
 ADR-0006 also bans popups. That ban was written against page-initiated `window.open`, which is a
@@ -32,7 +32,7 @@ site taking a decision away from the viewer. A tab the viewer asks for is the op
 
 - Tabs are **user-initiated only**. `setSupportMultipleWindows(false)` and
   `javaScriptCanOpenWindowsAutomatically = false` stay exactly as ADR-0006 requires, and
-  `onCreateWindow` continues to refuse — now with a visible reason rather than silence.
+  `onCreateWindow` continues to refuse - now with a visible reason rather than silence.
 - At most **8 tabs**, and at most **2 live renderers**: the foreground tab plus the most recently
   used one, which is what makes flipping between two sites instant.
 - A tab pushed out of the live set is **frozen**, not closed: its navigation state is saved and its
@@ -77,7 +77,7 @@ site taking a decision away from the viewer. A tab the viewer asks for is the op
 ## Invariants and validation
 
 - `BrowserTabRegistryTest` proves the 8-tab cap, the never-reused ids, close-successor selection,
-  and — across a long mixed open/select/close sequence — that the live count never exceeds two.
+  and - across a long mixed open/select/close sequence - that the live count never exceeds two.
 - The refusal at the cap is an effect (`TabEffect.Refused`), so a full strip cannot fail silently.
 - `BrowserTabHost` detaches before destroying; destroying an attached `WebView` leaves a dead child
   painting black over the page.

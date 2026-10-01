@@ -1,4 +1,4 @@
-# Slice 10 — receiver install over ADB
+# Slice 10 - receiver install over ADB
 
 **Governing ADR:**
 [ADR-0027](adrs/ADR-0027-RECEIVER-INSTALLATION-REQUIRES-RSA-CONSENT-AND-OFFERS-REMOVAL.md).
@@ -15,8 +15,8 @@ from the phone, and remove it again from the same screen.
 
 ## User-visible vertical behaviour
 
-1. The Settings tab names exactly what would be installed — package, version, size, where it came
-   from and what it does — before offering to install it.
+1. The Settings tab names exactly what would be installed - package, version, size, where it came
+   from and what it does - before offering to install it.
 2. Pressing Install connects over ADB, and the television shows its own authorisation prompt.
 3. The phone waits for that prompt and says so, pointing at the TV remote rather than offering a way
    around it.

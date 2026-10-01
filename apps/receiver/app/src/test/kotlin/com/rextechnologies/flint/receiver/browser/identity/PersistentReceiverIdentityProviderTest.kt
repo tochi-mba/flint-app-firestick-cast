@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
  *
  * The fingerprint is what a person compares between two screens when they set the browser up. If it
  * changes on every launch, that one-time comparison becomes a chore repeated forever, and users
- * learn to accept whatever code appears — which is worse than no verification at all, because it
+ * learn to accept whatever code appears - which is worse than no verification at all, because it
  * looks like security.
  */
 class PersistentReceiverIdentityProviderTest {

@@ -1,4 +1,4 @@
-# ADR-0028 — release scope is a sideloaded APK from GitHub with the publisher warning stated plainly
+# ADR-0028 - release scope is a sideloaded APK from GitHub with the publisher warning stated plainly
 
 - **Status:** Accepted
 - **Implementation:** Planned
@@ -34,8 +34,8 @@ produces a package named one thing and stamped another. On Android that is worse
 this repository. `receiver/build.gradle.kts` sets `isMinifyEnabled = true` and names
 `proguard-rules.pro`, which keeps `GoBackend`, its inner `VpnService` and `SharedLibraryLoader`
 because WireGuard resolves them by name. Nothing builds that
-variant — `package.ps1` runs `:receiver:assembleDebug` and `release.yml` packages the same debug
-output — so a shrinker configuration nobody has run is one nobody knows is wrong.
+variant - `package.ps1` runs `:receiver:assembleDebug` and `release.yml` packages the same debug
+output - so a shrinker configuration nobody has run is one nobody knows is wrong.
 
 ## Decision
 
@@ -45,7 +45,7 @@ output — so a shrinker configuration nobody has run is one nobody knows is wro
   immutable release that is still exactly those bytes years later. There is no store listing.
 - The release notes **state the publisher warning and call it accurate**, in those words. Nobody has
   reviewed this app, and the notes do not invite the reader past a true statement. They also give
-  the platform floor — Android 8.0, matching `mobile-min-sdk` — and say Vega OS cannot work.
+  the platform floor - Android 8.0, matching `mobile-min-sdk` - and say Vega OS cannot work.
 - Signing uses **one fixed key** decoded at job time from `MOBILE_KEYSTORE_BASE64` and its three
   companion secrets. A new key is a new app identity: Android refuses to upgrade across signatures,
   so anyone holding the old build must uninstall first, discarding the Keystore-wrapped session
@@ -54,7 +54,7 @@ output — so a shrinker configuration nobody has run is one nobody knows is wro
   something nobody chose.
 - An **unsigned build is labelled unsigned**: the job says so, builds anyway, and names the file
   `Flint-Mobile-<version>-unsigned.apk`. It never carries the name a releasable build would.
-- `versionCode` is `1000 + GITHUB_RUN_NUMBER` — monotonic and reproducible from the run alone, the
+- `versionCode` is `1000 + GITHUB_RUN_NUMBER` - monotonic and reproducible from the run alone, the
   offset clearing codes a hand-built APK may already occupy on somebody's phone.
 - `versionName` has **exactly one source**, `mobile.version` in `gradle.properties`. Anything that
   is not a tag build appends a seven-character commit sha. A `v*` tag that disagrees with that
@@ -97,7 +97,7 @@ output — so a shrinker configuration nobody has run is one nobody knows is wro
 | Alternative | Why rejected |
 |---|---|
 | Publish through Google Play or the Amazon Appstore so no warning appears. | Play App Signing moves the key out of this repository's control, so the store build is a different identity that no sideloaded install can upgrade into; browser ADR-0002 already restricts this project to sideload pending written approval. |
-| Ship an Android App Bundle with ABI and density splits. | An `.aab` is not installable by the person who downloaded it — only a store can resynthesise an APK from it — and the phone app has no native code of its own, so the splits would shave nothing measurable. |
+| Ship an Android App Bundle with ABI and density splits. | An `.aab` is not installable by the person who downloaded it - only a store can resynthesise an APK from it - and the phone app has no native code of its own, so the splits would shave nothing measurable. |
 | Mint a fresh signing key per release, or commit the keystore. | A new key is a new identity with no upgrade path, forcing an uninstall that discards the stored session token and ADB identity; a committed key lets anyone who forks the repository sign something that installs as this app. |
 | Take `versionName` from the git tag, as `release.yml` does for the desktop. | A rolling build has no tag at all, and a hand-created tag is exactly the second source of truth that already lets the desktop package name and its stamped version disagree unnoticed. |
 | Derive `versionCode` from a timestamp, or edit it by hand. | A timestamp is monotonic but not reproducible from the run that made it; a hand-edited code goes backwards on a revert, and Android refuses to install a lower code over a higher one. |

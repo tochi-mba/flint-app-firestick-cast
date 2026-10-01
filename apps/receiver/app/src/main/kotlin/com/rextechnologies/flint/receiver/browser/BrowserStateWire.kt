@@ -8,7 +8,7 @@ import com.rextechnologies.flint.receiver.toViewerSentence
 /**
  * Projects reducer state onto the host-facing wire snapshot.
  *
- * Without this, the desktop stays on "Nothing open" while the television is already loading —
+ * Without this, the desktop stays on "Nothing open" while the television is already loading -
  * state existed locally but never crossed the pinned TLS session.
  */
 fun BrowserState.toWireMessage(

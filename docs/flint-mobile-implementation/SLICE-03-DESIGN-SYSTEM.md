@@ -1,4 +1,4 @@
-# Slice 03 — the REX design system on a phone
+# Slice 03 - the REX design system on a phone
 
 **Governing ADR:** [ADR-0030](adrs/ADR-0030-ONE-SOURCE-OF-TRUTH-FOR-THE-REX-TOKEN-SET.md).
 
@@ -28,7 +28,7 @@ fails if any of them drifts.
 ### In scope
 
 - `:design` as an Android library: `FlintColors`, `FlintType`, `FlintSpace`, `FlintShapes`, `Tone`,
-  `FlintTheme`, `flintClickable`, and the components — `InfoCard`, `Pill`, `StatusDot`,
+  `FlintTheme`, `flintClickable`, and the components - `InfoCard`, `Pill`, `StatusDot`,
   `SectionLabel`, `PageHeading`, `DiagnosticRow`, `EmptyState`, `AdvisoryBlock`, `SignalButton`,
   `OutlineAction`, `Readout`, `TextEntry` and `FlintText`.
 - The Kotlin token test mirroring `tests/Flint.App.Tests/RexDesignSystemTests.cs`.
@@ -46,7 +46,7 @@ fails if any of them drifts.
 ## Planned files and boundaries
 
 `design/src/main/kotlin/com/rextechnologies/flint/design/`. The module depends on Compose foundation
-and ui and nothing else, and its `minSdk` is the receiver's rather than the phone's — 25, not 26 — so
+and ui and nothing else, and its `minSdk` is the receiver's rather than the phone's - 25, not 26 - so
 that the Fire TV app can adopt these tokens later without this module being the reason it cannot.
 
 Two deliberate divergences from the television are recorded in the source: `Muted` is the desktop's
@@ -54,7 +54,7 @@ Two deliberate divergences from the television are recorded in the source: `Mute
 lifted value reads as washed out; and the type scale is the desktop's rather than the ten-foot one.
 
 Two genuine gaps are filled rather than copied. Touch states come from the desktop's `:pointerover`
-and `:pressed` opacities — 0.88 and 0.72 — rather than from a new pair invented here. And reduced
+and `:pressed` opacities - 0.88 and 0.72 - rather than from a new pair invented here. And reduced
 motion is honoured through `Settings.Global.ANIMATOR_DURATION_SCALE`, which nothing in this
 repository has ever read: the Windows shell has no motion to speak of, and a television is not where
 people turn animation off.
@@ -80,5 +80,5 @@ people turn animation off.
 ## Rollback and stop conditions
 
 `:design` is additive; `:mobile` is its only consumer. Stop if a component needs a colour that is not
-in the palette — that is a sign the status language has run out of room, and adding a ninth colour is
+in the palette - that is a sign the status language has run out of room, and adding a ninth colour is
 the wrong answer to it.

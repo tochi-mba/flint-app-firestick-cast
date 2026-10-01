@@ -263,7 +263,7 @@ class BrowserTlsServerTest {
     @Test
     fun `teardown finishes before the next client is accepted`() {
         // The defect this pins: releasing the single-client slot before onSessionEnded returned let
-        // the next host open a page while the dead session's cleanup was still running — and that
+        // the next host open a page while the dead session's cleanup was still running - and that
         // cleanup wiped the new session. Holding teardown open must keep the slot closed.
         val teardownEntered = CountDownLatch(1)
         val teardownRelease = CountDownLatch(1)
@@ -320,7 +320,7 @@ class BrowserTlsServerTest {
     fun `a silent authenticated session survives past the read timeout`() {
         // Found on a Fire TV Stick 4K: after two minutes of nobody touching the remote, the receiver
         // logged `SocketTimeoutException: Read timed out`, tore the session down and dropped to the
-        // idle screen — while the desktop still showed "connected". Reading a page without pressing
+        // idle screen - while the desktop still showed "connected". Reading a page without pressing
         // anything is the most ordinary thing a browser does, and it was killing the session.
         //
         // SO_TIMEOUT is a read deadline, not a liveness signal. Silence after authentication is

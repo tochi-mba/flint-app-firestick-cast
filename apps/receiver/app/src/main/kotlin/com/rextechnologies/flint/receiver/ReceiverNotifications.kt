@@ -12,8 +12,8 @@ import androidx.core.app.NotificationCompat
 /**
  * The receiver's ongoing notification.
  *
- * Split out of the service because it is a complete responsibility on its own — a channel, a
- * builder, and one line of text — that shares nothing with decoding, mirroring or browsing beyond
+ * Split out of the service because it is a complete responsibility on its own - a channel, a
+ * builder, and one line of text - that shares nothing with decoding, mirroring or browsing beyond
  * the address and pairing code it prints. It is also the part of the service most easily got wrong
  * silently: a foreground service without a valid channel is killed on sight by newer Android, and
  * nothing about that failure looks like a notification bug.

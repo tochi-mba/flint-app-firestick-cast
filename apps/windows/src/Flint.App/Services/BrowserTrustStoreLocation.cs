@@ -8,7 +8,7 @@ namespace Flint.App.Services;
 /// <remarks>
 /// <para>
 /// One location, shared by every entry point. Verifying a television is a thing the person does
-/// once, holding a code up against the screen, and it has to stay done — a second copy of this path
+/// once, holding a code up against the screen, and it has to stay done - a second copy of this path
 /// means the desktop app and the command line each keep their own idea of what is trusted, and the
 /// same television gets verified twice for no reason the person could ever guess.
 /// </para>

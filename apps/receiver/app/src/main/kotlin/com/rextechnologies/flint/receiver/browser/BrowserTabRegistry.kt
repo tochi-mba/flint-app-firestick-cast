@@ -51,7 +51,7 @@ data class TabTransition(
  * Which pages are open, and which of them are allowed to hold a renderer.
  *
  * A Fire TV stick has one to two gigabytes for the whole system. Eight live WebViews is not a
- * budget decision, it is an out-of-memory kill — so at most two tabs keep a renderer (the one being
+ * budget decision, it is an out-of-memory kill - so at most two tabs keep a renderer (the one being
  * looked at, plus the most recently used, which makes flipping between two sites instant) and the
  * rest are frozen to saved navigation state.
  *

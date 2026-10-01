@@ -1,7 +1,7 @@
 # Flint Mobile implementation slices
 
-Flint has been a Windows host casting to a Fire TV. Flint Mobile makes the phone the host instead —
-the phone that already runs the hotspot everything else in the house joins — and the television the
+Flint has been a Windows host casting to a Fire TV. Flint Mobile makes the phone the host instead -
+the phone that already runs the hotspot everything else in the house joins - and the television the
 screen. Same wire protocol, same receiver, same REX ink/signal visual system. The phone either
 mirrors its own screen to the television or drives it as a second screen with the phone as cockpit.
 
@@ -31,7 +31,7 @@ that "Windows 11 24H2 and 25H2 currently cannot set an IDD display as the primar
 
 None of that is about the protocol or about the television. `SurfaceMode.PRESENTATION(4)` exists in
 Kotlin, C# and Rust, and `ReceiverScreen.kt` already renders it as "SECOND SCREEN" today. The blocker
-is a Windows driver-signing fact, and Android has no equivalent — so Flint Mobile ships the mode
+is a Windows driver-signing fact, and Android has no equivalent - so Flint Mobile ships the mode
 Flint Windows cannot.
 
 It ships it honestly. On Android the second screen is a private `VirtualDisplay` this app owns and
@@ -44,12 +44,12 @@ another app's window, and every card that offers it says so in the same breath.
 |---|---|---|
 | `:protocol` | `kotlin("jvm")` | The wire, both handshake halves, hotspot interface selection, ADB, DNS-SD, DLNA, the token-gated HTTP paths. Consumed unchanged. |
 | `:castcore` | `kotlin("jvm")` | Android-free phone logic: capability verdicts, the discovery ladder policy, the session state machine, encoder and thermal policy, receiver-setup policy, and every user-facing sentence. |
-| `:design` | `com.android.library` | The REX system in Compose — colour, type, spacing, shapes, `Tone`, and the shared components. Built on foundation primitives with no Material dependency. |
+| `:design` | `com.android.library` | The REX system in Compose - colour, type, spacing, shapes, `Tone`, and the shared components. Built on foundation primitives with no Material dependency. |
 | `:mobile` | `com.android.application` | The phone app. `com.rextechnologies.flint.mobile`. |
 | `:receiver` | `com.android.application` | Unchanged except for the additive UDP broadcast responder the phone's third discovery rung needs. |
 
 `:castcore` exists as its own module rather than as a source set inside `:mobile` for one reason: only
-a separate pure-JVM module can carry the same JaCoCo gate as `:protocol` — 95% line, 85% branch —
+a separate pure-JVM module can carry the same JaCoCo gate as `:protocol` - 95% line, 85% branch -
 with no Robolectric anywhere near it, and can run the source guard that fails the build on a wildcard
 socket bind.
 
@@ -130,8 +130,8 @@ and `HARDWARE-EVIDENCE.md` is the only place a claim about a physical phone or t
   commits them to the branch for review.
 - **The `MEDIA_COMMAND` MIME cap still diverges.** Kotlin caps `mimeType` at 255 bytes; C# and Rust
   cap it at 512. A MIME type between the two encodes on Windows and is refused by Kotlin. The phone
-  caps at 255, which is safe in both directions, and reconciling the three implementations — with
-  regenerated golden vectors — is outstanding work.
+  caps at 255, which is safe in both directions, and reconciling the three implementations - with
+  regenerated golden vectors - is outstanding work.
 - **Two checks have run on a physical phone, and nothing else has.** The second-screen check and
   the encoder listing both passed on one phone (`HARDWARE-EVIDENCE.md`). The encoder check has since
   been made a pixel round trip through the production encoder and a decoder, and that version has

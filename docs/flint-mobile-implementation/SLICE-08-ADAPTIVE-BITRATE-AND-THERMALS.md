@@ -1,4 +1,4 @@
-# Slice 08 — adaptive bitrate and thermals
+# Slice 08 - adaptive bitrate and thermals
 
 **Governing ADR:** [ADR-0026](adrs/ADR-0026-FLINT-MOBILE-CONSUMES-THE-PROTOCOL-IN-REPO.md).
 
@@ -33,7 +33,7 @@ The session degrades honestly instead of stuttering, and says what it is doing w
   frame appears within a bounded number of frames, the strategy changes to a bounded two-second
   interval for the rest of the session and does not change back.
 - `ThermalPolicy`, driven by `PowerManager`'s thermal status, with ceilings expressed as fractions of
-  this session's own maximum rather than as absolute numbers — so a session that started
+  this session's own maximum rather than as absolute numbers - so a session that started
   conservatively is never told it may climb.
 - Audio: `AudioPlaybackCaptureConfiguration` on API 29 and above, AAC-LC into `AudioConfigMessage`
   and `AudioPacket`. Below 29, and for apps that opt out, the UI says so plainly rather than shipping
@@ -79,4 +79,4 @@ The default suite, plus a long emulator run that actually reaches a congested st
 
 The controller is additive: without it the encoder runs at its initial bitrate, which is the
 behaviour slice 07 shipped. Stop if the UI would need to show a millisecond figure to explain a
-degradation — the word is the honest unit here until glass-to-glass has been measured.
+degradation - the word is the honest unit here until glass-to-glass has been measured.

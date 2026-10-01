@@ -32,16 +32,16 @@ object MediaCopy {
     fun pushing(chunksSent: Long, chunksTotal: Long): String {
         require(chunksTotal > 0)
         val percent = ((chunksSent.coerceIn(0, chunksTotal) * 100) / chunksTotal)
-        return "Sending to the TV — $percent%."
+        return "Sending to the TV - $percent%."
     }
 
     /** Progress as bytes, for a provider that would not say how long the file is. */
     fun sendingBytes(bytesSent: Long): String =
-        "Sending to the TV — ${Decimal.oneDecimal(bytesSent / BYTES_PER_MEBIBYTE)} MiB so far."
+        "Sending to the TV - ${Decimal.oneDecimal(bytesSent / BYTES_PER_MEBIBYTE)} MiB so far."
 
     /** Progress as a fraction, for a provider that did. */
     fun sendingFraction(fraction: Double): String =
-        "Sending to the TV — ${(fraction.coerceIn(0.0, 1.0) * 100).toInt()}%."
+        "Sending to the TV - ${(fraction.coerceIn(0.0, 1.0) * 100).toInt()}%."
 
     /**
      * Why the file is pushed rather than fetched.

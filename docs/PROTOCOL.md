@@ -67,7 +67,7 @@ as corruption and the whole frame is rejected. Unknown *type ids*, by contrast, 
 opaquely and relayed intact. Extending the family is therefore always additive.
 
 That tolerance is one-directional. A receiver that has never heard of id 21 will not dispatch it,
-so a host must not send one speculatively — the cockpit families are enabled only after the
+so a host must not send one speculatively - the cockpit families are enabled only after the
 receiver has volunteered a snapshot of its own.
 
 ### Browser transport boundary (protocol v2)
@@ -87,7 +87,7 @@ those messages, but browser values never silently inherit a plaintext fallback.
 looks exactly like a bug in Flint until it is understood.
 
 **Fire OS silently drops outbound connections the receiver initiates to private LAN addresses.** Not
-refused, not reset — dropped, with no error the application can see. The same TCP connection works
+refused, not reset - dropped, with no error the application can see. The same TCP connection works
 perfectly in the other direction, which is how pairing succeeds in the first place, so every
 diagnostic points at a working network.
 

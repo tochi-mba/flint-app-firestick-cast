@@ -9,7 +9,7 @@ import com.rextechnologies.flint.protocol.http.SessionToken
  * What a session needs from token storage.
  *
  * Named separately from [TokenStore] so that the session coordinator can be tested without a
- * keystore, an Android context or a file — none of which have anything to say about which
+ * keystore, an Android context or a file - none of which have anything to say about which
  * television is connected.
  */
 interface SessionTokens {

@@ -84,7 +84,7 @@ public static partial class PathRegistration
     /// </summary>
     /// <remarks>
     /// Without this, the registry holds the new PATH but every process started from Explorer keeps
-    /// the copy it inherited until the next sign-in — which reads exactly like the installer having
+    /// the copy it inherited until the next sign-in - which reads exactly like the installer having
     /// done nothing at all.
     /// </remarks>
     public static void AnnounceChange()

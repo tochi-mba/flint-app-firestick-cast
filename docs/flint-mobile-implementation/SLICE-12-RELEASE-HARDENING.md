@@ -1,4 +1,4 @@
-# Slice 12 — release hardening
+# Slice 12 - release hardening
 
 **Governing ADRs:** [ADR-0028](adrs/ADR-0028-RELEASE-SCOPE-SIDELOADED-APK-FROM-GITHUB.md) and
 [ADR-0029](adrs/ADR-0029-SESSION-TOKENS-ARE-ENCRYPTED-AT-REST-AND-ARE-AUTHORISATION.md).
@@ -39,7 +39,7 @@ somebody can actually download works.
 No latency figure. Glass-to-glass has never been measured on a phone, the 240 fps camera procedure
 has not been run against any named pair, and until it has, every number in the mobile budget section
 is a target and says so. A figure that appears without that procedure behind it is not evidence, it
-is a claim — and this project has a rule about those.
+is a claim - and this project has a rule about those.
 
 ## Release checklist
 

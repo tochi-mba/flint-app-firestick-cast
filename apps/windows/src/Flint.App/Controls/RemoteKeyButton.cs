@@ -18,7 +18,7 @@ namespace Flint.App.Controls;
 /// </para>
 /// <para>
 /// It also fixes a real defect. A <c>CommandParameter="Up"</c> in markup is a string, and the
-/// command takes a <see cref="BrowserSemanticKey"/> — so the binding throws the moment the button is
+/// command takes a <see cref="BrowserSemanticKey"/> - so the binding throws the moment the button is
 /// attached, which is a crash on a page rather than a compile error. Carrying the key as a typed
 /// property means a wrong name cannot be written in the first place.
 /// </para>

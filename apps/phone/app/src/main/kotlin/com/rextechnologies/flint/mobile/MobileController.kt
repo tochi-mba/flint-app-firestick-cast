@@ -62,8 +62,8 @@ import kotlinx.coroutines.withContext
  * The one object the UI talks to.
  *
  * Not an `androidx.lifecycle.ViewModel`. The activity declares every configuration change it handles
- * and so is never recreated underneath a running cast — which is the reason the declaration is there
- * — so the survival a ViewModel buys is survival from something that does not happen here, and the
+ * and so is never recreated underneath a running cast - which is the reason the declaration is there -
+ * so the survival a ViewModel buys is survival from something that does not happen here, and the
  * dependency would be carried for nothing.
  *
  * It holds no state of its own beyond navigation. Each coordinator owns one question and answers it
@@ -109,7 +109,7 @@ class MobileController(
      * Work that belongs to one run of the app rather than to this object.
      *
      * Cancelled by [stop] so that a stop-and-start cycle works. Cancelling the scope itself, which
-     * is what this used to do, left the controller permanently dead — every later launch was a
+     * is what this used to do, left the controller permanently dead - every later launch was a
      * no-op, and nothing said so.
      */
     private val work = CoroutineScope(scope.coroutineContext + SupervisorJob(scope.coroutineContext[Job]))
@@ -124,7 +124,7 @@ class MobileController(
      * probing, starting a mirror and every other button.
      *
      * A failure here is now a banner and a recorded stack rather than a death. It is still a
-     * defect — the recorded trace is how it gets fixed — but the person holding the phone keeps
+     * defect - the recorded trace is how it gets fixed - but the person holding the phone keeps
      * their session.
      */
     private val crashGuard = CoroutineExceptionHandler { _, failure ->

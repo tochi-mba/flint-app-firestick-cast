@@ -278,7 +278,7 @@ public sealed class OnboardingViewModelTests
     [Fact]
     public void TheAdbStep_IsNumberedBecauseItsOrderMatters()
     {
-        // Rendered as bullets, people open Developer Options first — where it does not yet exist.
+        // Rendered as bullets, people open Developer Options first - where it does not yet exist.
 
         // Arrange
         var onboarding = NewFlow();

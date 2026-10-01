@@ -7,7 +7,7 @@ namespace Flint.App.ViewModels;
 /// </summary>
 /// <remarks>
 /// Pulled out of the page so the copy sits together and can be read as a set. Three sentences that
-/// have to agree — a status, an explanation, and a next step — are far easier to keep consistent
+/// have to agree - a status, an explanation, and a next step - are far easier to keep consistent
 /// side by side than scattered through a view model that is also managing a TLS session.
 ///
 /// Pure functions of the phase and the verdict. Nothing here reaches for live state, so the copy
@@ -43,7 +43,7 @@ internal static class BrowserVerdictCopy
         phase switch
         {
             BrowserUiPhase.SecureReady =>
-                "Secure receiver ready — enter an HTTPS address to open it on the TV.",
+                "Secure receiver ready - enter an HTTPS address to open it on the TV.",
             BrowserUiPhase.Verifying =>
                 "Comparing the TV security code and completing the pinned TLS session.",
             BrowserUiPhase.Mismatch => lastError ?? "The secure browser session could not be verified.",

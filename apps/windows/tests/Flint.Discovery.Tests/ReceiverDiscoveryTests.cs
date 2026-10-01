@@ -136,7 +136,7 @@ public sealed class LocalSubnetTests
 
 /// <summary>
 /// The fallback probe, run for real against receivers on loopback addresses: only an exact answer
-/// counts, and every other kind of peer — silent, rude, absent — is simply not a receiver.
+/// counts, and every other kind of peer - silent, rude, absent - is simply not a receiver.
 /// </summary>
 public sealed class ReceiverProbeScannerScanTests
 {

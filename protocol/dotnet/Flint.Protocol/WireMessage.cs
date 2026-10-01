@@ -433,8 +433,8 @@ public sealed record ByeMessage(ByeReason Reason, string Detail = "") : WireMess
 }
 
 /// <summary>
-/// Instructs the receiver to play media: fetched from <see cref="Url"/> when it is set, or — when
-/// it is empty — the file most recently pushed over this connection via <see cref="MediaDataMessage"/>.
+/// Instructs the receiver to play media: fetched from <see cref="Url"/> when it is set, or - when
+/// it is empty - the file most recently pushed over this connection via <see cref="MediaDataMessage"/>.
 /// </summary>
 /// <remarks>
 /// The push path exists because some receivers cannot reach the host at all: several Fire OS

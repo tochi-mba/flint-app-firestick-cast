@@ -8,7 +8,7 @@ namespace Flint.Protocol.Tests;
 /// </summary>
 /// <remarks>
 /// The golden corpus proves that three implementations encode the same <em>messages</em> to the
-/// same bytes. It cannot prove they agree on the values those messages may carry — a vector only
+/// same bytes. It cannot prove they agree on the values those messages may carry - a vector only
 /// exercises the values it happens to use, and most of them are used by none.
 ///
 /// That gap has teeth here in particular: this codec resolves enums reflectively, so a value added

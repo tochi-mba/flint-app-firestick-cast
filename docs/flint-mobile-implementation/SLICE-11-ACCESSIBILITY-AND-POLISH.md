@@ -1,4 +1,4 @@
-# Slice 11 — accessibility and polish
+# Slice 11 - accessibility and polish
 
 **Governing ADR:** [ADR-0030](adrs/ADR-0030-ONE-SOURCE-OF-TRUTH-FOR-THE-REX-TOKEN-SET.md).
 
@@ -26,7 +26,7 @@ mirrored by accident.
 
 - Live regions on the states that change under the reader: the verdict stack, the live strip and the
   notice.
-- Content descriptions where a control's visible text is not its meaning — the tab glyphs in
+- Content descriptions where a control's visible text is not its meaning - the tab glyphs in
   particular, which are letterforms rather than words.
 - Decorative elements hidden from the reader rather than announced as unlabelled images. `StatusDot`
   always sits beside text that says the same thing, so it is cleared.
@@ -43,7 +43,7 @@ mirrored by accident.
 
 Nothing in this repository honours it today. The Windows shell has essentially no motion, and a
 television is not where people turn animation off. A phone is, and the phone app has more motion than
-either — so this is filled rather than ported, and it is read from the system setting rather than
+either - so this is filled rather than ported, and it is read from the system setting rather than
 from a preference of the app's own, because the person already told the system once.
 
 ## Touch targets

@@ -24,7 +24,7 @@ object FlintColors {
     /** Card surface, one step off the ground. */
     val Panel: Color = Color(0xFF111512)
 
-    /** Nested surface, for a panel inside a panel — the inset advisory block. */
+    /** Nested surface, for a panel inside a panel - the inset advisory block. */
     val Raised: Color = Color(0xFF181E19)
 
     /** Hairline borders and dividers. Always 1dp, never heavier. */

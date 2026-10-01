@@ -16,7 +16,7 @@ namespace Flint.App.Tests.Snapshots;
 /// </para>
 /// <para>
 /// Each page is rendered at the smallest window Flint supports, because that is where layout breaks
-/// first. Pages with a populated state get two images — empty and populated — since a page can be
+/// first. Pages with a populated state get two images - empty and populated - since a page can be
 /// correct with no data and wrong the moment it has some.
 /// </para>
 /// </remarks>
