@@ -20,8 +20,14 @@
       <controls:InfoCard IsVisible="{Binding HasDevice}" BorderTone="{Binding HeadingTone}">
         <StackPanel Spacing="16">
           <TextBlock Theme="{StaticResource TitleMedium}" Text="{Binding DeviceName}" />
-          <TextBlock Theme="{StaticResource BodyMedium}" IsVisible="{Binding IsConnected}"
-                     Text="Connected. Choose Screen, Media or Web to get started." />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" IsVisible="{Binding IsConnected}">
+            <TextBlock Theme="{StaticResource BodyMedium}" VerticalAlignment="Center"
+                       Text="Connected. Choose Screen, Media or Web to get started." />
+            <Button Grid.Column="1" Theme="{StaticResource OutlineAction}"
+                    Command="{Binding DisconnectCommand}"
+                    Content="DISCONNECT"
+                    AutomationProperties.Name="Disconnect from the TV" />
+          </Grid>
           <StackPanel IsVisible="{Binding ShowPairing}" Spacing="10">
             <TextBlock Theme="{StaticResource BodyMedium}" Text="Enter the six-digit code on your TV." />
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" RowDefinitions="Auto,Auto"
