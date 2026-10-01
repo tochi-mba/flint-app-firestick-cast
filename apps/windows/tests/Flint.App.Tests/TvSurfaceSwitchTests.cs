@@ -2,7 +2,9 @@ using System.Net;
 using System.Reflection;
 using Flint.App.Services;
 using Flint.App.ViewModels;
+using Flint.Core;
 using Flint.Protocol;
+using Flint.Session.Browser;
 using Shouldly;
 
 namespace Flint.App.Tests;
@@ -73,6 +75,30 @@ public sealed class TvSurfaceSwitchTests
         tv.Cast.IsMirroring.ShouldBeTrue();
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TakingBeforeATvIsKnown_UsesTheGenericTvName(bool reportWithoutDevice)
+    {
+        var shell = MainWindowViewModel.CreateWith(BrowserFixtures.Prober(BrowserFixtures.EligibleDevice()));
+        if (reportWithoutDevice)
+        {
+            await shell.Cast.ProbeCommand.ExecuteAsync(null);
+            var report = shell.Cast.Report! with { Device = null };
+            typeof(CastPageViewModel).GetProperty(nameof(CastPageViewModel.Report))!.SetValue(shell.Cast, report);
+        }
+
+        var prompt = new SurfaceSwitchPrompt();
+        var coordinator = new ModeSessionCoordinator(shell.Cast, shell.Browser, prompt);
+        SetMirroring(shell.Cast, true);
+
+        var taking = coordinator.TakeAsync(TvSurfaceKind.Browser, Token);
+
+        prompt.Body.ShouldBe("The TV is showing your screen. Opening the browser stops the mirror.");
+        prompt.KeepCommand.Execute(null);
+        (await taking).ShouldBeFalse();
+    }
+
     [Fact]
     public async Task TakingWhileSomethingElseShows_AndSwitching_StopsIt()
     {
@@ -134,6 +160,43 @@ public sealed class TvSurfaceSwitchTests
         tv.Browser.HasOpenBrowserSurface.ShouldBeTrue();
         tv.Remote.Commands.ShouldContain(command =>
             command.Action == BrowserCommandAction.Open && command.Url == "https://example.test/next");
+    }
+
+    [Fact]
+    public async Task BrowserAction_WhenTheSurfaceClosesDuringTheQuestion_SendsNothingToTheGonePage()
+    {
+        var tv = await TvAsync();
+        await OpenPageAsync(tv.Browser);
+        SetMirroring(tv.Cast, true);
+        var before = tv.Remote.Commands.Count;
+
+        var reloading = tv.Browser.ReloadCommand.ExecuteAsync(null);
+        tv.Prompt.IsOpen.ShouldBeTrue();
+        await tv.Browser.StopBrowserSurfaceAsync(Token);
+        tv.Prompt.ConfirmCommand.Execute(null);
+        await reloading;
+
+        tv.Cast.IsMirroring.ShouldBeFalse("switching was still accepted");
+        tv.Browser.HasOpenBrowserSurface.ShouldBeFalse();
+        tv.Remote.Commands.Skip(before).ShouldContain(command => command.Action == BrowserCommandAction.Close);
+        tv.Remote.Commands.Skip(before).ShouldNotContain(command => command.Action == BrowserCommandAction.Reload);
+    }
+
+    [Fact]
+    public async Task BrowserAction_WhenMirrorAlsoAppearsActive_KeepingSendsNothing()
+    {
+        var tv = await TvAsync();
+        await OpenPageAsync(tv.Browser);
+        SetMirroring(tv.Cast, true);
+        var before = tv.Remote.Commands.Count;
+
+        var reloading = tv.Browser.ReloadCommand.ExecuteAsync(null);
+        tv.Prompt.KeepCommand.Execute(null);
+        await reloading;
+
+        tv.Cast.IsMirroring.ShouldBeTrue();
+        tv.Browser.HasOpenBrowserSurface.ShouldBeTrue();
+        tv.Remote.Commands.Count.ShouldBe(before);
     }
 
     [Fact]
@@ -352,6 +415,31 @@ public sealed class TvSurfaceSwitchTests
     }
 
     [Fact]
+    public async Task TheNotice_ForATvWithoutAReadableName_SaysTheTv()
+    {
+        var device = BrowserFixtures.EligibleDevice() with { FriendlyName = string.Empty };
+        var shell = MainWindowViewModel.CreateWith(BrowserFixtures.Prober(device));
+        await shell.Cast.ProbeCommand.ExecuteAsync(null);
+        var coordinator = new ModeSessionCoordinator(shell.Cast, shell.Browser);
+        SetMirroring(shell.Cast, true);
+
+        coordinator.NoticeFor(TvSurfaceKind.Browser).ShouldBe("The TV is showing your screen.");
+    }
+
+    [Fact]
+    public async Task TheNotice_ForAReportWithoutADevice_SaysTheTv()
+    {
+        var shell = MainWindowViewModel.CreateWith(BrowserFixtures.Prober(BrowserFixtures.EligibleDevice()));
+        await shell.Cast.ProbeCommand.ExecuteAsync(null);
+        typeof(CastPageViewModel).GetProperty(nameof(CastPageViewModel.Report))!
+            .SetValue(shell.Cast, shell.Cast.Report! with { Device = null });
+        var coordinator = new ModeSessionCoordinator(shell.Cast, shell.Browser);
+        SetMirroring(shell.Cast, true);
+
+        coordinator.NoticeFor(TvSurfaceKind.Browser).ShouldBe("The TV is showing your screen.");
+    }
+
+    [Fact]
     public async Task SwitchingToTheBrowser_AsksNothing_AndPutsTheHeldTabsBack()
     {
         var tv = await TvAsync();
@@ -389,6 +477,51 @@ public sealed class TvSurfaceSwitchTests
         await OpenPageAsync(tv.Browser);
 
         tv.Coordinator.CanSwitchTo(TvSurfaceKind.Mirror).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task SwitchingToMirror_ClosesTheBrowserAndStartsWithoutASecondQuestion()
+    {
+        await using var receiver = new LoopbackReceiver();
+        var engine = new FailingMirrorEngine();
+        var cast = await PairedStandaloneCastAsync(receiver, engine);
+        var remote = new RecordingBrowserRemote();
+        using var browser = new BrowserPageViewModel(
+            cast,
+            new RecordingBrowserSessionConnector(remote),
+            new InMemoryBrowserTrustStore(),
+            new BrowserFixtures.ImmediateDispatcher(),
+            new InMemoryBrowserProfileLibraryStore(),
+            new BrowserHelpViewModel(false));
+        await browser.VerifySecureReceiverCommand.ExecuteAsync(null);
+        browser.Address = "https://example.test/";
+        await browser.NavigateCommand.ExecuteAsync(null);
+        browser.HasOpenBrowserSurface.ShouldBeTrue();
+        var prompt = new SurfaceSwitchPrompt();
+        var coordinator = new ModeSessionCoordinator(cast, browser, prompt);
+
+        await coordinator.SwitchToAsync(TvSurfaceKind.Mirror, Token);
+
+        prompt.IsOpen.ShouldBeFalse("the notice's switch button is already the answer");
+        browser.HasOpenBrowserSurface.ShouldBeFalse();
+        remote.Commands.ShouldContain(command => command.Action == BrowserCommandAction.Close);
+        engine.Starts.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task CastCommands_WithoutAShellCoordinator_StillReachTheirOwnWork()
+    {
+        await using var receiver = new LoopbackReceiver();
+        var engine = new FailingMirrorEngine();
+        var cast = await PairedStandaloneCastAsync(receiver, engine);
+
+        await cast.LoadMediaFileCommand.ExecuteAsync(@"C:\missing\video.mp4");
+        cast.MediaStatus.ShouldBe("Media was not sent.");
+
+        await cast.StartScreenSessionCommand.ExecuteAsync(null);
+        cast.Failure.ShouldBe("test engine stopped before capture");
+        cast.IsMirroring.ShouldBeFalse();
+        engine.Starts.ShouldBe(1);
     }
 
     [Fact]
@@ -455,6 +588,51 @@ public sealed class TvSurfaceSwitchTests
 
     private static void SetMediaPlaying(CastPageViewModel cast, bool value) =>
         typeof(CastPageViewModel).GetProperty(nameof(CastPageViewModel.IsMediaPlaying))!.SetValue(cast, value);
+
+    private static async Task<CastPageViewModel> PairedStandaloneCastAsync(
+        LoopbackReceiver receiver,
+        IMirrorEngine mirrorEngine)
+    {
+        var device = BrowserFixtures.EligibleDevice() with { Address = IPAddress.Loopback };
+        var cast = new CastPageViewModel(
+            BrowserFixtures.Prober(device),
+            new EmptyRecentAddressStore(),
+            mirrorEngine: mirrorEngine,
+            receiverInstaller: new OfflineReceiverInstaller());
+        await cast.ProbeCommand.ExecuteAsync(null);
+        cast.PairingCode = "123456";
+        cast.ReceiverPort = receiver.Port.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        await cast.ConnectCommand.ExecuteAsync(null);
+        cast.IsSessionConnected.ShouldBeTrue(cast.Failure ?? "the loopback receiver should have paired");
+        return cast;
+    }
+
+    private sealed class EmptyRecentAddressStore : IRecentAddressStore
+    {
+        public IReadOnlyList<RecentAddress> Load() => [];
+
+        public void Remember(RecentAddress address)
+        {
+        }
+
+        public void Clear()
+        {
+        }
+    }
+
+    private sealed class FailingMirrorEngine : IMirrorEngine
+    {
+        public int Starts { get; private set; }
+
+        public IMirrorEngineSession Start(MirrorSessionOptions options) =>
+            Throw();
+
+        private IMirrorEngineSession Throw()
+        {
+            Starts++;
+            throw new MirrorEngineException("test engine stopped before capture");
+        }
+    }
 
     /// <summary>A shell's Cast page, a ready browser, and the coordinator between them.</summary>
     private sealed class Tv
