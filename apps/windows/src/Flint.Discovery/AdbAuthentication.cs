@@ -125,6 +125,11 @@ internal sealed class AdbIdentity
             throw new CryptographicException("ADB authentication requires an RSA-2048 key.");
         }
 
+        // Windows makes an RSA key only when it is first used, and making a 2048-bit one can take
+        // seconds on a slow PC. Made here, it happens while the identity is loaded, before any
+        // network clock starts, rather than at the first signature inside a handshake that then
+        // times out on a television that was answering perfectly well.
+        _ = rsa.ExportParameters(includePrivateParameters: false);
         Comment = comment;
     }
 
