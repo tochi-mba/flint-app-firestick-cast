@@ -155,4 +155,27 @@ public sealed class SurfaceSwitchPromptTests
     {
         Should.Throw<ArgumentNullException>(() => new SurfaceSwitchPrompt().AskAsync(null!));
     }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AnAnswerGivenTheMomentTheQuestionOpens_IsTheAnswer(bool switching)
+    {
+        // Opening the question notifies listeners synchronously. One that answers right there used
+        // to clear the question before AskAsync returned it, and AskAsync threw.
+        var prompt = new SurfaceSwitchPrompt();
+        prompt.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(SurfaceSwitchPrompt.IsOpen) && prompt.IsOpen)
+            {
+                (switching ? prompt.ConfirmCommand : prompt.KeepCommand).Execute(null);
+            }
+        };
+
+        var answer = prompt.AskAsync(MirrorToBrowser);
+
+        answer.IsCompleted.ShouldBeTrue();
+        (await answer).ShouldBe(switching);
+        prompt.IsOpen.ShouldBeFalse();
+    }
 }
