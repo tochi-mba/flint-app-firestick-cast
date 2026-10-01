@@ -41,14 +41,17 @@ public sealed partial class SurfaceSwitchPrompt : ObservableObject
         ArgumentNullException.ThrowIfNull(copy);
         Answer(false);
 
-        pending = new TaskCompletionSource<bool>();
+        // Held locally: opening the question notifies listeners synchronously, and one that
+        // answers there clears pending before this method returns.
+        var question = new TaskCompletionSource<bool>();
+        pending = question;
         Title = copy.Title;
         Body = copy.Body;
         ConfirmLabel = copy.ConfirmLabel;
         KeepLabel = copy.KeepLabel;
-        IsOpen = true;
         Flint.Core.FlintDiag.Info("FlintSession", $"switch asked: {copy.Title}");
-        return pending.Task;
+        IsOpen = true;
+        return question.Task;
     }
 
     /// <summary>Withdraws the question, as keeping what the TV shows. Harmless when none is open.</summary>
