@@ -26,6 +26,12 @@ public sealed record MediaSettings
     /// <summary>How much one volume press changes the TV's volume, in percent.</summary>
     public int VolumeStepPercent { get; init; } = 5;
 
+    /// <summary>
+    /// Whether the time on the right of the seek bar is the file's whole length rather than the
+    /// time left. Changed by clicking that time, not on the Settings page.
+    /// </summary>
+    public bool ShowTotalTime { get; init; }
+
     /// <summary>Whether the next item in the queue plays by itself.</summary>
     public bool AutoPlayNext { get; init; } = true;
 

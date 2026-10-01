@@ -21,7 +21,7 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
         CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
     private readonly TaskCompletionSource<NetworkStream> paired = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly ConcurrentQueue<WireMessage> received = new();
-    private readonly List<(Func<WireMessage, bool> Wanted, TaskCompletionSource Seen)> waiters = [];
+    private readonly List<(Func<IReadOnlyCollection<WireMessage>, bool> Wanted, TaskCompletionSource Seen)> waiters = [];
     private TcpClient? client;
 
     internal LoopbackReceiver()
@@ -40,10 +40,14 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
     private Task Completion { get; }
 
     /// <summary>Says goodbye, as a TV whose Flint app is closing does.</summary>
-    internal async Task SendByeAsync(ByeReason reason = ByeReason.ReceiverStopped, string detail = "")
+    internal Task SendByeAsync(ByeReason reason = ByeReason.ReceiverStopped, string detail = "") =>
+        SendAsync(new ByeMessage(reason, detail));
+
+    /// <summary>Sends the session a message, as the TV would.</summary>
+    internal async Task SendAsync(WireMessage message)
     {
         var stream = await paired.Task.WaitAsync(lifetime.Token);
-        await stream.WriteAsync(WireCodec.Encode(new WireFrame(new ByeMessage(reason, detail))), lifetime.Token);
+        await stream.WriteAsync(WireCodec.Encode(new WireFrame(message)), lifetime.Token);
     }
 
     /// <summary>Hangs up without a goodbye, as a TV that lost power or Wi-Fi does.</summary>
@@ -55,17 +59,20 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
 
     /// <summary>Completes when the session has sent a message of type <typeparamref name="T"/>.</summary>
     internal Task WaitForAsync<T>()
-        where T : WireMessage
+        where T : WireMessage => WaitUntilAsync(sent => sent.Any(message => message is T));
+
+    /// <summary>Completes when what the session has sent satisfies <paramref name="condition"/>.</summary>
+    internal Task WaitUntilAsync(Func<IReadOnlyCollection<WireMessage>, bool> condition)
     {
         lock (waiters)
         {
-            if (received.Any(message => message is T))
+            if (condition(received))
             {
                 return Task.CompletedTask;
             }
 
             var seen = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            waiters.Add((message => message is T, seen));
+            waiters.Add((condition, seen));
             return seen.Task.WaitAsync(TimeSpan.FromSeconds(10), lifetime.Token);
         }
     }
@@ -113,7 +120,7 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
             received.Enqueue(frame.Message);
             lock (waiters)
             {
-                foreach (var waiter in waiters.Where(waiter => waiter.Wanted(frame.Message)).ToArray())
+                foreach (var waiter in waiters.Where(waiter => waiter.Wanted(received)).ToArray())
                 {
                     waiter.Seen.TrySetResult();
                     waiters.Remove(waiter);

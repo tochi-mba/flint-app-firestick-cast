@@ -124,7 +124,7 @@ public sealed class ModeSessionCoordinator
 
             if (next != TvSurfaceKind.Media)
             {
-                await Cast.StopMediaCoreAsync(cancellationToken).ConfigureAwait(true);
+                await Cast.StopMediaAsync(cancellationToken).ConfigureAwait(true);
             }
 
             if (next != TvSurfaceKind.Browser)

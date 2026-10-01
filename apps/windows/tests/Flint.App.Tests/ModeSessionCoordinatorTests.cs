@@ -38,13 +38,13 @@ public sealed class ModeSessionCoordinatorTests
     }
 
     [Fact]
-    public async Task StopMediaCommand_ClearsPlayingFlag()
+    public async Task StoppingMedia_ClearsPlayingFlag()
     {
         var shell = MainWindowViewModel.CreateWith(BrowserFixtures.Prober(BrowserFixtures.EligibleDevice()));
         shell.Cast.GetType().GetProperty(nameof(CastPageViewModel.IsMediaPlaying))!
             .SetValue(shell.Cast, true);
 
-        await shell.Cast.StopMediaCommand.ExecuteAsync(null);
+        await shell.Cast.StopMediaAsync(TestContext.Current.CancellationToken);
 
         shell.Cast.IsMediaPlaying.ShouldBeFalse();
     }

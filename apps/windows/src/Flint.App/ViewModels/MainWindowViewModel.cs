@@ -55,6 +55,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             }
         };
         Browser = new BrowserPageViewModel(cast);
+        Media = new MediaPageViewModel(cast, settingsService);
         Coordinator = new ModeSessionCoordinator(Cast, Browser, SwitchPrompt, settingsService);
         keepAwake = new KeepAwakeCoordinator(Cast, settingsService, keepAwakeApply);
         Onboarding = new OnboardingViewModel(onboardingState);
@@ -74,6 +75,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         Settings = new SettingsPageViewModel(
         [
             new GeneralSettingsViewModel(settingsService),
+            new MediaSettingsViewModel(settingsService),
             new TvSettingsViewModel(Cast),
             new PrivacySettingsViewModel(settingsService, folders, FlintDataFolder.Path, FlintDataFolder.LogsPath),
             new UpdatesSectionViewModel(Updates),
@@ -112,6 +114,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     /// <summary>The Cast page and local receiver connection screen.</summary>
     public CastPageViewModel Cast { get; }
+
+    /// <summary>The Media page: choosing a file, and what is playing.</summary>
+    public MediaPageViewModel Media { get; }
 
     /// <summary>The independent browser eligibility page.</summary>
     public BrowserPageViewModel Browser { get; }

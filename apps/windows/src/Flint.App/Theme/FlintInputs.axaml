@@ -257,6 +257,108 @@
     <Style Selector="^:disabled /template/ Thumb#thumb">
       <Setter Property="Background" Value="{StaticResource MutedBrush}" />
     </Style>
+    <!-- A value nobody has set yet: the track shows, with no position on it. -->
+    <Style Selector="^.unset /template/ Thumb#thumb">
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="^.unset /template/ RepeatButton#PART_DecreaseButton">
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+  </ControlTheme>
+
+  <!-- The seek bar: the REX slider, with the time it will land on shown above the thumb while it
+       is dragged. -->
+  <ControlTheme x:Key="{x:Type controls:SeekBar}" TargetType="controls:SeekBar" BasedOn="{StaticResource FlintSlider}">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid MinHeight="{TemplateBinding MinHeight}">
+          <Border Height="4" CornerRadius="2" VerticalAlignment="Center"
+                  Background="{TemplateBinding Background}" />
+          <Track Name="PART_Track"
+                 Orientation="Horizontal"
+                 Minimum="{TemplateBinding Minimum}"
+                 Maximum="{TemplateBinding Maximum}"
+                 Value="{TemplateBinding Value, Mode=TwoWay}"
+                 IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
+            <Track.DecreaseButton>
+              <RepeatButton Name="PART_DecreaseButton" Focusable="False"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                            Background="{TemplateBinding Foreground}">
+                <RepeatButton.Template>
+                  <ControlTemplate>
+                    <Border Height="4" CornerRadius="2" VerticalAlignment="Center"
+                            Background="{TemplateBinding Background}" />
+                  </ControlTemplate>
+                </RepeatButton.Template>
+              </RepeatButton>
+            </Track.DecreaseButton>
+            <Track.IncreaseButton>
+              <RepeatButton Name="PART_IncreaseButton" Focusable="False" Background="Transparent"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <RepeatButton.Template>
+                  <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}" />
+                  </ControlTemplate>
+                </RepeatButton.Template>
+              </RepeatButton>
+            </Track.IncreaseButton>
+            <Thumb Name="thumb" Width="18" Height="18"
+                   Background="{StaticResource TextBrush}"
+                   BorderBrush="{StaticResource InkBrush}" BorderThickness="2">
+              <Thumb.Template>
+                <ControlTemplate>
+                  <Panel>
+                    <Border CornerRadius="9"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" />
+                    <Border Name="Bubble" Height="24" Margin="-31,-34,-31,0" VerticalAlignment="Top"
+                            CornerRadius="3" Background="{StaticResource InkBrush}"
+                            BorderBrush="{StaticResource SignalBrush}" BorderThickness="1"
+                            IsVisible="{Binding IsScrubbing, RelativeSource={RelativeSource FindAncestor, AncestorType=controls:SeekBar}}">
+                      <TextBlock Theme="{StaticResource LabelSmall}" Foreground="{StaticResource TextBrush}"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 Text="{Binding BubbleText, RelativeSource={RelativeSource FindAncestor, AncestorType=controls:SeekBar}}" />
+                    </Border>
+                  </Panel>
+                </ControlTemplate>
+              </Thumb.Template>
+            </Thumb>
+          </Track>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <!-- A time that can be clicked, beside the seek bar: text, with a focus ring when keyed to. -->
+  <ControlTheme x:Key="TimeButton" TargetType="Button">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+    <Setter Property="Padding" Value="6,4" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <TextBlock Theme="{StaticResource Readout}" Foreground="{TemplateBinding Foreground}"
+                     HorizontalAlignment="Right"
+                     Text="{TemplateBinding Content}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    </Style>
+    <Style Selector="^:focus-visible">
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
   </ControlTheme>
 
   <ControlTheme x:Key="{x:Type controls:SettingRow}" TargetType="controls:SettingRow">

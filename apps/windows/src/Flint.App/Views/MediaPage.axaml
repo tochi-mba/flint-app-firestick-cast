@@ -3,39 +3,159 @@
              xmlns:vm="using:Flint.App.ViewModels"
              xmlns:controls="using:Flint.App.Controls"
              x:Class="Flint.App.Views.MediaPage"
-             x:DataType="vm:CastPageViewModel">
+             x:DataType="vm:MediaPageViewModel">
   <ScrollViewer>
     <StackPanel Margin="{StaticResource PageMargin}" Spacing="12" MaxWidth="820" HorizontalAlignment="Left">
-      <controls:PageHeading Eyebrow="Local playback" Title="Play on your TV" Trailing="{Binding SessionStatus}" TrailingTone="{Binding HeadingTone}" />
-      <controls:InfoCard BorderTone="{Binding HeadingTone}">
+      <controls:PageHeading Eyebrow="Local playback" Title="Play on your TV"
+                            Trailing="{Binding Cast.SessionStatus}" TrailingTone="{Binding Cast.HeadingTone}" />
+      <controls:InfoCard BorderTone="{Binding Cast.HeadingTone}">
         <StackPanel Spacing="12">
           <TextBlock Theme="{StaticResource BodyMedium}" Foreground="{StaticResource MutedBrush}"
                      Text="Choose a video, audio file or image to play on the TV at full quality. Starting it stops screen sharing or the browser on the TV." />
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Theme="{StaticResource SignalButton}" Content="CHOOSE MEDIA FILE"
-                    Command="{Binding ChooseMediaFileCommand}"
-                    IsEnabled="{Binding IsSessionConnected}"
-                    HorizontalAlignment="Left"
-                    AutomationProperties.Name="Choose media file" />
-            <Button Theme="{StaticResource OutlineAction}" Content="STOP PLAYBACK"
-                    Command="{Binding StopMediaCommand}"
-                    IsVisible="{Binding IsMediaPlaying}"
-                    HorizontalAlignment="Left"
-                    AutomationProperties.Name="Stop media playback" />
-          </StackPanel>
+          <Button Theme="{StaticResource SignalButton}" Content="CHOOSE MEDIA FILE"
+                  Command="{Binding Cast.ChooseMediaFileCommand}"
+                  IsEnabled="{Binding Cast.IsSessionConnected}"
+                  HorizontalAlignment="Left"
+                  AutomationProperties.Name="Choose media file" />
           <!-- One line of status: what is happening, or the one thing to do first. -->
           <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
-                     IsVisible="{Binding IsSessionConnected}"
-                     Text="{Binding MediaStatus}" />
+                     IsVisible="{Binding Cast.IsSessionConnected}"
+                     Text="{Binding Cast.MediaStatus}" />
           <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
-                     IsVisible="{Binding !IsSessionConnected}"
+                     IsVisible="{Binding !Cast.IsSessionConnected}"
                      Text="Connect to your TV on the Cast page first." />
         </StackPanel>
       </controls:InfoCard>
+
+      <!-- Now Playing: shown while something from this PC is on, or on its way to, the TV. -->
+      <controls:InfoCard x:Name="NowPlayingCard" DataContext="{Binding NowPlaying}" x:DataType="vm:NowPlayingViewModel"
+                         IsVisible="{Binding IsActive}">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="2">
+              <controls:SectionLabel Text="Now playing" />
+              <TextBlock x:Name="NowPlayingTitle" Theme="{StaticResource TitleMedium}"
+                         Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <controls:Pill Grid.Column="1" VerticalAlignment="Top"
+                           Text="{Binding PillText}" Tone="{Binding PillTone}" />
+          </Grid>
+
+          <TextBlock Theme="{StaticResource BodyMedium}" Foreground="{StaticResource LiveBrush}"
+                     IsVisible="{Binding IsConnectionLost}" TextWrapping="Wrap"
+                     Text="{Binding ConnectionLostText}" />
+
+          <StackPanel Spacing="14" IsEnabled="{Binding CanControl}">
+            <!-- Sending: how much has gone, and the way out. -->
+            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsSending}">
+              <ProgressBar Minimum="0" Maximum="100" Value="{Binding SendPercent}" Height="4"
+                           VerticalAlignment="Center" Margin="0,0,16,0"
+                           Foreground="{StaticResource SignalBrush}" Background="{StaticResource LineBrush}"
+                           AutomationProperties.Name="Sending progress" />
+              <Button Grid.Column="1" Theme="{StaticResource OutlineAction}" Content="CANCEL"
+                      Command="{Binding CancelCommand}"
+                      AutomationProperties.Name="Cancel sending" />
+            </Grid>
+
+            <!-- Where it is: a seek bar for a file of known length, elapsed time otherwise. -->
+            <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding ShowsSeekBar}">
+              <TextBlock Theme="{StaticResource Readout}" VerticalAlignment="Center" MinWidth="64"
+                         Text="{Binding ElapsedText}" />
+              <controls:SeekBar x:Name="Seek" Grid.Column="1" Margin="12,0"
+                                Minimum="0" Maximum="{Binding DurationSeconds}"
+                                Value="{Binding SeekSeconds, Mode=TwoWay}"
+                                BubbleText="{Binding ScrubText}"
+                                SpokenValue="{Binding SpokenPosition}"
+                                StepBack="{Binding SkipBackSeconds}"
+                                StepForward="{Binding SkipForwardSeconds}"
+                                AutomationProperties.Name="Position" />
+              <Button x:Name="RemainingTime" Grid.Column="2" Theme="{StaticResource TimeButton}"
+                      Content="{Binding RemainingText}" MinWidth="76"
+                      Command="{Binding ToggleTimeDisplayCommand}"
+                      ToolTip.Tip="Switch between time left and total length"
+                      AutomationProperties.Name="Switch between time left and total length" />
+            </Grid>
+            <TextBlock Theme="{StaticResource Readout}" IsVisible="{Binding ShowsElapsedOnly}"
+                       Text="{Binding ElapsedText}" />
+
+            <!-- Transport, left to right as on a remote. Play or pause is the one signal button. -->
+            <WrapPanel x:Name="Transport" Orientation="Horizontal" IsVisible="{Binding ShowsTransport}"
+                       ItemSpacing="8" LineSpacing="8">
+              <!-- Previous and next need a queue; until there is one they show, switched off. -->
+              <Button Theme="{StaticResource OutlineAction}" Content="PREV" IsEnabled="False"
+                      ToolTip.Tip="Play a queue to use previous and next." ToolTip.ShowOnDisabled="True"
+                      AutomationProperties.Name="Previous item" />
+              <Button Theme="{StaticResource OutlineAction}" Content="{Binding SkipBackLabel}"
+                      Command="{Binding SkipBackCommand}"
+                      ToolTip.Tip="{Binding SkipTip}" ToolTip.ShowOnDisabled="True"
+                      AutomationProperties.Name="{Binding SkipBackName}" />
+              <Button x:Name="PlayPause" Theme="{StaticResource SignalButton}" Content="{Binding PlayPauseLabel}"
+                      MinWidth="120"
+                      Command="{Binding PlayPauseCommand}"
+                      AutomationProperties.Name="{Binding PlayPauseName}" />
+              <Button Theme="{StaticResource OutlineAction}" Content="{Binding SkipForwardLabel}"
+                      Command="{Binding SkipForwardCommand}"
+                      ToolTip.Tip="{Binding SkipTip}" ToolTip.ShowOnDisabled="True"
+                      AutomationProperties.Name="{Binding SkipForwardName}" />
+              <Button Theme="{StaticResource OutlineAction}" Content="NEXT" IsEnabled="False"
+                      ToolTip.Tip="Play a queue to use previous and next." ToolTip.ShowOnDisabled="True"
+                      AutomationProperties.Name="Next item" />
+              <Button Theme="{StaticResource OutlineAction}" Content="STOP"
+                      Command="{Binding StopCommand}"
+                      AutomationProperties.Name="Stop playback" />
+            </WrapPanel>
+
+            <!-- A picture: nothing to play or seek, only to take off the TV. -->
+            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding ShowsPictureNote}">
+              <TextBlock Theme="{StaticResource BodyMedium}" VerticalAlignment="Center"
+                         Text="Showing a picture." />
+              <Button Grid.Column="1" Theme="{StaticResource OutlineAction}" Content="STOP"
+                      Command="{Binding StopCommand}"
+                      AutomationProperties.Name="Stop showing the picture" />
+            </Grid>
+
+            <!-- A problem: the TV's own reason, and another go. -->
+            <StackPanel Spacing="12" IsVisible="{Binding ShowsProblem}">
+              <TextBlock Theme="{StaticResource BodyMedium}" TextWrapping="Wrap" Text="{Binding ProblemText}" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Theme="{StaticResource SignalButton}" Content="TRY AGAIN"
+                        Command="{Binding TryAgainCommand}"
+                        AutomationProperties.Name="Try sending the file again" />
+                <Button Theme="{StaticResource OutlineAction}" Content="STOP"
+                        Command="{Binding StopCommand}"
+                        AutomationProperties.Name="Clear the TV" />
+              </StackPanel>
+            </StackPanel>
+
+            <!-- The TV's volume. It does not report its own, so nothing shows until it is set here. -->
+            <StackPanel Spacing="6" IsVisible="{Binding ShowsTransport}">
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Theme="{StaticResource OutlineAction}" Content="{Binding MuteLabel}" MinWidth="104"
+                        Command="{Binding MuteCommand}"
+                        ToolTip.Tip="Set a volume first, so there is a level to come back to." ToolTip.ShowOnDisabled="True"
+                        AutomationProperties.Name="{Binding MuteName}" />
+                <Slider x:Name="Volume" Grid.Column="1" Margin="12,0"
+                        Theme="{StaticResource FlintSlider}"
+                        Classes.unset="{Binding !HasVolume}"
+                        Minimum="0" Maximum="100" SmallChange="1" LargeChange="10"
+                        Value="{Binding VolumePercent, Mode=TwoWay}"
+                        AutomationProperties.Name="TV volume" />
+                <TextBlock Grid.Column="2" Theme="{StaticResource BodySmall}" VerticalAlignment="Center"
+                           MinWidth="190" Text="{Binding VolumeText}" />
+              </Grid>
+              <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                         Text="Some TVs control their own volume and ignore this." />
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </controls:InfoCard>
+
       <Expander Header="Supported media" HorizontalAlignment="Stretch">
         <TextBlock Theme="{StaticResource BodyMedium}" Margin="0,12,0,0"
                    Text="Local video, audio, images, subtitles, and direct network streams." />
       </Expander>
+      <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                 Text="On this page: Space plays or pauses, Left and Right skip, Up and Down change the volume, M mutes, S stops." />
     </StackPanel>
   </ScrollViewer>
 </UserControl>

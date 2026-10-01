@@ -74,6 +74,7 @@ public sealed partial class CastPageViewModel
         // behind would only say that something failed, not that the TV went away. The Cast
         // page's line is written last, so whoever sees it can rely on everything else being set.
         var told = DescribeEnd(closed.Reason);
+        NowPlaying.ConnectionLost(told);
         Failure = null;
         MirrorStatus = told;
         if (wasPlaying)
@@ -111,6 +112,7 @@ public sealed partial class CastPageViewModel
             IsMediaPlaying = false;
             await ending.DisconnectAsync().ConfigureAwait(true);
             PairingStatus = DescribeEnd(CastSessionEnd.ClosedByThisPc);
+            NowPlaying.ConnectionLost(PairingStatus);
             Failure = null;
         }
         finally

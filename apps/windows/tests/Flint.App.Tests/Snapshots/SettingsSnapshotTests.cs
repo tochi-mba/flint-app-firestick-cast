@@ -92,6 +92,15 @@ public sealed class SettingsSnapshotTests
     }
 
     [AvaloniaFact]
+    public void Settings_Media()
+    {
+        var model = Page();
+        model.SelectedSection = model.Section<MediaSettingsViewModel>();
+
+        Snapshot.Matches("settings-section-media", new SettingsPage { DataContext = model });
+    }
+
+    [AvaloniaFact]
     public void Settings_About()
     {
         var model = Page();
@@ -115,6 +124,7 @@ public sealed class SettingsSnapshotTests
         return new SettingsPageViewModel(
         [
             new GeneralSettingsViewModel(settings),
+            new MediaSettingsViewModel(settings),
             new TvSettingsViewModel(shell.Cast),
             new PrivacySettingsViewModel(
                 settings,

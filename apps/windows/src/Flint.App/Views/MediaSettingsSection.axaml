@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Flint.App.Controls"
+             xmlns:settings="using:Flint.App.ViewModels.Settings"
+             xmlns:views="using:Flint.App.Views"
+             x:Class="Flint.App.Views.MediaSettingsSection"
+             x:DataType="settings:MediaSettingsViewModel">
+  <StackPanel Spacing="0">
+    <TextBlock Theme="{StaticResource HeadlineLarge}" Text="Media" Margin="0,0,0,10" />
+    <controls:SettingRow Title="{Binding SkipBackText.Title}"
+                         Description="{Binding SkipBackText.Description}">
+      <ComboBox x:Name="SkipBack"
+                Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding SkipBackChoices}"
+                SelectedItem="{Binding SkipBack, Mode=TwoWay}"
+                AutomationProperties.Name="Skip back by" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding SkipForwardText.Title}"
+                         Description="{Binding SkipForwardText.Description}">
+      <ComboBox x:Name="SkipForward"
+                Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding SkipForwardChoices}"
+                SelectedItem="{Binding SkipForward, Mode=TwoWay}"
+                AutomationProperties.Name="Skip forward by" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding VolumeStepText.Title}"
+                         Description="{Binding VolumeStepText.Description}">
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Slider x:Name="VolumeStep"
+                Theme="{StaticResource FlintSlider}"
+                Minimum="1" Maximum="10" SmallChange="1" LargeChange="1"
+                TickFrequency="1" IsSnapToTickEnabled="True"
+                Value="{Binding VolumeStep, Mode=TwoWay}"
+                AutomationProperties.Name="Volume step" />
+        <TextBlock Theme="{StaticResource BodyMedium}" VerticalAlignment="Center" MinWidth="36"
+                   Text="{Binding VolumeStepLabel}" />
+      </StackPanel>
+    </controls:SettingRow>
+    <views:ConfirmableActionView DataContext="{Binding Reset}" Margin="0,18,0,0" />
+  </StackPanel>
+</UserControl>
