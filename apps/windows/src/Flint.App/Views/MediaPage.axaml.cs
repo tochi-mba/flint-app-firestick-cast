@@ -94,6 +94,9 @@ public partial class MediaPage : UserControl
             Title = "Choose media to play",
             AllowMultiple = false,
         });
-        return files.FirstOrDefault()?.TryGetLocalPath();
+        return PathOf(files);
     }
+
+    /// <summary>The local path of the first file chosen, or null when nothing was chosen.</summary>
+    internal static string? PathOf(IReadOnlyList<IStorageFile> chosen) => chosen.FirstOrDefault()?.TryGetLocalPath();
 }
