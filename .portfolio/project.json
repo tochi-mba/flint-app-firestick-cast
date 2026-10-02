@@ -1,0 +1,20 @@
+{
+  "$schema": "https://tochi-mba.github.io/schema/project.schema.json",
+  "slug": "flint",
+  "name": "Flint",
+  "tagline": "Cast a PC screen to a Fire TV at the lowest latency the hardware allows.",
+  "description": "A Windows host and a Compose-for-TV receiver. Desktop Duplication capture, colour conversion and downscale on the GPU's video processor, hardware H.264 encode, and a receiver that decodes and renders it, proven end to end on a Fire TV Stick. The REX wire protocol is implemented in Rust, C# and Kotlin and held byte-identical by a committed cross-language vector corpus. A capability prober reports, per device pair, which modes are actually possible, and the UI never presents an unavailable mode as a working control.",
+  "highlights": [
+    "GPU capture, convert, downscale and hardware encode on Windows",
+    "Fire TV receiver in Compose for TV: remote-operable, overscan-safe",
+    "One wire protocol in Rust, C# and Kotlin, checked by golden vectors",
+    "Authenticated, read-only ADB identification honouring the TV's consent prompt",
+    "Rolling releases; self-updating per-user installer with no .NET to install"
+  ],
+  "stack": ["C#", "Rust", "Kotlin", "DXGI", "Media Foundation", "Compose for TV"],
+  "category": "product",
+  "status": "active",
+  "featured": true,
+  "order": 40,
+  "display": true
+}
