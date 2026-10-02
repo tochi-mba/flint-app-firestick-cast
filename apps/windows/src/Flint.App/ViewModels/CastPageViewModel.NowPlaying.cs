@@ -17,8 +17,21 @@ public sealed partial class CastPageViewModel : IMediaRemote
     private CancellationTokenSource? sendCancellation;
     private string? lastMediaPath;
 
+    /// <summary>
+    /// Whether this file's end has been told already. The TV repeats Ended every half second until
+    /// something else happens, and a replay flips the card to playing before the TV has caught up,
+    /// so the end is told once and told again only after the TV says it is playing.
+    /// </summary>
+    private bool endTold;
+
     /// <summary>The Now Playing card on the Media page.</summary>
     public NowPlayingViewModel NowPlaying { get; }
+
+    /// <summary>Raised when the TV says the file from this PC played to its end.</summary>
+    public event EventHandler? MediaFinished;
+
+    /// <summary>What the TV shows instead of a file from this PC, in words, or null when it shows nothing else.</summary>
+    internal string? TvShowingNotice => coordinator?.NoticeFor(TvSurfaceKind.Media);
 
     /// <inheritdoc />
     Task IMediaRemote.SendTransportAsync(TransportAction action, long positionMs) =>
@@ -91,6 +104,15 @@ public sealed partial class CastPageViewModel : IMediaRemote
         }
 
         NowPlaying.Apply(ToSnapshot(report));
+        if (report.State is PlaybackState.Playing or PlaybackState.Buffering)
+        {
+            endTold = false;
+        }
+        else if (report.State is PlaybackState.Ended && NowPlaying.IsActive && !NowPlaying.IsSending && !endTold)
+        {
+            endTold = true;
+            MediaFinished?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     /// <summary>A report as the card reads it, stamped with when it arrived.</summary>

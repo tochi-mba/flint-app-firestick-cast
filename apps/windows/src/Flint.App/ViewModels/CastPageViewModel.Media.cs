@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Flint.App.Services;
 using Flint.Core;
+using Flint.Core.Media;
 using Flint.Protocol;
 using Flint.Session;
 
@@ -69,19 +70,42 @@ public sealed partial class CastPageViewModel
 
     /// <summary>Hosts and sends the selected local file to the authenticated receiver.</summary>
     [RelayCommand]
-    private async Task LoadMediaFileAsync(string path)
+    private Task LoadMediaFileAsync(string path) => PlayFileAsync(path, startPositionMs: 0, MediaTakeover.Ask);
+
+    /// <summary>
+    /// Sends a file to the TV and starts it at <paramref name="startPositionMs"/>.
+    /// </summary>
+    /// <param name="path">The file.</param>
+    /// <param name="startPositionMs">Where to start, for a file being resumed.</param>
+    /// <param name="takeover">
+    /// Whether the person asked for this, so the TV may be taken after asking, or the queue moved
+    /// on by itself, so it may only use a TV that shows nothing or a file already.
+    /// </param>
+    /// <returns>
+    /// What became of it: playing, refused by the TV, waiting for a TV showing something else, or
+    /// not sent at all.
+    /// </returns>
+    internal async Task<MediaStart> PlayFileAsync(string path, long startPositionMs, MediaTakeover takeover)
     {
         if (!IsSessionConnected)
         {
             Failure = "The receiver session ended. Connect it again before choosing media.";
             RaiseDerived();
-            return;
+            return MediaStart.NotSent;
+        }
+
+        if (takeover is MediaTakeover.OnlyIfFree
+            && coordinator?.Current is { } showing and not TvSurfaceKind.None and not TvSurfaceKind.Media)
+        {
+            FlintDiag.Info("FlintCast", $"queue waits current={showing}");
+            return MediaStart.Waiting;
         }
 
         // A connected page always has its session.
         var sending = session!;
 
         lastMediaPath = path;
+        var start = MediaStart.NotSent;
         var fileName = System.IO.Path.GetFileName(path);
         var progress = new EndableProgress<double>(fraction =>
         {
@@ -94,16 +118,19 @@ public sealed partial class CastPageViewModel
         {
             // Asked, not assumed: the TV may be mirroring or showing the browser, and a person who
             // keeps it that way has chosen not to play this now.
-            if (coordinator is not null && !await coordinator.TakeAsync(TvSurfaceKind.Media).ConfigureAwait(true))
+            if (takeover is MediaTakeover.Ask
+                && coordinator is not null
+                && !await coordinator.TakeAsync(TvSurfaceKind.Media).ConfigureAwait(true))
             {
-                return;
+                return MediaStart.Kept;
             }
 
-            var mimeType = GetMimeType(path);
+            var type = MediaFileTypes.For(path);
+            var mimeType = type.MimeType;
             MediaStatus = $"Sending {fileName} to the TV.";
             OnPropertyChanged(nameof(MediaStatus));
             sendCancellation = cancel;
-            NowPlaying.BeginSending(fileName, mimeType.StartsWith("image/", StringComparison.Ordinal));
+            NowPlaying.BeginSending(fileName, type.IsPicture);
             FlintDiag.Info("FlintCast", $"media push begin mime={mimeType} nameLen={fileName.Length}");
             using var timeout = new CancellationTokenSource(MediaStartTimeout, time);
             using var playbackTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token, timeout.Token);
@@ -111,6 +138,7 @@ public sealed partial class CastPageViewModel
                 path,
                 fileName,
                 mimeType,
+                startPositionMs: startPositionMs,
                 progress: progress,
                 cancellationToken: playbackTimeout.Token).ConfigureAwait(true);
             progress.End();
@@ -121,6 +149,7 @@ public sealed partial class CastPageViewModel
                 MediaStatus = $"Playing {fileName} on the TV.";
                 Failure = null;
                 NowPlaying.SendFinished(ToSnapshot(playback));
+                start = MediaStart.Playing;
                 FlintDiag.Info("FlintCast", "media playback started");
             }
             else
@@ -129,6 +158,7 @@ public sealed partial class CastPageViewModel
                 MediaStatus = "The TV did not start playback.";
                 Failure = DescribePlaybackFailure(playback.Detail);
                 NowPlaying.ShowProblem(Failure);
+                start = MediaStart.Refused;
                 FlintDiag.Warn("FlintCast", $"media playback not started state={playback.State}");
             }
         }
@@ -139,6 +169,7 @@ public sealed partial class CastPageViewModel
             MediaStatus = "Sending cancelled.";
             Failure = null;
             NowPlaying.Clear();
+            start = MediaStart.Cancelled;
             FlintDiag.Info("FlintCast", "media push cancelled");
             await DropPartialFileAsync(sending).ConfigureAwait(true);
         }
@@ -149,6 +180,7 @@ public sealed partial class CastPageViewModel
             MediaStatus = "The TV did not confirm playback.";
             Failure = FirewallGuidance;
             NowPlaying.ShowProblem(FirewallGuidance);
+            start = MediaStart.Refused;
             FlintDiag.Warn("FlintCast", "media push timed out waiting for playback");
         }
         catch (Exception exception)
@@ -158,6 +190,7 @@ public sealed partial class CastPageViewModel
             MediaStatus = "Media was not sent.";
             Failure = exception.Message;
             NowPlaying.ShowProblem(exception.Message);
+            start = MediaStart.Refused;
             FlintDiag.Error("FlintCast", $"media push failed: {exception.GetType().Name}");
         }
         finally
@@ -169,6 +202,7 @@ public sealed partial class CastPageViewModel
         }
 
         RaiseDerived();
+        return start;
     }
 
     /// <summary>Tells the TV to drop the part of a file it was sent before the send was cancelled.</summary>
@@ -212,16 +246,4 @@ public sealed partial class CastPageViewModel
             OnPropertyChanged(nameof(MediaStatus));
         }
     }
-
-    private static string GetMimeType(string path) => Path.GetExtension(path).ToLowerInvariant() switch
-    {
-        ".mp4" => "video/mp4",
-        ".mkv" => "video/x-matroska",
-        ".webm" => "video/webm",
-        ".mp3" => "audio/mpeg",
-        ".m4a" => "audio/mp4",
-        ".jpg" or ".jpeg" => "image/jpeg",
-        ".png" => "image/png",
-        _ => "application/octet-stream",
-    };
 }

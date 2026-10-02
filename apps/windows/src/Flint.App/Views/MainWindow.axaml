@@ -176,6 +176,21 @@
       it is open. Focus moves to the switch button, so Enter or Space answers it once it is showing,
       though never an Enter still held from opening it; Escape keeps what the TV shows.
     -->
+    <!-- Files dragged over the window: one line saying what dropping them does. -->
+    <Border x:Name="DropOverlay"
+            IsVisible="{Binding IsDropTarget}"
+            IsHitTestVisible="False"
+            Background="#CC000000">
+      <Border BorderBrush="{StaticResource SignalBrush}" BorderThickness="2"
+              CornerRadius="{StaticResource RadiusSmall}" Margin="24">
+        <TextBlock Theme="{StaticResource HeadlineLarge}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                   TextWrapping="Wrap" Margin="24"
+                   Text="{Binding DropText}"
+                   AutomationProperties.Name="Drop files here" />
+      </Border>
+    </Border>
+
     <Border x:Name="SwitchOverlay"
             IsVisible="{Binding SwitchPrompt.IsOpen}"
             Background="#CC000000"

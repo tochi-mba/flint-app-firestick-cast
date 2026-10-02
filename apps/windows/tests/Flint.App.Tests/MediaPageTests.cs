@@ -389,7 +389,39 @@ public sealed class MediaPageTests
     }
 
     [AvaloniaFact]
-    public async Task AChosenFile_IsSent_AndNoChoiceSendsNothing()
+    public async Task ChosenFiles_PlayTheFirst_AndQueueTheRest_AndNoChoiceSendsNothing()
+    {
+        await using var receiver = new LoopbackReceiver();
+        var media = SnapshotFixtures.Media(await PairedAsync(receiver, time: clock));
+        // Named so they sort: chosen files are queued by name, as a folder window lists them.
+        var first = Path.Combine(Path.GetTempPath(), $"flint-pick-a-{Guid.NewGuid():N}.mp4");
+        var second = Path.Combine(Path.GetTempPath(), $"flint-pick-b-{Guid.NewGuid():N}.mp3");
+        await File.WriteAllBytesAsync(first, new byte[1024], TestContext.Current.CancellationToken);
+        await File.WriteAllBytesAsync(second, new byte[16], TestContext.Current.CancellationToken);
+        try
+        {
+            using var shown = Show(media);
+            shown.Page.PickFiles = _ => Task.FromResult<IReadOnlyList<string>>([]);
+            media.Cast.ChooseMediaFileCommand.Execute(null);
+            shown.Settle();
+            receiver.Received.OfType<MediaDataMessage>().ShouldBeEmpty();
+            media.Queue.HasItems.ShouldBeFalse();
+
+            shown.Page.PickFiles = _ => Task.FromResult<IReadOnlyList<string>>([second, first]);
+            media.Cast.ChooseMediaFileCommand.Execute(null);
+            await receiver.WaitForAsync<MediaCommandMessage>();
+            media.Queue.Rows.Select(row => row.Item.Path).ShouldBe([first, second]);
+            receiver.Received.OfType<MediaCommandMessage>().Single().Title.ShouldBe(Path.GetFileName(first));
+        }
+        finally
+        {
+            File.Delete(first);
+            File.Delete(second);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task ChoosingFiles_WhileSomethingPlays_QueuesThemWithoutInterrupting()
     {
         await using var receiver = new LoopbackReceiver();
         var media = await PlayingAsync(receiver);
@@ -398,14 +430,12 @@ public sealed class MediaPageTests
         try
         {
             using var shown = Show(media);
-            shown.Page.PickFile = _ => Task.FromResult<string?>(null);
+            shown.Page.PickFiles = _ => Task.FromResult<IReadOnlyList<string>>([file]);
             media.Cast.ChooseMediaFileCommand.Execute(null);
-            shown.Settle();
-            receiver.Received.OfType<MediaDataMessage>().ShouldBeEmpty();
+            await Until(() => media.Queue.HasItems);
 
-            shown.Page.PickFile = _ => Task.FromResult<string?>(file);
-            media.Cast.ChooseMediaFileCommand.Execute(null);
-            await receiver.WaitForAsync<MediaDataMessage>();
+            receiver.Received.OfType<MediaDataMessage>().ShouldBeEmpty("the playing file carries on");
+            media.Queue.Status.ShouldBe($"Added {Path.GetFileName(file)} to the queue.");
         }
         finally
         {
@@ -414,7 +444,7 @@ public sealed class MediaPageTests
     }
 
     [AvaloniaFact]
-    public async Task ThePickersAnswer_IsTheFirstChosenFilesPath_OrNothing()
+    public async Task ThePickersAnswer_IsEveryChosenFilesPath_InOrder_OrNothing()
     {
         var chosen = Path.Combine(Path.GetTempPath(), $"flint-{Guid.NewGuid():N}.mp4");
         var other = Path.Combine(Path.GetTempPath(), $"flint-{Guid.NewGuid():N}.mp4");
@@ -429,8 +459,8 @@ public sealed class MediaPageTests
             var second = await window.StorageProvider.TryGetFileFromPathAsync(new Uri(other));
             first.ShouldNotBeNull("the headless platform should resolve a local file");
 
-            MediaPage.PathOf([first, second!]).ShouldBe(chosen);
-            MediaPage.PathOf([]).ShouldBeNull();
+            MediaPage.PathsOf([first, second!]).ShouldBe([chosen, other]);
+            MediaPage.PathsOf([]).ShouldBeEmpty();
         }
         finally
         {
@@ -441,6 +471,53 @@ public sealed class MediaPageTests
     }
 
     [AvaloniaFact]
+    public async Task AKeyOnAnUpNextRow_ReachesTheQueue()
+    {
+        var media = SnapshotFixtures.Media(SnapshotFixtures.ViewModel());
+        var first = Path.Combine(Path.GetTempPath(), $"flint-row-a-{Guid.NewGuid():N}.mp4");
+        var second = Path.Combine(Path.GetTempPath(), $"flint-row-b-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllBytesAsync(first, [1], TestContext.Current.CancellationToken);
+        await File.WriteAllBytesAsync(second, [1], TestContext.Current.CancellationToken);
+        try
+        {
+            await media.Queue.AddDroppedAsync([first, second]);
+            using var shown = Show(media);
+            var row = shown.Window.GetVisualDescendants().OfType<Border>()
+                .First(border => border.Classes.Contains("queueRow"));
+            row.Focus();
+            shown.Settle();
+
+            shown.Press(PhysicalKey.Delete);
+
+            media.Queue.Rows.Select(each => each.Item.Path).ShouldBe([second]);
+            shown.Press(PhysicalKey.A);
+            media.Queue.Rows.Count.ShouldBe(1, "a key the list does not use changes nothing");
+        }
+        finally
+        {
+            File.Delete(first);
+            File.Delete(second);
+        }
+    }
+
+    [AvaloniaFact]
+    public void ARowKey_WithNoPageModel_OrFromSomethingThatIsNotARow_IsLeftAlone()
+    {
+        var page = new MediaPage();
+        var row = new Border { DataContext = new QueueRowViewModel(new Flint.Core.Media.Playlist().Add(["a.mp4"])[0]) };
+        var handler = page.GetType()
+            .GetMethod("OnQueueRowKeyDown", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        Should.NotThrow(() => handler.Invoke(page, [row, new KeyEventArgs { Key = Key.Delete }]));
+
+        page.DataContext = SnapshotFixtures.Media(SnapshotFixtures.ViewModel());
+        var notARow = new KeyEventArgs { Key = Key.Delete };
+        handler.Invoke(page, [new Border { DataContext = "something else" }, notARow]);
+        handler.Invoke(page, [null, notARow]);
+        notARow.Handled.ShouldBeFalse();
+    }
+
+    [AvaloniaFact]
     public async Task TheSystemPicker_WithNothingChosen_GivesNoPath()
     {
         var window = new Window { Content = new MediaPage() };
@@ -448,7 +525,7 @@ public sealed class MediaPageTests
         try
         {
             var page = (MediaPage)window.Content!;
-            (await page.PickFile(window)).ShouldBeNull();
+            (await page.PickFiles(window)).ShouldBeEmpty();
         }
         finally
         {

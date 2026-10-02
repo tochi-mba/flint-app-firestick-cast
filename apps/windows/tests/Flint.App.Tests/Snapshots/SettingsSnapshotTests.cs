@@ -130,7 +130,8 @@ public sealed class SettingsSnapshotTests
                 settings,
                 new NoFolders(),
                 @"C:\Users\you\AppData\Local\REX Technologies\Flint",
-                @"C:\Users\you\AppData\Local\Flint\logs"),
+                @"C:\Users\you\AppData\Local\Flint\logs",
+                new Flint.Core.Media.InMemoryMediaHistoryStore()),
             new UpdatesSectionViewModel(shell.Updates),
             new AboutSettingsViewModel(shell.Cast, "v1.0.0", "0.1.0", "Windows 11"),
         ]);

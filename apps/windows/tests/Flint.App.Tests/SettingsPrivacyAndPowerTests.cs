@@ -128,7 +128,8 @@ public sealed class SettingsPrivacyAndPowerTests
     {
         var privacy = Privacy(Service());
 
-        privacy.Settings.Count.ShouldBe(5);
+        privacy.Settings.Count.ShouldBe(6);
+        privacy.HasHistory.ShouldBeFalse("no history was given to clear");
         privacy.KeptItems.ShouldContain("Your settings.");
         Should.Throw<ArgumentNullException>(() => new PrivacySettingsViewModel(null!, new RecordingFolderOpener(), "d", "l"));
         Should.Throw<ArgumentNullException>(() => new PrivacySettingsViewModel(Service(), null!, "d", "l"));

@@ -36,6 +36,67 @@
                    Text="{Binding VolumeStepLabel}" />
       </StackPanel>
     </controls:SettingRow>
+    <TextBlock Theme="{StaticResource TitleLarge}" Text="The queue" Margin="0,24,0,4" />
+    <controls:SettingRow Title="{Binding AutoPlayNextText.Title}"
+                         Description="{Binding AutoPlayNextText.Description}">
+      <ToggleSwitch x:Name="AutoPlayNext" Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding AutoPlayNext, Mode=TwoWay}"
+                    AutomationProperties.Name="Play the next item automatically" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding RepeatText.Title}"
+                         Description="{Binding RepeatText.Description}">
+      <ComboBox x:Name="Repeat" Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding RepeatChoices}"
+                SelectedItem="{Binding Repeat, Mode=TwoWay}"
+                AutomationProperties.Name="Repeat" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding ShuffleText.Title}"
+                         Description="{Binding ShuffleText.Description}">
+      <ToggleSwitch x:Name="Shuffle" Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding Shuffle, Mode=TwoWay}"
+                    AutomationProperties.Name="Shuffle" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding PictureText.Title}"
+                         Description="{Binding PictureText.Description}">
+      <ComboBox x:Name="PictureSeconds" Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding PictureChoices}"
+                SelectedItem="{Binding PictureSeconds, Mode=TwoWay}"
+                AutomationProperties.Name="Show each picture for" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding QueueEndText.Title}"
+                         Description="{Binding QueueEndText.Description}">
+      <ComboBox x:Name="QueueEnd" Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding QueueEndChoices}"
+                SelectedItem="{Binding AtQueueEnd, Mode=TwoWay}"
+                AutomationProperties.Name="When the queue ends" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding SubfoldersText.Title}"
+                         Description="{Binding SubfoldersText.Description}">
+      <ToggleSwitch x:Name="IncludeSubfolders" Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding IncludeSubfolders, Mode=TwoWay}"
+                    AutomationProperties.Name="Include subfolders when a folder is dropped" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding DropOrderText.Title}"
+                         Description="{Binding DropOrderText.Description}">
+      <ComboBox x:Name="DropOrder" Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding DropOrderChoices}"
+                SelectedItem="{Binding DroppedOrder, Mode=TwoWay}"
+                AutomationProperties.Name="Order of dropped files" />
+    </controls:SettingRow>
+    <TextBlock Theme="{StaticResource TitleLarge}" Text="Carrying on" Margin="0,24,0,4" />
+    <controls:SettingRow Title="{Binding PlayedBeforeText.Title}"
+                         Description="{Binding PlayedBeforeText.Description}">
+      <ComboBox x:Name="PlayedBefore" Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding PlayedBeforeChoices}"
+                SelectedItem="{Binding PlayedBefore, Mode=TwoWay}"
+                AutomationProperties.Name="When a file was played before" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding RememberText.Title}"
+                         Description="{Binding RememberText.Description}">
+      <ToggleSwitch x:Name="RememberPlayback" Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding RememberPlayback, Mode=TwoWay}"
+                    AutomationProperties.Name="Remember where files stopped" />
+    </controls:SettingRow>
     <views:ConfirmableActionView DataContext="{Binding Reset}" Margin="0,18,0,0" />
   </StackPanel>
 </UserControl>

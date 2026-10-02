@@ -491,4 +491,17 @@
       </ControlTemplate>
     </Setter>
   </ControlTheme>
+
+  <!--
+    A small action beside a list row: the outline look at row height, so five of them fit beside a
+    file name without the row growing taller than the name needs.
+  -->
+  <ControlTheme x:Key="CompactAction" TargetType="Button" BasedOn="{StaticResource OutlineAction}">
+    <Setter Property="Height" Value="30" />
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Style Selector="^:focus-visible">
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
+  </ControlTheme>
 </ResourceDictionary>

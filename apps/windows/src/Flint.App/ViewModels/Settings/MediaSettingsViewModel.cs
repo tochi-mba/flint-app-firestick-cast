@@ -2,8 +2,8 @@ using Flint.Core.Settings;
 
 namespace Flint.App.ViewModels.Settings;
 
-/// <summary>The Media section: how far the skip buttons go, and how much one volume press changes.</summary>
-public sealed class MediaSettingsViewModel : SettingsSectionViewModel
+/// <summary>The Media section: the playback controls, and how the queue plays.</summary>
+public sealed partial class MediaSettingsViewModel : SettingsSectionViewModel
 {
     private readonly ISettingsService settings;
 
@@ -42,7 +42,11 @@ public sealed class MediaSettingsViewModel : SettingsSectionViewModel
         "How much one press of the Up or Down key changes the TV's volume.");
 
     /// <inheritdoc />
-    public override IReadOnlyList<SettingText> Settings => [SkipBackText, SkipForwardText, VolumeStepText];
+    public override IReadOnlyList<SettingText> Settings =>
+    [
+        SkipBackText, SkipForwardText, VolumeStepText, AutoPlayNextText, RepeatText, ShuffleText,
+        PlayedBeforeText, RememberText, SubfoldersText, DropOrderText, PictureText, QueueEndText,
+    ];
 
     /// <summary>The skip-back distances offered.</summary>
     public IReadOnlyList<SecondsChoice> SkipBackChoices { get; } =

@@ -2,6 +2,7 @@ using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Flint.App.Services;
+using Flint.Core.Media;
 using Flint.Core.Settings;
 
 namespace Flint.App.ViewModels.Settings;
@@ -19,15 +20,32 @@ public sealed partial class PrivacySettingsViewModel : SettingsSectionViewModel
     private readonly IFolderOpener folders;
     private readonly string dataFolder;
     private readonly string logsFolder;
+    private readonly IMediaHistoryStore? mediaHistory;
 
     /// <summary>Creates the section.</summary>
     /// <param name="settings">The live settings, for export, import and reset.</param>
     /// <param name="folders">Shows a folder in File Explorer.</param>
     /// <param name="dataFolder">Where Flint keeps what it remembers.</param>
     /// <param name="logsFolder">Where Flint writes its log.</param>
-    public PrivacySettingsViewModel(ISettingsService settings, IFolderOpener folders, string dataFolder, string logsFolder)
+    /// <param name="mediaHistory">Where played files stopped, to clear on request.</param>
+    public PrivacySettingsViewModel(
+        ISettingsService settings,
+        IFolderOpener folders,
+        string dataFolder,
+        string logsFolder,
+        IMediaHistoryStore? mediaHistory = null)
         : base("Privacy and data")
     {
+        this.mediaHistory = mediaHistory;
+        ClearHistory = new ConfirmableAction(
+            "CLEAR PLAYBACK HISTORY",
+            "Forget where every file stopped? Files will start from the beginning next time.",
+            "CLEAR",
+            () =>
+            {
+                mediaHistory?.Clear();
+                Status = "Playback history cleared.";
+            });
         this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
         this.folders = folders ?? throw new ArgumentNullException(nameof(folders));
         ArgumentException.ThrowIfNullOrWhiteSpace(dataFolder);
@@ -65,13 +83,24 @@ public sealed partial class PrivacySettingsViewModel : SettingsSectionViewModel
         "Export or import settings",
         "Save your settings to a file, or load them on this or another PC.");
 
+    /// <summary>Clearing the playback history.</summary>
+    public SettingText HistoryText { get; } = new(
+        "Clear playback history",
+        "Forgets where each file stopped, so nothing offers to resume. Kept only on this PC, without file names.");
+
+    /// <summary>Forgets where every file stopped.</summary>
+    public ConfirmableAction ClearHistory { get; }
+
+    /// <summary>Whether there is a playback history to clear.</summary>
+    public bool HasHistory => mediaHistory is not null;
+
     /// <summary>Resetting everything.</summary>
     public SettingText ResetText { get; } = new(
         "Reset all settings",
         "Puts every setting back to how Flint came.");
 
     /// <inheritdoc />
-    public override IReadOnlyList<SettingText> Settings => [KeptText, DataFolderText, LogsFolderText, TransferText, ResetText];
+    public override IReadOnlyList<SettingText> Settings => [KeptText, DataFolderText, LogsFolderText, HistoryText, TransferText, ResetText];
 
     /// <summary>What is kept, one line each, in plain words.</summary>
     public IReadOnlyList<string> KeptItems { get; } =
@@ -81,6 +110,7 @@ public sealed partial class PrivacySettingsViewModel : SettingsSectionViewModel
         "TVs you verified for the browser, and your browser profiles, protected so only your Windows account can read them.",
         "The key that lets Flint talk to your TV over ADB.",
         "Whether you have seen the introduction and the Web help.",
+        "Where files you played stopped, so they can carry on. Named by a code, not the file name.",
     ];
 
     /// <summary>The data folder, for display.</summary>

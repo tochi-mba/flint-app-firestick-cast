@@ -1,6 +1,7 @@
 using System.Net;
 using Flint.App.ViewModels;
 using Flint.Core;
+using Flint.Core.Media;
 using Flint.Core.Settings;
 
 namespace Flint.App.Tests.Snapshots;
@@ -80,8 +81,15 @@ public static class SnapshotFixtures
             new FixedNetworkProbe(path));
 
     /// <summary>The Media page over a Cast page, with settings as Flint ships them.</summary>
-    public static MediaPageViewModel Media(CastPageViewModel cast) =>
-        new(cast, new SettingsService(new InMemoryAppSettingsStore()));
+    public static MediaPageViewModel Media(
+        CastPageViewModel cast,
+        ISettingsService? settings = null,
+        IMediaHistoryStore? history = null) =>
+        new(
+            cast,
+            settings ?? new SettingsService(new InMemoryAppSettingsStore()),
+            history ?? new InMemoryMediaHistoryStore(),
+            new Flint.App.Services.LocalMediaFileSystem());
 
     /// <summary>
     /// A cast view model wired to fakes, with nothing probed yet.

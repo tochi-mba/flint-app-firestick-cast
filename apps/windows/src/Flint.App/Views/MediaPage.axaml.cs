@@ -20,8 +20,8 @@ public partial class MediaPage : UserControl
 
     private MediaPageViewModel? viewModel;
 
-    /// <summary>Asks the person for a file, and gives its path; the system picker unless a test sets one.</summary>
-    internal Func<TopLevel, Task<string?>> PickFile { get; set; } = PickWithSystemPickerAsync;
+    /// <summary>Asks the person for files, and gives their paths; the system picker unless a test sets one.</summary>
+    internal Func<TopLevel, Task<IReadOnlyList<string>>> PickFiles { get; set; } = PickWithSystemPickerAsync;
 
     private void OnDataContextChanged(object? sender, EventArgs eventArgs)
     {
@@ -39,6 +39,15 @@ public partial class MediaPage : UserControl
             viewModel.Cast.MediaFileSelectionRequested += SelectMediaFileAsync;
             Seek.ScrubStarted += OnScrubStarted;
             Seek.SeekCommitted += OnSeekCommitted;
+        }
+    }
+
+    /// <summary>A key on a row of the Up next list.</summary>
+    private void OnQueueRowKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (viewModel is not null && sender is Control { DataContext: QueueRowViewModel row })
+        {
+            e.Handled = viewModel.Queue.HandleRowKey(row, e.Key, e.KeyModifiers);
         }
     }
 
@@ -80,23 +89,31 @@ public partial class MediaPage : UserControl
             return;
         }
 
-        var path = await PickFile(topLevel);
-        if (!string.IsNullOrWhiteSpace(path))
+        var paths = await PickFiles(topLevel);
+        if (paths.Count > 0)
         {
-            await viewModel.Cast.LoadMediaFileCommand.ExecuteAsync(path);
+            await viewModel.Queue.AddDroppedAsync(paths);
         }
     }
 
-    private static async Task<string?> PickWithSystemPickerAsync(TopLevel topLevel)
+    private static async Task<IReadOnlyList<string>> PickWithSystemPickerAsync(TopLevel topLevel)
     {
         var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = "Choose media to play",
-            AllowMultiple = false,
+            AllowMultiple = true,
+            FileTypeFilter = [MediaFiles, FilePickerFileTypes.All],
         });
-        return PathOf(files);
+        return PathsOf(files);
     }
 
-    /// <summary>The local path of the first file chosen, or null when nothing was chosen.</summary>
-    internal static string? PathOf(IReadOnlyList<IStorageFile> chosen) => chosen.FirstOrDefault()?.TryGetLocalPath();
+    /// <summary>The picker's filter: every kind of file Flint offers.</summary>
+    internal static FilePickerFileType MediaFiles { get; } = new("Video, music and pictures")
+    {
+        Patterns = [.. Flint.Core.Media.MediaFileTypes.Extensions.Order(StringComparer.Ordinal).Select(extension => "*" + extension)],
+    };
+
+    /// <summary>The local paths of the files chosen, in the order given; none when nothing was chosen.</summary>
+    internal static IReadOnlyList<string> PathsOf(IReadOnlyList<IStorageItem> chosen) =>
+        [.. chosen.Select(item => item.TryGetLocalPath()).OfType<string>()];
 }

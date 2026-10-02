@@ -4,20 +4,43 @@
              xmlns:controls="using:Flint.App.Controls"
              x:Class="Flint.App.Views.MediaPage"
              x:DataType="vm:MediaPageViewModel">
+  <UserControl.Styles>
+    <!-- Up next rows: the playing one washed in signal; the focused one ringed, for the keyboard. -->
+    <Style Selector="Border.queueRow">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Border.queueRow:pointerover">
+      <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+    </Style>
+    <Style Selector="Border.queueRow.current">
+      <Setter Property="Background" Value="{StaticResource SignalWashBrush}" />
+    </Style>
+    <Style Selector="Border.queueRow:focus-visible">
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
+    <Style Selector="TextBlock.playing">
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+  </UserControl.Styles>
   <ScrollViewer>
     <StackPanel Margin="{StaticResource PageMargin}" Spacing="12" MaxWidth="820" HorizontalAlignment="Left">
       <controls:PageHeading Eyebrow="Local playback" Title="Play on your TV"
                             Trailing="{Binding Cast.SessionStatus}" TrailingTone="{Binding Cast.HeadingTone}" />
       <controls:InfoCard BorderTone="{Binding Cast.HeadingTone}">
         <StackPanel Spacing="12">
-          <TextBlock Theme="{StaticResource BodyMedium}" Foreground="{StaticResource MutedBrush}"
-                     Text="Choose a video, audio file or image to play on the TV at full quality. Starting it stops screen sharing or the browser on the TV." />
-          <Button Theme="{StaticResource SignalButton}" Content="CHOOSE MEDIA FILE"
+          <TextBlock Theme="{StaticResource BodyMedium}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                     Text="Choose videos, music or pictures to play on the TV at full quality, or drop them anywhere on this window. Several play one after another. Starting one stops screen sharing or the browser on the TV." />
+          <Button Theme="{StaticResource SignalButton}" Content="CHOOSE FILES"
                   Command="{Binding Cast.ChooseMediaFileCommand}"
                   IsEnabled="{Binding Cast.IsSessionConnected}"
                   HorizontalAlignment="Left"
-                  AutomationProperties.Name="Choose media file" />
-          <!-- One line of status: what is happening, or the one thing to do first. -->
+                  AutomationProperties.Name="Choose files to play" />
+          <!-- One line of status: what the queue last did, else what is happening, or the one thing to do first. -->
+          <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                     IsVisible="{Binding Queue.Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                     Text="{Binding Queue.Status}" AutomationProperties.LiveSetting="Polite" />
           <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
                      IsVisible="{Binding Cast.IsSessionConnected}"
                      Text="{Binding Cast.MediaStatus}" />
@@ -25,6 +48,35 @@
                      IsVisible="{Binding !Cast.IsSessionConnected}"
                      Text="Connect to your TV on the Cast page first." />
         </StackPanel>
+      </controls:InfoCard>
+
+      <!-- A file played before: carry on, or start again. Resumes by itself after eight seconds. -->
+      <controls:InfoCard BorderTone="Signal" IsVisible="{Binding Queue.IsAskingResume}">
+        <StackPanel Spacing="12">
+          <TextBlock Theme="{StaticResource TitleMedium}" TextWrapping="Wrap" Text="{Binding Queue.ResumeText}"
+                     AutomationProperties.LiveSetting="Assertive" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button x:Name="ResumeButton" Theme="{StaticResource SignalButton}" Content="RESUME"
+                    Command="{Binding Queue.ResumeFromWhereItStoppedCommand}"
+                    AutomationProperties.Name="Resume from where it stopped" />
+            <Button Theme="{StaticResource OutlineAction}" Content="START OVER"
+                    Command="{Binding Queue.StartOverCommand}"
+                    AutomationProperties.Name="Play from the start" />
+          </StackPanel>
+          <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                     Text="Resumes by itself if you do nothing." />
+        </StackPanel>
+      </controls:InfoCard>
+
+      <!-- The next item, waiting for a TV that shows something else: only the person may replace that. -->
+      <controls:InfoCard IsVisible="{Binding Queue.IsWaiting}">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Theme="{StaticResource BodyMedium}" TextWrapping="Wrap" VerticalAlignment="Center"
+                     Text="{Binding Queue.WaitingText}" />
+          <Button Grid.Column="1" Theme="{StaticResource SignalButton}" Content="PLAY IT NOW" Margin="16,0,0,0"
+                  Command="{Binding Queue.PlayWaitingCommand}"
+                  AutomationProperties.Name="Play the waiting item now" />
+        </Grid>
       </controls:InfoCard>
 
       <!-- Now Playing: shown while something from this PC is on, or on its way to, the TV. -->
@@ -81,9 +133,10 @@
             <!-- Transport, left to right as on a remote. Play or pause is the one signal button. -->
             <WrapPanel x:Name="Transport" Orientation="Horizontal" IsVisible="{Binding ShowsTransport}"
                        ItemSpacing="8" LineSpacing="8">
-              <!-- Previous and next need a queue; until there is one they show, switched off. -->
-              <Button Theme="{StaticResource OutlineAction}" Content="PREV" IsEnabled="False"
-                      ToolTip.Tip="Play a queue to use previous and next." ToolTip.ShowOnDisabled="True"
+              <!-- Previous restarts the item a few seconds in, and goes back an item before that. -->
+              <Button Theme="{StaticResource OutlineAction}" Content="PREV"
+                      Command="{Binding $parent[UserControl].((vm:MediaPageViewModel)DataContext).Queue.PreviousCommand}"
+                      ToolTip.Tip="Start again, or go back an item" ToolTip.ShowOnDisabled="True"
                       AutomationProperties.Name="Previous item" />
               <Button Theme="{StaticResource OutlineAction}" Content="{Binding SkipBackLabel}"
                       Command="{Binding SkipBackCommand}"
@@ -97,8 +150,9 @@
                       Command="{Binding SkipForwardCommand}"
                       ToolTip.Tip="{Binding SkipTip}" ToolTip.ShowOnDisabled="True"
                       AutomationProperties.Name="{Binding SkipForwardName}" />
-              <Button Theme="{StaticResource OutlineAction}" Content="NEXT" IsEnabled="False"
-                      ToolTip.Tip="Play a queue to use previous and next." ToolTip.ShowOnDisabled="True"
+              <Button Theme="{StaticResource OutlineAction}" Content="NEXT"
+                      Command="{Binding $parent[UserControl].((vm:MediaPageViewModel)DataContext).Queue.NextCommand}"
+                      ToolTip.Tip="Nothing is queued after this" ToolTip.ShowOnDisabled="True"
                       AutomationProperties.Name="Next item" />
               <Button Theme="{StaticResource OutlineAction}" Content="STOP"
                       Command="{Binding StopCommand}"
@@ -106,10 +160,14 @@
             </WrapPanel>
 
             <!-- A picture: nothing to play or seek, only to take off the TV. -->
-            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding ShowsPictureNote}">
+            <Grid ColumnDefinitions="*,Auto,Auto" IsVisible="{Binding ShowsPictureNote}">
               <TextBlock Theme="{StaticResource BodyMedium}" VerticalAlignment="Center"
                          Text="Showing a picture." />
-              <Button Grid.Column="1" Theme="{StaticResource OutlineAction}" Content="STOP"
+              <Button Grid.Column="1" Theme="{StaticResource OutlineAction}" Content="NEXT" Margin="0,0,8,0"
+                      Command="{Binding $parent[UserControl].((vm:MediaPageViewModel)DataContext).Queue.NextCommand}"
+                      IsVisible="{Binding $self.IsEffectivelyEnabled}"
+                      AutomationProperties.Name="Next item" />
+              <Button Grid.Column="2" Theme="{StaticResource OutlineAction}" Content="STOP"
                       Command="{Binding StopCommand}"
                       AutomationProperties.Name="Stop showing the picture" />
             </Grid>
@@ -150,9 +208,86 @@
         </StackPanel>
       </controls:InfoCard>
 
+      <!-- Up next: everything queued, in playing order unless shuffled. -->
+      <controls:InfoCard IsVisible="{Binding Queue.HasItems}">
+        <StackPanel Spacing="12">
+          <Grid ColumnDefinitions="*,Auto">
+            <controls:SectionLabel Text="Up next" VerticalAlignment="Center" />
+            <WrapPanel Grid.Column="1" ItemSpacing="8" LineSpacing="8">
+              <Button Theme="{StaticResource OutlineAction}" Content="{Binding Queue.ShuffleLabel}"
+                      Command="{Binding Queue.ToggleShuffleCommand}"
+                      AutomationProperties.Name="Shuffle" />
+              <Button Theme="{StaticResource OutlineAction}" Content="{Binding Queue.RepeatLabel}"
+                      Command="{Binding Queue.CycleRepeatCommand}"
+                      AutomationProperties.Name="Repeat" />
+              <Button Theme="{StaticResource OutlineAction}" Content="CLEAR"
+                      Command="{Binding Queue.ClearCommand}"
+                      ToolTip.Tip="Empty the queue. What is playing carries on."
+                      AutomationProperties.Name="Clear the queue" />
+            </WrapPanel>
+          </Grid>
+          <ItemsControl x:Name="UpNext" ItemsSource="{Binding Queue.Rows}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Spacing="4" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:QueueRowViewModel">
+                <Border Classes="queueRow" Classes.current="{Binding IsCurrent}" Focusable="True"
+                        Padding="12,8" CornerRadius="{StaticResource RadiusSmall}"
+                        KeyDown="OnQueueRowKeyDown"
+                        AutomationProperties.Name="{Binding SpokenName}">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Theme="{StaticResource LabelSmall}" Foreground="{StaticResource MutedBrush}"
+                                   VerticalAlignment="Center" Text="{Binding KindLabel}" />
+                        <TextBlock Theme="{StaticResource BodyMedium}" TextTrimming="CharacterEllipsis"
+                                   Classes.playing="{Binding IsCurrent}" Text="{Binding Name}" />
+                      </StackPanel>
+                      <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                                 IsVisible="{Binding HasNote}" Text="{Binding Note}" />
+                    </StackPanel>
+                    <WrapPanel Grid.Column="1" ItemSpacing="6" LineSpacing="6" Margin="12,0,0,0" VerticalAlignment="Center">
+                      <Button Theme="{StaticResource CompactAction}" Content="PLAY NOW"
+                              Command="{Binding $parent[UserControl].((vm:MediaPageViewModel)DataContext).Queue.PlayNowCommand}"
+                              CommandParameter="{Binding}" IsVisible="{Binding !IsCurrent}"
+                              AutomationProperties.Name="{Binding Name, StringFormat='Play {0} now'}" />
+                      <Button Theme="{StaticResource CompactAction}" Content="PLAY NEXT"
+                              Command="{Binding $parent[UserControl].((vm:MediaPageViewModel)DataContext).Queue.PlayNextCommand}"
+                              CommandParameter="{Binding}" IsVisible="{Binding !IsCurrent}"
+                              AutomationProperties.Name="{Binding Name, StringFormat='Play {0} next'}" />
+                      <Button Theme="{StaticResource CompactAction}" Content="UP"
+                              Command="{Binding $parent[UserControl].((vm:MediaPageViewModel)DataContext).Queue.MoveUpCommand}"
+                              CommandParameter="{Binding}"
+                              AutomationProperties.Name="{Binding Name, StringFormat='Move {0} up'}" />
+                      <Button Theme="{StaticResource CompactAction}" Content="DOWN"
+                              Command="{Binding $parent[UserControl].((vm:MediaPageViewModel)DataContext).Queue.MoveDownCommand}"
+                              CommandParameter="{Binding}"
+                              AutomationProperties.Name="{Binding Name, StringFormat='Move {0} down'}" />
+                      <Button Theme="{StaticResource CompactAction}" Content="REMOVE"
+                              Command="{Binding $parent[UserControl].((vm:MediaPageViewModel)DataContext).Queue.RemoveCommand}"
+                              CommandParameter="{Binding}"
+                              AutomationProperties.Name="{Binding Name, StringFormat='Remove {0} from the queue'}" />
+                    </WrapPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                     Text="In the list: Alt with Up or Down moves a file, Delete removes it, Enter plays it. The TV keeps one file at a time, so each is sent when its turn comes." />
+        </StackPanel>
+      </controls:InfoCard>
+
       <Expander Header="Supported media" HorizontalAlignment="Stretch">
-        <TextBlock Theme="{StaticResource BodyMedium}" Margin="0,12,0,0"
-                   Text="Local video, audio, images, subtitles, and direct network streams." />
+        <StackPanel Spacing="8" Margin="0,12,0,0">
+          <TextBlock Theme="{StaticResource BodyMedium}" TextWrapping="Wrap"
+                     Text="Played on a Fire TV through Flint: MP4, MKV and WebM video, MP3 and M4A music, and JPEG and PNG pictures." />
+          <TextBlock Theme="{StaticResource BodyMedium}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                     Text="Also offered, not yet tried: M4V, MOV and TS video, AAC, FLAC, WAV, OGG and Opus music, and WebP, BMP and GIF pictures. Whether one plays depends on what is inside the file." />
+        </StackPanel>
       </Expander>
       <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
                  Text="On this page: Space plays or pauses, Left and Right skip, Up and Down change the volume, M mutes, S stops." />

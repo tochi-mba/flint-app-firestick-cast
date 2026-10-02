@@ -34,6 +34,20 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
     /// <summary>The port the Cast page pairs with.</summary>
     internal int Port { get; }
 
+    /// <summary>
+    /// What the TV says when it is told to play a file. Unset, it says nothing and the test answers
+    /// for it; <see cref="PlaysEverything"/> answers as a TV that plays whatever it is sent.
+    /// </summary>
+    internal Func<MediaCommandMessage, PlaybackStateMessage?>? AnswerLoad { get; set; }
+
+    /// <summary>Answers every file with playing, from where it was asked to start, ninety seconds long.</summary>
+    internal static PlaybackStateMessage PlaysEverything(MediaCommandMessage load) =>
+        new(PlaybackState.Playing, load.StartPositionMs, 90_000);
+
+    /// <summary>The files the TV was told to play, in order.</summary>
+    internal IReadOnlyList<MediaCommandMessage> Loads =>
+        [.. received.OfType<MediaCommandMessage>().Where(command => command.Action is MediaAction.Load)];
+
     /// <summary>Every message the session sent after pairing, in order.</summary>
     internal IReadOnlyCollection<WireMessage> Received => received;
 
@@ -118,6 +132,11 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
         {
             var frame = await ReadFrameAsync(stream, cancellationToken);
             received.Enqueue(frame.Message);
+            if (frame.Message is MediaCommandMessage { Action: MediaAction.Load } load && AnswerLoad?.Invoke(load) is { } answer)
+            {
+                await stream.WriteAsync(WireCodec.Encode(new WireFrame(answer)), cancellationToken);
+            }
+
             lock (waiters)
             {
                 foreach (var waiter in waiters.Where(waiter => waiter.Wanted(received)).ToArray())

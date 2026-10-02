@@ -26,6 +26,11 @@
               Command="{Binding OpenLogsFolderCommand}" AutomationProperties.Name="Open the logs folder" />
     </StackPanel>
 
+    <Border Height="1" Background="{StaticResource LineBrush}" Margin="0,6" IsVisible="{Binding HasHistory}" />
+    <TextBlock Theme="{StaticResource TitleMedium}" Text="{Binding HistoryText.Title}" IsVisible="{Binding HasHistory}" />
+    <TextBlock Theme="{StaticResource BodySmall}" Text="{Binding HistoryText.Description}" IsVisible="{Binding HasHistory}" />
+    <views:ConfirmableActionView DataContext="{Binding ClearHistory}" IsVisible="{Binding $parent[UserControl].((settings:PrivacySettingsViewModel)DataContext).HasHistory}" />
+
     <Border Height="1" Background="{StaticResource LineBrush}" Margin="0,6" />
     <TextBlock Theme="{StaticResource TitleMedium}" Text="Take your settings with you" />
     <TextBlock Theme="{StaticResource BodySmall}" Text="{Binding TransferText.Description}" />
