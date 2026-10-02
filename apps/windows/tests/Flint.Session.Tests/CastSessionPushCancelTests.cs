@@ -41,6 +41,42 @@ public sealed class CastSessionPushCancelTests
     }
 
     [Fact]
+    public async Task ASendWithNoProgressReporter_StillPlays()
+    {
+        await using var tv = await FakeTv.StartAsync();
+        await using var session = await tv.PairAsync();
+        var file = Path.Combine(Path.GetTempPath(), $"flint-plain-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllBytesAsync(file, [1, 2, 3], Token);
+        try
+        {
+            var playing = session.PushMediaAndWaitForPlaybackStartAsync(file, "clip.mp4", "video/mp4", cancellationToken: Token);
+
+            (await tv.ReadAsync()).Message.ShouldBeOfType<MediaDataMessage>().IsFinal.ShouldBeTrue();
+            (await tv.ReadAsync()).Message.ShouldBeOfType<MediaCommandMessage>().Action.ShouldBe(MediaAction.Load);
+            await tv.SendAsync(new PlaybackStateMessage(PlaybackState.Playing));
+
+            (await playing.WaitAsync(TimeSpan.FromSeconds(10), Token)).State.ShouldBe(PlaybackState.Playing);
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Fact]
+    public async Task ATvThatHangsUpBeforePlaying_EndsTheWaitWithTheReason()
+    {
+        await using var tv = await FakeTv.StartAsync();
+        await using var session = await tv.PairAsync();
+
+        var waiting = session.WaitForPlaybackStartAsync(Token);
+        tv.HangUp();
+
+        var failure = await Should.ThrowAsync<IOException>(() => waiting.WaitAsync(TimeSpan.FromSeconds(10), Token));
+        failure.Message.ShouldBe("The receiver session ended before playback started.");
+    }
+
+    [Fact]
     public async Task Closing_BehindAWriteTheTvNeverReads_StillFinishes()
     {
         await using var tv = await FakeTv.StartAsync();
