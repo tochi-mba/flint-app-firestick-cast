@@ -1,5 +1,6 @@
 using Flint.App.ViewModels;
 using Flint.App.ViewModels.Settings;
+using Flint.Core.Media;
 using Flint.Core.Settings;
 using Shouldly;
 
@@ -96,7 +97,12 @@ public sealed class MediaSettingsSectionTests
     {
         var media = new MediaSettingsViewModel(Service());
 
-        media.Settings.ShouldBe([media.SkipBackText, media.SkipForwardText, media.VolumeStepText]);
+        media.Settings.ShouldBe(
+        [
+            media.SkipBackText, media.SkipForwardText, media.VolumeStepText, media.AutoPlayNextText,
+            media.RepeatText, media.ShuffleText, media.PlayedBeforeText, media.RememberText,
+            media.SubfoldersText, media.DropOrderText, media.PictureText, media.QueueEndText,
+        ]);
         media.Title.ShouldBe("Media");
         Should.Throw<ArgumentNullException>(() => new MediaSettingsViewModel(null!));
     }
@@ -118,8 +124,13 @@ public sealed class MediaSettingsSectionTests
         using var service = Service();
         var cast = Snapshots.SnapshotFixtures.ViewModel();
 
-        Should.Throw<ArgumentNullException>(() => new MediaPageViewModel(null!, service));
-        Should.Throw<ArgumentNullException>(() => new MediaPageViewModel(cast, null!));
+        var history = new InMemoryMediaHistoryStore();
+        var files = new Flint.App.Services.LocalMediaFileSystem();
+
+        Should.Throw<ArgumentNullException>(() => new MediaPageViewModel(null!, service, history, files));
+        Should.Throw<ArgumentNullException>(() => new MediaPageViewModel(cast, null!, history, files));
+        Should.Throw<ArgumentNullException>(() => new MediaPageViewModel(cast, service, null!, files));
+        Should.Throw<ArgumentNullException>(() => new MediaPageViewModel(cast, service, history, null!));
     }
 
     private static SettingsService Service() => new(new InMemoryAppSettingsStore());

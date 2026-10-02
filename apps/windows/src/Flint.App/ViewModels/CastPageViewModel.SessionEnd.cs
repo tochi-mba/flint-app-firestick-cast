@@ -27,7 +27,7 @@ public sealed partial class CastPageViewModel
     private string TvAtStart => Report?.Device?.FriendlyName is { Length: > 0 } name ? name : "The TV";
 
     /// <summary>The TV's name for the middle of a sentence.</summary>
-    private string TvInSentence => Report?.Device?.FriendlyName is { Length: > 0 } name ? name : "the TV";
+    internal string TvInSentence => Report?.Device?.FriendlyName is { Length: > 0 } name ? name : "the TV";
 
     /// <summary>What to tell the person when a session ended, by why it ended.</summary>
     internal string DescribeEnd(CastSessionEnd reason) => reason switch

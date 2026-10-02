@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Flint.App.Services;
 using Flint.App.ViewModels.Settings;
 using Flint.Core;
+using Flint.Core.Media;
 using Flint.Core.Settings;
 using Flint.Discovery;
 using Flint.Engine.Interop;
@@ -40,6 +41,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IAppSettingsStore settingsStore,
         Func<KeepAwakeLevel, bool> keepAwakeApply,
         IFolderOpener folders,
+        IMediaHistoryStore mediaHistory,
         IUpdateSource? updateSource = null,
         IUpdatePreference? updatePreference = null)
     {
@@ -55,7 +57,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             }
         };
         Browser = new BrowserPageViewModel(cast);
-        Media = new MediaPageViewModel(cast, settingsService);
+        Media = new MediaPageViewModel(cast, settingsService, mediaHistory, new LocalMediaFileSystem());
         Coordinator = new ModeSessionCoordinator(Cast, Browser, SwitchPrompt, settingsService);
         keepAwake = new KeepAwakeCoordinator(Cast, settingsService, keepAwakeApply);
         Onboarding = new OnboardingViewModel(onboardingState);
@@ -77,7 +79,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             new GeneralSettingsViewModel(settingsService),
             new MediaSettingsViewModel(settingsService),
             new TvSettingsViewModel(Cast),
-            new PrivacySettingsViewModel(settingsService, folders, FlintDataFolder.Path, FlintDataFolder.LogsPath),
+            new PrivacySettingsViewModel(settingsService, folders, FlintDataFolder.Path, FlintDataFolder.LogsPath, mediaHistory),
             new UpdatesSectionViewModel(Updates),
             new AboutSettingsViewModel(Cast, VersionLabel, EngineVersion.Read(), Environment.OSVersion.VersionString),
         ]);
@@ -176,6 +178,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <remarks>Called as Flint exits, so a change made in the last moment is not lost.</remarks>
     public void Dispose()
     {
+        Media.Dispose();
         keepAwake.Dispose();
         settingsService.Dispose();
     }
@@ -233,6 +236,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             new FileAppSettingsStore(),
             sleepBlocker.Apply,
             new ExplorerFolderOpener(),
+            new FileMediaHistoryStore(),
             new VelopackUpdateSource(),
             new FileUpdatePreference());
 
@@ -255,6 +259,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// test never holds the machine running it awake.
     /// </param>
     /// <param name="folders">Opens folders. Defaults to one that opens nothing.</param>
+    /// <param name="mediaHistory">Where played files stopped. Defaults to one kept only in memory.</param>
     /// <remarks>
     /// The receiver installer is the offline one: a shell built around a supplied prober has no
     /// television to talk to, and the real installer would try the fake device's address on every
@@ -266,7 +271,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IRecentAddressStore? addressStore = null,
         IAppSettingsStore? settingsStore = null,
         Func<KeepAwakeLevel, bool>? keepAwake = null,
-        IFolderOpener? folders = null) =>
+        IFolderOpener? folders = null,
+        IMediaHistoryStore? mediaHistory = null) =>
         new(
             new CastPageViewModel(
                 prober,
@@ -275,7 +281,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             onboardingState ?? new CompletedOnboardingState(),
             settingsStore ?? new InMemoryAppSettingsStore(),
             keepAwake ?? (_ => true),
-            folders ?? new NoFolderOpener());
+            folders ?? new NoFolderOpener(),
+            mediaHistory ?? new InMemoryMediaHistoryStore());
 
     /// <summary>A folder opener for tests and design-time shells, which must not open windows.</summary>
     private sealed class NoFolderOpener : IFolderOpener

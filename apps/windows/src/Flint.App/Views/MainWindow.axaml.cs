@@ -24,6 +24,45 @@ public partial class MainWindow : Window
         // A key released while another window has focus never comes up here.
         Deactivated += (_, _) => ReleaseEnter();
         Closed += (_, _) => (DataContext as IDisposable)?.Dispose();
+        DragDrop.SetAllowDrop(this, true);
+        AddHandler(DragDrop.DragEnterEvent, OnDragOver);
+        AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        AddHandler(DragDrop.DragLeaveEvent, OnDragLeave);
+        AddHandler(DragDrop.DropEvent, OnDrop);
+    }
+
+    /// <summary>Offers to take files and folders; text, links and anything else are refused.</summary>
+    private void OnDragOver(object? sender, DragEventArgs e)
+    {
+        var files = DroppedFiles.HasFiles(e.DataTransfer);
+        e.DragEffects = files ? DragDropEffects.Copy : DragDropEffects.None;
+        if (DataContext is MainWindowViewModel shell)
+        {
+            shell.IsDropTarget = files;
+        }
+    }
+
+    private void OnDragLeave(object? sender, DragEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel shell)
+        {
+            shell.IsDropTarget = false;
+        }
+    }
+
+    private async void OnDrop(object? sender, DragEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel shell)
+        {
+            return;
+        }
+
+        shell.IsDropTarget = false;
+        if (DroppedFiles.HasFiles(e.DataTransfer))
+        {
+            e.DragEffects = DragDropEffects.Copy;
+            await shell.DropFilesAsync(DroppedFiles.PathsOf(e.DataTransfer));
+        }
     }
 
     private void OnDataContextChanged(object? sender, EventArgs args)
