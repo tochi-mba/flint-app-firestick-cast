@@ -226,16 +226,21 @@
                       AutomationProperties.Name="Clear the queue" />
             </WrapPanel>
           </Grid>
-          <ItemsControl x:Name="UpNext" ItemsSource="{Binding Queue.Rows}">
+          <!--
+            Its own scroll area, so only the rows in view are built: a dropped folder can queue two
+            thousand files, and a plain stack would build every row and its buttons up front.
+          -->
+          <ScrollViewer MaxHeight="520" HorizontalScrollBarVisibility="Disabled">
+          <ItemsControl x:Name="UpNext" ItemsSource="{Binding Queue.Rows}" Margin="0,0,0,-4">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
-                <StackPanel Spacing="4" />
+                <VirtualizingStackPanel />
               </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:QueueRowViewModel">
                 <Border Classes="queueRow" Classes.current="{Binding IsCurrent}" Focusable="True"
-                        Padding="12,8" CornerRadius="{StaticResource RadiusSmall}"
+                        Padding="12,8" Margin="0,0,0,4" CornerRadius="{StaticResource RadiusSmall}"
                         KeyDown="OnQueueRowKeyDown"
                         AutomationProperties.Name="{Binding SpokenName}">
                   <Grid ColumnDefinitions="*,Auto">
@@ -276,6 +281,7 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
+          </ScrollViewer>
           <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
                      Text="In the list: Alt with Up or Down moves a file, Delete removes it, Enter plays it. The TV keeps one file at a time, so each is sent when its turn comes." />
         </StackPanel>

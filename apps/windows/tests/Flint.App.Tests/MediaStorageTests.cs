@@ -116,8 +116,10 @@ public sealed class MediaStorageTests : IDisposable
         var store = new FileMediaHistoryStore(blocked);
 
         Should.NotThrow(() => store.Save(new MediaHistoryEntry(Key(1), 60_000, 0, Played)));
-        store.Find(Key(1)).ShouldBeNull();
+        store.Find(Key(1)).ShouldNotBeNull("kept for this run, though it could not reach the disk");
+        new FileMediaHistoryStore(blocked).Find(Key(1)).ShouldBeNull("nothing reached the disk");
         Should.NotThrow(store.Clear);
+        store.Find(Key(1)).ShouldBeNull();
     }
 
     [Fact]
@@ -127,8 +129,10 @@ public sealed class MediaStorageTests : IDisposable
         store.Save(new MediaHistoryEntry(Key(1), 60_000, 0, Played));
         using var held = File.Open(Path.Combine(folder, FileMediaHistoryStore.FileName), FileMode.Open, FileAccess.Read, FileShare.None);
 
-        store.Find(Key(1)).ShouldBeNull("the file cannot be read while another program holds it");
+        new FileMediaHistoryStore(folder).Find(Key(1)).ShouldBeNull("the file cannot be read while another program holds it");
+        store.Find(Key(1)).ShouldNotBeNull("the store that wrote it read it once and keeps it");
         Should.NotThrow(store.Clear);
+        store.Find(Key(1)).ShouldBeNull("cleared here even though the file could not be deleted");
     }
 
     [Fact]

@@ -36,6 +36,9 @@ public sealed partial class MediaQueueViewModel
     private long knownPositionMs;
     private long knownDurationMs;
 
+    /// <summary>The position last written, so a paused file is not written again every few seconds.</summary>
+    private long savedPositionMs = -1;
+
     /// <summary>Whether the next item is waiting for a TV that shows something else.</summary>
     [ObservableProperty]
     private bool _isWaiting;
@@ -106,6 +109,7 @@ public sealed partial class MediaQueueViewModel
         playingKey = null;
         knownPositionMs = 0;
         knownDurationMs = 0;
+        savedPositionMs = -1;
         var facts = files.Facts(item.Path);
         if (facts is null)
         {
@@ -203,7 +207,7 @@ public sealed partial class MediaQueueViewModel
         answer?.TrySetResult(resume);
     }
 
-    private async void OnMediaFinished(object? sender, EventArgs args)
+    private void OnMediaFinished(object? sender, EventArgs args)
     {
         if (playlist.Current is not { } current || current.Type.IsPicture)
         {
@@ -218,7 +222,7 @@ public sealed partial class MediaQueueViewModel
 
         if (settings.Current.Media.AutoPlayNext || Repeat is RepeatMode.One)
         {
-            await MoveOnAsync(current).ConfigureAwait(true);
+            _ = RunUnobservedAsync(() => MoveOnAsync(current));
         }
     }
 
@@ -256,7 +260,7 @@ public sealed partial class MediaQueueViewModel
         if (playlist.Current is { Type.IsPicture: true } picture && cast.NowPlaying.IsActive && seconds > 0)
         {
             pictureTimer = time.CreateTimer(
-                _ => OnUi(() => _ = MoveOnAsync(picture)),
+                _ => OnUi(() => _ = RunUnobservedAsync(() => MoveOnAsync(picture))),
                 null,
                 TimeSpan.FromSeconds(seconds),
                 Timeout.InfiniteTimeSpan);
@@ -272,9 +276,10 @@ public sealed partial class MediaQueueViewModel
             return;
         }
 
-        if (ResumePolicy.IsWorthKeeping(knownPositionMs, knownDurationMs))
+        if (knownPositionMs != savedPositionMs && ResumePolicy.IsWorthKeeping(knownPositionMs, knownDurationMs))
         {
             history.Save(new MediaHistoryEntry(key, knownPositionMs, knownDurationMs, time.GetUtcNow()));
+            savedPositionMs = knownPositionMs;
         }
     }
 

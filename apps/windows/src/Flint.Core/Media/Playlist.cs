@@ -330,5 +330,6 @@ public sealed class Playlist
 
     private PlaylistItem? Find(long id) => items.FirstOrDefault(item => item.Id == id);
 
-    private int IndexOf(long id) => items.FindIndex(item => item.Id == id);
+    /// <summary>Where <paramref name="id"/> is in the list, or -1 when it is not there.</summary>
+    public int IndexOf(long id) => items.FindIndex(item => item.Id == id);
 }

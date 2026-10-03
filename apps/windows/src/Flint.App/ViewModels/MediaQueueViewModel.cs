@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Flint.Core;
 using Avalonia.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -154,8 +155,8 @@ public sealed partial class MediaQueueViewModel : ObservableObject, IDisposable
             return;
         }
 
-        var after = playlist.Current is { } current ? IndexOf(current.Id) + 1 : 0;
-        var from = IndexOf(row.Item.Id);
+        var after = playlist.Current is { } current ? playlist.IndexOf(current.Id) + 1 : 0;
+        var from = playlist.IndexOf(row.Item.Id);
         playlist.Move(row.Item.Id, from < after ? after - 1 : after);
         RebuildRows();
     }
@@ -255,7 +256,7 @@ public sealed partial class MediaQueueViewModel : ObservableObject, IDisposable
             return;
         }
 
-        var index = IndexOf(row.Item.Id);
+        var index = playlist.IndexOf(row.Item.Id);
         if (index + step < 0 || index + step >= Rows.Count)
         {
             return;
@@ -265,33 +266,55 @@ public sealed partial class MediaQueueViewModel : ObservableObject, IDisposable
         RebuildRows();
     }
 
-    private int IndexOf(long id)
+    /// <summary>
+    /// Brings the rows into line with the playlist, changing only what changed.
+    /// </summary>
+    /// <remarks>
+    /// Rows are kept and reused by the item they show. Clearing and refilling the list instead
+    /// rebuilt every row, and every row's controls, for one move or one change of what is playing:
+    /// a few hundred controls per keypress on a large drop. Removing goes first, then each row is
+    /// put where it belongs, so an add is only an add and a move is only a move.
+    /// </remarks>
+    private void RebuildRows()
     {
-        for (var index = 0; index < playlist.Items.Count; index++)
+        var items = playlist.Items;
+        var wanted = new HashSet<long>(items.Count);
+        foreach (var item in items)
         {
-            if (playlist.Items[index].Id == id)
+            wanted.Add(item.Id);
+        }
+
+        var kept = new Dictionary<long, QueueRowViewModel>(Rows.Count);
+        for (var index = Rows.Count - 1; index >= 0; index--)
+        {
+            if (wanted.Contains(Rows[index].Item.Id))
             {
-                return index;
+                kept[Rows[index].Item.Id] = Rows[index];
+            }
+            else
+            {
+                Rows.RemoveAt(index);
             }
         }
 
-        return -1;
-    }
-
-    private void RebuildRows()
-    {
-        var missing = Rows.Where(row => row.IsMissing).Select(row => row.Item.Id).ToHashSet();
-        Rows.Clear();
-        foreach (var item in playlist.Items)
+        var currentId = playlist.Current?.Id;
+        var waitingId = waitingItem?.Id;
+        for (var index = 0; index < items.Count; index++)
         {
-            // Waiting is not playing: what the TV shows is still the item before it.
-            var waiting = item.Id == waitingItem?.Id;
-            Rows.Add(new QueueRowViewModel(item)
+            var item = items[index];
+            if (!kept.TryGetValue(item.Id, out var row))
             {
-                IsCurrent = item.Id == playlist.Current?.Id && !waiting,
-                IsWaiting = waiting,
-                IsMissing = missing.Contains(item.Id),
-            });
+                row = new QueueRowViewModel(item);
+                Rows.Insert(index, row);
+            }
+            else if (!ReferenceEquals(Rows[index], row))
+            {
+                Rows.Move(Rows.IndexOf(row), index);
+            }
+
+            // Waiting is not playing: what the TV shows is still the item before it.
+            row.IsWaiting = item.Id == waitingId;
+            row.IsCurrent = item.Id == currentId && !row.IsWaiting;
         }
 
         OnPropertyChanged(nameof(HasItems));
@@ -314,6 +337,25 @@ public sealed partial class MediaQueueViewModel : ObservableObject, IDisposable
         NextCommand.NotifyCanExecuteChanged();
         PreviousCommand.NotifyCanExecuteChanged();
         StartPictureTimer();
+    }
+
+    /// <summary>
+    /// Runs queue work that nobody waits for, so a TV that has gone cannot end the app.
+    /// </summary>
+    /// <remarks>
+    /// The end of a file and a picture's timer move the queue on by themselves. A failure there is
+    /// the connection ending, which the page already says; it is logged and the queue stops.
+    /// </remarks>
+    internal static async Task RunUnobservedAsync(Func<Task> work)
+    {
+        try
+        {
+            await work().ConfigureAwait(true);
+        }
+        catch (Exception exception) when (exception is IOException or ObjectDisposedException or InvalidOperationException)
+        {
+            FlintDiag.Warn("FlintCast", $"queue could not move on: {exception.GetType().Name}");
+        }
     }
 
     /// <summary>Runs <paramref name="action"/> where the list's bindings read it.</summary>

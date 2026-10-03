@@ -21,6 +21,9 @@ public sealed class FileMediaHistoryStore : IMediaHistoryStore
 
     private readonly string filePath;
 
+    /// <summary>The entries, read from disk the first time they are needed and kept from then on.</summary>
+    private List<MediaHistoryEntry>? entries;
+
     /// <summary>Creates the store under local application data.</summary>
     public FileMediaHistoryStore()
         : this(FlintDataFolder.Path)
@@ -65,6 +68,7 @@ public sealed class FileMediaHistoryStore : IMediaHistoryStore
     /// <inheritdoc />
     public void Clear()
     {
+        entries = [];
         try
         {
             File.Delete(filePath);
@@ -74,7 +78,9 @@ public sealed class FileMediaHistoryStore : IMediaHistoryStore
         }
     }
 
-    private List<MediaHistoryEntry> Load()
+    private List<MediaHistoryEntry> Load() => entries ??= Read();
+
+    private List<MediaHistoryEntry> Read()
     {
         try
         {
@@ -92,8 +98,9 @@ public sealed class FileMediaHistoryStore : IMediaHistoryStore
         }
     }
 
-    private void Write(List<MediaHistoryEntry> entries)
+    private void Write(List<MediaHistoryEntry> next)
     {
+        entries = next;
         try
         {
             var directory = System.IO.Path.GetDirectoryName(filePath);
@@ -102,7 +109,7 @@ public sealed class FileMediaHistoryStore : IMediaHistoryStore
                 Directory.CreateDirectory(directory);
             }
 
-            File.WriteAllText(filePath, JsonSerializer.Serialize(entries));
+            File.WriteAllText(filePath, JsonSerializer.Serialize(next));
         }
         catch (Exception exception) when (IsStorageFailure(exception))
         {

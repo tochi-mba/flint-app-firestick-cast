@@ -188,7 +188,7 @@ public sealed class SettingsSectionsTests
         using var shell = MainWindowViewModel.CreateWith(BrowserFixtures.Prober(BrowserFixtures.EligibleDevice()));
         var about = shell.Settings.Section<AboutSettingsViewModel>();
 
-        about.Settings.ShouldBe([about.VersionText, about.ReportText, about.LicenceText]);
+        about.Settings.ShouldBe([about.VersionText, about.WhatsNewText, about.ReportText, about.LicenceText]);
         Should.Throw<ArgumentNullException>(() => new AboutSettingsViewModel(null!, "v1", null, "w"));
         Should.Throw<ArgumentException>(() => new AboutSettingsViewModel(shell.Cast, " ", null, "w"));
         Should.Throw<ArgumentException>(() => new AboutSettingsViewModel(shell.Cast, "v1", null, " "));
