@@ -21,7 +21,8 @@ public sealed class MediaPageViewModel : IDisposable
         ArgumentNullException.ThrowIfNull(settings);
         NowPlaying = cast.NowPlaying;
         NowPlaying.UseSettings(settings);
-        Queue = new MediaQueueViewModel(cast, settings, history, files);
+        // The Cast page's own clock: a second one would let the queue's timers run while the card's stand still.
+        Queue = new MediaQueueViewModel(cast, settings, history, files, cast.Time);
     }
 
     /// <summary>The connection, and the file chooser.</summary>
