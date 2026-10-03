@@ -12,6 +12,10 @@
       <TextBlock Grid.Row="1" Grid.Column="1" Theme="{StaticResource BodyMedium}" Text="{Binding EngineVersion}" />
     </Grid>
     <Button Theme="{StaticResource OutlineAction}" HorizontalAlignment="Left"
+            Content="SEE WHAT'S NEW" Command="{Binding ShowWhatsNewCommand}"
+            IsVisible="{Binding HasWhatsNew}"
+            AutomationProperties.Name="See what's new" />
+    <Button Theme="{StaticResource OutlineAction}" HorizontalAlignment="Left"
             Content="COPY DETAILS FOR A BUG REPORT" Command="{Binding CopyReportCommand}"
             AutomationProperties.Name="Copy details for a bug report" />
     <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding Status}" IsVisible="{Binding !!Status}" />

@@ -12,15 +12,23 @@ public sealed partial class AboutSettingsViewModel : SettingsSectionViewModel
 
     private readonly CastPageViewModel cast;
     private readonly string windowsVersion;
+    private readonly WhatsNewViewModel? whatsNew;
 
     /// <summary>Creates the section.</summary>
     /// <param name="cast">The TV this PC last looked at, for the report.</param>
     /// <param name="appVersion">This build's version.</param>
     /// <param name="engineVersion">The native engine's version, or null when it could not be loaded.</param>
     /// <param name="windowsVersion">Which Windows this is.</param>
-    public AboutSettingsViewModel(CastPageViewModel cast, string appVersion, string? engineVersion, string windowsVersion)
+    /// <param name="whatsNew">The "What's new" walkthrough, to open again from here.</param>
+    public AboutSettingsViewModel(
+        CastPageViewModel cast,
+        string appVersion,
+        string? engineVersion,
+        string windowsVersion,
+        WhatsNewViewModel? whatsNew = null)
         : base("About")
     {
+        this.whatsNew = whatsNew;
         this.cast = cast ?? throw new ArgumentNullException(nameof(cast));
         ArgumentException.ThrowIfNullOrWhiteSpace(appVersion);
         ArgumentException.ThrowIfNullOrWhiteSpace(windowsVersion);
@@ -39,13 +47,21 @@ public sealed partial class AboutSettingsViewModel : SettingsSectionViewModel
         "Copy details for a bug report",
         "Copies the versions and the TV model, so a report says exactly what was running.");
 
+    /// <summary>Seeing what has changed.</summary>
+    public SettingText WhatsNewText { get; } = new(
+        "See what's new",
+        "Shows the recent changes to Flint again, the same walkthrough that appears after an update.");
+
+    /// <summary>Whether "What's new" can be opened from here.</summary>
+    public bool HasWhatsNew => whatsNew is not null;
+
     /// <summary>The licence.</summary>
     public SettingText LicenceText { get; } = new(
         "Licence",
         "MIT. Copyright (c) 2026 REX Technologies.");
 
     /// <inheritdoc />
-    public override IReadOnlyList<SettingText> Settings => [VersionText, ReportText, LicenceText];
+    public override IReadOnlyList<SettingText> Settings => [VersionText, WhatsNewText, ReportText, LicenceText];
 
     /// <summary>This build's version.</summary>
     public string AppVersion { get; }
@@ -111,6 +127,10 @@ public sealed partial class AboutSettingsViewModel : SettingsSectionViewModel
             Status = ClipboardRefused;
         }
     }
+
+    /// <summary>Opens "What's new" again.</summary>
+    [RelayCommand]
+    private void ShowWhatsNew() => whatsNew?.ShowAll();
 
     [RelayCommand]
     private void CopyReport() => CopyRequested?.Invoke(this, EventArgs.Empty);

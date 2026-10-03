@@ -3,12 +3,13 @@
              xmlns:vm="using:Flint.App.ViewModels"
              xmlns:controls="using:Flint.App.Controls"
              x:Class="Flint.App.Views.OnboardingView"
-             x:DataType="vm:OnboardingViewModel">
+             x:DataType="vm:WalkthroughViewModel">
 
   <!--
     A full-bleed ink cover rather than a dialog. The introduction carries the one fact that decides
     whether Flint can work at all, so it gets the whole window and is not something to click past
-    without noticing.
+    without noticing. "What's new" after an update is shown the same way, so the two read as one
+    product.
   -->
   <Border Background="{StaticResource InkBrush}">
     <Grid RowDefinitions="Auto,*,Auto" Margin="48,40">

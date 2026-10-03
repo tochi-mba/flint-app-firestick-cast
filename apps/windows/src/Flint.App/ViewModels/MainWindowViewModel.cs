@@ -42,6 +42,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         Func<KeepAwakeLevel, bool> keepAwakeApply,
         IFolderOpener folders,
         IMediaHistoryStore mediaHistory,
+        IWhatsNewState whatsNewState,
         IUpdateSource? updateSource = null,
         IUpdatePreference? updatePreference = null)
     {
@@ -61,6 +62,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         Coordinator = new ModeSessionCoordinator(Cast, Browser, SwitchPrompt, settingsService);
         keepAwake = new KeepAwakeCoordinator(Cast, settingsService, keepAwakeApply);
         Onboarding = new OnboardingViewModel(onboardingState);
+        WhatsNew = new WhatsNewViewModel(whatsNewState, Onboarding.HasCompleted);
+        Onboarding.PropertyChanged += (_, change) => RaiseWhatsNewShown(change.PropertyName);
+        WhatsNew.PropertyChanged += (_, change) => RaiseWhatsNewShown(change.PropertyName);
 
         // What the TV is showing changes under every page: a mirror ends, a video stops, the
         // browser closes. The notice follows it rather than a page switch.
@@ -81,7 +85,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             new TvSettingsViewModel(Cast),
             new PrivacySettingsViewModel(settingsService, folders, FlintDataFolder.Path, FlintDataFolder.LogsPath, mediaHistory),
             new UpdatesSectionViewModel(Updates),
-            new AboutSettingsViewModel(Cast, VersionLabel, EngineVersion.Read(), Environment.OSVersion.VersionString),
+            new AboutSettingsViewModel(Cast, VersionLabel, EngineVersion.Read(), Environment.OSVersion.VersionString, WhatsNew),
         ]);
         Cast.PropertyChanged += (_, changed) =>
         {
@@ -95,6 +99,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         // Finishing the introduction runs the first probe, so the walkthrough ends on the answer it
         // spent five steps preparing the user for rather than on an empty screen.
         Onboarding.Completed += (_, _) => Cast.ProbeCommand.Execute(null);
+
+        // Someone who has just been introduced to Flint has nothing to catch up on: everything in
+        // "What's new" was there when they started.
+        Onboarding.Completed += (_, _) => WhatsNew.MarkAllSeen();
         if (!Onboarding.IsVisible && !string.IsNullOrWhiteSpace(Cast.ManualAddress))
         {
             _ = Cast.ProbeCommand.ExecuteAsync(null);
@@ -153,6 +161,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <summary>The first-run introduction, shown over the shell until it is completed.</summary>
     public OnboardingViewModel Onboarding { get; }
 
+    /// <summary>What has changed since this person last used Flint, shown once after an update.</summary>
+    public WhatsNewViewModel WhatsNew { get; }
+
+    /// <summary>Whether "What's new" covers the window: only when it is open and the introduction is not.</summary>
+    public bool ShowsWhatsNew => WhatsNew.IsVisible && !Onboarding.IsVisible;
+
     /// <summary>Finding and installing a newer Flint, shown on the Settings page.</summary>
     public UpdatesViewModel Updates { get; }
 
@@ -173,6 +187,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     /// <summary>The level this PC is currently kept awake at.</summary>
     public KeepAwakeLevel KeepAwakeLevel => keepAwake.Level;
+
+    private void RaiseWhatsNewShown(string? changed)
+    {
+        if (changed == nameof(WalkthroughViewModel.IsVisible))
+        {
+            OnPropertyChanged(nameof(ShowsWhatsNew));
+        }
+    }
 
     /// <summary>Writes any settings change still waiting and lets the PC sleep normally.</summary>
     /// <remarks>Called as Flint exits, so a change made in the last moment is not lost.</remarks>
@@ -237,6 +259,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             sleepBlocker.Apply,
             new ExplorerFolderOpener(),
             new FileMediaHistoryStore(),
+            new FileWhatsNewState(),
             new VelopackUpdateSource(),
             new FileUpdatePreference());
 
@@ -260,6 +283,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </param>
     /// <param name="folders">Opens folders. Defaults to one that opens nothing.</param>
     /// <param name="mediaHistory">Where played files stopped. Defaults to one kept only in memory.</param>
+    /// <param name="whatsNewState">
+    /// Which "What's new" highlights were seen. Defaults to all of them, so a test asking about the
+    /// shell is not handed a walkthrough it did not ask for.
+    /// </param>
     /// <remarks>
     /// The receiver installer is the offline one: a shell built around a supplied prober has no
     /// television to talk to, and the real installer would try the fake device's address on every
@@ -272,7 +299,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IAppSettingsStore? settingsStore = null,
         Func<KeepAwakeLevel, bool>? keepAwake = null,
         IFolderOpener? folders = null,
-        IMediaHistoryStore? mediaHistory = null) =>
+        IMediaHistoryStore? mediaHistory = null,
+        IWhatsNewState? whatsNewState = null) =>
         new(
             new CastPageViewModel(
                 prober,
@@ -282,7 +310,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             settingsStore ?? new InMemoryAppSettingsStore(),
             keepAwake ?? (_ => true),
             folders ?? new NoFolderOpener(),
-            mediaHistory ?? new InMemoryMediaHistoryStore());
+            mediaHistory ?? new InMemoryMediaHistoryStore(),
+            whatsNewState ?? new InMemoryWhatsNewState(WhatsNewViewModel.Catalogue.Select(highlight => highlight.Id)));
 
     /// <summary>A folder opener for tests and design-time shells, which must not open windows.</summary>
     private sealed class NoFolderOpener : IFolderOpener

@@ -171,6 +171,10 @@
     <views:OnboardingView DataContext="{Binding Onboarding}"
                           IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Onboarding.IsVisible}" />
 
+    <!-- After an update: what changed, once. Never over the introduction, which comes first. -->
+    <views:OnboardingView x:Name="WhatsNewView" DataContext="{Binding WhatsNew}"
+                          IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowsWhatsNew}" />
+
     <!--
       The switch question covers the shell until it is answered, and nothing on the TV changes while
       it is open. Focus moves to the switch button, so Enter or Space answers it once it is showing,

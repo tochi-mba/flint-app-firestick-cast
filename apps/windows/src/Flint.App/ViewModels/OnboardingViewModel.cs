@@ -1,4 +1,3 @@
-using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Flint.App.Controls;
 using Flint.Core;
@@ -19,88 +18,28 @@ namespace Flint.App.ViewModels;
 /// or a disk.
 /// </para>
 /// </remarks>
-public sealed partial class OnboardingViewModel : ObservableObject
+public sealed partial class OnboardingViewModel : WalkthroughViewModel
 {
     private readonly IOnboardingState _state;
-
-    [ObservableProperty]
-    private int _stepIndex;
-
-    [ObservableProperty]
-    private bool _isVisible;
 
     /// <summary>Creates the introduction over a persistence store.</summary>
     /// <param name="state">Where completion is remembered.</param>
     public OnboardingViewModel(IOnboardingState state)
+        : base(BuildSteps())
     {
         ArgumentNullException.ThrowIfNull(state);
         _state = state;
-        Steps = BuildSteps();
-        _isVisible = !state.HasCompleted;
+        IsVisible = !state.HasCompleted;
     }
 
     /// <summary>Raised when the user finishes, so the shell can run the first probe.</summary>
     public event EventHandler? Completed;
 
-    /// <summary>Every step, in order.</summary>
-    public IReadOnlyList<OnboardingStep> Steps { get; }
+    /// <summary>Whether the introduction has been completed or skipped, now or on an earlier run.</summary>
+    public bool HasCompleted => _state.HasCompleted;
 
-    /// <summary>The step being shown.</summary>
-    public OnboardingStep Current => Steps[StepIndex];
-
-    /// <summary>Whether there is a previous step to go back to.</summary>
-    public bool CanGoBack => StepIndex > 0;
-
-    /// <summary>Whether this is the last step.</summary>
-    public bool IsLastStep => StepIndex == Steps.Count - 1;
-
-    /// <summary>The label on the forward button, which becomes a finish action at the end.</summary>
-    public string AdvanceLabel => IsLastStep ? "PROBE MY NETWORK" : "NEXT";
-
-    /// <summary>Human-readable position, for the step counter.</summary>
-    public string Progress => $"{StepIndex + 1} / {Steps.Count}";
-
-    /// <summary>Moves to the next step, or finishes on the last one.</summary>
-    [RelayCommand]
-    private void Advance()
-    {
-        if (IsLastStep)
-        {
-            Finish();
-            return;
-        }
-
-        StepIndex++;
-    }
-
-    /// <summary>Moves back one step. Does nothing on the first.</summary>
-    [RelayCommand]
-    private void GoBack()
-    {
-        if (CanGoBack)
-        {
-            StepIndex--;
-        }
-    }
-
-    /// <summary>
-    /// Dismisses the introduction without walking through it.
-    /// </summary>
-    /// <remarks>
-    /// Skipping still counts as completion. Someone who has decided they do not want the
-    /// walkthrough should not be shown it again on every launch.
-    /// </remarks>
-    [RelayCommand]
-    private void Skip() => Finish();
-
-    /// <summary>Jumps to a specific step, for the progress dots.</summary>
-    public void GoToStep(int index)
-    {
-        if (index >= 0 && index < Steps.Count)
-        {
-            StepIndex = index;
-        }
-    }
+    /// <inheritdoc />
+    protected override string FinishLabel => "PROBE MY NETWORK";
 
     /// <summary>Shows the introduction again from the beginning.</summary>
     [RelayCommand]
@@ -111,20 +50,16 @@ public sealed partial class OnboardingViewModel : ObservableObject
         IsVisible = true;
     }
 
-    private void Finish()
+    /// <inheritdoc />
+    /// <remarks>
+    /// Skipping still counts as completion. Someone who has decided they do not want the
+    /// walkthrough should not be shown it again on every launch.
+    /// </remarks>
+    protected override void Finish()
     {
         _state.MarkCompleted();
         IsVisible = false;
         Completed?.Invoke(this, EventArgs.Empty);
-    }
-
-    partial void OnStepIndexChanged(int value)
-    {
-        OnPropertyChanged(nameof(Current));
-        OnPropertyChanged(nameof(CanGoBack));
-        OnPropertyChanged(nameof(IsLastStep));
-        OnPropertyChanged(nameof(AdvanceLabel));
-        OnPropertyChanged(nameof(Progress));
     }
 
     /// <summary>
