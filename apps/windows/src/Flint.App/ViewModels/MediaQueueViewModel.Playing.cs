@@ -153,7 +153,8 @@ public sealed partial class MediaQueueViewModel
             row.IsMissing = true;
         }
 
-        Status = $"{item.Name} is no longer there, so it was skipped.";
+        // Said once, when it is known what comes next: a first "skipped" replaced a moment later by
+        // "nothing after it" flickered on screen and read wrongly to anyone looking in between.
         if (Rows.All(row => row.IsMissing))
         {
             Status = "None of the queued files are there any more.";
@@ -166,6 +167,7 @@ public sealed partial class MediaQueueViewModel
             return;
         }
 
+        Status = $"{item.Name} is no longer there, so it was skipped.";
         RebuildRows();
         await PlayItemAsync(next, takeover).ConfigureAwait(true);
     }

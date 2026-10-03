@@ -279,8 +279,8 @@ public sealed partial class MediaQueueViewModelTests : IDisposable
 
         await EndAsync(tv);
 
-        await Until(() => queue.Rows[1].IsMissing);
-        queue.Status.ShouldBe("b.mp4 is no longer there, and nothing is queued after it.");
+        await Until(() => queue.Status == "b.mp4 is no longer there, and nothing is queued after it.");
+        queue.Rows[1].IsMissing.ShouldBeTrue();
         tv.Loads.Count.ShouldBe(1);
     }
 

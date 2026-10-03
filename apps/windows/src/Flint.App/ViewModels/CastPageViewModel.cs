@@ -55,6 +55,10 @@ public sealed partial class CastPageViewModel : ObservableObject
     private ModeSessionCoordinator? coordinator;
     private readonly TimeProvider time;
 
+    /// <summary>The clock this page and everything built on it runs on.</summary>
+    /// <remarks>One clock for the whole page, so a test that holds it still holds every timer still.</remarks>
+    internal TimeProvider Time => time;
+
     public CastPageViewModel(
         CapabilityProber prober,
         IRecentAddressStore? addressStore = null,
