@@ -101,9 +101,7 @@ public sealed partial class CastPageViewModel
             return MediaStart.Waiting;
         }
 
-        // A connected page always has its session.
-        var sending = session!;
-
+        CastSession? sending = null;
         lastMediaPath = path;
         var start = MediaStart.NotSent;
         var fileName = System.IO.Path.GetFileName(path);
@@ -114,6 +112,7 @@ public sealed partial class CastPageViewModel
             NowPlaying.ReportSendProgress(fraction);
         });
         using var cancel = new CancellationTokenSource();
+        var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         try
         {
             // Asked, not assumed: the TV may be mirroring or showing the browser, and a person who
@@ -125,6 +124,23 @@ public sealed partial class CastPageViewModel
                 return MediaStart.Kept;
             }
 
+            // The TV builds a sent file from its chunks in the order they arrive, one file at a time.
+            // Two sends side by side would weave two files into one broken one, so the newer request
+            // ends the older and waits until it has let go. Of several waiting, the last one wins.
+            while (sendInFlight is { IsCompleted: false } earlier)
+            {
+                await (sendCancellation?.CancelAsync() ?? Task.CompletedTask).ConfigureAwait(true);
+                await earlier.ConfigureAwait(true);
+            }
+
+            if (session is not { IsConnected: true } live)
+            {
+                // The send just ended may have been the connection's last.
+                return MediaStart.NotSent;
+            }
+
+            sending = live;
+            sendInFlight = done.Task;
             var type = MediaFileTypes.For(path);
             var mimeType = type.MimeType;
             MediaStatus = $"Sending {fileName} to the TV.";
@@ -171,7 +187,8 @@ public sealed partial class CastPageViewModel
             NowPlaying.Clear();
             start = MediaStart.Cancelled;
             FlintDiag.Info("FlintCast", "media push cancelled");
-            await DropPartialFileAsync(sending).ConfigureAwait(true);
+            // Cancellation is only possible once the send began, and with it the session was chosen.
+            await DropPartialFileAsync(sending!).ConfigureAwait(true);
         }
         catch (OperationCanceledException)
         {
@@ -199,6 +216,8 @@ public sealed partial class CastPageViewModel
             {
                 sendCancellation = null;
             }
+
+            done.SetResult();
         }
 
         RaiseDerived();

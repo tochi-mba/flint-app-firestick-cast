@@ -30,6 +30,12 @@ public sealed partial class MediaQueueViewModel
     private PlaybackPhase lastPhase;
 
     /// <summary>
+    /// Counts plays, so one overtaken by a newer play (Next pressed while a file was still being
+    /// sent, or while its resume question was open) stops instead of finishing on top of it.
+    /// </summary>
+    private int attempt;
+
+    /// <summary>
     /// Where the playing file last was, and how long it is. The card forgets both the moment it is
     /// stopped, before saying it has stopped, so the position to keep is the last one seen.
     /// </summary>
@@ -97,6 +103,11 @@ public sealed partial class MediaQueueViewModel
     /// <summary>Plays <paramref name="item"/>, from where it stopped if the person wants that.</summary>
     private async Task PlayItemAsync(PlaylistItem item, MediaTakeover takeover)
     {
+        var mine = ++attempt;
+
+        // A question still open belongs to the play this one replaces; left up, its answer, or its
+        // own timer, would start that file over this one.
+        AnswerResume(false);
         StopTimers();
         var wasWaiting = waitingItem is not null;
         IsWaiting = false;
@@ -119,7 +130,17 @@ public sealed partial class MediaQueueViewModel
 
         var key = ResumePolicy.KeyFor(item.Path, facts.SizeBytes, facts.LastWritten);
         var start = await StartPositionAsync(item, key).ConfigureAwait(true);
+        if (mine != attempt)
+        {
+            return;
+        }
+
         var result = await cast.PlayFileAsync(item.Path, start, takeover).ConfigureAwait(true);
+        if (mine != attempt)
+        {
+            return;
+        }
+
         switch (result)
         {
             case MediaStart.Playing:
@@ -188,7 +209,7 @@ public sealed partial class MediaQueueViewModel
                 return kept!.PositionMs;
             case ResumeDecision.Ask:
                 ResumeText = $"Resume {item.Name} from {PlaybackTimeText.Format(kept!.PositionMs)}?";
-                resumeAnswer = new TaskCompletionSource<bool>();
+                resumeAnswer = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 IsAskingResume = true;
 
                 // Nobody answering is a queue left playing to itself: carry on, as most people would.
@@ -325,6 +346,9 @@ public sealed partial class MediaQueueViewModel
         {
             SavePosition();
             StopTimers();
+
+            // Whatever was about to play has nowhere to go; it stops rather than failing to send.
+            attempt++;
             AnswerResume(false);
             IsWaiting = false;
             FlintDiag.Info("FlintCast", "queue paused by a lost connection");

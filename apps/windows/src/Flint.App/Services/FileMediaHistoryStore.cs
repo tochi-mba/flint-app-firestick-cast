@@ -58,10 +58,10 @@ public sealed class FileMediaHistoryStore : IMediaHistoryStore
     /// <inheritdoc />
     public void Forget(string key)
     {
-        var entries = Load();
-        if (entries.Any(entry => entry.Key == key))
+        var current = Load();
+        if (current.Any(entry => entry.Key == key))
         {
-            Write([.. entries.Where(entry => entry.Key != key)]);
+            Write([.. current.Where(entry => entry.Key != key)]);
         }
     }
 
@@ -89,8 +89,8 @@ public sealed class FileMediaHistoryStore : IMediaHistoryStore
                 return [];
             }
 
-            var entries = JsonSerializer.Deserialize<List<MediaHistoryEntry>>(File.ReadAllText(filePath)) ?? [];
-            return [.. entries.Where(entry => entry is { Key.Length: 64, PositionMs: >= 0 })];
+            var stored = JsonSerializer.Deserialize<List<MediaHistoryEntry>>(File.ReadAllText(filePath)) ?? [];
+            return [.. stored.Where(entry => entry is { Key.Length: 64, PositionMs: >= 0 })];
         }
         catch (Exception exception) when (IsStorageFailure(exception) || exception is JsonException)
         {

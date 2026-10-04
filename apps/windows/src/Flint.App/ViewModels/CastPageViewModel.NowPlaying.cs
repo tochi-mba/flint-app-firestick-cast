@@ -15,6 +15,10 @@ namespace Flint.App.ViewModels;
 public sealed partial class CastPageViewModel : IMediaRemote
 {
     private CancellationTokenSource? sendCancellation;
+
+    /// <summary>Completes when the file being sent has started, failed or been let go of.</summary>
+    private Task? sendInFlight;
+
     private string? lastMediaPath;
 
     /// <summary>
