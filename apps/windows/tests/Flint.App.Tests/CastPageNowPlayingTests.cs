@@ -184,6 +184,38 @@ public sealed class CastPageNowPlayingTests : IDisposable
     }
 
     [Fact]
+    public async Task ASecondFile_WhileTheFirstIsStillSending_EndsTheFirst_SoTheTwoNeverMix()
+    {
+        await using var receiver = new LoopbackReceiver { AnswerLoad = LoopbackReceiver.PlaysEverything };
+        var cast = await PairedAsync(receiver, time: clock);
+        var large = Path.Combine(Path.GetTempPath(), $"flint-large-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllBytesAsync(large, new byte[24 * 1024 * 1024], Token);
+        try
+        {
+            var first = cast.PlayFileAsync(large, 0, MediaTakeover.Ask);
+            await receiver.WaitForAsync<MediaDataMessage>();
+
+            var second = await cast.PlayFileAsync(file, 0, MediaTakeover.Ask).WaitAsync(TimeSpan.FromSeconds(10), Token);
+
+            (await first).ShouldBe(MediaStart.Cancelled);
+            second.ShouldBe(MediaStart.Playing);
+            cast.NowPlaying.Title.ShouldBe(FileName);
+            var wire = receiver.Received.ToList();
+            var clear = wire.FindIndex(sent => sent is MediaCommandMessage { Action: MediaAction.Clear });
+            clear.ShouldBeGreaterThan(0, "the first file is let go of before the second begins");
+            var after = wire.Skip(clear + 1).ToList();
+            after.OfType<MediaDataMessage>().Select(chunk => (chunk.Data.Length, chunk.IsFinal))
+                .ShouldBe([(64 * 1024, true)], "only the second file's bytes follow, whole");
+            wire.OfType<MediaCommandMessage>().Where(command => command.Action == MediaAction.Load)
+                .Select(load => load.Title).ShouldBe([FileName]);
+        }
+        finally
+        {
+            File.Delete(large);
+        }
+    }
+
+    [Fact]
     public async Task CancellingWhenNothingIsSending_DoesNothing()
     {
         await using var receiver = new LoopbackReceiver();

@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
-using Flint.Core;
 using Avalonia.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Flint.Core;
 using Flint.Core.Media;
 using Flint.Core.Settings;
 
@@ -336,7 +336,13 @@ public sealed partial class MediaQueueViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(RepeatLabel));
         NextCommand.NotifyCanExecuteChanged();
         PreviousCommand.NotifyCanExecuteChanged();
-        StartPictureTimer();
+
+        // A new time for pictures starts the one showing over, at that time. Any other change, the
+        // volume step, say, leaves its countdown alone.
+        if (change.Previous.Media.PictureSeconds != change.Current.Media.PictureSeconds)
+        {
+            StartPictureTimer();
+        }
     }
 
     /// <summary>
