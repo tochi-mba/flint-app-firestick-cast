@@ -15,7 +15,7 @@ internal static class CliCompletion
         Register-ArgumentCompleter -Native -CommandName flint -ScriptBlock {
             param($wordToComplete, $commandAst, $cursorPosition)
 
-            $commands = 'version', 'doctor', 'update', 'completion'
+            $commands = 'version', 'doctor', 'update', 'completion', 'perf'
             $options = '--address', '--port', '--receiver-port', '--pairing-code', '--media',
                 '--mirror', '--mirror-width', '--browse', '--browser-port', '--services',
                 '--json', '--version', '--help'
@@ -25,6 +25,7 @@ internal static class CliCompletion
                 $commands + $options
             }
             elseif ($spoken[0] -eq 'completion') { @('powershell') }
+            elseif ($spoken[0] -eq 'perf') { @('--json') }
             elseif ($spoken[0] -in $commands) { @() }
             else { $options }
 

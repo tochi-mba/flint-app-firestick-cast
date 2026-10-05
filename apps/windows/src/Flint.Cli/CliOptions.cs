@@ -19,6 +19,9 @@ internal enum CliVerb
 
     /// <summary>Print a shell completion script.</summary>
     Completion,
+
+    /// <summary>Time the paths Flint runs most often, for comparing two builds.</summary>
+    Perf,
 }
 
 /// <summary>Validated command-line intent for the diagnostics runner.</summary>
@@ -193,12 +196,15 @@ internal sealed record CliOptions(
             return true;
         }
 
-        // update and completion do their own job and take none of the probe's options.
-        if (verb is CliVerb.Update or CliVerb.Completion)
+        // update, completion and perf do their own job and take none of the probe's options; perf
+        // takes --json, which says how to write what it measured.
+        if (verb is CliVerb.Update or CliVerb.Completion or CliVerb.Perf)
         {
-            if (rest.Count > 0)
+            if (rest.Any(argument => verb is not CliVerb.Perf || !argument.Equals("--json", StringComparison.OrdinalIgnoreCase)))
             {
-                error = $"'{arguments[0]}' takes no other options.";
+                error = verb is CliVerb.Perf
+                    ? "'perf' takes only --json."
+                    : $"'{arguments[0]}' takes no other options.";
                 return false;
             }
 
@@ -340,6 +346,9 @@ internal sealed record CliOptions(
             case "update":
                 verb = CliVerb.Update;
                 return true;
+            case "perf":
+                verb = CliVerb.Perf;
+                return true;
             case "completion":
                 verb = CliVerb.Completion;
                 // Only the shell Flint ships a script for. Naming the others would promise something
@@ -353,7 +362,7 @@ internal sealed record CliOptions(
                 shell = arguments[1];
                 return true;
             default:
-                error = $"Unknown command '{arguments[0]}'. Try version, doctor, update or completion.";
+                error = $"Unknown command '{arguments[0]}'. Try version, doctor, update, completion or perf.";
                 return false;
         }
     }

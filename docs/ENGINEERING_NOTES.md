@@ -164,3 +164,30 @@ under `Flint*` / `BrowserTlsServer` tags. Snapshot both into the repo with:
 
 Outputs land in `artifacts/logs/` (`firetv-latest.log`, `windows-latest.log`, `session-meta.txt`),
 which is gitignored. See `AGENTS.md` (“Debugging logs”). Do not put secrets in these streams.
+
+## Measuring the managed paths
+
+`flint perf` times the C# paths that run on every wire message, every change to the queue and every
+drop: encoding and decoding a 64 KiB video frame, adding, walking and shuffling a queue of 2,000
+files, opening a dropped tree of 6,000 files (2,000 kept), sorting 2,000 names, judging 10,000
+file types, ten settings updates, and a thousand ticks of the playback bar. Each path is warmed
+up, then timed run by run, and the median and 95th percentile are kept, not the mean, so one
+garbage collection cannot move the answer.
+
+`./dev.ps1 perf compare` builds Release, runs it, and compares the medians with
+`tools/perf/baseline.json`. A path fails when it takes more than half as long again and more than
+twenty microseconds longer. Unchanged code measured on a laptop drifts by a fifth or more between runs
+as its clock follows heat and power, so a tighter ratio fails on nothing, while the regressions this
+is for (a lookup that turns into a walk, a sort that copies) are several times slower. The floor
+keeps paths measured in microseconds from failing on noise. Every path is warmed up for 300 ms
+before it is timed, so the runtime's second, optimised compilation is what gets measured, and is
+timed in three rounds of which the best is kept. The report names the PC only by an opaque
+profile (a hash of its name, processor count, Windows build and architecture), so the committed
+baseline does not publish a machine name. A baseline from another profile, runtime, schema or a
+Debug build is refused rather than compared, because the comparison would mean nothing. Measure a
+baseline on the PC that will compare against it with `./dev.ps1 perf baseline`, and commit it with
+the change it measures.
+
+These numbers describe one PC on one day. They are not claims about Flint's speed, and none of them
+is a latency: capture, encoding and the television are measured separately, by the engine's
+hardware tests and the procedure in `LATENCY_BUDGET.md`.

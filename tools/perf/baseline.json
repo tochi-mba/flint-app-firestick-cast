@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "measuredAtUtc": "2026-10-05T16:53:30.8858810\u002B00:00",
+  "profile": "70d22ecd8c2d442d",
+  "processors": 8,
+  "runtime": ".NET 10.0.12",
+  "build": "Release",
+  "metrics": [
+    {
+      "name": "wire.encode-video-frame",
+      "medianMicroseconds": 28.9,
+      "p95Microseconds": 435.1,
+      "runs": 400
+    },
+    {
+      "name": "wire.decode-video-frame",
+      "medianMicroseconds": 9.9,
+      "p95Microseconds": 15.5,
+      "runs": 400
+    },
+    {
+      "name": "playlist.add-2000",
+      "medianMicroseconds": 504.7,
+      "p95Microseconds": 3674.7,
+      "runs": 50
+    },
+    {
+      "name": "playlist.advance-through-2000",
+      "medianMicroseconds": 600.1,
+      "p95Microseconds": 3591.9,
+      "runs": 50
+    },
+    {
+      "name": "playlist.shuffle-cycle-2000",
+      "medianMicroseconds": 1849.5,
+      "p95Microseconds": 9909.1,
+      "runs": 50
+    },
+    {
+      "name": "drop.expand-2000-of-6000-files",
+      "medianMicroseconds": 3055.1,
+      "p95Microseconds": 7060.7,
+      "runs": 50
+    },
+    {
+      "name": "order.natural-sort-2000-names",
+      "medianMicroseconds": 4399.2,
+      "p95Microseconds": 6368.7,
+      "runs": 50
+    },
+    {
+      "name": "types.judge-10000-files",
+      "medianMicroseconds": 550.1,
+      "p95Microseconds": 728.8,
+      "runs": 50
+    },
+    {
+      "name": "settings.update-10-times",
+      "medianMicroseconds": 27.3,
+      "p95Microseconds": 32.3,
+      "runs": 400
+    },
+    {
+      "name": "playback.position-1000-ticks",
+      "medianMicroseconds": 9.8,
+      "p95Microseconds": 10.4,
+      "runs": 400
+    }
+  ]
+}

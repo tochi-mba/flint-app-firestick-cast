@@ -172,6 +172,13 @@ own gates. The Windows app and the Rust engine build on Windows; the Android app
 on any platform. The .NET tests write Coverlet reports under `TestResults`; no .NET coverage floor is
 enforced yet.
 
+`./dev.ps1 perf compare` times the managed paths Flint runs most often (the wire codec, the queue,
+opening a dropped folder, sorting names, settings and the playback bar) in a Release build, and fails
+when one is clearly slower than `tools/perf/baseline.json`. The baseline belongs to one PC, named only
+by an opaque profile; on any other PC the comparison refuses rather than mislead, and
+`./dev.ps1 perf baseline` measures one for that PC. Capture and encoding are measured by the engine's
+hardware tests instead. See [Measuring the managed paths](docs/ENGINEERING_NOTES.md#measuring-the-managed-paths).
+
 ## Privacy
 
 No account, analytics, ads, cloud relay, or crash-reporting SDK. Current network activity is local

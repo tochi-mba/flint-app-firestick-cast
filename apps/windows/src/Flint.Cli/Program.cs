@@ -67,6 +67,11 @@ internal static class Program
             return FlintExitCode.Success;
         }
 
+        if (options.Verb is CliVerb.Perf)
+        {
+            return PerfCommand.Run(Console.Out, banner, options.Json);
+        }
+
         if (options.Verb is CliVerb.Update)
         {
             // Its own deadline: a download is not a probe, and the probe's sixty seconds would stop
@@ -220,6 +225,7 @@ internal static class Program
         Console.WriteLine("    flint doctor                  Probe this PC and the television (the same as `flint`)");
         Console.WriteLine("    flint update                  Install a newer Flint, if this copy was installed");
         Console.WriteLine("    flint completion powershell   Print a completion script for PowerShell");
+        Console.WriteLine("    flint perf [--json]           Time the paths Flint runs most often, to compare builds");
         Console.WriteLine();
         Console.WriteLine("  Usage:");
         Console.WriteLine("    flint                         Discover and probe an advertised Fire TV");
