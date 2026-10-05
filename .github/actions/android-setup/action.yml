@@ -34,4 +34,4 @@ runs:
     # release after this action was shared failed here with "sdkmanager: command not found".
     - name: Install Android build tools
       shell: pwsh
-      run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
