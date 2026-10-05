@@ -30,7 +30,7 @@ Set-StrictMode -Version Latest
 
 $script:RepoRoot = $PSScriptRoot
 $script:TaskArguments = @($args)
-foreach ($module in 'common', 'source-check', 'gates', 'doctor', 'hooks', 'release', 'devices') {
+foreach ($module in 'common', 'source-check', 'gates', 'doctor', 'hooks', 'release', 'devices', 'perf') {
     . (Join-Path $PSScriptRoot "tools/dev/$module.ps1")
 }
 
@@ -48,6 +48,7 @@ $script:DevTasks = [ordered]@{
     logs     = @{ Usage = 'logs pull|watch [options]'; Summary = 'Collect Fire TV and Windows logs into artifacts/logs.'; Run = { Invoke-Logs $script:TaskArguments } }
     hardware = @{ Usage = 'hardware <scenario> [options]'; Summary = 'Run a test that drives a real television or this desktop.'; Run = { Invoke-Hardware $script:TaskArguments } }
     release  = @{ Usage = 'release bump <x.y.z>|notes [x.y.z]'; Summary = 'Move the version everywhere at once, or print a release''s notes.'; Run = { Invoke-Release $script:TaskArguments } }
+    perf     = @{ Usage = 'perf [run|compare|baseline]'; Summary = 'Time the paths Flint runs most often, and compare with the committed baseline.'; Run = { Invoke-Perf $script:TaskArguments } }
 }
 
 function Show-DevHelp {
