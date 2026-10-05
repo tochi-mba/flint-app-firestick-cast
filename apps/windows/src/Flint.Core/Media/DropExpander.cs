@@ -88,7 +88,8 @@ public static class DropExpander
         string[] below;
         try
         {
-            here = [.. files.FilesIn(folder).Order(NaturalOrderByName.Instance)];
+            // Only what could be queued is put in order: a folder is often mostly other files.
+            here = [.. files.FilesIn(folder).Where(MediaFileTypes.IsPlayable).Order(NaturalOrderByName.Instance)];
             below = deep ? [.. files.FoldersIn(folder).Order(NaturalOrderByName.Instance)] : [];
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
@@ -98,7 +99,7 @@ public static class DropExpander
 
         foreach (var path in here)
         {
-            if (IsWanted(path, files) && !TryAdd(found, path))
+            if (!files.IsHiddenOrSystem(path) && !TryAdd(found, path))
             {
                 capped = true;
                 return 0;
@@ -141,7 +142,7 @@ public static class DropExpander
         public static NaturalOrderByName Instance { get; } = new();
 
         public int Compare(string? x, string? y) =>
-            NaturalOrder.Instance.Compare(Path.GetFileName(x), Path.GetFileName(y)) is var byName and not 0
+            NaturalOrder.Compare(Path.GetFileName(x.AsSpan()), Path.GetFileName(y.AsSpan())) is var byName and not 0
                 ? byName
                 : NaturalOrder.Instance.Compare(x, y);
     }

@@ -43,8 +43,8 @@ public sealed class LocalMediaFileSystem : IMediaFileSystem
     }
 
     /// <inheritdoc />
-    public IEnumerable<string> FilesIn(string folder) => Directory.GetFiles(folder);
+    public IEnumerable<string> FilesIn(string folder) => Directory.EnumerateFiles(folder);
 
     /// <inheritdoc />
-    public IEnumerable<string> FoldersIn(string folder) => Directory.GetDirectories(folder);
+    public IEnumerable<string> FoldersIn(string folder) => Directory.EnumerateDirectories(folder);
 }
