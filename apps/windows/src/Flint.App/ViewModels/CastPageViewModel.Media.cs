@@ -129,7 +129,7 @@ public sealed partial class CastPageViewModel
             // ends the older and waits until it has let go. Of several waiting, the last one wins.
             while (sendInFlight is { IsCompleted: false } earlier)
             {
-                await (sendCancellation?.CancelAsync() ?? Task.CompletedTask).ConfigureAwait(true);
+                CancelMediaSend();
                 await earlier.ConfigureAwait(true);
             }
 

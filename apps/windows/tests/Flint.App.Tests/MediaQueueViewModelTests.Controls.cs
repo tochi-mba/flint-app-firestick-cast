@@ -59,6 +59,25 @@ public sealed partial class MediaQueueViewModelTests
     }
 
     [Fact]
+    public async Task SeparateDrops_StayInTheOrderTheyWereMade_WhenTheFirstFolderIsSlow()
+    {
+        using var disk = new SlowFirstDropFileSystem();
+        var cast = Snapshots.SnapshotFixtures.ViewModel();
+        using var queue = new MediaQueueViewModel(cast, settings, history, disk, clock);
+
+        var first = queue.AddDroppedAsync([SlowFirstDropFileSystem.SlowFolder]);
+        disk.WaitUntilFolderWalkStarts();
+        var second = queue.AddDroppedAsync([SlowFirstDropFileSystem.FastFile]);
+        await Task.Yield();
+        second.IsCompleted.ShouldBeFalse("a later drop waits behind the one already being opened");
+
+        disk.FinishFolderWalk();
+        await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        Names(queue).ShouldBe(["slow.mp4", "fast.mp4"]);
+    }
+
+    [Fact]
     public async Task Remove_MoveUp_MoveDown_AndClear_ArrangeTheList()
     {
         var cast = Snapshots.SnapshotFixtures.ViewModel();
@@ -262,13 +281,86 @@ public sealed partial class MediaQueueViewModelTests
     public void ARow_SaysWhatKindOfFileItIs_AndWhetherItHasBeenTried()
     {
         var playlist = new Playlist();
-        var rows = playlist.Add(["a.mp4", "b.mp3", "c.jpg", "d.flac"]).Select(item => new QueueRowViewModel(item)).ToArray();
+        var rows = playlist.Add(["a.mp4", "b.mp3", "c.jpg", "d.flac"])
+            .Select(item => new QueueRowViewModel(item))
+            .ToArray();
+        var unknown = new QueueRowViewModel(new PlaylistItem(99, "e.unknown", MediaFileTypes.For("e.unknown")));
 
-        rows.Select(row => row.KindLabel).ShouldBe(["VIDEO", "MUSIC", "PICTURE", "MUSIC"]);
+        rows.Select(row => row.KindLabel)
+            .Append(unknown.KindLabel)
+            .ShouldBe(["VIDEO", "MUSIC", "PICTURE", "MUSIC", "FILE"]);
         rows[0].HasNote.ShouldBeFalse();
         rows[3].Note.ShouldBe("Flint has not tried this kind of file");
-        rows[3].SpokenName.ShouldBe("d.flac");
+        rows[3].SpokenName.ShouldBe("d.flac, Flint has not tried this kind of file");
+    }
+
+    [Fact]
+    public void ARow_UpdatesItsScreenReaderName_WhenItsStateChanges()
+    {
+        var item = new Playlist().Add(["a.mp4"]).Single();
+        var row = new QueueRowViewModel(item);
+        var raised = new List<string?>();
+        row.PropertyChanged += (_, change) => raised.Add(change.PropertyName);
+
+        row.IsCurrent = true;
+        row.SpokenName.ShouldBe("a.mp4, playing");
+        raised.ShouldContain(nameof(QueueRowViewModel.SpokenName));
+
+        raised.Clear();
+        row.IsCurrent = false;
+        row.IsWaiting = true;
+        row.SpokenName.ShouldBe("a.mp4, Waiting for the TV");
+        raised.ShouldContain(nameof(QueueRowViewModel.SpokenName));
+
+        raised.Clear();
+        row.IsWaiting = false;
+        row.IsMissing = true;
+        row.SpokenName.ShouldBe("a.mp4, File not found");
+        raised.ShouldContain(nameof(QueueRowViewModel.SpokenName));
+    }
+
+    [Fact]
+    public void APlayingRow_StillSaysWhatIsWorthKnowingAboutIt()
+    {
+        var row = new QueueRowViewModel(new Playlist().Add(["a.flac"]).Single()) { IsCurrent = true };
+
+        row.SpokenName.ShouldBe("a.flac, playing, Flint has not tried this kind of file");
     }
 
     private static List<string> Names(MediaQueueViewModel queue) => [.. queue.Rows.Select(row => row.Name)];
+
+    private sealed class SlowFirstDropFileSystem : IMediaFileSystem, IDisposable
+    {
+        public const string SlowFolder = @"D:\slow";
+        public const string FastFile = @"D:\fast.mp4";
+        private readonly ManualResetEventSlim started = new();
+        private readonly ManualResetEventSlim release = new();
+
+        public bool IsFolder(string path) => path == SlowFolder;
+
+        public MediaFileFacts? Facts(string path) => new(1, DateTimeOffset.UnixEpoch);
+
+        public bool IsHiddenOrSystem(string path) => false;
+
+        public IEnumerable<string> FilesIn(string folder)
+        {
+            started.Set();
+            release.Wait(TestContext.Current.CancellationToken);
+            return [@"D:\slow\slow.mp4"];
+        }
+
+        public IEnumerable<string> FoldersIn(string folder) => [];
+
+        public void WaitUntilFolderWalkStarts() =>
+            started.Wait(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken)
+                .ShouldBeTrue("the first drop should be walking its folder");
+
+        public void FinishFolderWalk() => release.Set();
+
+        public void Dispose()
+        {
+            started.Dispose();
+            release.Dispose();
+        }
+    }
 }

@@ -20,22 +20,23 @@ public sealed partial class QueueRowViewModel : ObservableObject
     {
         MediaKind.Video => "VIDEO",
         MediaKind.Audio => "MUSIC",
-        _ => "PICTURE",
+        MediaKind.Picture => "PICTURE",
+        _ => "FILE",
     };
 
     /// <summary>Whether this is the item playing.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Note), nameof(HasNote))]
+    [NotifyPropertyChangedFor(nameof(Note), nameof(HasNote), nameof(SpokenName))]
     private bool _isCurrent;
 
     /// <summary>Whether the file was not there when its turn came.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Note), nameof(HasNote))]
+    [NotifyPropertyChangedFor(nameof(Note), nameof(HasNote), nameof(SpokenName))]
     private bool _isMissing;
 
     /// <summary>Whether this is next, waiting for a TV that shows something else.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Note), nameof(HasNote))]
+    [NotifyPropertyChangedFor(nameof(Note), nameof(HasNote), nameof(SpokenName))]
     private bool _isWaiting;
 
     /// <summary>The one thing worth saying about the file, if anything.</summary>
@@ -48,5 +49,11 @@ public sealed partial class QueueRowViewModel : ObservableObject
     public bool HasNote => Note is not null;
 
     /// <summary>The row's name for a screen reader.</summary>
-    public string SpokenName => IsCurrent ? $"{Name}, playing" : Name;
+    public string SpokenName => (IsCurrent, Note) switch
+    {
+        (true, { } note) => $"{Name}, playing, {note}",
+        (true, _) => $"{Name}, playing",
+        (_, { } note) => $"{Name}, {note}",
+        _ => Name,
+    };
 }
