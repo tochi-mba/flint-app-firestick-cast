@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Flint.App.ViewModels;
 using Shouldly;
 using static Flint.App.Tests.CastPageFixtures;
@@ -49,10 +50,13 @@ public sealed partial class MediaQueueViewModelTests
 
         var adding = queue.AddDroppedAsync([a, b]);
         await Until(() => queue.ResumeText?.Contains("a.mp4", StringComparison.Ordinal) == true);
+        // The question's words appear a moment before its timer is made, on another thread here.
+        await Until(() => lateTime.Created.Count == 1);
         var oldTimer = lateTime.Created.Single();
 
         var choosing = queue.PlayNowCommand.ExecuteAsync(queue.Rows[1]);
         await Until(() => queue.ResumeText?.Contains("b.mp4", StringComparison.Ordinal) == true);
+        await Until(() => lateTime.Created.Count == 2);
         oldTimer.FireEvenThoughDisposed();
         await Settle();
 
@@ -135,14 +139,14 @@ public sealed partial class MediaQueueViewModelTests
 
     private sealed class LateCallbackTime : TimeProvider
     {
-        public List<LateTimer> Created { get; } = [];
+        public ConcurrentQueue<LateTimer> Created { get; } = [];
 
         public override DateTimeOffset GetUtcNow() => DateTimeOffset.UnixEpoch;
 
         public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
         {
             var timer = new LateTimer(callback, state);
-            Created.Add(timer);
+            Created.Enqueue(timer);
             return timer;
         }
 
