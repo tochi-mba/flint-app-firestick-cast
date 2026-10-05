@@ -23,7 +23,7 @@
       .config/dotnet-tools.json, which builds the packages this library reads: a client older than
       the packages cannot apply them.
     -->
-    <PackageVersion Include="Velopack" Version="1.2.158" />
+    <PackageVersion Include="Velopack" Version="1.2.161" />
     <!--
       No project references this directly. Avalonia.Desktop pulls in a Tmds.DBus.Protocol with a
       published advisory (GHSA-xrw6-gwf8-vvr9). The D-Bus path is Linux-only and never executes on a
