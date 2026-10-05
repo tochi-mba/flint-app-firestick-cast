@@ -32,6 +32,9 @@ public sealed partial class MediaQueueViewModel : ObservableObject, IDisposable
     private readonly SynchronizationContext? context;
     private readonly Playlist playlist;
 
+    /// <summary>Completes when the latest drop has joined the queue, whether or not it has started playing.</summary>
+    private Task lastJoined = Task.CompletedTask;
+
     /// <summary>Builds the queue over the Cast page's connection.</summary>
     /// <param name="cast">The connection, and the Now Playing card.</param>
     /// <param name="settings">How the queue moves on, repeats, shuffles and resumes.</param>
@@ -91,12 +94,40 @@ public sealed partial class MediaQueueViewModel : ObservableObject, IDisposable
     public string ShuffleLabel => Shuffle ? "SHUFFLE ON" : "SHUFFLE OFF";
 
     /// <summary>Adds what was dropped on Flint or chosen in its picker, opening folders.</summary>
-    public Task AddDroppedAsync(IReadOnlyList<string> dropped)
+    /// <remarks>
+    /// <para>
+    /// Folders are opened away from the window's thread: a large tree, or one on a slow network
+    /// drive, takes a while to list, and the window stays responsive while it does.
+    /// </para>
+    /// <para>
+    /// Separate drops join the queue in the order they were made, so a single file dropped after a
+    /// slow folder still lands after it. Only joining waits its turn, never playing: a drop made
+    /// while the one before it asks whether to resume is queued at once, not when someone answers.
+    /// </para>
+    /// </remarks>
+    public async Task AddDroppedAsync(IReadOnlyList<string> dropped)
     {
         ArgumentNullException.ThrowIfNull(dropped);
         var media = settings.Current.Media;
-        var contents = DropExpander.Expand(dropped, files, media.IncludeSubfolders, media.DropOrder);
-        return AddAsync(contents);
+        var earlier = lastJoined;
+        var joined = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        lastJoined = joined.Task;
+        try
+        {
+            var contents = await Task.Run(() => DropExpander.Expand(dropped, files, media.IncludeSubfolders, media.DropOrder))
+                .ConfigureAwait(true);
+            await earlier.ConfigureAwait(true);
+
+            // The files are in the list by the time AddAsync first waits, which is for the TV.
+            var adding = AddAsync(contents);
+            joined.TrySetResult();
+            await adding.ConfigureAwait(true);
+        }
+        finally
+        {
+            // A drop that failed to open still lets the next one through.
+            joined.TrySetResult();
+        }
     }
 
     /// <summary>Queues files, and starts the first when nothing from this PC is on the TV.</summary>
@@ -111,8 +142,9 @@ public sealed partial class MediaQueueViewModel : ObservableObject, IDisposable
             return;
         }
 
-        // Nothing from this PC on the TV, even if the queue remembers what played last.
-        var idle = !cast.NowPlaying.IsActive;
+        // Nothing from this PC on the TV, even if the queue remembers what played last, and nothing
+        // on its way there.
+        var idle = !cast.NowPlaying.IsActive && playsUnderway == 0;
         var added = playlist.Add(contents.Files);
         RebuildRows();
         var said = added.Count == 1 ? $"Added {added[0].Name} to the queue." : $"Added {added.Count} to the queue.";

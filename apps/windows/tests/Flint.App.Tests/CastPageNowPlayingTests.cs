@@ -1,3 +1,4 @@
+using System.Reflection;
 using Flint.App.ViewModels;
 using Flint.Core.Media;
 using Flint.Protocol;
@@ -213,6 +214,27 @@ public sealed class CastPageNowPlayingTests : IDisposable
         {
             File.Delete(large);
         }
+    }
+
+    [Fact]
+    public async Task ASendWaitingItsTurn_WhenTheConnectionEndsMeanwhile_SendsNothing()
+    {
+        await using var receiver = new LoopbackReceiver { AnswerLoad = LoopbackReceiver.PlaysEverything };
+        var cast = await PairedAsync(receiver, time: clock);
+
+        // A send still letting go, held open by the test so the connection can end while this waits.
+        var earlier = new TaskCompletionSource();
+        typeof(CastPageViewModel).GetField("sendInFlight", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(cast, earlier.Task);
+
+        var waiting = cast.PlayFileAsync(file, 0, MediaTakeover.Ask);
+        await receiver.CloseAsync();
+        await Until(() => !cast.IsSessionConnected);
+        earlier.SetResult();
+
+        (await waiting.WaitAsync(TimeSpan.FromSeconds(10), Token)).ShouldBe(MediaStart.NotSent);
+        receiver.Received.OfType<MediaDataMessage>().ShouldBeEmpty();
+        receiver.Loads.ShouldBeEmpty();
     }
 
     [Fact]

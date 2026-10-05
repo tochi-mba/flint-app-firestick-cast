@@ -36,6 +36,12 @@ public sealed partial class MediaQueueViewModel
     private int attempt;
 
     /// <summary>
+    /// Plays started and not yet settled. While one is asking whether to resume, or sending, a new
+    /// drop joins the queue behind it rather than starting a play of its own over it.
+    /// </summary>
+    private int playsUnderway;
+
+    /// <summary>
     /// Where the playing file last was, and how long it is. The card forgets both the moment it is
     /// stopped, before saying it has stopped, so the position to keep is the last one seen.
     /// </summary>
@@ -103,12 +109,28 @@ public sealed partial class MediaQueueViewModel
     /// <summary>Plays <paramref name="item"/>, from where it stopped if the person wants that.</summary>
     private async Task PlayItemAsync(PlaylistItem item, MediaTakeover takeover)
     {
+        playsUnderway++;
+        try
+        {
+            await PlayItemCoreAsync(item, takeover).ConfigureAwait(true);
+        }
+        finally
+        {
+            playsUnderway--;
+        }
+    }
+
+    private async Task PlayItemCoreAsync(PlaylistItem item, MediaTakeover takeover)
+    {
         var mine = ++attempt;
 
         // A question still open belongs to the play this one replaces; left up, its answer, or its
         // own timer, would start that file over this one.
         AnswerResume(false);
         StopTimers();
+        // A remembered replacement may wait for an answer. End an older upload before asking, so
+        // it cannot finish and start on the TV while the replacement question is still open.
+        cast.CancelMediaSend();
         var wasWaiting = waitingItem is not null;
         IsWaiting = false;
         waitingItem = null;
@@ -209,25 +231,36 @@ public sealed partial class MediaQueueViewModel
                 return kept!.PositionMs;
             case ResumeDecision.Ask:
                 ResumeText = $"Resume {item.Name} from {PlaybackTimeText.Format(kept!.PositionMs)}?";
-                resumeAnswer = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var question = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                resumeAnswer = question;
                 IsAskingResume = true;
 
                 // Nobody answering is a queue left playing to itself: carry on, as most people would.
-                resumeTimer = time.CreateTimer(_ => OnUi(() => AnswerResume(true)), null, ResumeWait, Timeout.InfiniteTimeSpan);
-                return await resumeAnswer.Task.ConfigureAwait(true) ? kept.PositionMs : 0;
+                // The answer is tied to this question, so a timer that fires late answers nothing newer.
+                Action resumeByItself = () => AnswerResume(question, true);
+                resumeTimer = time.CreateTimer(_ => OnUi(resumeByItself), null, ResumeWait, Timeout.InfiniteTimeSpan);
+                return await question.Task.ConfigureAwait(true) ? kept.PositionMs : 0;
             default:
                 return 0;
         }
     }
 
-    private void AnswerResume(bool resume)
+    private void AnswerResume(bool resume) => AnswerResume(resumeAnswer, resume);
+
+    private void AnswerResume(TaskCompletionSource<bool>? question, bool resume)
     {
+        // Disposing a timer cannot retract a callback that it already queued. An old callback must
+        // never answer a newer file's question through the field that now points at that question.
+        if (!ReferenceEquals(resumeAnswer, question))
+        {
+            return;
+        }
+
         resumeTimer?.Dispose();
         resumeTimer = null;
         IsAskingResume = false;
-        var answer = resumeAnswer;
         resumeAnswer = null;
-        answer?.TrySetResult(resume);
+        question?.TrySetResult(resume);
     }
 
     private void OnMediaFinished(object? sender, EventArgs args)

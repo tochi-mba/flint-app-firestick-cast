@@ -62,6 +62,13 @@ public sealed partial class CastPageViewModel : IMediaRemote
     /// <inheritdoc />
     Task IMediaRemote.CancelSendAsync() => sendCancellation?.CancelAsync() ?? Task.CompletedTask;
 
+    /// <summary>Ends the file being sent, if any, before the caller does anything else.</summary>
+    /// <remarks>
+    /// Synchronous on purpose: the send's own wait for the TV is cancelled before this returns, so
+    /// nothing can start on the TV between this call and the caller's next step.
+    /// </remarks>
+    internal void CancelMediaSend() => sendCancellation?.Cancel();
+
     /// <inheritdoc />
     Task IMediaRemote.TryAgainAsync() =>
         lastMediaPath is { } path ? LoadMediaFileCommand.ExecuteAsync(path) : Task.CompletedTask;
