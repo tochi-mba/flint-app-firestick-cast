@@ -94,10 +94,10 @@ function Test-Jdk {
 }
 
 function Test-AndroidSdk {
-    $fix = 'sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0", with ANDROID_HOME set to the SDK'
+    $fix = 'sdkmanager "platform-tools" "platforms;android-37.0" "build-tools;36.0.0", with ANDROID_HOME set to the SDK'
     $sdk = Resolve-AndroidSdk
     if ($null -eq $sdk) { return New-DoctorFinding 'Android SDK' $false 'not found' $fix }
-    $missing = @('platform-tools', 'platforms/android-36', 'build-tools/36.0.0' | Where-Object {
+    $missing = @('platform-tools', 'platforms/android-37.0', 'build-tools/36.0.0' | Where-Object {
         -not (Test-Path -LiteralPath (Join-Path $sdk $_))
     })
     New-DoctorFinding 'Android SDK' ($missing.Count -eq 0) $(if ($missing.Count -gt 0) { "missing $($missing -join ', ')" } else { $sdk }) $fix
