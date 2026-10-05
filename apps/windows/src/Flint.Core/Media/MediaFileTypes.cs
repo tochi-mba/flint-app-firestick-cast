@@ -39,6 +39,9 @@ public static class MediaFileTypes
     /// <summary>What a file of no known kind is sent as.</summary>
     public const string UnknownMimeType = "application/octet-stream";
 
+    /// <summary>What every file of no known kind is: one value, rather than a new one per question.</summary>
+    private static readonly MediaFileType Unknown = new(UnknownMimeType, MediaKind.Unknown, Tried: false);
+
     private static readonly Dictionary<string, MediaFileType> Known = new(StringComparer.OrdinalIgnoreCase)
     {
         // Played on a Fire TV through Flint before this list existed.
@@ -65,6 +68,13 @@ public static class MediaFileTypes
         [".gif"] = new("image/gif", MediaKind.Picture, Tried: false),
     };
 
+    /// <summary>
+    /// The same table, asked with part of a path, so judging a folder of thousands of files copies
+    /// none of their extensions.
+    /// </summary>
+    private static readonly Dictionary<string, MediaFileType>.AlternateLookup<ReadOnlySpan<char>> ByExtension =
+        Known.GetAlternateLookup<ReadOnlySpan<char>>();
+
     /// <summary>Every extension Flint offers, with its leading dot, for a file picker's filter.</summary>
     public static IReadOnlyCollection<string> Extensions => Known.Keys;
 
@@ -72,9 +82,7 @@ public static class MediaFileTypes
     public static MediaFileType For(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
-        return Known.TryGetValue(Path.GetExtension(path), out var type)
-            ? type
-            : new MediaFileType(UnknownMimeType, MediaKind.Unknown, Tried: false);
+        return ByExtension.TryGetValue(Path.GetExtension(path.AsSpan()), out var type) ? type : Unknown;
     }
 
     /// <summary>Whether a file at <paramref name="path"/> is one Flint offers to play.</summary>

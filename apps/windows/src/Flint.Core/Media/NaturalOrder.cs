@@ -30,11 +30,13 @@ public sealed class NaturalOrder : IComparer<string>
             return -1;
         }
 
-        if (y is null)
-        {
-            return 1;
-        }
+        return y is null ? 1 : Compare(x.AsSpan(), y.AsSpan());
+    }
 
+    /// <summary>Compares two names, or two parts of names, without copying either.</summary>
+    /// <returns>Less than zero when <paramref name="x"/> comes first, more when it comes second.</returns>
+    public static int Compare(ReadOnlySpan<char> x, ReadOnlySpan<char> y)
+    {
         var i = 0;
         var j = 0;
         while (i < x.Length && j < y.Length)
@@ -53,7 +55,7 @@ public sealed class NaturalOrder : IComparer<string>
                     j++;
                 }
 
-                var byValue = CompareDigits(x.AsSpan(startX, i - startX), y.AsSpan(startY, j - startY));
+                var byValue = CompareDigits(x[startX..i], y[startY..j]);
                 if (byValue != 0)
                 {
                     return byValue;
@@ -61,7 +63,8 @@ public sealed class NaturalOrder : IComparer<string>
             }
             else
             {
-                var byLetter = char.ToUpperInvariant(x[i]).CompareTo(char.ToUpperInvariant(y[j]));
+                // Names in one folder mostly share their start, so equal letters skip the case folding.
+                var byLetter = x[i] == y[j] ? 0 : char.ToUpperInvariant(x[i]).CompareTo(char.ToUpperInvariant(y[j]));
                 if (byLetter != 0)
                 {
                     return byLetter;
@@ -73,7 +76,7 @@ public sealed class NaturalOrder : IComparer<string>
         }
 
         var byLength = (x.Length - i).CompareTo(y.Length - j);
-        return byLength != 0 ? byLength : string.CompareOrdinal(x, y);
+        return byLength != 0 ? byLength : Math.Sign(x.SequenceCompareTo(y));
     }
 
     /// <summary>Compares two runs of digits by value, however long, then by length.</summary>

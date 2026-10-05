@@ -30,6 +30,15 @@ public sealed record PlaylistItem(long Id, string Path, MediaFileType Type)
 public sealed class Playlist
 {
     private readonly List<PlaylistItem> items = [];
+
+    /// <summary>The same items by id, so finding one does not walk the list.</summary>
+    private readonly Dictionary<long, PlaylistItem> byId = [];
+
+    /// <summary>
+    /// Where the last item looked up was. Nearly every lookup is the current item or the one after
+    /// it, so trying here first makes walking a long queue constant work per step, not a scan.
+    /// </summary>
+    private int indexHint;
     private readonly List<long> history = [];
     private readonly Random random;
     private List<long>? shuffleRemaining;
@@ -85,6 +94,7 @@ public sealed class Playlist
         var added = Create(paths);
         nextCycle = null;
         items.AddRange(added);
+        Index(added);
         foreach (var item in added)
         {
             // A new item takes its chance among those not yet played in this cycle.
@@ -102,6 +112,7 @@ public sealed class Playlist
         nextCycle = null;
         var at = currentId is { } id ? IndexOf(id) + 1 : removedCurrent ? NextPositionAfterRemoval : 0;
         items.InsertRange(at, added);
+        Index(added);
         if (removedCurrent && added.Count > 0)
         {
             afterRemoved = added[0].Id;
@@ -122,6 +133,7 @@ public sealed class Playlist
         }
 
         items.RemoveAt(index);
+        byId.Remove(id);
         nextCycle = null;
         shuffleRemaining?.Remove(id);
         history.RemoveAll(played => played == id);
@@ -156,6 +168,7 @@ public sealed class Playlist
     public void Clear()
     {
         items.Clear();
+        byId.Clear();
         history.Clear();
         nextCycle = null;
         shuffleRemaining = Shuffle ? [] : null;
@@ -328,8 +341,41 @@ public sealed class Playlist
         return order;
     }
 
-    private PlaylistItem? Find(long id) => items.FirstOrDefault(item => item.Id == id);
+    private PlaylistItem? Find(long id) => byId.GetValueOrDefault(id);
+
+    private void Index(List<PlaylistItem> added)
+    {
+        foreach (var item in added)
+        {
+            byId.Add(item.Id, item);
+        }
+    }
 
     /// <summary>Where <paramref name="id"/> is in the list, or -1 when it is not there.</summary>
-    public int IndexOf(long id) => items.FindIndex(item => item.Id == id);
+    public int IndexOf(long id)
+    {
+        if (indexHint < items.Count && items[indexHint].Id == id)
+        {
+            return indexHint;
+        }
+
+        if (indexHint + 1 < items.Count && items[indexHint + 1].Id == id)
+        {
+            return ++indexHint;
+        }
+
+        if (!byId.ContainsKey(id))
+        {
+            return -1;
+        }
+
+        // It is here, so the walk ends on it.
+        var index = 0;
+        while (items[index].Id != id)
+        {
+            index++;
+        }
+
+        return indexHint = index;
+    }
 }

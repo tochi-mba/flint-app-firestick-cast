@@ -228,8 +228,10 @@ internal static class DevFileLog
 
             try
             {
-                MaybeTrimUnlocked();
                 WriteUnlocked(level, tag, message);
+                // Check after the append: checking only before it let the last line cross the cap
+                // until some later write happened to arrive.
+                MaybeTrimUnlocked();
             }
             catch
             {
@@ -257,9 +259,9 @@ internal static class DevFileLog
 
         try
         {
-            writer.Flush();
-            var info = new FileInfo(primaryPath);
-            if (!info.Exists || info.Length < MaximumBytes)
+            // The writer flushes every line and is the only one appending, so where it is in its own
+            // stream is the file's length. Asking the disk instead cost a file lookup per log line.
+            if (writer.BaseStream.Position < MaximumBytes)
             {
                 return;
             }
@@ -330,10 +332,10 @@ internal static class DevFileLog
 
                 try
                 {
-                    MaybeTrimUnlocked();
                     if (TryParseDiag(message, out var level, out var tag, out var body))
                     {
                         WriteUnlocked(level, tag, body);
+                        MaybeTrimUnlocked();
                         return;
                     }
 
@@ -343,6 +345,7 @@ internal static class DevFileLog
                     }
 
                     WriteRawUnlocked(message);
+                    MaybeTrimUnlocked();
                 }
                 catch
                 {
