@@ -7,19 +7,42 @@
              x:DataType="settings:TvSettingsViewModel">
   <StackPanel Spacing="12">
     <TextBlock Theme="{StaticResource HeadlineLarge}" Text="TVs" />
-    <TextBlock Theme="{StaticResource BodySmall}" Text="{Binding RememberedText.Description}" />
-    <ItemsControl ItemsSource="{Binding RecentAddresses}" IsVisible="{Binding HasRecentAddresses}">
+    <TextBlock Theme="{StaticResource BodySmall}" TextWrapping="Wrap" Text="{Binding RememberedText.Description}" />
+    <ItemsControl ItemsSource="{Binding Tvs}" IsVisible="{Binding HasTvs}">
       <ItemsControl.ItemTemplate>
-        <DataTemplate x:DataType="core:RecentAddress">
+        <DataTemplate x:DataType="settings:KnownTvRow">
           <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="0,12">
-            <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding Label}" />
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2">
+                <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding Name}" />
+                <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                           TextWrapping="Wrap" Text="{Binding Detail}" />
+              </StackPanel>
+              <Button Grid.Column="1" Theme="{StaticResource OutlineAction}" Height="34" Padding="12,0"
+                      VerticalAlignment="Center" Content="FORGET" Command="{Binding ForgetCommand}"
+                      AutomationProperties.Name="{Binding ForgetName}" />
+            </Grid>
           </Border>
         </DataTemplate>
       </ItemsControl.ItemTemplate>
     </ItemsControl>
-    <TextBlock Theme="{StaticResource BodyMedium}" IsVisible="{Binding !HasRecentAddresses}"
-               Text="No remembered TVs. Addresses you type on Cast will appear here." />
+    <TextBlock Theme="{StaticResource BodyMedium}" IsVisible="{Binding !HasTvs}" TextWrapping="Wrap"
+               Text="No remembered TVs yet. A TV is remembered once you pair with it on the Cast page." />
+    <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+               Text="{Binding LoginLimitText.Description}" />
+    <StackPanel Spacing="4" IsVisible="{Binding HasRecentAddresses}" Margin="0,8,0,0">
+      <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding AddressesText.Title}" />
+      <ItemsControl ItemsSource="{Binding RecentAddresses}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="core:RecentAddress">
+            <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="0,10">
+              <TextBlock Theme="{StaticResource BodySmall}" Text="{Binding Label}" />
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
     <views:ConfirmableActionView DataContext="{Binding ForgetAll}"
-                                 IsVisible="{Binding $parent[UserControl].((settings:TvSettingsViewModel)DataContext).HasRecentAddresses}" />
+                                 IsVisible="{Binding $parent[UserControl].((settings:TvSettingsViewModel)DataContext).HasAnything}" />
   </StackPanel>
 </UserControl>

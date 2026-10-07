@@ -100,20 +100,7 @@ public sealed partial class CastPageViewModel
                 $"pair begin address={device.Address} port={port} pairingCodePresent=yes");
             var nextSession = await ConnectReceiverAsync(device.Address, port, PairingCode, cancellationToken)
                 .ConfigureAwait(true);
-            if (session is not null)
-            {
-                await session.DisposeAsync().ConfigureAwait(true);
-            }
-
-            session = nextSession;
-            IsConnected = true;
-            _ = WatchAsync(nextSession);
-            ListenForPlayback(nextSession);
-            PairingStatus = "Paired and ready to cast.";
-            FlintDiag.Info(
-                "FlintCast",
-                $"pair ok browserPort={nextSession.BrowserSecureEndpointPort?.ToString() ?? "(none)"}");
-            await ApplyPairedSessionAsync(device, nextSession, cancellationToken).ConfigureAwait(true);
+            await AdoptSessionAsync(device, nextSession, port, "Paired and ready to cast.", cancellationToken).ConfigureAwait(true);
         }
         catch (Exception exception)
         {
@@ -126,6 +113,35 @@ public sealed partial class CastPageViewModel
             IsConnecting = false;
             RaiseDerived();
         }
+    }
+
+    /// <summary>
+    /// Makes <paramref name="nextSession"/> the page's session, whether it came from a code or a
+    /// remembered login, and remembers the TV so it can be reached again without a code.
+    /// </summary>
+    private async Task AdoptSessionAsync(
+        FireTvDevice device,
+        CastSession nextSession,
+        int port,
+        string status,
+        CancellationToken cancellationToken)
+    {
+        if (session is not null)
+        {
+            await session.DisposeAsync().ConfigureAwait(true);
+        }
+
+        session = nextSession;
+        IsConnected = true;
+        reconnectSuppressed = false;
+        _ = WatchAsync(nextSession);
+        ListenForPlayback(nextSession);
+        PairingStatus = status;
+        RememberTv(device, nextSession, port);
+        FlintDiag.Info(
+            "FlintCast",
+            $"pair ok browserPort={nextSession.BrowserSecureEndpointPort?.ToString() ?? "(none)"} login={nextSession.GrantedToken is not null}");
+        await ApplyPairedSessionAsync(device, nextSession, cancellationToken).ConfigureAwait(true);
     }
 
     /// <summary>

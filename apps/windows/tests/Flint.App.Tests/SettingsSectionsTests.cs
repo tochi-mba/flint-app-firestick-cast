@@ -61,7 +61,11 @@ public sealed class SettingsSectionsTests
     {
         var general = new GeneralSettingsViewModel(Service());
 
-        general.Settings.ShouldBe([general.AskBeforeSwitchingText, general.KeepAwakeText, general.InterfaceSizeText]);
+        general.Settings.ShouldBe(
+        [
+            general.AskBeforeSwitchingText, general.KeepAwakeText, general.InterfaceSizeText, general.ReconnectOnStartText,
+            general.ReconnectAfterDropText, general.ReconnectTimeText, general.AfterReconnectText, general.OpenReceiverText,
+        ]);
         general.Title.ShouldBe("General");
         Should.Throw<ArgumentNullException>(() => new GeneralSettingsViewModel(null!));
     }
@@ -114,7 +118,7 @@ public sealed class SettingsSectionsTests
         tvs.RecentAddresses.ShouldBeEmpty();
         tvs.HasRecentAddresses.ShouldBeFalse();
         raised.ShouldContain(nameof(TvSettingsViewModel.HasRecentAddresses));
-        tvs.Settings.ShouldBe([tvs.RememberedText]);
+        tvs.Settings.ShouldBe([tvs.RememberedText, tvs.LoginLimitText, tvs.AddressesText]);
         Should.Throw<ArgumentNullException>(() => new TvSettingsViewModel(null!));
     }
 
@@ -249,7 +253,7 @@ public sealed class SettingsSectionsTests
     private static SettingsService Service(AppSettings? initial = null) =>
         new(new InMemoryAppSettingsStore(initial), (_, token) => Task.Delay(Timeout.InfiniteTimeSpan, token));
 
-    private sealed class ListAddressStore(params RecentAddress[] addresses) : IRecentAddressStore
+    internal sealed class ListAddressStore(params RecentAddress[] addresses) : IRecentAddressStore
     {
         private readonly List<RecentAddress> saved = [.. addresses];
 

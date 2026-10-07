@@ -64,6 +64,7 @@ public sealed partial class CastPageViewModel
         FlintDiag.Info("FlintCast", $"session ended reason={closed.Reason}");
         session = null;
         var wasPlaying = IsMediaPlaying;
+        NoteWhatWasOnTheTv(IsMirroring, wasPlaying);
         IsConnected = false;
         IsMediaPlaying = false;
         coordinator?.Prompt?.Dismiss();
@@ -87,6 +88,10 @@ public sealed partial class CastPageViewModel
         RaiseDerived();
         OnPropertyChanged(nameof(CanDisconnect));
         DisconnectCommand.NotifyCanExecuteChanged();
+
+        // The TV went away by itself: reach it again, as the settings say, without a code. Not
+        // waited on here: trying can take minutes, and it says what it is doing in its own banner.
+        ReconnectTask = KeepTryingAsync();
     }
 
     /// <summary>Ends the connection to the TV: stops sharing first, then says goodbye.</summary>
@@ -103,6 +108,10 @@ public sealed partial class CastPageViewModel
         {
             FlintDiag.Info("FlintCast", "disconnect requested");
             coordinator?.Prompt?.Dismiss();
+
+            // The person ended it: nothing reconnects until they connect again.
+            reconnectSuppressed = true;
+            CancelReconnect();
             await StopMirrorAsync().ConfigureAwait(true);
 
             // Let go before saying goodbye, so the end the session reports is not mistaken for

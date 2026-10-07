@@ -47,7 +47,11 @@ public sealed class SettingsSnapshotTests
     [AvaloniaFact]
     public void Settings_TvsWithRememberedAddresses()
     {
-        var model = Page(new RecentAddress("192.168.1.42", 8009), new RecentAddress("192.168.1.77", null));
+        // Midday UTC, so the date the row shows is the same in every ordinary time zone.
+        var tvs = new Flint.Core.InMemoryKnownTvStore();
+        tvs.Save(new Flint.Core.KnownTv("Living Room", "192.168.1.42", 47855, new string('k', 43), new DateTimeOffset(2026, 10, 7, 12, 0, 0, TimeSpan.Zero)));
+        tvs.Save(new Flint.Core.KnownTv("Bedroom", "192.168.1.77", 47855, null, new DateTimeOffset(2026, 10, 2, 12, 0, 0, TimeSpan.Zero)));
+        var model = Page(tvs, new RecentAddress("192.168.1.42", 8009), new RecentAddress("192.168.1.77", null));
         model.SelectedSection = model.Section<TvSettingsViewModel>();
 
         Snapshot.Matches("settings-section-tvs", new SettingsPage { DataContext = model });
@@ -110,7 +114,9 @@ public sealed class SettingsSnapshotTests
     }
 
     /// <summary>The Settings page over pinned sections, so nothing in the image depends on this machine.</summary>
-    private static SettingsPageViewModel Page(params RecentAddress[] remembered)
+    private static SettingsPageViewModel Page(params RecentAddress[] remembered) => Page(null, remembered);
+
+    private static SettingsPageViewModel Page(Flint.Core.IKnownTvStore? tvs, params RecentAddress[] remembered)
     {
         var shell = SnapshotFixtures.Shell();
         foreach (var address in remembered)
@@ -121,6 +127,10 @@ public sealed class SettingsSnapshotTests
         var settings = new SettingsService(
             new InMemoryAppSettingsStore(),
             (_, token) => Task.Delay(Timeout.InfiniteTimeSpan, token));
+        if (tvs is not null)
+        {
+            shell.Cast.UseReconnect(tvs, settings);
+        }
         return new SettingsPageViewModel(
         [
             new GeneralSettingsViewModel(settings),

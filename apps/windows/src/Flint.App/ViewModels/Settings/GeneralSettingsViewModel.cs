@@ -3,7 +3,7 @@ using Flint.Core.Settings;
 namespace Flint.App.ViewModels.Settings;
 
 /// <summary>The General section: how Flint behaves around the TV and how large it draws itself.</summary>
-public sealed class GeneralSettingsViewModel : SettingsSectionViewModel
+public sealed partial class GeneralSettingsViewModel : SettingsSectionViewModel
 {
     private readonly ISettingsService settings;
 
@@ -42,7 +42,8 @@ public sealed class GeneralSettingsViewModel : SettingsSectionViewModel
         "Makes everything in the Flint window larger or smaller.");
 
     /// <inheritdoc />
-    public override IReadOnlyList<SettingText> Settings => [AskBeforeSwitchingText, KeepAwakeText, InterfaceSizeText];
+    public override IReadOnlyList<SettingText> Settings =>
+        [AskBeforeSwitchingText, KeepAwakeText, InterfaceSizeText, ReconnectOnStartText, ReconnectAfterDropText, ReconnectTimeText, AfterReconnectText, OpenReceiverText];
 
     /// <summary>Whether Flint asks before switching what the TV shows.</summary>
     public bool AskBeforeSwitching
