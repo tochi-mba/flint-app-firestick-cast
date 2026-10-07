@@ -408,6 +408,8 @@ public sealed partial class CastPageReconnectTests : IDisposable
         {
             public VideoCodec Codec => VideoCodec.H264;
 
+            public MirrorEncoderKind EncoderKind => MirrorEncoderKind.Hardware;
+
             public int Width => 1280;
 
             public int Height => 720;

@@ -300,7 +300,7 @@ fn report_live_mirror_pipeline() {
                     key_frames += 1;
                 }
             }
-            Ok(Tick::Unchanged) => {
+            Ok(Tick::Unchanged | Tick::Held) => {
                 unchanged += 1;
             }
             Ok(Tick::Recovered) => println!("capture recovered"),
@@ -502,7 +502,7 @@ fn report_gpu_path_against_readback_path() {
             let started = std::time::Instant::now();
             match session.tick() {
                 Ok(Tick::Encoded(_)) => samples.push(started.elapsed().as_secs_f64() * 1000.0),
-                Ok(Tick::Unchanged) => unchanged += 1,
+                Ok(Tick::Unchanged | Tick::Held) => unchanged += 1,
                 Ok(Tick::Recovered) => {}
                 Err(error) => {
                     if first_error.is_none() {

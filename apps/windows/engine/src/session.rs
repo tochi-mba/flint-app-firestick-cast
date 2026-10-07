@@ -8,6 +8,7 @@
 use crate::capture::{CaptureError, FrameOutcome};
 use crate::convert::scale::scale_bgra;
 use crate::encode::video::{EncodeError, EncodedFrame, FrameData, SourceFrame, VideoEncoder};
+use crate::pacing::{FramePacer, MonotonicClock, PacingClock};
 
 /// A source of desktop frames.
 ///
@@ -68,6 +69,9 @@ pub enum Tick {
     /// rather than swallowing it so the host can say why the picture paused, and forces a key
     /// frame on the next real frame because the receiver's reference frames are now stale.
     Recovered,
+    /// A frame arrived sooner than the frame-rate cap allows. It is kept, replaced by any newer
+    /// one, and sent as soon as the interval has passed.
+    Held,
 }
 
 /// Counters a session keeps for the diagnostics view and for adaptive bitrate.
@@ -81,27 +85,41 @@ pub struct SessionStats {
     pub recoveries: u64,
     /// Total encoded bytes handed to the transport.
     pub bytes_encoded: u64,
+    /// Frames the frame-rate cap replaced with a newer one before they could be sent.
+    pub frames_held_back: u64,
 }
 
 /// Drives capture into an encoder.
-pub struct MirrorSession<S: FrameSource, E: VideoEncoder> {
+pub struct MirrorSession<S: FrameSource, E: VideoEncoder, C: PacingClock = MonotonicClock> {
     source: S,
     encoder: E,
     stats: SessionStats,
     force_key_frame: bool,
     started: bool,
     scaled: Vec<u8>,
+    clock: C,
+    pacer: FramePacer,
+    /// The newest frame that arrived before the cap allowed another. At most one: a newer arrival
+    /// replaces it, and the replaced frame goes straight back to the source.
+    held: Option<SourceFrame>,
 }
 
 impl<S: FrameSource, E: VideoEncoder> MirrorSession<S, E> {
+    /// Builds an uncapped session over a capture source and an encoder.
+    pub fn new(source: S, encoder: E) -> Self {
+        Self::with_clock(source, encoder, MonotonicClock::new())
+    }
+}
+
+impl<S: FrameSource, E: VideoEncoder, C: PacingClock> MirrorSession<S, E, C> {
     /// How long a tick waits for the desktop to change before reporting it unchanged.
     ///
     /// Short enough that a key-frame request or a stop is acted on promptly, long enough that a
     /// still desktop is not a busy loop.
     pub const FRAME_TIMEOUT_MS: u32 = 100;
 
-    /// Builds a session over a capture source and an encoder.
-    pub fn new(source: S, encoder: E) -> Self {
+    /// Builds an uncapped session that reads time from `clock`.
+    pub fn with_clock(source: S, encoder: E, clock: C) -> Self {
         let (width, height) = encoder.output_size();
         let scaled = packed_bgra_len(width, height)
             .map(Vec::with_capacity)
@@ -117,7 +135,32 @@ impl<S: FrameSource, E: VideoEncoder> MirrorSession<S, E> {
             // Allocated before capture starts so resizing does not hit the allocator on the first
             // frame and then recycled after every encoder submission.
             scaled,
+            clock,
+            pacer: FramePacer::UNCAPPED,
+            held: None,
         }
+    }
+
+    /// Sends at most `frames_per_second` frames a second; zero removes the cap.
+    ///
+    /// Without a cap a session sends a frame every time the desktop changes, which on a
+    /// high-refresh display is far more than the encoder was configured for or the TV can show.
+    #[must_use]
+    pub fn with_frame_rate_cap(mut self, frames_per_second: u32) -> Self {
+        self.pacer = FramePacer::capped_at(frames_per_second);
+        self
+    }
+
+    /// The cap in frames a second, or zero when there is none.
+    #[must_use]
+    pub fn frame_rate_cap(&self) -> u32 {
+        self.pacer.frames_per_second()
+    }
+
+    /// The encoder this session drives.
+    #[must_use]
+    pub fn encoder(&self) -> &E {
+        &self.encoder
     }
 
     /// The pixel size the encoder was configured for, which is also the size of every access unit.
@@ -163,23 +206,70 @@ impl<S: FrameSource, E: VideoEncoder> MirrorSession<S, E> {
     /// # Errors
     /// [`SessionError`] when capture or encode failed in a way the session cannot recover from.
     pub fn tick(&mut self) -> Result<Tick, SessionError> {
-        let outcome = self.source.next_frame(Self::FRAME_TIMEOUT_MS);
+        let outcome = self.source.next_frame(self.wait_ms());
 
-        let frame = match outcome {
-            Ok((FrameOutcome::Captured, Some(frame))) => frame,
-            Ok((FrameOutcome::Captured, None) | (FrameOutcome::Unchanged, _)) => {
-                self.stats.frames_unchanged += 1;
-                return Ok(Tick::Unchanged);
-            }
+        let arrived = match outcome {
+            Ok((FrameOutcome::Captured, Some(frame))) => Some(frame),
+            Ok((FrameOutcome::Captured, None) | (FrameOutcome::Unchanged, _)) => None,
             Err(CaptureError::Interrupted) => {
+                // A held frame shows a desktop that is gone, and the receiver needs a key frame
+                // next anyway.
+                self.return_held();
                 self.stats.recoveries += 1;
                 // Whatever the receiver was decoding against no longer describes the desktop.
                 self.force_key_frame = true;
                 return Ok(Tick::Recovered);
             }
-            Err(error) => return Err(SessionError::Capture(error)),
+            Err(error) => {
+                self.return_held();
+                return Err(SessionError::Capture(error));
+            }
         };
 
+        if let Some(frame) = arrived {
+            // Latest wins: the older frame would only show the TV a picture that is already gone.
+            if let Some(older) = self.held.replace(frame) {
+                self.source.recycle_frame(older);
+                self.stats.frames_held_back += 1;
+            }
+        }
+
+        let now = self.clock.now();
+        let pacer = self.pacer;
+        let Some(frame) = self.held.take_if(|_| pacer.is_due(now)) else {
+            if self.held.is_some() {
+                return Ok(Tick::Held);
+            }
+            self.stats.frames_unchanged += 1;
+            return Ok(Tick::Unchanged);
+        };
+
+        self.pacer.sent(now);
+        self.encode(frame)
+    }
+
+    /// How long the next capture may wait: until a held frame is due, otherwise the usual timeout.
+    fn wait_ms(&self) -> u32 {
+        if self.held.is_none() {
+            return Self::FRAME_TIMEOUT_MS;
+        }
+
+        let remaining = self.pacer.wait_before_due(self.clock.now());
+        // Rounded up, so the tick after the wait finds the held frame due rather than a fraction
+        // of a millisecond early.
+        u32::try_from(remaining.as_micros().div_ceil(1000))
+            .map_or(Self::FRAME_TIMEOUT_MS, |ms| ms.min(Self::FRAME_TIMEOUT_MS))
+    }
+
+    /// Gives a held frame back to the source without sending it.
+    fn return_held(&mut self) {
+        if let Some(frame) = self.held.take() {
+            self.source.recycle_frame(frame);
+        }
+    }
+
+    /// Encodes one frame and gives its storage back to the source.
+    fn encode(&mut self, frame: SourceFrame) -> Result<Tick, SessionError> {
         let force_key_frame = self.force_key_frame || !self.started;
         // A texture goes straight to the encoder whatever its size. The GPU path converts colour
         // and scales in one hardware pass, so resizing it here would mean reading it back to do by
@@ -277,6 +367,10 @@ fn packed_bgra_len(width: u32, height: u32) -> Option<usize> {
 #[cfg(test)]
 #[path = "session_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "session_pacing_tests.rs"]
+mod pacing_tests;
 
 #[cfg(all(test, windows))]
 /// Live diagnostics that capture and encode from the real desktop.

@@ -24,6 +24,8 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
         "flint_mirror_request_key_frame",
         "flint_mirror_stats",
         "flint_mirror_stop",
+        "flint_mirror_pacing",
+        "flint_mirror_encoder_kind",
     ];
 
     /// <inheritdoc />
@@ -320,6 +322,32 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
             (int)native.Height);
     }
 
+    /// <summary>Validates the pacing counters from the native session.</summary>
+    internal static long ToFramesHeldBack(FlintStatus status, NativeMirrorPacing native)
+    {
+        ThrowForStatus(status, "reporting how the mirror is paced");
+
+        if (native.FramesHeldBack > long.MaxValue)
+        {
+            throw new MirrorEngineException("The Flint engine returned a pacing counter outside the managed range.");
+        }
+
+        return (long)native.FramesHeldBack;
+    }
+
+    /// <summary>Validates the encoder kind returned by the native session.</summary>
+    internal static MirrorEncoderKind ToEncoderKind(FlintStatus status, uint kind)
+    {
+        ThrowForStatus(status, "reporting which encoder is in use");
+
+        return kind switch
+        {
+            1 => MirrorEncoderKind.Hardware,
+            2 => MirrorEncoderKind.Software,
+            _ => throw new MirrorEngineException($"The Flint engine returned an unknown encoder kind ({kind})."),
+        };
+    }
+
     /// <summary>Turns a failed native operation into one consistent managed exception.</summary>
     private static void ThrowForStatus(FlintStatus status, string operation)
     {
@@ -376,6 +404,14 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
         [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
         internal static unsafe partial int Stats(nint handle, NativeMirrorStats* stats);
 
+        [LibraryImport(NativeEngineProbeApi.LibraryName, EntryPoint = "flint_mirror_pacing")]
+        [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+        internal static unsafe partial int Pacing(nint handle, NativeMirrorPacing* pacing);
+
+        [LibraryImport(NativeEngineProbeApi.LibraryName, EntryPoint = "flint_mirror_encoder_kind")]
+        [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+        internal static unsafe partial int EncoderKind(nint handle, uint* kind);
+
         [LibraryImport(NativeEngineProbeApi.LibraryName, EntryPoint = "flint_mirror_stop")]
         [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
         internal static partial int Stop(nint handle);
@@ -419,6 +455,15 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
                 }
 
                 Codec = ToVideoCodec((FlintStatus)codecStatus, nativeCodec);
+
+                uint nativeKind;
+                int kindStatus;
+                unsafe
+                {
+                    kindStatus = NativeMethods.EncoderKind(handle, &nativeKind);
+                }
+
+                EncoderKind = ToEncoderKind((FlintStatus)kindStatus, nativeKind);
                 var codecSpecificData = ReadCodecData(handle);
                 ValidateCodecSpecificData(Codec, codecSpecificData);
                 CodecSpecificData = codecSpecificData;
@@ -434,6 +479,9 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
 
         /// <inheritdoc />
         public VideoCodec Codec { get; }
+
+        /// <inheritdoc />
+        public MirrorEncoderKind EncoderKind { get; }
 
         /// <inheritdoc />
         public int Width { get; }
@@ -501,12 +549,15 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
             ObjectDisposedException.ThrowIf(handle == 0, this);
 
             NativeMirrorStats native;
+            NativeMirrorPacing pacing;
             int status;
+            int pacingStatus;
             try
             {
                 unsafe
                 {
                     status = NativeMethods.Stats(handle, &native);
+                    pacingStatus = NativeMethods.Pacing(handle, &pacing);
                 }
             }
             catch (Exception exception) when (exception is DllNotFoundException
@@ -525,7 +576,10 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
                         + $"{converted.Width}x{converted.Height} without a new decoder configuration.");
             }
 
-            return converted.Stats;
+            return converted.Stats with
+            {
+                FramesHeldBack = ToFramesHeldBack((FlintStatus)pacingStatus, pacing),
+            };
         }
 
         public void Dispose()

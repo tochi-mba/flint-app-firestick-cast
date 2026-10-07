@@ -123,6 +123,38 @@ fn every_entry_point_rejects_a_null_handle_rather_than_dereferencing_it() {
         unsafe { flint_mirror_stats(std::ptr::null_mut(), &raw mut stats) },
         FlintStatus::NullArgument as i32
     );
+    let mut pacing = pacing();
+    assert_eq!(
+        unsafe { flint_mirror_pacing(std::ptr::null_mut(), &raw mut pacing) },
+        FlintStatus::NullArgument as i32
+    );
+    let mut kind = 0u32;
+    assert_eq!(
+        unsafe { flint_mirror_encoder_kind(std::ptr::null_mut(), &raw mut kind) },
+        FlintStatus::NullArgument as i32
+    );
+}
+
+#[test]
+fn the_newer_queries_reject_a_null_result_pointer_with_a_live_looking_handle() {
+    // Rejected before the handle is touched, so a dangling one is safe to pass here.
+    let handle = std::ptr::dangling_mut::<FlintMirrorSession>();
+    assert_eq!(
+        unsafe { flint_mirror_pacing(handle, std::ptr::null_mut()) },
+        FlintStatus::NullArgument as i32
+    );
+    assert_eq!(
+        unsafe { flint_mirror_encoder_kind(handle, std::ptr::null_mut()) },
+        FlintStatus::NullArgument as i32
+    );
+}
+
+fn pacing() -> FlintMirrorPacing {
+    FlintMirrorPacing {
+        frames_held_back: 7,
+        frame_rate_cap: 7,
+        _reserved: 0,
+    }
 }
 
 #[test]
@@ -143,6 +175,16 @@ fn tick_kinds_are_stable() {
     assert_eq!(mirror_tick::NOTHING, 0);
     assert_eq!(mirror_tick::ENCODED, 1);
     assert_eq!(mirror_tick::RECOVERED, 2);
+    assert_eq!(encoder_kind::HARDWARE, 1);
+    assert_eq!(encoder_kind::SOFTWARE, 2);
+    assert_eq!(
+        encoder_kind::of(crate::encode::selected::EncoderKind::Hardware),
+        encoder_kind::HARDWARE
+    );
+    assert_eq!(
+        encoder_kind::of(crate::encode::selected::EncoderKind::Software),
+        encoder_kind::SOFTWARE
+    );
 }
 
 #[test]
@@ -154,6 +196,8 @@ fn the_mirror_structs_have_stable_layouts() {
     assert_eq!(std::mem::align_of::<FlintMirrorFrame>(), 8);
     assert_eq!(std::mem::size_of::<FlintMirrorStats>(), 40);
     assert_eq!(std::mem::align_of::<FlintMirrorStats>(), 8);
+    assert_eq!(std::mem::size_of::<FlintMirrorPacing>(), 16);
+    assert_eq!(std::mem::align_of::<FlintMirrorPacing>(), 8);
 }
 
 /// Exercises a real session over this machine's display, when it has one.
@@ -228,6 +272,25 @@ fn a_real_session_reports_codec_data_and_a_capped_frame_size() {
         FlintStatus::Ok as i32
     );
     assert_eq!(codec, crate::encode::VideoCodec::H264 as u32);
+
+    // The cap is the frame rate the session was started with, and nothing has been held yet.
+    let mut pacing = pacing();
+    assert_eq!(
+        unsafe { flint_mirror_pacing(handle, &raw mut pacing) },
+        FlintStatus::Ok as i32
+    );
+    assert_eq!(pacing.frame_rate_cap, config.frame_rate);
+    assert_eq!(pacing.frames_held_back, 0);
+
+    let mut kind = 0u32;
+    assert_eq!(
+        unsafe { flint_mirror_encoder_kind(handle, &raw mut kind) },
+        FlintStatus::Ok as i32
+    );
+    assert!(
+        kind == encoder_kind::HARDWARE || kind == encoder_kind::SOFTWARE,
+        "unexpected encoder kind {kind}"
+    );
 
     assert_eq!(
         unsafe { flint_mirror_request_key_frame(handle) },
