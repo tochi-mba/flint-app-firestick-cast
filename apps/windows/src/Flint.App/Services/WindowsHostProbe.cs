@@ -42,7 +42,8 @@ public sealed class WindowsHostProbe : IHostProbe
             Encoders: [],
             primary?.Luid ?? 0,
             ReadWindowsBuild(),
-            EncodersProbed: false));
+            EncodersProbed: false,
+            ActiveVpn: SystemNetworkAdapters.ActiveVpn()));
     }
 
     /// <summary>

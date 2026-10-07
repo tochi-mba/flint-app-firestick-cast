@@ -17,13 +17,18 @@ namespace Flint.Core;
 /// none. Reported by the engine rather than assumed, so a mode that depends on capture is judged
 /// on what the build can actually do instead of on a hardcoded expectation.
 /// </param>
+/// <param name="ActiveVpn">
+/// The VPN on this PC when it was probed, or <see langword="null"/> when none was: a reason the TV
+/// may not answer, said when it does not.
+/// </param>
 public sealed record HostCapabilities(
     IReadOnlyList<DisplayAdapter> Adapters,
     IReadOnlyList<HostVideoEncoder> Encoders,
     long PrimaryDisplayAdapterLuid,
     int WindowsBuild,
     bool EncodersProbed = true,
-    CaptureApi? ScreenCaptureBackend = null)
+    CaptureApi? ScreenCaptureBackend = null,
+    string? ActiveVpn = null)
 {
     /// <summary>Whether this build can capture the screen at all.</summary>
     /// <remarks>

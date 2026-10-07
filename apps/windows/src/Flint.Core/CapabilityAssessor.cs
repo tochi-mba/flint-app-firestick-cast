@@ -87,7 +87,7 @@ public static class CapabilityAssessor
         [
             AssessMirror(device, host, path, pairedSessionActive),
             AssessSecondScreen(device, host, path, pairedSessionActive),
-            AssessMediaHandoff(device, path, pairedSessionActive),
+            AssessMediaHandoff(device, host, path, pairedSessionActive),
         ];
 
         return new CapabilityReport(device, host, path, verdicts)
@@ -104,7 +104,7 @@ public static class CapabilityAssessor
     {
         const CastMode mode = CastMode.Mirror;
 
-        var receiver = AssessReceiverAvailability(device, pairedSessionActive);
+        var receiver = AssessReceiverAvailability(device, host, pairedSessionActive);
         if (receiver is not null)
         {
             return receiver with { Mode = mode };
@@ -245,12 +245,13 @@ public static class CapabilityAssessor
 
     private static ModeVerdict AssessMediaHandoff(
         FireTvDevice? device,
+        HostCapabilities host,
         NetworkPath? path,
         bool pairedSessionActive = false)
     {
         const CastMode mode = CastMode.MediaHandoff;
 
-        var receiver = AssessReceiverAvailability(device, pairedSessionActive);
+        var receiver = AssessReceiverAvailability(device, host, pairedSessionActive);
         if (receiver is not null)
         {
             return receiver with { Mode = mode };
@@ -285,6 +286,7 @@ public static class CapabilityAssessor
     /// </remarks>
     private static ModeVerdict? AssessReceiverAvailability(
         FireTvDevice? device,
+        HostCapabilities host,
         bool pairedSessionActive = false)
     {
         if (device is null)
@@ -293,8 +295,10 @@ public static class CapabilityAssessor
                 default,
                 ModeStatus.Blocked,
                 "No receiver has been found on this network yet.",
-                "Check that the television is powered on and on the same network as this PC, then "
-                    + "run the probe again. Diagnostics can show whether multicast reached this PC.");
+                host.ActiveVpn is { } vpn
+                    ? VpnDetection.Advice(vpn) + " Then run the probe again."
+                    : "Check that the television is powered on and on the same network as this PC, then "
+                        + "run the probe again. Diagnostics can show whether multicast reached this PC.");
         }
 
         if (device.Platform is FireTvPlatform.Vega)
