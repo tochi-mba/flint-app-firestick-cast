@@ -93,6 +93,26 @@ public sealed partial class CastPageViewModel
     /// <summary>The attempt to reconnect after the last drop, for tests to wait on.</summary>
     internal Task ReconnectTask { get; private set; } = Task.CompletedTask;
 
+    /// <summary>Starts reconnecting after a drop, with <see cref="ReconnectTask"/> set before it begins.</summary>
+    /// <remarks>
+    /// The attempt says it is reconnecting before its first wait, so storing the task only once
+    /// it was running let anything watching see "reconnecting" while still holding the previous,
+    /// finished attempt. The attempt waits on a gate, is stored, and only then is let through; the
+    /// gate releases it inline, on this thread and in this context, as calling it directly would.
+    /// </remarks>
+    private void StartKeepTrying()
+    {
+        var gate = new TaskCompletionSource();
+        ReconnectTask = KeepTryingAfterAsync(gate.Task);
+        gate.SetResult();
+    }
+
+    private async Task KeepTryingAfterAsync(Task gate)
+    {
+        await gate.ConfigureAwait(true);
+        await KeepTryingAsync().ConfigureAwait(true);
+    }
+
     /// <summary>Keeps the TV a session was just made with, and its login when it gave one.</summary>
     private void RememberTv(FireTvDevice device, CastSession paired, int port)
     {
