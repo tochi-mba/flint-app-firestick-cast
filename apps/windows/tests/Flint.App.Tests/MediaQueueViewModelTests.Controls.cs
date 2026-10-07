@@ -278,7 +278,7 @@ public sealed partial class MediaQueueViewModelTests
     }
 
     [Fact]
-    public void ARow_SaysWhatKindOfFileItIs_AndWhetherItHasBeenTried()
+    public void ARow_SaysWhatKindOfFileItIs()
     {
         var playlist = new Playlist();
         var rows = playlist.Add(["a.mp4", "b.mp3", "c.jpg", "d.flac"])
@@ -290,8 +290,8 @@ public sealed partial class MediaQueueViewModelTests
             .Append(unknown.KindLabel)
             .ShouldBe(["VIDEO", "MUSIC", "PICTURE", "MUSIC", "FILE"]);
         rows[0].HasNote.ShouldBeFalse();
-        rows[3].Note.ShouldBe("Flint has not tried this kind of file");
-        rows[3].SpokenName.ShouldBe("d.flac, Flint has not tried this kind of file");
+        rows[3].HasNote.ShouldBeFalse("every kind Flint offers has played on a TV");
+        rows[3].SpokenName.ShouldBe("d.flac");
     }
 
     [Fact]
@@ -320,11 +320,11 @@ public sealed partial class MediaQueueViewModelTests
     }
 
     [Fact]
-    public void APlayingRow_StillSaysWhatIsWorthKnowingAboutIt()
+    public void AMissingCurrentRow_SaysItIsMissing_NotThatItIsPlaying()
     {
-        var row = new QueueRowViewModel(new Playlist().Add(["a.flac"]).Single()) { IsCurrent = true };
+        var row = new QueueRowViewModel(new Playlist().Add(["a.flac"]).Single()) { IsCurrent = true, IsMissing = true };
 
-        row.SpokenName.ShouldBe("a.flac, playing, Flint has not tried this kind of file");
+        row.SpokenName.ShouldBe("a.flac, File not found");
     }
 
     private static List<string> Names(MediaQueueViewModel queue) => [.. queue.Rows.Select(row => row.Name)];

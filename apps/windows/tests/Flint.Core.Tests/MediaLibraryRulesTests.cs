@@ -10,32 +10,30 @@ public sealed class MediaLibraryRulesTests
     private static readonly DateTimeOffset Played = new(2026, 10, 2, 9, 0, 0, TimeSpan.Zero);
 
     [Theory]
-    [InlineData("a.mp4", "video/mp4", MediaKind.Video, true)]
-    [InlineData("a.mkv", "video/x-matroska", MediaKind.Video, true)]
-    [InlineData("a.webm", "video/webm", MediaKind.Video, true)]
-    [InlineData("a.mp3", "audio/mpeg", MediaKind.Audio, true)]
-    [InlineData("a.m4a", "audio/mp4", MediaKind.Audio, true)]
-    [InlineData("a.jpg", "image/jpeg", MediaKind.Picture, true)]
-    [InlineData("a.jpeg", "image/jpeg", MediaKind.Picture, true)]
-    [InlineData("a.png", "image/png", MediaKind.Picture, true)]
-    [InlineData("a.m4v", "video/mp4", MediaKind.Video, false)]
-    [InlineData("a.mov", "video/quicktime", MediaKind.Video, false)]
-    [InlineData("a.ts", "video/mp2t", MediaKind.Video, false)]
-    [InlineData("a.aac", "audio/aac", MediaKind.Audio, false)]
-    [InlineData("a.flac", "audio/flac", MediaKind.Audio, false)]
-    [InlineData("a.wav", "audio/wav", MediaKind.Audio, false)]
-    [InlineData("a.ogg", "audio/ogg", MediaKind.Audio, false)]
-    [InlineData("a.opus", "audio/ogg", MediaKind.Audio, false)]
-    [InlineData("a.webp", "image/webp", MediaKind.Picture, false)]
-    [InlineData("a.bmp", "image/bmp", MediaKind.Picture, false)]
-    [InlineData("a.gif", "image/gif", MediaKind.Picture, false)]
-    public void EachKnownExtension_HasItsTypeKindAndWhetherItWasTried(string path, string mime, MediaKind kind, bool tried)
+    [InlineData("a.mp4", "video/mp4", MediaKind.Video)]
+    [InlineData("a.m4v", "video/mp4", MediaKind.Video)]
+    [InlineData("a.mkv", "video/x-matroska", MediaKind.Video)]
+    [InlineData("a.webm", "video/webm", MediaKind.Video)]
+    [InlineData("a.mov", "video/quicktime", MediaKind.Video)]
+    [InlineData("a.ts", "video/mp2t", MediaKind.Video)]
+    [InlineData("a.mp3", "audio/mpeg", MediaKind.Audio)]
+    [InlineData("a.m4a", "audio/mp4", MediaKind.Audio)]
+    [InlineData("a.aac", "audio/aac", MediaKind.Audio)]
+    [InlineData("a.flac", "audio/flac", MediaKind.Audio)]
+    [InlineData("a.wav", "audio/wav", MediaKind.Audio)]
+    [InlineData("a.ogg", "audio/ogg", MediaKind.Audio)]
+    [InlineData("a.opus", "audio/ogg", MediaKind.Audio)]
+    [InlineData("a.jpg", "image/jpeg", MediaKind.Picture)]
+    [InlineData("a.jpeg", "image/jpeg", MediaKind.Picture)]
+    [InlineData("a.png", "image/png", MediaKind.Picture)]
+    [InlineData("a.webp", "image/webp", MediaKind.Picture)]
+    [InlineData("a.bmp", "image/bmp", MediaKind.Picture)]
+    public void EachKnownExtension_HasItsTypeAndKind(string path, string mime, MediaKind kind)
     {
         var type = MediaFileTypes.For(path);
 
         type.MimeType.ShouldBe(mime);
         type.Kind.ShouldBe(kind);
-        type.Tried.ShouldBe(tried);
         type.IsPicture.ShouldBe(kind is MediaKind.Picture);
         MediaFileTypes.IsPlayable(path).ShouldBeTrue();
     }
@@ -51,6 +49,7 @@ public sealed class MediaLibraryRulesTests
     [InlineData("notes.txt")]
     [InlineData("README")]
     [InlineData("archive.mp4.zip")]
+    [InlineData("animation.gif")]
     [InlineData("")]
     public void OtherFiles_AreNotOffered(string path)
     {
@@ -61,7 +60,7 @@ public sealed class MediaLibraryRulesTests
     [Fact]
     public void TheExtensionList_IsEveryKnownType_ForAPickersFilter()
     {
-        MediaFileTypes.Extensions.Count.ShouldBe(19);
+        MediaFileTypes.Extensions.Count.ShouldBe(18);
         MediaFileTypes.Extensions.ShouldAllBe(extension => extension.StartsWith('.'));
         Should.Throw<ArgumentNullException>(() => MediaFileTypes.For(null!));
     }

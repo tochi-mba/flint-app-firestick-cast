@@ -16,14 +16,10 @@ public enum MediaKind
     Picture = 3,
 }
 
-/// <summary>How Flint sends a file, and whether it has been tried on a TV.</summary>
+/// <summary>How Flint sends a file.</summary>
 /// <param name="MimeType">What the TV's player is told the file is.</param>
 /// <param name="Kind">What sort of thing it holds.</param>
-/// <param name="Tried">
-/// Whether this kind of file has been seen to play on a Fire TV. A file that has not is still sent,
-/// and the queue says so rather than promising it will play.
-/// </param>
-public sealed record MediaFileType(string MimeType, MediaKind Kind, bool Tried)
+public sealed record MediaFileType(string MimeType, MediaKind Kind)
 {
     /// <summary>Whether this is a picture, which has no position to seek or play to.</summary>
     public bool IsPicture => Kind is MediaKind.Picture;
@@ -31,8 +27,15 @@ public sealed record MediaFileType(string MimeType, MediaKind Kind, bool Tried)
 
 /// <summary>Which files Flint offers to play, and how it describes each to the TV.</summary>
 /// <remarks>
+/// <para>
 /// Judged by extension, because that is what a person sees and what the file picker filters on.
 /// The TV's player looks at the bytes itself, so a mislabelled file still plays if it can.
+/// </para>
+/// <para>
+/// Every kind listed here has been played on a Fire TV Stick 4K (Fire OS 6.7.1.1) through Flint,
+/// by the hardware test <c>MediaHardwareTests.EveryFileTypeFlintOffers_PlaysOnTheTv</c>, which
+/// fails if one stops playing. GIF is not listed: the TV's player refuses it.
+/// </para>
 /// </remarks>
 public static class MediaFileTypes
 {
@@ -40,32 +43,28 @@ public static class MediaFileTypes
     public const string UnknownMimeType = "application/octet-stream";
 
     /// <summary>What every file of no known kind is: one value, rather than a new one per question.</summary>
-    private static readonly MediaFileType Unknown = new(UnknownMimeType, MediaKind.Unknown, Tried: false);
+    private static readonly MediaFileType Unknown = new(UnknownMimeType, MediaKind.Unknown);
 
     private static readonly Dictionary<string, MediaFileType> Known = new(StringComparer.OrdinalIgnoreCase)
     {
-        // Played on a Fire TV through Flint before this list existed.
-        [".mp4"] = new("video/mp4", MediaKind.Video, Tried: true),
-        [".mkv"] = new("video/x-matroska", MediaKind.Video, Tried: true),
-        [".webm"] = new("video/webm", MediaKind.Video, Tried: true),
-        [".mp3"] = new("audio/mpeg", MediaKind.Audio, Tried: true),
-        [".m4a"] = new("audio/mp4", MediaKind.Audio, Tried: true),
-        [".jpg"] = new("image/jpeg", MediaKind.Picture, Tried: true),
-        [".jpeg"] = new("image/jpeg", MediaKind.Picture, Tried: true),
-        [".png"] = new("image/png", MediaKind.Picture, Tried: true),
-
-        // Formats the TV's player supports, not yet seen to play through Flint.
-        [".m4v"] = new("video/mp4", MediaKind.Video, Tried: false),
-        [".mov"] = new("video/quicktime", MediaKind.Video, Tried: false),
-        [".ts"] = new("video/mp2t", MediaKind.Video, Tried: false),
-        [".aac"] = new("audio/aac", MediaKind.Audio, Tried: false),
-        [".flac"] = new("audio/flac", MediaKind.Audio, Tried: false),
-        [".wav"] = new("audio/wav", MediaKind.Audio, Tried: false),
-        [".ogg"] = new("audio/ogg", MediaKind.Audio, Tried: false),
-        [".opus"] = new("audio/ogg", MediaKind.Audio, Tried: false),
-        [".webp"] = new("image/webp", MediaKind.Picture, Tried: false),
-        [".bmp"] = new("image/bmp", MediaKind.Picture, Tried: false),
-        [".gif"] = new("image/gif", MediaKind.Picture, Tried: false),
+        [".mp4"] = new("video/mp4", MediaKind.Video),
+        [".m4v"] = new("video/mp4", MediaKind.Video),
+        [".mkv"] = new("video/x-matroska", MediaKind.Video),
+        [".webm"] = new("video/webm", MediaKind.Video),
+        [".mov"] = new("video/quicktime", MediaKind.Video),
+        [".ts"] = new("video/mp2t", MediaKind.Video),
+        [".mp3"] = new("audio/mpeg", MediaKind.Audio),
+        [".m4a"] = new("audio/mp4", MediaKind.Audio),
+        [".aac"] = new("audio/aac", MediaKind.Audio),
+        [".flac"] = new("audio/flac", MediaKind.Audio),
+        [".wav"] = new("audio/wav", MediaKind.Audio),
+        [".ogg"] = new("audio/ogg", MediaKind.Audio),
+        [".opus"] = new("audio/ogg", MediaKind.Audio),
+        [".jpg"] = new("image/jpeg", MediaKind.Picture),
+        [".jpeg"] = new("image/jpeg", MediaKind.Picture),
+        [".png"] = new("image/png", MediaKind.Picture),
+        [".webp"] = new("image/webp", MediaKind.Picture),
+        [".bmp"] = new("image/bmp", MediaKind.Picture),
     };
 
     /// <summary>
