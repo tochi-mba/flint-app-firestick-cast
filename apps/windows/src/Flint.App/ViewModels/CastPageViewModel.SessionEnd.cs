@@ -91,7 +91,7 @@ public sealed partial class CastPageViewModel
 
         // The TV went away by itself: reach it again, as the settings say, without a code. Not
         // waited on here: trying can take minutes, and it says what it is doing in its own banner.
-        ReconnectTask = KeepTryingAsync();
+        StartKeepTrying();
     }
 
     /// <summary>Ends the connection to the TV: stops sharing first, then says goodbye.</summary>
