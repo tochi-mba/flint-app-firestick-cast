@@ -8,6 +8,7 @@
 pub mod duplication;
 #[cfg(windows)]
 pub mod mipscale;
+pub mod outputs;
 #[cfg(windows)]
 pub mod readback;
 

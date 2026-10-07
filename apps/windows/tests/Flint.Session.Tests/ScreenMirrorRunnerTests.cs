@@ -547,6 +547,8 @@ public sealed class ScreenMirrorRunnerTests
 
         public VideoCodec Codec { get; set; } = VideoCodec.H264;
 
+        public MirrorEncoderKind EncoderKind => MirrorEncoderKind.Hardware;
+
         public int Width { get; set; } = 1280;
 
         public int Height { get; set; } = 720;

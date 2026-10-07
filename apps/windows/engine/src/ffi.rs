@@ -415,6 +415,36 @@ pub struct FlintMirrorStats {
     pub height: u32,
 }
 
+/// How a session is being paced, read separately from [`FlintMirrorStats`] so that structure's
+/// layout never changes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
+pub struct FlintMirrorPacing {
+    /// Frames the frame-rate cap replaced with a newer one before they could be sent.
+    pub frames_held_back: u64,
+    /// The cap in frames a second.
+    pub frame_rate_cap: u32,
+    /// Explicit padding to an eight-byte boundary.
+    pub _reserved: u32,
+}
+
+/// Values written by [`flint_mirror_encoder_kind`].
+pub mod encoder_kind {
+    /// The graphics card's own encode block.
+    pub const HARDWARE: u32 = 1;
+    /// Windows' software encoder, on the processor.
+    pub const SOFTWARE: u32 = 2;
+
+    /// The value for `kind`.
+    #[must_use]
+    pub fn of(kind: crate::encode::selected::EncoderKind) -> u32 {
+        match kind {
+            crate::encode::selected::EncoderKind::Hardware => HARDWARE,
+            crate::encode::selected::EncoderKind::Software => SOFTWARE,
+        }
+    }
+}
+
 /// Values for [`FlintMirrorFrame::kind`].
 pub mod mirror_tick {
     /// Nothing to send: the desktop had not changed, or the encoder is still filling.
@@ -512,7 +542,8 @@ pub unsafe extern "C" fn flint_mirror_start(
 
         if let Some(encoder) = gpu_encoder {
             let boxed = Box::new(FlintMirrorSession {
-                session: crate::session::MirrorSession::new(source, encoder),
+                session: crate::session::MirrorSession::new(source, encoder)
+                    .with_frame_rate_cap(config.frame_rate),
             });
             // SAFETY: checked non-null above.
             unsafe { *out_handle = Box::into_raw(boxed) };
@@ -530,7 +561,8 @@ pub unsafe extern "C" fn flint_mirror_start(
         };
 
         let boxed = Box::new(FlintMirrorSession {
-            session: crate::session::MirrorSession::new(source, encoder),
+            session: crate::session::MirrorSession::new(source, encoder)
+                .with_frame_rate_cap(config.frame_rate),
         });
         // SAFETY: checked non-null above.
         unsafe { *out_handle = Box::into_raw(boxed) };
@@ -572,7 +604,10 @@ pub unsafe extern "C" fn flint_mirror_next(
         let mut frame = FlintMirrorFrame::EMPTY;
 
         let status = match session.tick() {
-            Ok(crate::session::Tick::Unchanged) => FlintStatus::Ok as i32,
+            // A frame held back by the cap is, to the caller, a tick with nothing to send yet.
+            Ok(crate::session::Tick::Unchanged | crate::session::Tick::Held) => {
+                FlintStatus::Ok as i32
+            }
             Ok(crate::session::Tick::Recovered) => {
                 frame.kind = mirror_tick::RECOVERED;
                 FlintStatus::Ok as i32
@@ -761,6 +796,62 @@ pub unsafe extern "C" fn flint_mirror_stats(
     result.unwrap_or(FlintStatus::InternalError as i32)
 }
 
+/// Reads how the session is being paced.
+///
+/// # Safety
+/// `handle` must be live and `out_pacing` non-null.
+#[no_mangle]
+pub unsafe extern "C" fn flint_mirror_pacing(
+    handle: *mut FlintMirrorSession,
+    out_pacing: *mut FlintMirrorPacing,
+) -> i32 {
+    if handle.is_null() || out_pacing.is_null() {
+        return FlintStatus::NullArgument as i32;
+    }
+
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: the caller guarantees the handle is live.
+        let session = unsafe { &(*handle).session };
+        // SAFETY: checked non-null above.
+        unsafe {
+            *out_pacing = FlintMirrorPacing {
+                frames_held_back: session.stats().frames_held_back,
+                frame_rate_cap: session.frame_rate_cap(),
+                _reserved: 0,
+            };
+        }
+        FlintStatus::Ok as i32
+    }));
+
+    result.unwrap_or(FlintStatus::InternalError as i32)
+}
+
+/// Reports whether the session encodes on the graphics card or in software.
+///
+/// `out_kind` receives one of the [`encoder_kind`] values.
+///
+/// # Safety
+/// `handle` must be live and `out_kind` non-null.
+#[no_mangle]
+pub unsafe extern "C" fn flint_mirror_encoder_kind(
+    handle: *mut FlintMirrorSession,
+    out_kind: *mut u32,
+) -> i32 {
+    if handle.is_null() || out_kind.is_null() {
+        return FlintStatus::NullArgument as i32;
+    }
+
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: the caller guarantees the handle is live.
+        let kind = encoder_kind::of(unsafe { (*handle).session.encoder().kind() });
+        // SAFETY: checked non-null above.
+        unsafe { *out_kind = kind };
+        FlintStatus::Ok as i32
+    }));
+
+    result.unwrap_or(FlintStatus::InternalError as i32)
+}
+
 /// Ends a mirror session and releases it.
 ///
 /// A null handle is a no-op rather than an error, so a shell that tears down twice - which a
@@ -787,3 +878,7 @@ pub unsafe extern "C" fn flint_mirror_stop(handle: *mut FlintMirrorSession) -> i
 #[cfg(test)]
 #[path = "ffi_mirror_tests.rs"]
 mod mirror_ffi_tests;
+
+#[path = "ffi_outputs.rs"]
+mod outputs;
+pub use outputs::{flint_probe_outputs, FlintOutput};

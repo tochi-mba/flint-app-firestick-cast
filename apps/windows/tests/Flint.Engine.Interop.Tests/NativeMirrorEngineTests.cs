@@ -59,6 +59,48 @@ public sealed class NativeMirrorEngineTests
         Marshal.OffsetOf<NativeMirrorStats>(nameof(NativeMirrorStats.BytesEncoded)).ShouldBe(24);
         Marshal.OffsetOf<NativeMirrorStats>(nameof(NativeMirrorStats.Width)).ShouldBe(32);
         Marshal.OffsetOf<NativeMirrorStats>(nameof(NativeMirrorStats.Height)).ShouldBe(36);
+
+        Marshal.SizeOf<NativeMirrorPacing>().ShouldBe(16);
+        Marshal.OffsetOf<NativeMirrorPacing>(nameof(NativeMirrorPacing.FramesHeldBack)).ShouldBe(0);
+        Marshal.OffsetOf<NativeMirrorPacing>(nameof(NativeMirrorPacing.FrameRateCap)).ShouldBe(8);
+    }
+
+    [Theory]
+    [InlineData(1u, MirrorEncoderKind.Hardware)]
+    [InlineData(2u, MirrorEncoderKind.Software)]
+    public void ToEncoderKind_ReadsTheEnginesValues(uint native, MirrorEncoderKind expected)
+    {
+        NativeMirrorEngine.ToEncoderKind(FlintStatus.Ok, native).ShouldBe(expected);
+        ((int)expected).ShouldBe((int)native, "the managed enum carries the engine's own numbers");
+    }
+
+    [Theory]
+    [InlineData(0u)]
+    [InlineData(3u)]
+    public void ToEncoderKind_RejectsAValueThisBuildDoesNotKnow(uint native)
+    {
+        Should.Throw<MirrorEngineException>(() => NativeMirrorEngine.ToEncoderKind(FlintStatus.Ok, native))
+            .Message.ShouldContain($"unknown encoder kind ({native})");
+    }
+
+    [Fact]
+    public void ToEncoderKind_AFailedCall_IsAFailureNotHardware()
+    {
+        Should.Throw<MirrorEngineException>(() => NativeMirrorEngine.ToEncoderKind(FlintStatus.PlatformError, 1))
+            .Message.ShouldContain("which encoder is in use");
+    }
+
+    [Fact]
+    public void ToFramesHeldBack_PassesTheCounterThrough_AndRejectsWhatCannotBeRepresented()
+    {
+        NativeMirrorEngine.ToFramesHeldBack(FlintStatus.Ok, new NativeMirrorPacing { FramesHeldBack = 42, FrameRateCap = 30 })
+            .ShouldBe(42);
+
+        Should.Throw<MirrorEngineException>(() =>
+                NativeMirrorEngine.ToFramesHeldBack(FlintStatus.Ok, new NativeMirrorPacing { FramesHeldBack = ulong.MaxValue }))
+            .Message.ShouldContain("outside the managed range");
+        Should.Throw<MirrorEngineException>(() => NativeMirrorEngine.ToFramesHeldBack(FlintStatus.InternalError, default))
+            .Message.ShouldContain("how the mirror is paced");
     }
 
     [Theory]
@@ -373,6 +415,9 @@ public sealed class NativeMirrorEngineTests
             // session that can never produce a picture.
             session.CodecSpecificData.ShouldNotBeEmpty();
             session.CodecSpecificData.ShouldAllBe(block => block.Length > 0);
+
+            session.EncoderKind.ShouldBeOneOf(MirrorEncoderKind.Hardware, MirrorEncoderKind.Software);
+            session.ReadStats().FramesHeldBack.ShouldBe(0, "nothing has been captured yet");
         }
     }
 

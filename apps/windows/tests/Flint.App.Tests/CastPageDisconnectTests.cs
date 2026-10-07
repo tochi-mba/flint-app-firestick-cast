@@ -353,6 +353,8 @@ public sealed class CastPageDisconnectTests
         {
             public VideoCodec Codec => VideoCodec.H264;
 
+            public MirrorEncoderKind EncoderKind => MirrorEncoderKind.Hardware;
+
             public int Width => 1280;
 
             public int Height => 720;

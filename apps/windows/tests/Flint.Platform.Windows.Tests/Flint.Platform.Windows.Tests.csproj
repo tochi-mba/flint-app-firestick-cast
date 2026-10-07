@@ -4,6 +4,8 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <RootNamespace>Flint.Platform.Windows.Tests</RootNamespace>
     <IsTestProject>true</IsTestProject>
+    <!-- The display configuration fake writes into Windows' fixed character buffers. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

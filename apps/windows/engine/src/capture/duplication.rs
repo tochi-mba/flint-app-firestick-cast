@@ -9,6 +9,7 @@
 //! Frames stay on the GPU. `AcquireNextFrame` hands back a texture that the encoder can consume
 //! directly; copying it to system memory would cost more than the entire rest of the host budget.
 
+use std::ops::ControlFlow;
 use windows::core::Interface;
 use windows::Win32::Graphics::Direct3D::{D3D_DRIVER_TYPE_UNKNOWN, D3D_FEATURE_LEVEL_11_0};
 use windows::Win32::Graphics::Direct3D11::{
@@ -16,9 +17,8 @@ use windows::Win32::Graphics::Direct3D11::{
     D3D11_CREATE_DEVICE_BGRA_SUPPORT, D3D11_CREATE_DEVICE_VIDEO_SUPPORT, D3D11_SDK_VERSION,
 };
 use windows::Win32::Graphics::Dxgi::{
-    CreateDXGIFactory1, IDXGIAdapter1, IDXGIFactory1, IDXGIOutput1, IDXGIOutputDuplication,
-    IDXGIResource, DXGI_ERROR_ACCESS_LOST, DXGI_ERROR_NOT_FOUND, DXGI_ERROR_WAIT_TIMEOUT,
-    DXGI_OUTDUPL_FRAME_INFO,
+    IDXGIAdapter1, IDXGIOutput1, IDXGIOutputDuplication, IDXGIResource, DXGI_ERROR_ACCESS_LOST,
+    DXGI_ERROR_WAIT_TIMEOUT, DXGI_OUTDUPL_FRAME_INFO,
 };
 
 use super::{CaptureError, CaptureFormat, FrameOutcome};
@@ -188,48 +188,20 @@ impl Drop for DesktopDuplication {
 ///
 /// Outputs are counted across adapters in enumeration order, so index 0 is the first display on
 /// the first adapter that has one - which on a hybrid laptop is the integrated GPU, not the
-/// discrete card.
+/// discrete card. The count is [`super::outputs::walk`]'s, the same one the display list shows.
 fn find_output(target: u32) -> Result<(IDXGIAdapter1, IDXGIOutput1, i64), CaptureError> {
-    // SAFETY: CreateDXGIFactory1 is callable on any thread and returns a checked HRESULT.
-    let factory: IDXGIFactory1 = unsafe { CreateDXGIFactory1() }.map_err(platform)?;
-    let mut seen = 0u32;
-    let mut any_output = false;
-
-    for adapter_index in 0.. {
-        // SAFETY: bounded by the DXGI_ERROR_NOT_FOUND break below.
-        let adapter: IDXGIAdapter1 = match unsafe { factory.EnumAdapters1(adapter_index) } {
-            Ok(adapter) => adapter,
-            Err(error) if error.code() == DXGI_ERROR_NOT_FOUND => break,
-            Err(error) => return Err(platform(error)),
-        };
-
-        // SAFETY: the adapter is live; GetDesc1 returns its description.
-        let description = unsafe { adapter.GetDesc1() }.map_err(platform)?;
-        let luid = (i64::from(description.AdapterLuid.HighPart) << 32)
-            | i64::from(description.AdapterLuid.LowPart);
-
-        for output_index in 0.. {
-            // SAFETY: bounded by the DXGI_ERROR_NOT_FOUND break below.
-            let output = match unsafe { adapter.EnumOutputs(output_index) } {
-                Ok(output) => output,
-                Err(error) if error.code() == DXGI_ERROR_NOT_FOUND => break,
-                Err(error) => return Err(platform(error)),
-            };
-
-            any_output = true;
-            if seen == target {
-                let output1: IDXGIOutput1 = output.cast().map_err(platform)?;
-                return Ok((adapter, output1, luid));
-            }
-
-            seen += 1;
+    let walked = super::outputs::walk_dxgi(|index, adapter, luid, output| {
+        if index != target {
+            return Ok(ControlFlow::Continue(()));
         }
-    }
+        let output1: IDXGIOutput1 = output.cast().map_err(platform)?;
+        Ok(ControlFlow::Break((adapter.clone(), output1, luid)))
+    })?;
 
-    if any_output {
-        Err(CaptureError::NoSuchOutput(target))
-    } else {
-        Err(CaptureError::NoDisplayAdapter)
+    match walked {
+        ControlFlow::Break(found) => Ok(found),
+        ControlFlow::Continue(0) => Err(CaptureError::NoDisplayAdapter),
+        ControlFlow::Continue(_) => Err(CaptureError::NoSuchOutput(target)),
     }
 }
 

@@ -20,6 +20,9 @@ public interface IMirrorEngineSession : IDisposable
     /// </remarks>
     VideoCodec Codec { get; }
 
+    /// <summary>Whether the video is encoded on the graphics card or in software.</summary>
+    MirrorEncoderKind EncoderKind { get; }
+
     /// <summary>Encoded frame width, which may be smaller than the desktop's.</summary>
     int Width { get; }
 

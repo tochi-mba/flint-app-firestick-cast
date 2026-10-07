@@ -20,6 +20,7 @@ pub mod capture;
 pub mod convert;
 pub mod decode;
 pub mod encode;
+pub mod pacing;
 pub mod session;
 pub mod wire;
 
