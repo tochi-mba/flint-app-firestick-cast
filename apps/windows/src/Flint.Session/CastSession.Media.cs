@@ -25,9 +25,7 @@ public sealed partial class CastSession
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(command);
-        var playbackTask = WaitForPlaybackStartAsync(cancellationToken);
-        await SendMediaAsync(command, cancellationToken).ConfigureAwait(false);
-        return await playbackTask.ConfigureAwait(false);
+        return await LoadAndWaitForStartAsync(command, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -57,7 +55,6 @@ public sealed partial class CastSession
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(mimeType);
 
-        var playbackTask = WaitForPlaybackStartAsync(cancellationToken);
         await using (var file = new FileStream(
             filePath,
             FileMode.Open,
@@ -93,10 +90,9 @@ public sealed partial class CastSession
             }
         }
 
-        await SendMediaAsync(
+        return await LoadAndWaitForStartAsync(
             new MediaCommandMessage(MediaAction.Load, Url: "", title, mimeType, durationMs, startPositionMs),
             cancellationToken).ConfigureAwait(false);
-        return await playbackTask.ConfigureAwait(false);
     }
 
     /// <summary>Tells the TV's player to play, pause, stop, seek or move through its queue.</summary>
@@ -140,14 +136,40 @@ public sealed partial class CastSession
             cancellationToken);
     }
 
-    /// <summary>Waits until the receiver either starts, ends, or rejects the current media item.</summary>
-    public async Task<PlaybackStateMessage> WaitForPlaybackStartAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Sends <paramref name="load"/> and waits until the TV starts, ends or refuses the item it asks for.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The TV reports its player twice a second whatever it is doing, so until it takes the new item
+    /// it goes on reporting the old one: a file that ended says Ended, one still playing says
+    /// Playing. Taken at its word, that answered for the new file before it had even arrived; on a
+    /// real Fire TV the queue's next file was "refused" because the one before it had ended.
+    /// </para>
+    /// <para>
+    /// So it listens only from the load on, never during an upload, and Playing and Ended count only
+    /// once the TV has said Buffering, which it does the moment it takes a new item, even a picture or
+    /// a file too short to report Playing. A refusal counts at once: the TV refuses some loads without
+    /// buffering. Listening starts before the load is sent, not after: a TV close by can answer
+    /// before the send has returned, and a wait that started after would never hear it.
+    /// </para>
+    /// </remarks>
+    private async Task<PlaybackStateMessage> LoadAndWaitForStartAsync(
+        MediaCommandMessage load,
+        CancellationToken cancellationToken)
     {
         var completion = new TaskCompletionSource<PlaybackStateMessage>(
             TaskCreationOptions.RunContinuationsAsynchronously);
+        var buffering = false;
         void OnPlaybackState(PlaybackStateMessage message)
         {
-            if (message.State is PlaybackState.Playing or PlaybackState.Error or PlaybackState.Ended)
+            // Reports arrive on the receive loop, one at a time, so the flag needs no lock.
+            if (message.State is PlaybackState.Buffering)
+            {
+                buffering = true;
+            }
+            else if (message.State is PlaybackState.Error
+                || (buffering && message.State is PlaybackState.Playing or PlaybackState.Ended))
             {
                 completion.TrySetResult(message);
             }
@@ -156,6 +178,7 @@ public sealed partial class CastSession
         PlaybackStateReceived += OnPlaybackState;
         try
         {
+            await SendMediaAsync(load, cancellationToken).ConfigureAwait(false);
             var closedTask = closed.Task.WaitAsync(cancellationToken);
             await Task.WhenAny(completion.Task, closedTask).ConfigureAwait(false);
 

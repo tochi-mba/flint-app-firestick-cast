@@ -209,6 +209,7 @@ public sealed class CastSessionTests
             await WriteFrameAsync(stream, new WireFrame(new AuthMessage(
                 AuthMethod.SessionToken, BinaryData.From("accepted"u8))));
             (await ReadFrameAsync(stream)).Message.ShouldBeOfType<MediaCommandMessage>();
+            await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(PlaybackState.Buffering)));
             await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(
                 PlaybackState.Playing, 1_000, 5_000, "Playing on this TV")));
         }, TestContext.Current.CancellationToken);
@@ -269,6 +270,7 @@ public sealed class CastSessionTests
                 command.Title.ShouldBe("clip.mp4");
                 command.MimeType.ShouldBe("video/mp4");
 
+                await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(PlaybackState.Buffering)));
                 await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(
                     PlaybackState.Playing, 0, -1, "Playing on this TV")));
             }, TestContext.Current.CancellationToken);
@@ -322,6 +324,7 @@ public sealed class CastSessionTests
                 chunk.Data.Length.ShouldBe(0);
 
                 await ReadFrameAsync(stream);
+                await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(PlaybackState.Buffering)));
                 await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(PlaybackState.Ended)));
             }, TestContext.Current.CancellationToken);
 
@@ -335,6 +338,84 @@ public sealed class CastSessionTests
         {
             File.Delete(filePath);
         }
+    }
+
+    [Fact]
+    public async Task ThePreviousFilesReports_DoNotAnswerForTheNewOne()
+    {
+        // A real Fire TV goes on reporting the file before until it takes the new one: here, the
+        // end of the last file during the upload, and once more just after the load, before it
+        // says Buffering. Taking either as the new file's start called the next queued file refused.
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var server = Task.Run(async () =>
+        {
+            using var client = await listener.AcceptTcpClientAsync(TestContext.Current.CancellationToken);
+            var stream = client.GetStream();
+            await ReadFrameAsync(stream);
+            await WriteFrameAsync(stream, new WireFrame(new HelloMessage(
+                1, 1, "Fire TV", ValueList<CodecId>.From([CodecId.H264]), 1920, 1080, 320)));
+            await ReadFrameAsync(stream);
+            await WriteFrameAsync(stream, new WireFrame(new AuthMessage(
+                AuthMethod.SessionToken, BinaryData.From("accepted"u8))));
+            (await ReadFrameAsync(stream)).Message.ShouldBeOfType<MediaDataMessage>();
+            await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(PlaybackState.Ended, 20_000, 20_000)));
+            (await ReadFrameAsync(stream)).Message.ShouldBeOfType<MediaCommandMessage>();
+            await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(PlaybackState.Ended, 20_000, 20_000)));
+            await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(PlaybackState.Playing, 15_000, 20_000)));
+            await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(PlaybackState.Buffering)));
+            await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(PlaybackState.Paused, 0, 60_000)));
+            await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(PlaybackState.Playing, 0, 60_000)));
+        }, TestContext.Current.CancellationToken);
+        var filePath = Path.Combine(Path.GetTempPath(), $"flint-next-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllBytesAsync(filePath, [1, 2, 3], TestContext.Current.CancellationToken);
+        try
+        {
+            await using var session = await CastSession.ConnectAsync(
+                IPAddress.Loopback, port, "123456", cancellationToken: TestContext.Current.CancellationToken);
+            var state = await session.PushMediaAndWaitForPlaybackStartAsync(
+                filePath, "next.mp4", "video/mp4", cancellationToken: TestContext.Current.CancellationToken);
+
+            state.State.ShouldBe(PlaybackState.Playing);
+            state.DurationMs.ShouldBe(60_000, "the new file's own report, not the last one's");
+            await server;
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    [Fact]
+    public async Task ARefusal_CountsAtOnce_ThoughTheTvNeverBuffered()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var server = Task.Run(async () =>
+        {
+            using var client = await listener.AcceptTcpClientAsync(TestContext.Current.CancellationToken);
+            var stream = client.GetStream();
+            await ReadFrameAsync(stream);
+            await WriteFrameAsync(stream, new WireFrame(new HelloMessage(
+                1, 1, "Fire TV", ValueList<CodecId>.From([CodecId.H264]), 1920, 1080, 320)));
+            await ReadFrameAsync(stream);
+            await WriteFrameAsync(stream, new WireFrame(new AuthMessage(
+                AuthMethod.SessionToken, BinaryData.From("accepted"u8))));
+            (await ReadFrameAsync(stream)).Message.ShouldBeOfType<MediaCommandMessage>();
+            await WriteFrameAsync(stream, new WireFrame(new PlaybackStateMessage(
+                PlaybackState.Error, Detail: "no media was pushed to this TV to play")));
+        }, TestContext.Current.CancellationToken);
+
+        await using var session = await CastSession.ConnectAsync(
+            IPAddress.Loopback, port, "123456", cancellationToken: TestContext.Current.CancellationToken);
+        var state = await session.SendMediaAndWaitForPlaybackStartAsync(
+            new MediaCommandMessage(MediaAction.Load, "", "Video", "video/mp4"),
+            TestContext.Current.CancellationToken);
+
+        state.State.ShouldBe(PlaybackState.Error);
+        await server;
     }
 
     [Fact]
