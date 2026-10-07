@@ -29,6 +29,44 @@
                 SelectedItem="{Binding InterfaceScale, Mode=TwoWay}"
                 AutomationProperties.Name="Interface size" />
     </controls:SettingRow>
+    <controls:SettingRow Title="{Binding ReconnectOnStartText.Title}"
+                         Description="{Binding ReconnectOnStartText.Description}">
+      <ToggleSwitch x:Name="ReconnectOnStart"
+                    Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding ReconnectOnStart, Mode=TwoWay}"
+                    AutomationProperties.Name="Reconnect to the last TV when Flint starts" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding ReconnectAfterDropText.Title}"
+                         Description="{Binding ReconnectAfterDropText.Description}">
+      <ToggleSwitch x:Name="ReconnectAfterDrop"
+                    Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding ReconnectAfterDrop, Mode=TwoWay}"
+                    AutomationProperties.Name="Keep trying if the connection drops" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding ReconnectTimeText.Title}"
+                         Description="{Binding ReconnectTimeText.Description}">
+      <ComboBox x:Name="ReconnectTime"
+                Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding ReconnectTimeChoices}"
+                SelectedItem="{Binding ReconnectTime, Mode=TwoWay}"
+                IsEnabled="{Binding ReconnectAfterDrop}"
+                AutomationProperties.Name="How long to keep trying" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding AfterReconnectText.Title}"
+                         Description="{Binding AfterReconnectText.Description}">
+      <ComboBox x:Name="AfterReconnect"
+                Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding AfterReconnectChoices}"
+                SelectedItem="{Binding AfterReconnect, Mode=TwoWay}"
+                AutomationProperties.Name="After reconnecting" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding OpenReceiverText.Title}"
+                         Description="{Binding OpenReceiverText.Description}">
+      <ToggleSwitch x:Name="OpenReceiverForNewCode"
+                    Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding OpenReceiverForNewCode, Mode=TwoWay}"
+                    AutomationProperties.Name="Open Flint on the TV when a new code is needed" />
+    </controls:SettingRow>
     <views:ConfirmableActionView DataContext="{Binding Reset}" Margin="0,18,0,0" />
   </StackPanel>
 </UserControl>

@@ -43,6 +43,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IFolderOpener folders,
         IMediaHistoryStore mediaHistory,
         IWhatsNewState whatsNewState,
+        IKnownTvStore knownTvs,
         IUpdateSource? updateSource = null,
         IUpdatePreference? updatePreference = null)
     {
@@ -57,6 +58,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 OnPropertyChanged(nameof(MinimumHeight));
             }
         };
+        Cast.UseReconnect(knownTvs, settingsService);
         Browser = new BrowserPageViewModel(cast);
         Media = new MediaPageViewModel(cast, settingsService, mediaHistory, new LocalMediaFileSystem());
         Coordinator = new ModeSessionCoordinator(Cast, Browser, SwitchPrompt, settingsService);
@@ -103,9 +105,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         // Someone who has just been introduced to Flint has nothing to catch up on: everything in
         // "What's new" was there when they started.
         Onboarding.Completed += (_, _) => WhatsNew.MarkAllSeen();
-        if (!Onboarding.IsVisible && !string.IsNullOrWhiteSpace(Cast.ManualAddress))
+        if (!Onboarding.IsVisible)
         {
-            _ = Cast.ProbeCommand.ExecuteAsync(null);
+            _ = StartAsync();
         }
         Destinations =
         [
@@ -117,6 +119,19 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 new NavigationDestination("R", "Settings"),
         ];
         _selected = Destinations[0];
+    }
+
+    /// <summary>
+    /// Reaches the last TV again without its code when the setting is on; otherwise, or when that
+    /// does not work, probes the address typed last, as Flint always did.
+    /// </summary>
+    internal async Task StartAsync()
+    {
+        if (!await Cast.ReconnectOnStartAsync().ConfigureAwait(true) && !string.IsNullOrWhiteSpace(Cast.ManualAddress)
+            && !Cast.HasDevice)
+        {
+            await Cast.ProbeCommand.ExecuteAsync(null).ConfigureAwait(true);
+        }
     }
 
     /// <summary>The rail's destinations.</summary>
@@ -260,6 +275,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             new ExplorerFolderOpener(),
             new FileMediaHistoryStore(),
             new FileWhatsNewState(),
+            new FileKnownTvStore(),
             new VelopackUpdateSource(),
             new FileUpdatePreference());
 
@@ -287,6 +303,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// Which "What's new" highlights were seen. Defaults to all of them, so a test asking about the
     /// shell is not handed a walkthrough it did not ask for.
     /// </param>
+    /// <param name="knownTvs">TVs Flint can reach again. Defaults to none, kept only in memory.</param>
     /// <remarks>
     /// The receiver installer is the offline one: a shell built around a supplied prober has no
     /// television to talk to, and the real installer would try the fake device's address on every
@@ -300,7 +317,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         Func<KeepAwakeLevel, bool>? keepAwake = null,
         IFolderOpener? folders = null,
         IMediaHistoryStore? mediaHistory = null,
-        IWhatsNewState? whatsNewState = null) =>
+        IWhatsNewState? whatsNewState = null,
+        IKnownTvStore? knownTvs = null) =>
         new(
             new CastPageViewModel(
                 prober,
@@ -311,7 +329,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             keepAwake ?? (_ => true),
             folders ?? new NoFolderOpener(),
             mediaHistory ?? new InMemoryMediaHistoryStore(),
-            whatsNewState ?? new InMemoryWhatsNewState(WhatsNewViewModel.Catalogue.Select(highlight => highlight.Id)));
+            whatsNewState ?? new InMemoryWhatsNewState(WhatsNewViewModel.Catalogue.Select(highlight => highlight.Id)),
+            knownTvs ?? new InMemoryKnownTvStore());
 
     /// <summary>A folder opener for tests and design-time shells, which must not open windows.</summary>
     private sealed class NoFolderOpener : IFolderOpener

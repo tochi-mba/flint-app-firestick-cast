@@ -191,3 +191,28 @@ the change it measures.
 These numbers describe one PC on one day. They are not claims about Flint's speed, and none of them
 is a latency: capture, encoding and the television are measured separately, by the engine's
 hardware tests and the procedure in `LATENCY_BUDGET.md`.
+
+## Reconnecting without a code
+
+At pairing, the TV's Flint app grants a session token in its AUTH reply, and accepts that token in
+place of the pairing code for as long as its listener runs. Windows keeps it in `known-tvs.json`,
+protected with Windows data protection for the current user, under the name the TV gave in its
+HELLO. `CastSession.ConnectWithTokenAsync` reads the TV's HELLO before it sends anything, and refuses
+to present the token to a TV giving another name: an address a router hands out can pass to another
+device.
+
+- **On start**, with "Reconnect to the last TV" on, Flint probes the remembered address and logs in.
+  If nothing answers there it searches the network, because a TV's address can change.
+- **After a drop**, with "Keep trying" on, it tries after 1, 2, 4 and 8 seconds and then every 15,
+  until the configured time is up or the person cancels. A disconnect the person asked for is never
+  retried.
+- **A refused token** means the TV's app restarted or someone pressed New code. Flint forgets the
+  token, says the TV needs its code, and opens the TV app over ADB when it can.
+- **After reconnecting**, it offers to carry on with what was on the TV: a file from where it was,
+  or the screen. "Carry on" does it without asking, but a screen share always counts down first,
+  where it can be seen and stopped.
+
+The token is regenerated whenever the TV app's listener restarts, so after the TV reboots the first
+connection needs the code once. Making the TV remember a PC across restarts would take a TV app
+change. The handshake itself is limited to ten seconds, so a device that takes the connection and
+never answers no longer leaves pairing waiting forever.

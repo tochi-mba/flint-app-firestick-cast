@@ -23,6 +23,7 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
     private readonly ConcurrentQueue<WireMessage> received = new();
     private readonly List<(Func<IReadOnlyCollection<WireMessage>, bool> Wanted, TaskCompletionSource Seen)> waiters = [];
     private TcpClient? client;
+    private NetworkStream? current;
 
     internal LoopbackReceiver()
     {
@@ -33,6 +34,30 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
 
     /// <summary>The port the Cast page pairs with.</summary>
     internal int Port { get; }
+
+    /// <summary>The name the TV gives in its greeting.</summary>
+    internal string Name { get; set; } = "Fire TV";
+
+    /// <summary>
+    /// The login the TV grants, and accepts in place of a code. Unset, it grants a word no store
+    /// keeps, as the tests before logins did.
+    /// </summary>
+    internal string? Login { get; set; }
+
+    /// <summary>The browser port the TV names in its login reply, or null for none.</summary>
+    internal int? BrowserPort { get; set; }
+
+    /// <summary>Whether the TV refuses every login, as one whose app restarted does.</summary>
+    internal bool RefusesLogins { get; set; }
+
+    /// <summary>How many sessions logged in with the TV's login rather than a code.</summary>
+    internal int LoginsAccepted => loginsAccepted;
+
+    /// <summary>How many login attempts the TV refused.</summary>
+    internal int LoginsRefused => loginsRefused;
+
+    private int loginsAccepted;
+    private int loginsRefused;
 
     /// <summary>
     /// What the TV says when it is told to play a file. Unset, it says nothing and the test answers
@@ -60,8 +85,8 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
     /// <summary>Sends the session a message, as the TV would.</summary>
     internal async Task SendAsync(WireMessage message)
     {
-        var stream = await paired.Task.WaitAsync(lifetime.Token);
-        await stream.WriteAsync(WireCodec.Encode(new WireFrame(message)), lifetime.Token);
+        await paired.Task.WaitAsync(lifetime.Token);
+        await current!.WriteAsync(WireCodec.Encode(new WireFrame(message)), lifetime.Token);
     }
 
     /// <summary>Hangs up without a goodbye, as a TV that lost power or Wi-Fi does.</summary>
@@ -99,7 +124,8 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
         {
             await Completion;
         }
-        catch (Exception exception) when (exception is OperationCanceledException or IOException or SocketException or ObjectDisposedException)
+        catch (Exception exception) when (exception is OperationCanceledException or IOException or SocketException
+            or ObjectDisposedException or InvalidOperationException)
         {
         }
 
@@ -109,23 +135,74 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
 
     private async Task ServeAsync(CancellationToken cancellationToken)
     {
-        client = await listener.AcceptTcpClientAsync(cancellationToken);
-        var stream = client.GetStream();
+        // Every session it is offered, side by side, as a TV does: the one the page pairs with, a
+        // second pairing while the first is still open, and any made again with the TV's login.
+        var sessions = new List<Task>();
+        while (true)
+        {
+            try
+            {
+                client = await listener.AcceptTcpClientAsync(cancellationToken);
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or SocketException
+                or ObjectDisposedException or OperationCanceledException)
+            {
+                // The TV was put away: nothing more will connect, and what was open winds down.
+                await Task.WhenAll(sessions.Select(EndQuietlyAsync));
+                return;
+            }
+
+            sessions.Add(ServeOneAsync(client.GetStream(), cancellationToken));
+        }
+    }
+
+    /// <summary>A session's end, whichever way it ended.</summary>
+    private static async Task EndQuietlyAsync(Task session)
+    {
+        try
+        {
+            await session;
+        }
+        catch (Exception exception) when (exception is IOException or EndOfStreamException or ObjectDisposedException
+            or OperationCanceledException or SocketException or InvalidCastException)
+        {
+        }
+    }
+
+    private async Task ServeOneAsync(NetworkStream stream, CancellationToken cancellationToken)
+    {
         await ReadFrameAsync(stream, cancellationToken);
         await stream.WriteAsync(
             WireCodec.Encode(new WireFrame(new HelloMessage(
                 1,
                 1,
-                "Fire TV",
+                Name,
                 ValueList<CodecId>.From([CodecId.H264]),
                 1920,
                 1080,
                 320))),
             cancellationToken);
-        await ReadFrameAsync(stream, cancellationToken);
+        var auth = (AuthMessage)(await ReadFrameAsync(stream, cancellationToken)).Message;
+        if (auth.Method is AuthMethod.SessionToken)
+        {
+            var presented = System.Text.Encoding.ASCII.GetString(auth.Credential.Span);
+            if (RefusesLogins || presented != Login)
+            {
+                Interlocked.Increment(ref loginsRefused);
+                await stream.WriteAsync(WireCodec.Encode(new WireFrame(new ByeMessage(ByeReason.AuthenticationFailed, "Authentication failed"))), cancellationToken);
+                return;
+            }
+
+            Interlocked.Increment(ref loginsAccepted);
+        }
+
         await stream.WriteAsync(
-            WireCodec.Encode(new WireFrame(new AuthMessage(AuthMethod.SessionToken, BinaryData.From("accepted"u8)))),
+            WireCodec.Encode(new WireFrame(new AuthMessage(
+                AuthMethod.SessionToken,
+                BinaryData.From(System.Text.Encoding.ASCII.GetBytes(Login ?? "accepted")),
+                BrowserPort?.ToString(System.Globalization.CultureInfo.InvariantCulture)))),
             cancellationToken);
+        current = stream;
         paired.TrySetResult(stream);
 
         while (true)

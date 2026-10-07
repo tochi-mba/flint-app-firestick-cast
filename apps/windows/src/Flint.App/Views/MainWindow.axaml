@@ -103,6 +103,50 @@
 
     <!-- Content, under a strip that says what the TV is showing when it is not this page's. -->
     <DockPanel Grid.Column="1">
+      <!-- Reaching the TV again, a TV that needs a new code, or an offer to carry on: on every page. -->
+      <Border DockPanel.Dock="Top"
+              IsVisible="{Binding Cast.HasReconnectBanner}"
+              Background="{StaticResource PanelBrush}"
+              BorderBrush="{StaticResource SignalBrush}"
+              BorderThickness="0,0,0,1"
+              Padding="24,10">
+        <Grid ColumnDefinitions="*,Auto,Auto">
+          <TextBlock Grid.Column="0"
+                     Theme="{StaticResource BodyMedium}"
+                     VerticalAlignment="Center"
+                     TextWrapping="Wrap"
+                     Text="{Binding Cast.ReconnectBanner}"
+                     AutomationProperties.Name="Connection to the TV"
+                     AutomationProperties.LiveSetting="Polite" />
+          <Button Grid.Column="1"
+                  Theme="{StaticResource SignalButton}"
+                  Height="34"
+                  Padding="12,0"
+                  Margin="16,0,0,0"
+                  Content="{Binding Cast.ReconnectOfferAction}"
+                  Command="{Binding Cast.AcceptReconnectOfferCommand}"
+                  IsVisible="{Binding Cast.HasReconnectOffer}"
+                  AutomationProperties.Name="Carry on with what was on the TV" />
+          <Button Grid.Column="2"
+                  Theme="{StaticResource OutlineAction}"
+                  Height="34"
+                  Padding="12,0"
+                  Margin="8,0,0,0"
+                  Content="CANCEL"
+                  Command="{Binding Cast.CancelReconnectCommand}"
+                  IsVisible="{Binding Cast.IsReconnecting}"
+                  AutomationProperties.Name="Stop reconnecting" />
+          <Button Grid.Column="2"
+                  Theme="{StaticResource OutlineAction}"
+                  Height="34"
+                  Padding="12,0"
+                  Margin="8,0,0,0"
+                  Content="NOT NOW"
+                  Command="{Binding Cast.DismissReconnectOfferCommand}"
+                  IsVisible="{Binding Cast.HasReconnectOffer}"
+                  AutomationProperties.Name="Leave the TV as it is" />
+        </Grid>
+      </Border>
       <Border DockPanel.Dock="Top"
               IsVisible="{Binding ShowTvNotice}"
               Background="{StaticResource PanelBrush}"
