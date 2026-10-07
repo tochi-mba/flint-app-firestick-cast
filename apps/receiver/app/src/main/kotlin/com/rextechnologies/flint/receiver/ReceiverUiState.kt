@@ -23,6 +23,8 @@ data class ReceiverUiState(
     val peerName: String? = null,
     val surfaceMode: SurfaceMode = SurfaceMode.IDLE,
     val title: String = "",
+    /** Whether the item playing is a still picture, which has no time or pause of its own. */
+    val isPicture: Boolean = false,
     val playbackState: PlaybackState = PlaybackState.IDLE,
     val positionMs: Long = 0,
     val durationMs: Long = -1,
