@@ -132,9 +132,14 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
         {
             var frame = await ReadFrameAsync(stream, cancellationToken);
             received.Enqueue(frame.Message);
-            if (frame.Message is MediaCommandMessage { Action: MediaAction.Load } load && AnswerLoad?.Invoke(load) is { } answer)
+            if (frame.Message is MediaCommandMessage { Action: MediaAction.Load } load)
             {
-                await stream.WriteAsync(WireCodec.Encode(new WireFrame(answer)), cancellationToken);
+                // As a real Fire TV does: it says Buffering the moment it takes a new item.
+                await stream.WriteAsync(WireCodec.Encode(new WireFrame(new PlaybackStateMessage(PlaybackState.Buffering))), cancellationToken);
+                if (AnswerLoad?.Invoke(load) is { } answer)
+                {
+                    await stream.WriteAsync(WireCodec.Encode(new WireFrame(answer)), cancellationToken);
+                }
             }
 
             lock (waiters)

@@ -53,6 +53,7 @@ public sealed class CastSessionPushCancelTests
 
             (await tv.ReadAsync()).Message.ShouldBeOfType<MediaDataMessage>().IsFinal.ShouldBeTrue();
             (await tv.ReadAsync()).Message.ShouldBeOfType<MediaCommandMessage>().Action.ShouldBe(MediaAction.Load);
+            await tv.SendAsync(new PlaybackStateMessage(PlaybackState.Buffering));
             await tv.SendAsync(new PlaybackStateMessage(PlaybackState.Playing));
 
             (await playing.WaitAsync(TimeSpan.FromSeconds(10), Token)).State.ShouldBe(PlaybackState.Playing);
@@ -69,7 +70,9 @@ public sealed class CastSessionPushCancelTests
         await using var tv = await FakeTv.StartAsync();
         await using var session = await tv.PairAsync();
 
-        var waiting = session.WaitForPlaybackStartAsync(Token);
+        var waiting = session.SendMediaAndWaitForPlaybackStartAsync(
+            new MediaCommandMessage(MediaAction.Load, "", "Video", "video/mp4"), Token);
+        (await tv.ReadAsync()).Message.ShouldBeOfType<MediaCommandMessage>();
         tv.HangUp();
 
         var failure = await Should.ThrowAsync<IOException>(() => waiting.WaitAsync(TimeSpan.FromSeconds(10), Token));
