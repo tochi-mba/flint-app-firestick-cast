@@ -126,9 +126,12 @@ public sealed partial class CastPageViewModel
         string status,
         CancellationToken cancellationToken)
     {
-        if (session is not null)
+        // Let go before closing it, so the end the replaced session reports is not mistaken for the
+        // TV leaving - which would clear the new connection and start reconnecting over it.
+        if (session is { } replaced)
         {
-            await session.DisposeAsync().ConfigureAwait(true);
+            session = null;
+            await replaced.DisposeAsync().ConfigureAwait(true);
         }
 
         session = nextSession;
