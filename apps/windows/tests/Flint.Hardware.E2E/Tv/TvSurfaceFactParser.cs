@@ -12,10 +12,10 @@ public static partial class TvSurfaceFactParser
     [GeneratedRegex(@"content-desc=""Pairing code ([0-9 ]+)""", RegexOptions.CultureInvariant)]
     private static partial Regex PairingCodeDesc();
 
-    [GeneratedRegex(@"text=""(\d{1,3}(?:\.\d{1,3}){3}):(\d{1,5})""", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"text=""(?:TV address: )?(\d{1,3}(?:\.\d{1,3}){3}):(\d{1,5})""", RegexOptions.CultureInvariant)]
     private static partial Regex EndpointText();
 
-    [GeneratedRegex(@"content-desc=""Browser port (\d{1,5})""", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"(?:content-desc=""Browser port |text=""Browser port: )(\d{1,5})""", RegexOptions.CultureInvariant)]
     private static partial Regex BrowserPortDesc();
 
     [GeneratedRegex(@"text=""([0-9A-F]{4}(?:-[0-9A-F]{4}){2,3})""", RegexOptions.CultureInvariant)]
@@ -25,6 +25,9 @@ public static partial class TvSurfaceFactParser
         @"Browser TLS listening on \d{1,3}(?:\.\d{1,3}){3}:(\d{1,5})",
         RegexOptions.CultureInvariant)]
     private static partial Regex BrowserTlsLog();
+
+    /// <summary>Whether a dump shows the TV's address, which newer receivers keep behind Connection details.</summary>
+    public static bool HasEndpoint(string uiDumpXml) => EndpointText().IsMatch(uiDumpXml);
 
     /// <summary>Builds facts from a uiautomator dump, optionally filled from logcat.</summary>
     public static TvSurfaceFacts Parse(string uiDumpXml, string? logcat = null)

@@ -58,4 +58,29 @@ public sealed class TvSurfaceFactParserTests
         error.Message.ShouldContain("Pairing code");
         error.Message.ShouldContain("READY");
     }
+
+    [Fact]
+    public void Parse_TheReadyScreenAndConnectionDetailsTogether_ReadsTheLabelledAddressAndPort()
+    {
+        const string ready = """
+            <hierarchy>
+              <node text="Ready to connect" />
+              <node content-desc="Pairing code 1 7 8 4 8 9" />
+              <node text="Connection details" />
+            </hierarchy>
+            """;
+        const string details = """
+            <hierarchy>
+              <node text="TV address: 10.214.174.172:47855" />
+              <node text="7F3A-1B8F-CAF3" />
+              <node text="Browser port: 39087" />
+            </hierarchy>
+            """;
+
+        TvSurfaceFactParser.HasEndpoint(ready).ShouldBeFalse();
+        TvSurfaceFactParser.HasEndpoint(details).ShouldBeTrue();
+        var facts = TvSurfaceFactParser.Parse(ready + details);
+
+        facts.ShouldBe(new TvSurfaceFacts("178489", "10.214.174.172", 47855, 39087, "7F3A-1B8F-CAF3"));
+    }
 }
