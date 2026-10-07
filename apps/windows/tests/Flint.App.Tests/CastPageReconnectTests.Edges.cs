@@ -114,9 +114,19 @@ public sealed partial class CastPageReconnectTests
         await using var tv = new LoopbackReceiver { Name = "Living Room", Login = Login };
         var cast = await PairedPageAsync(tv);
 
-        await Pair(cast, tv);
+        // Several times, because the replaced session's end arrives on its own schedule: when it
+        // was taken for the TV leaving, it cleared the new connection and reconnected over it.
+        for (var again = 0; again < 3; again++)
+        {
+            await Pair(cast, tv);
+            await cast.ReconnectTask;
 
-        cast.IsSessionConnected.ShouldBeTrue();
+            cast.IsSessionConnected.ShouldBeTrue();
+            cast.IsReconnecting.ShouldBeFalse();
+            cast.PairingStatus.ShouldBe("Paired and ready to cast.");
+        }
+
+        tv.LoginsAccepted.ShouldBe(0, "nothing reconnected over the new session");
         cast.KnownTvs.ShouldHaveSingleItem().Name.ShouldBe("Living Room");
     }
 
