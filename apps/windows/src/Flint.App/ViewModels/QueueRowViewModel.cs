@@ -42,18 +42,14 @@ public sealed partial class QueueRowViewModel : ObservableObject
     /// <summary>The one thing worth saying about the file, if anything.</summary>
     public string? Note => IsMissing ? "File not found"
         : IsWaiting ? "Waiting for the TV"
-        : !Item.Type.Tried ? "Flint has not tried this kind of file"
         : null;
 
     /// <summary>Whether there is a note to show.</summary>
     public bool HasNote => Note is not null;
 
     /// <summary>The row's name for a screen reader.</summary>
-    public string SpokenName => (IsCurrent, Note) switch
-    {
-        (true, { } note) => $"{Name}, playing, {note}",
-        (true, _) => $"{Name}, playing",
-        (_, { } note) => $"{Name}, {note}",
-        _ => Name,
-    };
+    /// <remarks>A missing or waiting file is not playing, even when it is the queue's current item.</remarks>
+    public string SpokenName => Note is { } note ? $"{Name}, {note}"
+        : IsCurrent ? $"{Name}, playing"
+        : Name;
 }
