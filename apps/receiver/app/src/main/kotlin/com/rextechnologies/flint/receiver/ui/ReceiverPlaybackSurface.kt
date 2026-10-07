@@ -49,6 +49,33 @@ import com.rextechnologies.flint.protocol.wire.PlaybackState
 import com.rextechnologies.flint.receiver.ReceiverUiState
 import kotlinx.coroutines.delay
 
+/** What the playback surface draws over the player. */
+internal enum class PlaybackOverlay {
+    /** The player stopped; say why. */
+    FAILURE,
+
+    /** The item has not shown anything yet: a full-screen wait. */
+    LOADING,
+
+    /** The bar of title, time and buttons, over the picture. */
+    HUD,
+}
+
+/**
+ * Which overlay to draw. [started] is whether this item has played, paused or ended yet: a seek
+ * buffers too, and covering the picture the viewer is watching with the opening wait for that
+ * moment read as if the whole item were starting again.
+ */
+internal fun playbackOverlay(state: ReceiverUiState, started: Boolean): PlaybackOverlay = when {
+    state.error != null || state.playbackState == PlaybackState.ERROR -> PlaybackOverlay.FAILURE
+    !started && (state.playbackState == PlaybackState.BUFFERING || state.playbackState == PlaybackState.IDLE) ->
+        PlaybackOverlay.LOADING
+    else -> PlaybackOverlay.HUD
+}
+
+/** Whether the bar shows a time and progress: a picture has neither, however long it is shown for. */
+internal fun hudShowsProgress(state: ReceiverUiState): Boolean = !state.isPicture && state.durationMs > 0
+
 @Composable
 internal fun ReceiverPlaybackSurface(
     state: ReceiverUiState,
@@ -57,18 +84,26 @@ internal fun ReceiverPlaybackSurface(
     onTogglePlayPause: () -> Unit = {},
     onClose: () -> Unit = {},
 ) {
+    // Plain memory, not state: it only latches on, and is read in the same pass that sets it.
+    val startedLatch = remember(state.title) { booleanArrayOf(false) }
+    if (state.playbackState == PlaybackState.PLAYING ||
+        state.playbackState == PlaybackState.PAUSED ||
+        state.playbackState == PlaybackState.ENDED
+    ) {
+        startedLatch[0] = true
+    }
+    val started = startedLatch[0]
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         playerContent()
-        when {
-            state.error != null || state.playbackState == PlaybackState.ERROR -> ReceiverFailureOverlay(
+        when (playbackOverlay(state, started)) {
+            PlaybackOverlay.FAILURE -> ReceiverFailureOverlay(
                 state = state,
                 eyebrow = "PLAYBACK STOPPED",
                 instruction = "Press BACK to close playback",
                 tag = ReceiverTags.PLAYBACK_ERROR,
             )
-            state.playbackState == PlaybackState.BUFFERING || state.playbackState == PlaybackState.IDLE ->
-                PlaybackLoadingOverlay(state)
-            else -> PlaybackHud(state, hudAutoHideMillis, onTogglePlayPause, onClose)
+            PlaybackOverlay.LOADING -> PlaybackLoadingOverlay(state)
+            PlaybackOverlay.HUD -> PlaybackHud(state, hudAutoHideMillis, onTogglePlayPause, onClose)
         }
     }
 }
@@ -104,7 +139,7 @@ private fun PlaybackLoadingOverlay(state: ReceiverUiState) {
                 modifier = Modifier.fillMaxWidth(0.8f).padding(top = 8.dp),
             )
             Text(
-                text = "Connecting to your phone or PC…",
+                text = "Opening it on this TV…",
                 color = ReceiverColors.Muted,
                 fontSize = 15.sp,
                 lineHeight = 20.sp,
@@ -227,7 +262,7 @@ private fun PlaybackHud(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                if (state.durationMs > 0) {
+                if (hudShowsProgress(state)) {
                     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                         Text(
                             text = "${elapsedLabel(state.positionMs)}  /  ${elapsedLabel(state.durationMs)}",
@@ -238,7 +273,7 @@ private fun PlaybackHud(
                     }
                 }
             }
-            if (state.durationMs > 0) {
+            if (hudShowsProgress(state)) {
                 Spacer(Modifier.height(12.dp))
                 PlaybackProgress(progressFraction(state.positionMs, state.durationMs))
             }
@@ -246,20 +281,25 @@ private fun PlaybackHud(
             val playPauseFocusRequester = remember { FocusRequester() }
             LaunchedEffect(state.title) { playPauseFocusRequester.requestFocus() }
             Row {
-                TvActionButton(
-                    label = if (state.playbackState == PlaybackState.PLAYING) "PAUSE" else "PLAY",
-                    enabled = true,
-                    onClick = onTogglePlayPause,
-                    modifier = Modifier
-                        .testTag(ReceiverTags.PLAYBACK_PLAY_PAUSE)
-                        .focusRequester(playPauseFocusRequester),
-                )
-                Spacer(Modifier.width(12.dp))
+                // A picture has nothing to pause, so its only button is CLOSE, and focus starts there.
+                if (!state.isPicture) {
+                    TvActionButton(
+                        label = if (state.playbackState == PlaybackState.PLAYING) "PAUSE" else "PLAY",
+                        enabled = true,
+                        onClick = onTogglePlayPause,
+                        modifier = Modifier
+                            .testTag(ReceiverTags.PLAYBACK_PLAY_PAUSE)
+                            .focusRequester(playPauseFocusRequester),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                }
                 TvActionButton(
                     label = "CLOSE",
                     enabled = true,
                     onClick = onClose,
-                    modifier = Modifier.testTag(ReceiverTags.PLAYBACK_CLOSE),
+                    modifier = Modifier
+                        .testTag(ReceiverTags.PLAYBACK_CLOSE)
+                        .then(if (state.isPicture) Modifier.focusRequester(playPauseFocusRequester) else Modifier),
                 )
             }
         }

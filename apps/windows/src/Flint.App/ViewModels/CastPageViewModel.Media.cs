@@ -29,6 +29,15 @@ public sealed partial class CastPageViewModel
         MediaFileSelectionRequested?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>How long the TV is asked to keep a picture up: a day, so it never ends by itself.</summary>
+    /// <remarks>
+    /// Left to itself the TV's player ends a picture after six seconds and draws its Finished bar
+    /// over it, seen on a Fire TV Stick 4K. The queue moves on from a picture by its own timer, or
+    /// when the person does, so the TV must not. A TV app from before it honoured this still ends
+    /// the picture at six seconds, as it always did.
+    /// </remarks>
+    internal const long PictureHoldMs = 24 * 60 * 60 * 1000;
+
     /// <summary>
     /// What to tell the user when the TV's own player could not reach this PC's media server.
     /// </summary>
@@ -154,6 +163,7 @@ public sealed partial class CastPageViewModel
                 path,
                 fileName,
                 mimeType,
+                durationMs: type.IsPicture ? PictureHoldMs : -1,
                 startPositionMs: startPositionMs,
                 progress: progress,
                 cancellationToken: playbackTimeout.Token).ConfigureAwait(true);

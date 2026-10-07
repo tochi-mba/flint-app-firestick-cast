@@ -202,7 +202,7 @@
                            MinWidth="190" Text="{Binding VolumeText}" />
               </Grid>
               <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
-                         Text="Some TVs control their own volume and ignore this." />
+                         Text="Flint's own volume on the TV. The TV's volume, set with its remote, still applies." />
             </StackPanel>
           </StackPanel>
         </StackPanel>
@@ -290,9 +290,9 @@
       <Expander Header="Supported media" HorizontalAlignment="Stretch">
         <StackPanel Spacing="8" Margin="0,12,0,0">
           <TextBlock Theme="{StaticResource BodyMedium}" TextWrapping="Wrap"
-                     Text="Played on a Fire TV through Flint: MP4, MKV and WebM video, MP3 and M4A music, and JPEG and PNG pictures." />
+                     Text="Each of these has played on a Fire TV through Flint: MP4, M4V, MKV, WebM, MOV and TS video, MP3, M4A, AAC, FLAC, WAV, OGG and Opus music, and JPEG, PNG, WebP and BMP pictures." />
           <TextBlock Theme="{StaticResource BodyMedium}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
-                     Text="Also offered, not yet tried: M4V, MOV and TS video, AAC, FLAC, WAV, OGG and Opus music, and WebP, BMP and GIF pictures. Whether one plays depends on what is inside the file." />
+                     Text="Whether a particular file plays still depends on how it was made inside. GIF pictures are not offered: the TV's player refuses them." />
         </StackPanel>
       </Expander>
       <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"

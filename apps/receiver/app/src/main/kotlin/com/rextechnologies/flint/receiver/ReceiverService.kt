@@ -2,7 +2,6 @@ package com.rextechnologies.flint.receiver
 
 import android.app.Service
 import android.content.Intent
-import android.media.AudioManager
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -78,6 +77,9 @@ import com.rextechnologies.flint.receiver.browser.workspace.BrowserWorkspaceSess
 import com.rextechnologies.flint.receiver.media.MirrorAudioDecoder
 import com.rextechnologies.flint.receiver.media.MirrorVideoDecoder
 import com.rextechnologies.flint.receiver.media.PushedMediaSink
+import com.rextechnologies.flint.receiver.media.isPicture
+import com.rextechnologies.flint.receiver.media.pictureDurationMillis
+import com.rextechnologies.flint.receiver.media.playerVolume
 import com.rextechnologies.flint.receiver.net.ReceiverBroadcastResponder
 import com.rextechnologies.flint.receiver.net.ReceiverMdnsResponder
 import com.rextechnologies.flint.receiver.net.ReceiverServer
@@ -609,9 +611,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
             .setUri(uri)
             .setMimeType(command.mimeType)
             .setMediaMetadata(MediaMetadata.Builder().setTitle(command.title).build())
-        if (command.mimeType.startsWith("image/")) {
-            builder.setImageDurationMs(DEFAULT_IMAGE_DURATION_MILLIS)
-        }
+        if (isPicture(command.mimeType)) builder.setImageDurationMs(pictureDurationMillis(command.durationMs))
         command.subtitleUrl?.let { subtitleUrl ->
             builder.setSubtitleConfigurations(
                 listOf(
@@ -626,6 +626,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
             it.copy(
                 surfaceMode = SurfaceMode.PLAYER,
                 title = command.title,
+                isPicture = isPicture(command.mimeType),
                 playbackState = PlaybackState.BUFFERING,
                 positionMs = command.startPositionMs,
                 durationMs = command.durationMs,
@@ -696,15 +697,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                     TransportAction.NEXT -> if (player.hasNextMediaItem()) player.seekToNextMediaItem()
                     TransportAction.PREVIOUS -> if (player.hasPreviousMediaItem()) player.seekToPreviousMediaItem()
                 }
-                is VolumeControl -> {
-                    val manager = getSystemService(AudioManager::class.java)
-                    val maximum = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-                    manager.setStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        (event.level * maximum).toInt().coerceIn(0, maximum),
-                        0,
-                    )
-                }
+                is VolumeControl -> player.volume = playerVolume(event.level)
                 is KeyControl -> if (event.action == KeyAction.DOWN) dispatchTvKey(event.keyCode)
                 else -> Unit
             }
@@ -958,7 +951,6 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
         private const val NETWORK_POLL_MILLIS = 2_000L
         private const val REPORT_INTERVAL_MILLIS = 500L
         private const val SEEK_STEP_MILLIS = 10_000L
-        private const val DEFAULT_IMAGE_DURATION_MILLIS = 6_000L
 
         /**
          * Connect and read timeout for fetching local media from the paired PC.
