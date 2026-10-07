@@ -76,30 +76,82 @@ public sealed partial class CastSession : IMirrorTransport, IMirrorFeedbackTrans
     public event Action<CastSessionClosed>? Closed;
 
     /// <summary>Connects and completes the receiver handshake with a pairing code.</summary>
-    public static async Task<CastSession> ConnectAsync(
+    public static Task<CastSession> ConnectAsync(
         IPAddress address,
         int port,
         string pairingCode,
         string deviceName = "Flint Windows Host",
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(address);
         ArgumentException.ThrowIfNullOrWhiteSpace(pairingCode);
+        return ConnectCoreAsync(address, port, AuthMethod.PairingCode, pairingCode, expectedTvName: null, deviceName, cancellationToken);
+    }
+
+    /// <summary>
+    /// Connects with a token the TV granted at an earlier pairing, which it accepts in place of a
+    /// code until its app restarts or someone asks it for a new code.
+    /// </summary>
+    /// <param name="address">Where the TV was last seen.</param>
+    /// <param name="port">The receiver's port.</param>
+    /// <param name="token">The token from <see cref="GrantedToken"/>.</param>
+    /// <param name="expectedTvName">
+    /// The name the TV gave when the token was granted. The token is sent only to a TV that gives
+    /// the same name in its greeting, which it does before anything is sent, so a different device
+    /// that now answers at the address never sees it.
+    /// </param>
+    /// <param name="deviceName">This PC's name, as the TV shows it.</param>
+    /// <param name="cancellationToken">Abandons the attempt.</param>
+    /// <exception cref="CastTvMismatchException">A different TV answered.</exception>
+    /// <exception cref="CastAuthenticationRejectedException">The TV no longer accepts the token.</exception>
+    public static Task<CastSession> ConnectWithTokenAsync(
+        IPAddress address,
+        int port,
+        string token,
+        string expectedTvName,
+        string deviceName = "Flint Windows Host",
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(token);
+        ArgumentException.ThrowIfNullOrWhiteSpace(expectedTvName);
+        return ConnectCoreAsync(address, port, AuthMethod.SessionToken, token, expectedTvName, deviceName, cancellationToken);
+    }
+
+    /// <summary>Whether <paramref name="token"/> has the shape the TV's tokens have: 43 URL-safe base64 characters.</summary>
+    public static bool IsWellFormedToken(string? token) =>
+        token is { Length: 43 } && token.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_');
+
+    /// <summary>How long the greeting and login may take once the TV has taken the connection.</summary>
+    internal static readonly TimeSpan HandshakeTimeout = TimeSpan.FromSeconds(10);
+
+    private static async Task<CastSession> ConnectCoreAsync(
+        IPAddress address,
+        int port,
+        AuthMethod method,
+        string credential,
+        string? expectedTvName,
+        string deviceName,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(address);
         ArgumentOutOfRangeException.ThrowIfLessThan(port, 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(port, 65_535);
 
+        // The handshake has its own limit: a device that takes the connection and never answers
+        // would otherwise leave "Pairing with the receiver" on screen for as long as Flint ran.
+        using var handshake = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        handshake.CancelAfter(HandshakeTimeout);
         var client = new TcpClient(address.AddressFamily) { NoDelay = true };
         try
         {
             client.Client.Bind(new IPEndPoint(ResolveLocalAddress(address, port), 0));
-            await client.ConnectAsync(address, port, cancellationToken).ConfigureAwait(false);
+            await client.ConnectAsync(address, port, handshake.Token).ConfigureAwait(false);
             var stream = client.GetStream();
             // HELLO's payload advertises the range this host understands, but its envelope stays
             // v1. An old receiver must be able to parse this first exchange in order to negotiate
             // v1; sending a v2 envelope optimistically would make the compatibility range moot.
-            await WriteFrameAsync(stream, new WireFrame(ProtocolVersion.MinSupported, CreateHello(deviceName)), cancellationToken)
+            await WriteFrameAsync(stream, new WireFrame(ProtocolVersion.MinSupported, CreateHello(deviceName)), handshake.Token)
                 .ConfigureAwait(false);
-            var peerHello = await ReadFrameAsync(stream, cancellationToken).ConfigureAwait(false);
+            var peerHello = await ReadFrameAsync(stream, handshake.Token).ConfigureAwait(false);
             if (peerHello.Message is not HelloMessage hello)
             {
                 throw new WireFormatException("Receiver did not answer with HELLO.");
@@ -112,25 +164,60 @@ public sealed partial class CastSession : IMirrorTransport, IMirrorFeedbackTrans
                 hello.MaximumVersion)
                 ?? throw new WireFormatException("The receiver has no compatible protocol version.");
 
+            if (expectedTvName is not null && !string.Equals(hello.DeviceName, expectedTvName, StringComparison.Ordinal))
+            {
+                throw new CastTvMismatchException(expectedTvName, hello.DeviceName);
+            }
+
             var codec = SelectCodec(hello);
             await WriteFrameAsync(stream, new WireFrame(negotiatedVersion, new AuthMessage(
-                AuthMethod.PairingCode,
-                BinaryData.From(System.Text.Encoding.ASCII.GetBytes(pairingCode)))), cancellationToken)
+                method,
+                BinaryData.From(System.Text.Encoding.ASCII.GetBytes(credential)))), handshake.Token)
                 .ConfigureAwait(false);
-            var authReply = await ReadFrameAsync(stream, cancellationToken).ConfigureAwait(false);
+            var authReply = await ReadFrameAsync(stream, handshake.Token).ConfigureAwait(false);
             if (authReply.Message is ByeMessage bye)
             {
-                throw new WireFormatException($"Receiver rejected the session: {bye.Detail}");
+                throw bye.Reason is ByeReason.AuthenticationFailed
+                    ? new CastAuthenticationRejectedException(bye.Detail)
+                    : new WireFormatException($"Receiver rejected the session: {bye.Detail}");
             }
 
             var browserPort = TryReadBrowserPortHint(authReply.Message);
-            return new CastSession(client, stream, peerHello, codec, negotiatedVersion, browserPort);
+            return new CastSession(client, stream, peerHello, codec, negotiatedVersion, browserPort)
+            {
+                GrantedToken = TryReadGrantedToken(authReply.Message),
+            };
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            client.Dispose();
+            throw new TimeoutException(
+                $"The TV did not finish connecting within {HandshakeTimeout.TotalSeconds:0} seconds. Check that Flint is open on it.");
         }
         catch
         {
             client.Dispose();
             throw;
         }
+    }
+
+    /// <summary>
+    /// The token the TV granted when this session was established, or null when its reply carried
+    /// none. Kept so a later connection can log in without a code: see <see cref="ConnectWithTokenAsync"/>.
+    /// </summary>
+    /// <remarks>Authorisation, not encryption, and never logged.</remarks>
+    public string? GrantedToken { get; private init; }
+
+    /// <summary>The token in an AUTH reply, when it carries one of the right shape.</summary>
+    internal static string? TryReadGrantedToken(WireMessage message)
+    {
+        if (message is not AuthMessage { Method: AuthMethod.SessionToken, Credential: var credential })
+        {
+            return null;
+        }
+
+        var text = System.Text.Encoding.ASCII.GetString(credential.Span);
+        return IsWellFormedToken(text) ? text : null;
     }
 
     /// <summary>
