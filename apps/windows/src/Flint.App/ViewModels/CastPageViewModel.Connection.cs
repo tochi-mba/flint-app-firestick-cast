@@ -117,7 +117,7 @@ public sealed partial class CastPageViewModel
         }
         catch (Exception exception)
         {
-            Failure = exception.Message;
+            Failure = DescribeReachFailure(exception);
             IsConnected = false;
             FlintDiag.Error("FlintCast", $"pair failed: {exception.GetType().Name}");
         }
@@ -218,6 +218,19 @@ public sealed partial class CastPageViewModel
         }
     }
 
+    /// <summary>The VPN on this PC now, or null when none is on. Asked when it matters; tests replace it.</summary>
+    internal Func<string?> FindActiveVpn { get; set; } = SystemNetworkAdapters.ActiveVpn;
+
+    /// <summary>
+    /// A failure to reach the TV, and, when a VPN is on, what it may have to do with it: a VPN that
+    /// takes local traffic into its tunnel makes the TV look switched off.
+    /// </summary>
+    internal string DescribeReachFailure(Exception exception) =>
+        exception is IOException or System.Net.Sockets.SocketException or TimeoutException
+            && FindActiveVpn() is { } vpn
+            ? $"{exception.Message} {VpnDetection.Advice(vpn)}"
+            : exception.Message;
+
     /// <summary>Clears saved direct addresses from both memory and persistent storage.</summary>
     [RelayCommand]
     private void ClearRecentAddresses()
@@ -253,7 +266,7 @@ public sealed partial class CastPageViewModel
         }
         catch (Exception exception)
         {
-            Failure = exception.Message;
+            Failure = DescribeReachFailure(exception);
             FlintDiag.Error("FlintCast", $"probe failed: {exception.GetType().Name}");
         }
         finally
