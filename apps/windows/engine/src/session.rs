@@ -35,6 +35,14 @@ pub trait FrameSource {
     /// when scaling or encoding fails. A capture source can therefore keep its full-size pixel
     /// allocation and fill it again on the next capture instead of allocating on every tick.
     fn recycle_frame(&mut self, frame: SourceFrame);
+
+    /// Time since this source started, on the clock its frames' presentation times are counted on.
+    ///
+    /// Sound is timed from the same point, so the TV can line the two up. A source with no clock
+    /// of its own reports zero.
+    fn elapsed_us(&self) -> i64 {
+        0
+    }
 }
 
 /// Why a session tick could not complete.
@@ -164,6 +172,12 @@ impl<S: FrameSource, E: VideoEncoder, C: PacingClock> MirrorSession<S, E, C> {
     #[must_use]
     pub fn frame_rate_cap(&self) -> u32 {
         self.pacer.frames_per_second()
+    }
+
+    /// Time since capture started, on the clock frames are timed by.
+    #[must_use]
+    pub fn elapsed_us(&self) -> i64 {
+        self.source.elapsed_us()
     }
 
     /// The encoder this session drives.

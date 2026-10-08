@@ -51,6 +51,33 @@ pub unsafe extern "C" fn flint_mirror_set_pause(handle: *mut FlintMirrorSession,
     result.unwrap_or(FlintStatus::InternalError as i32)
 }
 
+/// Reads how long the session has been capturing, on the clock its frames are timed by.
+///
+/// A sound share started now times its packets from this point, so picture and sound share one
+/// clock on the TV.
+///
+/// # Safety
+/// `handle` must be live and `out_elapsed_us` non-null.
+#[no_mangle]
+pub unsafe extern "C" fn flint_mirror_elapsed_us(
+    handle: *mut FlintMirrorSession,
+    out_elapsed_us: *mut i64,
+) -> i32 {
+    if handle.is_null() || out_elapsed_us.is_null() {
+        return FlintStatus::NullArgument as i32;
+    }
+
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: the caller guarantees the handle is live.
+        let elapsed = unsafe { (*handle).session.elapsed_us() };
+        // SAFETY: checked non-null above.
+        unsafe { *out_elapsed_us = elapsed };
+        FlintStatus::Ok as i32
+    }));
+
+    result.unwrap_or(FlintStatus::InternalError as i32)
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(
@@ -74,6 +101,24 @@ mod tests {
         assert_eq!(
             unsafe { flint_mirror_set_pause(handle, 3) },
             FlintStatus::InvalidArgument as i32
+        );
+    }
+
+    #[test]
+    fn the_elapsed_time_refuses_null_arguments() {
+        let mut elapsed = 0i64;
+        assert_eq!(
+            unsafe { flint_mirror_elapsed_us(std::ptr::null_mut(), &raw mut elapsed) },
+            FlintStatus::NullArgument as i32
+        );
+        assert_eq!(
+            unsafe {
+                flint_mirror_elapsed_us(
+                    std::ptr::dangling_mut::<FlintMirrorSession>(),
+                    std::ptr::null_mut(),
+                )
+            },
+            FlintStatus::NullArgument as i32
         );
     }
 
@@ -124,6 +169,16 @@ mod tests {
             }
         }
         assert!(sent >= 1, "the black frame never reached the wire");
+
+        let mut elapsed = -1i64;
+        assert_eq!(
+            unsafe { flint_mirror_elapsed_us(handle, &raw mut elapsed) },
+            FlintStatus::Ok as i32
+        );
+        assert!(
+            elapsed > 0,
+            "the session has been capturing since it started"
+        );
 
         for mode in [
             pause_mode::BLANKING,

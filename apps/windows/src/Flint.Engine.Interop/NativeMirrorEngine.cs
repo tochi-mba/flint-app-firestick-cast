@@ -27,6 +27,7 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
         "flint_mirror_pacing",
         "flint_mirror_encoder_kind",
         "flint_mirror_set_pause",
+        "flint_mirror_elapsed_us",
     ];
 
     /// <inheritdoc />
@@ -413,6 +414,10 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
         [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
         internal static unsafe partial int EncoderKind(nint handle, uint* kind);
 
+        [LibraryImport(NativeEngineProbeApi.LibraryName, EntryPoint = "flint_mirror_elapsed_us")]
+        [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+        internal static partial int ElapsedUs(nint handle, out long elapsedUs);
+
         [LibraryImport(NativeEngineProbeApi.LibraryName, EntryPoint = "flint_mirror_set_pause")]
         [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
         internal static partial int SetPause(nint handle, uint mode);
@@ -422,8 +427,33 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
         internal static partial int Stop(nint handle);
     }
 
+    /// <summary>
+    /// Makes one call into a running session's engine, turning an engine that can no longer be
+    /// called into the session's usual failure.
+    /// </summary>
+    internal static int CallSession(Func<int> call)
+    {
+        try
+        {
+            return call();
+        }
+        catch (Exception exception) when (exception is DllNotFoundException
+            or EntryPointNotFoundException
+            or BadImageFormatException
+            or MarshalDirectiveException)
+        {
+            throw AbiCallFailed(exception);
+        }
+    }
+
+    private static MirrorEngineException AbiCallFailed(Exception innerException) =>
+        new(
+            "The Flint engine's mirror ABI became unavailable while a session was running. "
+                + "This build's engine may not match the app.",
+            innerException);
+
     /// <summary>One live native session.</summary>
-    private sealed class NativeMirrorEngineSession : IMirrorEngineSession
+    private sealed class NativeMirrorEngineSession : IMirrorEngineSession, IMirrorClock
     {
         /// <summary>
         /// Blocks of codec setup data the engine may publish.
@@ -549,6 +579,16 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
         }
 
         /// <inheritdoc />
+        public long ReadElapsedUs()
+        {
+            ObjectDisposedException.ThrowIf(handle == 0, this);
+            long elapsed = 0;
+            var status = CallSession(() => NativeMethods.ElapsedUs(handle, out elapsed));
+            ThrowForStatus((FlintStatus)status, "reading how long it has been capturing");
+            return elapsed;
+        }
+
+        /// <inheritdoc />
         public void SetPause(MirrorPause pause)
         {
             ObjectDisposedException.ThrowIf(handle == 0, this);
@@ -557,19 +597,9 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
                 throw new ArgumentOutOfRangeException(nameof(pause), pause, "Not a pause the engine knows.");
             }
 
-            try
-            {
-                ThrowForStatus(
-                    (FlintStatus)NativeMethods.SetPause(handle, (uint)pause),
-                    "pausing or resuming the share");
-            }
-            catch (Exception exception) when (exception is DllNotFoundException
-                or EntryPointNotFoundException
-                or BadImageFormatException
-                or MarshalDirectiveException)
-            {
-                throw AbiCallFailed(exception);
-            }
+            ThrowForStatus(
+                (FlintStatus)CallSession(() => NativeMethods.SetPause(handle, (uint)pause)),
+                "pausing or resuming the share");
         }
 
         /// <inheritdoc />
@@ -689,11 +719,5 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
 
             return blocks;
         }
-
-        private static MirrorEngineException AbiCallFailed(Exception innerException) =>
-            new(
-                "The Flint engine's mirror ABI became unavailable while a session was running. "
-                    + "This build's engine may not match the app.",
-                innerException);
     }
 }

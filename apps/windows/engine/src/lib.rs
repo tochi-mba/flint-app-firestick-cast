@@ -16,6 +16,8 @@
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 
+#[cfg(windows)]
+pub mod audio;
 pub mod capture;
 pub mod convert;
 pub mod decode;
