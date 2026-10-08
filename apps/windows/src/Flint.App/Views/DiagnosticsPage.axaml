@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Flint.App.ViewModels"
              xmlns:controls="using:Flint.App.Controls"
+             xmlns:views="using:Flint.App.Views"
              x:Class="Flint.App.Views.DiagnosticsPage"
              x:DataType="vm:CastPageViewModel">
 
@@ -57,6 +58,15 @@
             <controls:DiagnosticRow Label="Throughput" Value="{Binding Throughput}" />
             <controls:DiagnosticRow Label="Connect-sample loss" Value="{Binding PacketLoss}" IsLast="True" />
           </StackPanel>
+        </controls:InfoCard>
+      </StackPanel>
+
+      <!-- The Screen page's counters, while a share runs: the shell's Screen page owns them. -->
+      <StackPanel Spacing="12" IsVisible="{Binding IsMirroring}">
+        <controls:SectionLabel Text="Screen share" />
+        <controls:InfoCard>
+          <views:LiveNumbersView x:Name="ShareNumbers"
+                                 DataContext="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Screen, FallbackValue={x:Null}}" />
         </controls:InfoCard>
       </StackPanel>
     </StackPanel>

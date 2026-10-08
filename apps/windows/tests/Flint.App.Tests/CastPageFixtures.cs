@@ -73,3 +73,83 @@ internal sealed class NoRecentAddresses : IRecentAddressStore
     {
     }
 }
+
+/// <summary>An engine whose screen changes about thirty times a second, so frames reach the TV.</summary>
+internal sealed class MovingMirrorEngine : IMirrorEngine
+{
+    public IMirrorEngineSession Start(MirrorSessionOptions options) => new MovingSession();
+
+    private sealed class MovingSession : IMirrorEngineSession
+    {
+        private long frames;
+
+        public VideoCodec Codec => VideoCodec.H264;
+
+        public MirrorEncoderKind EncoderKind => MirrorEncoderKind.Hardware;
+
+        public int Width => 1280;
+
+        public int Height => 720;
+
+        public IReadOnlyList<byte[]> CodecSpecificData { get; } = [[0, 0, 0, 1, 0x67], [0, 0, 0, 1, 0x68]];
+
+        public MirrorTick Next(Span<byte> buffer)
+        {
+            Thread.Sleep(30);
+            buffer[..16].Fill(0xAB);
+            frames++;
+            return new MirrorTick(MirrorTickKind.Encoded, 16, frames == 1, frames * 33_333);
+        }
+
+        public void RequestKeyFrame()
+        {
+        }
+
+        public MirrorSessionStats ReadStats() => new(frames, 0, 0, frames * 16);
+
+        public void Dispose()
+        {
+        }
+    }
+}
+
+/// <summary>An engine that records what each share asked for and then shows a still screen.</summary>
+internal sealed class RecordingMirrorEngine : IMirrorEngine
+{
+    public List<MirrorSessionOptions> Started { get; } = [];
+
+    public IMirrorEngineSession Start(MirrorSessionOptions options)
+    {
+        lock (Started)
+        {
+            Started.Add(options);
+        }
+
+        return new StillSession();
+    }
+
+    private sealed class StillSession : IMirrorEngineSession
+    {
+        public VideoCodec Codec => VideoCodec.H264;
+
+        public MirrorEncoderKind EncoderKind => MirrorEncoderKind.Hardware;
+
+        public int Width => 1280;
+
+        public int Height => 720;
+
+        public IReadOnlyList<byte[]> CodecSpecificData { get; } = [[0, 0, 0, 1, 0x67], [0, 0, 0, 1, 0x68]];
+
+        public MirrorTick Next(Span<byte> buffer) => MirrorTick.Nothing;
+
+        public void RequestKeyFrame()
+        {
+        }
+
+        public MirrorSessionStats ReadStats() => default;
+
+        public void Dispose()
+        {
+        }
+    }
+}

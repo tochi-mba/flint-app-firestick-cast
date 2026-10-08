@@ -427,6 +427,18 @@
     </Style>
   </ControlTheme>
 
+  <!-- One display on the Screen page's map: an outline that fills with the signal colour when chosen. -->
+  <ControlTheme x:Key="DisplayTile" TargetType="Button" BasedOn="{StaticResource ContentOutlineButton}">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="{StaticResource RaisedBrush}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Style Selector="^.selected">
+      <Setter Property="Background" Value="{StaticResource SignalWashBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+      <Setter Property="BorderThickness" Value="2" />
+    </Style>
+  </ControlTheme>
+
   <!--
     One option of a SegmentedChoice. Its own theme, assigned as the list's ItemContainerTheme,
     because a ControlTheme may only style its own template: a "^ ListBoxItem" descendant selector

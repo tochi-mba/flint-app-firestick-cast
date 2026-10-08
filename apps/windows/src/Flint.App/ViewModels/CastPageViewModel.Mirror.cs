@@ -1,6 +1,8 @@
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using Flint.Core;
+using Flint.Core.Settings;
+using Flint.Protocol;
 using Flint.Session;
 
 namespace Flint.App.ViewModels;
@@ -13,6 +15,46 @@ namespace Flint.App.ViewModels;
 /// </remarks>
 public sealed partial class CastPageViewModel
 {
+    private MirrorControl? mirrorControl;
+
+    /// <summary>Raised on the UI thread with a running share's counters, after each frame sent.</summary>
+    public event Action<MirrorSessionStats>? MirrorStatsUpdated;
+
+    /// <summary>Raised on the UI thread once a change to a running share was made or refused.</summary>
+    public event Action<MirrorSwitch>? MirrorSwitched;
+
+    /// <summary>Raised on the UI thread each time a share starts sending a picture.</summary>
+    public event Action<MirrorPicture>? MirrorPictureStarted;
+
+    /// <summary>Raised on the UI thread with the TV's own counters while a share runs.</summary>
+    public event Action<StatsMessage>? MirrorReceiverStats;
+
+    /// <summary>The TV's own screen width, as it said when it connected; the protocol requires one.</summary>
+    internal int? TvScreenWidth => (session?.PeerHello.Message as HelloMessage)?.ScreenWidth;
+
+    /// <summary>What a share of <paramref name="display"/> sends, as the settings ask.</summary>
+    /// <param name="display">The display to share, or null for the first one capture finds.</param>
+    internal MirrorSessionOptions MirrorOptionsFor(DisplayInfo? display) =>
+        ScreenQualityPreset.ToOptions(
+            settings?.Current.Screen ?? new ScreenSettings(),
+            display?.Index ?? 0,
+            TvScreenWidth,
+            display?.Width);
+
+    /// <summary>Asks a running share to send <paramref name="options"/> instead.</summary>
+    /// <returns>False when nothing is being shared.</returns>
+    internal bool ChangeMirror(MirrorSessionOptions options)
+    {
+        if (mirrorControl is not { } control)
+        {
+            return false;
+        }
+
+        FlintDiag.Info("FlintCast", $"mirror change display={options.OutputIndex} width={options.MaxWidth} fps={options.FrameRate}");
+        control.Change(options);
+        return true;
+    }
+
     /// <summary>Whether the Screen page should offer Stop rather than only Start.</summary>
     public bool CanStopMirror => IsMirroring;
 
@@ -33,7 +75,10 @@ public sealed partial class CastPageViewModel
     /// saying why.
     /// </remarks>
     [RelayCommand]
-    private async Task StartScreenSessionAsync()
+    private Task StartScreenSessionAsync() => StartMirrorAsync(MirrorOptionsFor(null));
+
+    /// <summary>Shares the screen with <paramref name="options"/>, refusing as the command does.</summary>
+    internal async Task StartMirrorAsync(MirrorSessionOptions options)
     {
         if (MirrorVerdict is not { IsOfferable: true })
         {
@@ -72,15 +117,25 @@ public sealed partial class CastPageViewModel
                 MirrorStatus =
                     $"Mirroring: {stats.FramesEncoded} frames, {stats.BytesEncoded / 1024} KiB sent.";
                 OnPropertyChanged(nameof(MirrorStatus));
+                MirrorStatsUpdated?.Invoke(stats);
             });
         };
+        runner.PictureStarted += picture => Dispatcher.UIThread.Post(() => MirrorPictureStarted?.Invoke(picture));
+        var control = new MirrorControl();
+        control.Switched += switched => Dispatcher.UIThread.Post(() => MirrorSwitched?.Invoke(switched));
+        var sharing = session;
+        void OnReceiverStats(StatsMessage stats) => Dispatcher.UIThread.Post(() => MirrorReceiverStats?.Invoke(stats));
+        sharing.StatsReceived += OnReceiverStats;
 
         mirrorStop = new CancellationTokenSource();
         mirrorStopped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        mirrorControl = control;
         IsMirroring = true;
         Failure = null;
         MirrorStatus = "Starting the mirror.";
-        FlintDiag.Info("FlintCast", $"mirror begin maxWidth={MirrorMaxWidth}");
+        FlintDiag.Info(
+            "FlintCast",
+            $"mirror begin display={options.OutputIndex} maxWidth={options.MaxWidth} fps={options.FrameRate} bitrate={options.BitrateBitsPerSecond}");
         RaiseDerived();
         OnPropertyChanged(nameof(CanStopMirror));
         StopScreenSessionCommand.NotifyCanExecuteChanged();
@@ -89,8 +144,9 @@ public sealed partial class CastPageViewModel
         {
             var stats = await runner.RunAsync(
                 session,
-                new MirrorSessionOptions(MaxWidth: MirrorMaxWidth),
+                options,
                 Environment.MachineName,
+                control,
                 mirrorStop.Token).ConfigureAwait(true);
 
             // Nothing threw, so the session ran - but a mirror that sent no frames left the TV on
@@ -121,8 +177,10 @@ public sealed partial class CastPageViewModel
         }
         finally
         {
+            sharing.StatsReceived -= OnReceiverStats;
             mirrorStop.Dispose();
             mirrorStop = null;
+            mirrorControl = null;
             IsMirroring = false;
             mirrorStopped?.TrySetResult();
             mirrorStopped = null;

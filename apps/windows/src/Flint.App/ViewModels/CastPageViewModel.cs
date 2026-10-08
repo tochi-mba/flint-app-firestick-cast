@@ -34,15 +34,6 @@ public sealed partial class CastPageViewModel : ObservableObject
     /// being impatient.
     /// </remarks>
     private static readonly TimeSpan MediaStartTimeout = TimeSpan.FromSeconds(60);
-    /// <summary>
-    /// How wide a mirrored frame may be before it is scaled down.
-    /// </summary>
-    /// <remarks>
-    /// A 4K desktop encoded at full width costs far more to encode and to send than a television
-    /// twelve feet away can show the difference of, so the default trades width no one can see for
-    /// latency everyone can.
-    /// </remarks>
-    private const uint MirrorMaxWidth = 1920;
     private readonly CapabilityProber prober;
     private readonly IRecentAddressStore addressStore;
     private readonly IReceiverLauncher receiverLauncher;

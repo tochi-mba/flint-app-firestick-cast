@@ -38,6 +38,9 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
     /// <summary>The name the TV gives in its greeting.</summary>
     internal string Name { get; set; } = "Fire TV";
 
+    /// <summary>The screen width the TV gives in its greeting.</summary>
+    internal int ScreenWidth { get; set; } = 1920;
+
     /// <summary>
     /// The login the TV grants, and accepts in place of a code. Unset, it grants a word no store
     /// keeps, as the tests before logins did.
@@ -178,7 +181,7 @@ internal sealed class LoopbackReceiver : IAsyncDisposable
                 1,
                 Name,
                 ValueList<CodecId>.From([CodecId.H264]),
-                1920,
+                ScreenWidth,
                 1080,
                 320))),
             cancellationToken);

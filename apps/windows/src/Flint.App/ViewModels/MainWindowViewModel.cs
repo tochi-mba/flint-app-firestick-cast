@@ -44,6 +44,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IMediaHistoryStore mediaHistory,
         IWhatsNewState whatsNewState,
         IKnownTvStore knownTvs,
+        IDisplayCatalog displays,
         IUpdateSource? updateSource = null,
         IUpdatePreference? updatePreference = null)
     {
@@ -61,6 +62,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         Cast.UseReconnect(knownTvs, settingsService);
         Browser = new BrowserPageViewModel(cast);
         Media = new MediaPageViewModel(cast, settingsService, mediaHistory, new LocalMediaFileSystem());
+        Screen = new ScreenPageViewModel(cast, settingsService, displays);
         Coordinator = new ModeSessionCoordinator(Cast, Browser, SwitchPrompt, settingsService);
         keepAwake = new KeepAwakeCoordinator(Cast, settingsService, keepAwakeApply);
         Onboarding = new OnboardingViewModel(onboardingState);
@@ -84,6 +86,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         [
             new GeneralSettingsViewModel(settingsService),
             new MediaSettingsViewModel(settingsService),
+            new ScreenSettingsViewModel(settingsService),
             new TvSettingsViewModel(Cast),
             new PrivacySettingsViewModel(settingsService, folders, FlintDataFolder.Path, FlintDataFolder.LogsPath, mediaHistory),
             new UpdatesSectionViewModel(Updates),
@@ -95,6 +98,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 or nameof(CastPageViewModel.IsMirroring))
             {
                 Updates.SessionStateChanged();
+            }
+
+            // The window gets out of the way so the TV shows the person's work rather than Flint.
+            if (changed.PropertyName is nameof(CastPageViewModel.IsMirroring)
+                && Cast.IsMirroring
+                && settingsService.Current.Screen.MinimiseWhenSharing)
+            {
+                MinimiseRequested?.Invoke(this, EventArgs.Empty);
             }
         };
 
@@ -142,6 +153,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     /// <summary>The Media page: choosing a file, and what is playing.</summary>
     public MediaPageViewModel Media { get; }
+
+    /// <summary>The Screen page: which display, which picture, and the live numbers.</summary>
+    public ScreenPageViewModel Screen { get; }
+
+    /// <summary>Raised when a share starts and the settings say Flint should minimise itself.</summary>
+    public event EventHandler? MinimiseRequested;
 
     /// <summary>The independent browser eligibility page.</summary>
     public BrowserPageViewModel Browser { get; }
@@ -276,6 +293,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             new FileMediaHistoryStore(),
             new FileWhatsNewState(),
             new FileKnownTvStore(),
+            new DisplayCatalog(new NativeDisplayOutputs(), new DisplayNames()),
             new VelopackUpdateSource(),
             new FileUpdatePreference());
 
@@ -304,6 +322,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// shell is not handed a walkthrough it did not ask for.
     /// </param>
     /// <param name="knownTvs">TVs Flint can reach again. Defaults to none, kept only in memory.</param>
+    /// <param name="displays">This PC's displays. Defaults to one main 1920 by 1080 display.</param>
     /// <remarks>
     /// The receiver installer is the offline one: a shell built around a supplied prober has no
     /// television to talk to, and the real installer would try the fake device's address on every
@@ -318,7 +337,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         IFolderOpener? folders = null,
         IMediaHistoryStore? mediaHistory = null,
         IWhatsNewState? whatsNewState = null,
-        IKnownTvStore? knownTvs = null) =>
+        IKnownTvStore? knownTvs = null,
+        IDisplayCatalog? displays = null) =>
         new(
             new CastPageViewModel(
                 prober,
@@ -330,7 +350,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             folders ?? new NoFolderOpener(),
             mediaHistory ?? new InMemoryMediaHistoryStore(),
             whatsNewState ?? new InMemoryWhatsNewState(WhatsNewViewModel.Catalogue.Select(highlight => highlight.Id)),
-            knownTvs ?? new InMemoryKnownTvStore());
+            knownTvs ?? new InMemoryKnownTvStore(),
+            displays ?? new OneDisplay());
+
+    /// <summary>One main display, for tests and design-time shells, which must not read the real ones.</summary>
+    private sealed class OneDisplay : IDisplayCatalog
+    {
+        public IReadOnlyList<DisplayInfo> List() =>
+            [new DisplayInfo(0, 1, "Display 1", "display-1", 0, 0, 1920, 1080, DisplayRotation.Upright, IsMain: true)];
+    }
 
     /// <summary>A folder opener for tests and design-time shells, which must not open windows.</summary>
     private sealed class NoFolderOpener : IFolderOpener

@@ -65,7 +65,7 @@ public sealed class PageSnapshotTests
     [AvaloniaFact]
     public void ScreenPage_BeforeProbing()
     {
-        var page = new ScreenPage { DataContext = SnapshotFixtures.ViewModel() };
+        var page = new ScreenPage { DataContext = SnapshotFixtures.Screen(SnapshotFixtures.ViewModel()) };
 
         Snapshot.Matches("screen-page-idle", page);
     }
@@ -73,7 +73,7 @@ public sealed class PageSnapshotTests
     [AvaloniaFact]
     public async Task ScreenPage_WhenMirroringIsAvailable()
     {
-        var page = new ScreenPage { DataContext = await SnapshotFixtures.ProbedViewModel() };
+        var page = new ScreenPage { DataContext = SnapshotFixtures.Screen(await SnapshotFixtures.ProbedViewModel()) };
 
         Snapshot.Matches("screen-page-ready", page);
     }
@@ -87,7 +87,7 @@ public sealed class PageSnapshotTests
             SnapshotFixtures.CapableDevice(),
             SnapshotFixtures.HostThatCannotMirror(),
             SnapshotFixtures.GoodPath());
-        var page = new ScreenPage { DataContext = viewModel };
+        var page = new ScreenPage { DataContext = SnapshotFixtures.Screen(viewModel) };
 
         Snapshot.Matches("screen-page-blocked", page);
     }

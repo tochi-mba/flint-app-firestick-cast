@@ -80,6 +80,30 @@ public static class SnapshotFixtures
             new FixedDeviceProbe(device),
             new FixedNetworkProbe(path));
 
+    /// <summary>The main display a snapshot shares, at a fixed size.</summary>
+    public static DisplayInfo MainDisplay { get; } =
+        new(0, 1, "DELL U2720Q", "dell", 0, 0, 2560, 1440, DisplayRotation.Upright, IsMain: true);
+
+    /// <summary>The Screen page over a Cast page, with settings as Flint ships them and one display.</summary>
+    public static ScreenPageViewModel Screen(
+        CastPageViewModel cast,
+        ISettingsService? settings = null,
+        params DisplayInfo[] displays) =>
+        new(
+            cast,
+            settings ?? new SettingsService(new InMemoryAppSettingsStore()),
+            new FixedDisplays(displays.Length == 0 ? [MainDisplay] : displays));
+
+    /// <summary>A display catalogue that lists what it was given.</summary>
+    public sealed class FixedDisplays(IReadOnlyList<DisplayInfo> displays) : IDisplayCatalog
+    {
+        /// <summary>What <see cref="List"/> returns; replaceable, as plugging a display in would.</summary>
+        public IReadOnlyList<DisplayInfo> Displays { get; set; } = displays;
+
+        /// <inheritdoc />
+        public IReadOnlyList<DisplayInfo> List() => Displays;
+    }
+
     /// <summary>The Media page over a Cast page, with settings as Flint ships them.</summary>
     public static MediaPageViewModel Media(
         CastPageViewModel cast,

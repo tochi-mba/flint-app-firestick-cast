@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Flint.App.Controls"
+             xmlns:settings="using:Flint.App.ViewModels.Settings"
+             xmlns:vm="using:Flint.App.ViewModels"
+             xmlns:views="using:Flint.App.Views"
+             x:Class="Flint.App.Views.ScreenSettingsSection"
+             x:DataType="settings:ScreenSettingsViewModel">
+  <StackPanel Spacing="0">
+    <TextBlock Theme="{StaticResource HeadlineLarge}" Text="Screen sharing" Margin="0,0,0,10" />
+    <controls:SettingRow Title="{Binding DisplayText.Title}"
+                         Description="{Binding DisplayText.Description}">
+      <ComboBox x:Name="ShareDisplay" Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding DisplayChoices}"
+                SelectedItem="{Binding Display, Mode=TwoWay}"
+                AutomationProperties.Name="Display to share" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding PromptText.Title}"
+                         Description="{Binding PromptText.Description}">
+      <ComboBox x:Name="SharePrompt" Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding PromptChoices}"
+                SelectedItem="{Binding Prompt, Mode=TwoWay}"
+                AutomationProperties.Name="When I press Share" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding PictureText.Title}"
+                         Description="{Binding PictureText.Description}">
+      <ComboBox x:Name="PictureMode" Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding PictureChoices}"
+                SelectedItem="{Binding Picture, Mode=TwoWay}"
+                AutomationProperties.Name="Picture mode" />
+    </controls:SettingRow>
+    <StackPanel IsVisible="{Binding IsCustom}">
+      <controls:SettingRow Title="{Binding CustomSizeText.Title}"
+                           Description="{Binding CustomSizeText.Description}">
+        <ComboBox x:Name="CustomSize" Theme="{StaticResource FlintComboBox}"
+                  ItemsSource="{Binding SizeChoices}"
+                  SelectedItem="{Binding CustomSize, Mode=TwoWay}"
+                  AutomationProperties.Name="Custom largest picture" />
+      </controls:SettingRow>
+      <controls:SettingRow Title="{Binding CustomFramesText.Title}"
+                           Description="{Binding CustomFramesText.Description}">
+        <ComboBox x:Name="CustomFrames" Theme="{StaticResource FlintComboBox}"
+                  ItemsSource="{Binding FrameChoices}"
+                  SelectedItem="{Binding CustomFrames, Mode=TwoWay}"
+                  AutomationProperties.Name="Custom frames a second" />
+      </controls:SettingRow>
+      <controls:SettingRow Title="{Binding CustomRateText.Title}"
+                           Description="{Binding CustomRateText.Description}">
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <Slider x:Name="CustomRate" Theme="{StaticResource FlintSlider}" Width="200"
+                  Minimum="{x:Static vm:ScreenPageText.MinimumMegabits}"
+                  Maximum="{x:Static vm:ScreenPageText.MaximumMegabits}"
+                  SmallChange="1" LargeChange="2" TickFrequency="1" IsSnapToTickEnabled="True"
+                  Value="{Binding CustomRate, Mode=TwoWay}"
+                  AutomationProperties.Name="Custom data rate in megabits a second" />
+          <TextBlock Theme="{StaticResource BodyMedium}" VerticalAlignment="Center"
+                     Text="{Binding CustomRate, StringFormat='{}{0:0} Mbps'}" />
+        </StackPanel>
+      </controls:SettingRow>
+    </StackPanel>
+    <controls:SettingRow Title="{Binding LiveNumbersText.Title}"
+                         Description="{Binding LiveNumbersText.Description}">
+      <ToggleSwitch x:Name="ShowLiveNumbers" Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding ShowLiveNumbers, Mode=TwoWay}"
+                    AutomationProperties.Name="Show live numbers on the Screen page" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding CountdownText.Title}"
+                         Description="{Binding CountdownText.Description}">
+      <ComboBox x:Name="Countdown" Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding CountdownChoices}"
+                SelectedItem="{Binding Countdown, Mode=TwoWay}"
+                AutomationProperties.Name="Count down before sharing starts" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding MinimiseText.Title}"
+                         Description="{Binding MinimiseText.Description}">
+      <ToggleSwitch x:Name="MinimiseWhenSharing" Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding MinimiseWhenSharing, Mode=TwoWay}"
+                    AutomationProperties.Name="Minimise Flint when sharing starts" />
+    </controls:SettingRow>
+    <views:ConfirmableActionView DataContext="{Binding Reset}" Margin="0,18,0,0" />
+  </StackPanel>
+</UserControl>

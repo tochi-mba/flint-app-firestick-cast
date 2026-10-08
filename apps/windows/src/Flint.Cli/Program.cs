@@ -307,7 +307,7 @@ internal static class Program
                 session,
                 new MirrorSessionOptions(MaxWidth: maxWidth),
                 Environment.MachineName,
-                stop.Token).ConfigureAwait(false);
+                cancellationToken: stop.Token).ConfigureAwait(false);
 
             Console.WriteLine();
             Console.WriteLine($"  Mirror stopped: {stats.FramesEncoded} frames, {stats.BytesEncoded / 1024} KiB sent.");

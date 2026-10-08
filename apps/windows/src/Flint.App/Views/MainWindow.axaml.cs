@@ -11,6 +11,7 @@ namespace Flint.App.Views;
 public partial class MainWindow : Window
 {
     private SurfaceSwitchPrompt? prompt;
+    private MainWindowViewModel? shell;
     private bool enterDown;
     private bool enterOpenedTheQuestion;
 
@@ -67,6 +68,17 @@ public partial class MainWindow : Window
 
     private void OnDataContextChanged(object? sender, EventArgs args)
     {
+        if (shell is not null)
+        {
+            shell.MinimiseRequested -= OnMinimiseRequested;
+        }
+
+        shell = DataContext as MainWindowViewModel;
+        if (shell is not null)
+        {
+            shell.MinimiseRequested += OnMinimiseRequested;
+        }
+
         if (prompt is not null)
         {
             prompt.PropertyChanged -= OnPromptChanged;
@@ -87,6 +99,8 @@ public partial class MainWindow : Window
     /// the button that has focus. An Enter still held from opening the question does not count as
     /// an answer: see <see cref="OnWindowKeyDown"/>.
     /// </remarks>
+    private void OnMinimiseRequested(object? sender, EventArgs args) => WindowState = WindowState.Minimized;
+
     private void OnPromptChanged(object? sender, PropertyChangedEventArgs args)
     {
         // This handler is attached only to SurfaceSwitchPrompt.PropertyChanged. Reading the event

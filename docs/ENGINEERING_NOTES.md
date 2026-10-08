@@ -216,3 +216,31 @@ The token is regenerated whenever the TV app's listener restarts, so after the T
 connection needs the code once. Making the TV remember a PC across restarts would take a TV app
 change. The handshake itself is limited to ten seconds, so a device that takes the connection and
 never answers no longer leaves pairing waiting forever.
+
+## Choosing a display, picture modes and the frame-rate cap
+
+Displays are numbered by one walk over DXGI adapters and their outputs (`capture/outputs.rs`), and
+both the list the Screen page shows (`flint_probe_outputs`) and capture itself (`find_output`) use
+that walk, so the index a person picks is the index capture opens. Windows' display configuration
+supplies each monitor's own name and its device path. The path is what a chosen display is
+remembered by, because it survives replugging where the `\.\DISPLAYn` name does not. A laptop's own
+panel reports no name and is called "Built-in display".
+
+The picture modes live in one table, `ScreenQualityPreset`, and the sentence under each mode is
+built from the same numbers a share starts with. The picture is never wider than the screen size
+the TV reports in its HELLO.
+
+`MirrorSession` holds a share to its frame rate. A frame that arrives too soon is kept, a newer one
+replaces it, and it is sent the moment the interval has passed, on a tick whose wait is cut to the
+time left. Sends keep a fixed cadence, so rounding each wait up to a whole millisecond does not
+slowly lower the rate. Before this, a 144 Hz display sent up to 144 frames a second.
+
+Changing the display or the mode while sharing is applied in place: the runner, on its own worker
+thread, disposes the engine session, starts one with the new options and sends a new `VIDEO_CONFIG`,
+without a second surface message. The TV rebuilds its decoder and stays on the mirror surface. If the
+new options cannot be captured, the share starts again with the old ones and the page says why.
+
+The live numbers on the Screen page and on Diagnostics are counters: frames and data sent each
+second over at least a second, the picture size, whether the graphics card or software encodes, and
+the TV's own dropped frames and queue. If the TV keeps dropping frames for ten seconds, the page
+suggests Data saver; it never changes the picture by itself.

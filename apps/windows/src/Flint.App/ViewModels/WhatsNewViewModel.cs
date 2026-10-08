@@ -124,5 +124,29 @@ public sealed class WhatsNewViewModel : WalkthroughViewModel
                     "The queue never replaces something else on the TV; it waits and tells you.",
                     "Choose what happens next, how long pictures show, and whether to remember positions, in Settings, Media.",
                 ])),
+        new(
+            "2026-10-reconnect",
+            new OnboardingStep(
+                "New in Flint",
+                "Flint reaches your TV again by itself",
+                "Once you have paired, Flint reconnects without the TV's code: when Flint starts, and "
+                    + "when the connection drops.",
+                [
+                    "If something was playing or being shared, Flint offers to carry on.",
+                    "Choose how long it keeps trying, or turn it off, in Settings, General.",
+                    "Settings, TVs lists the TVs Flint remembers, and forgets them when you ask.",
+                ])),
+        new(
+            "2026-10-screen-sharing",
+            new OnboardingStep(
+                "New in Flint",
+                "Choose which display to share, and how",
+                "The Screen page shows your displays as Windows arranges them, and picture modes for "
+                    + "everyday use, films, games, slides and weak Wi-Fi.",
+                [
+                    "Change the display or the picture while sharing; the TV keeps showing your screen.",
+                    "Custom sets the size, frame rate and data rate yourself.",
+                    "Turn on live numbers to see what is being sent.",
+                ])),
     ];
 }
