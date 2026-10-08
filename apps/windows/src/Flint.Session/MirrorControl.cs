@@ -35,8 +35,24 @@ public sealed class MirrorControl
     /// </remarks>
     public const int BlackFrameAllowance = 4;
 
+    private readonly TimeProvider time;
+    private readonly TaskCompletionSource clockStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private MirrorSessionOptions? pending;
     private int pause;
+    private long clockOrigin;
+
+    /// <summary>Creates a control on the system clock.</summary>
+    public MirrorControl()
+        : this(TimeProvider.System)
+    {
+    }
+
+    /// <summary>Creates a control that reads the picture's clock through <paramref name="time"/>.</summary>
+    public MirrorControl(TimeProvider time)
+    {
+        ArgumentNullException.ThrowIfNull(time);
+        this.time = time;
+    }
 
     /// <summary>
     /// Raised on the share's worker thread once a change has been made, or refused and the share
@@ -64,6 +80,36 @@ public sealed class MirrorControl
     {
         ArgumentNullException.ThrowIfNull(options);
         Volatile.Write(ref pending, options);
+    }
+
+    /// <summary>The picture's clock now, in microseconds, or null until the share has started it.</summary>
+    /// <remarks>
+    /// Sound shares this clock, so the TV can line the two up. It is read here rather than from the
+    /// engine because the engine's session belongs to the share's worker thread.
+    /// </remarks>
+    public long? ReadPictureTimeUs() =>
+        clockStarted.Task.IsCompleted
+            ? (long)time.GetElapsedTime(Volatile.Read(ref clockOrigin)).TotalMicroseconds
+            : null;
+
+    /// <summary>
+    /// Waits up to <paramref name="timeout"/> for the share to start the picture's clock, for sound
+    /// switched on at the same moment as the picture.
+    /// </summary>
+    /// <returns>The picture's clock now, or null when it did not start in time.</returns>
+    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was cancelled.</exception>
+    public long? WaitForPictureTimeUs(TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        _ = clockStarted.Task.Wait(timeout, cancellationToken);
+        return ReadPictureTimeUs();
+    }
+
+    /// <summary>Starts the picture's clock: it read <paramref name="elapsedUs"/> just now.</summary>
+    internal void StartClock(long elapsedUs)
+    {
+        var ticks = (long)(elapsedUs / 1_000_000.0 * time.TimestampFrequency);
+        Volatile.Write(ref clockOrigin, time.GetTimestamp() - ticks);
+        clockStarted.TrySetResult();
     }
 
     /// <summary>Takes the waiting change, if there is one.</summary>

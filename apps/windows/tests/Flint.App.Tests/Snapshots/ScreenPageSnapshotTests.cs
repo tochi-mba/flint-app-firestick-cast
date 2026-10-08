@@ -132,6 +132,43 @@ public sealed class ScreenPageSnapshotTests : IDisposable
         Snapshot.Matches("screen-page-struggling", Page(screen), Tall);
     }
 
+    [AvaloniaFact]
+    public async Task SoundReady()
+    {
+        using var screen = await PageAsync(SnapshotFixtures.MainDisplay);
+        screen.Cast.IsMirroring = true;
+        screen.Cast.SoundState = AudioShareState.Ready;
+
+        Snapshot.Matches("screen-page-sound-ready", Page(screen), Tall);
+    }
+
+    [AvaloniaFact]
+    public async Task SoundSending()
+    {
+        using var screen = await PageAsync(SnapshotFixtures.MainDisplay);
+        screen.Cast.IsMirroring = true;
+        screen.Cast.SoundState = AudioShareState.Sounding;
+        screen.Cast.SoundLevel = 0.1f;
+        screen.Cast.IsMutingThisPc = true;
+
+        Snapshot.Matches("screen-page-sound-sending", Page(screen), Tall);
+    }
+
+    [AvaloniaFact]
+    public async Task SoundUnavailable()
+    {
+        settings.Update(current => current with
+        {
+            Screen = current.Screen with { SoundSource = SoundSource.NamedDevice, SoundDeviceIdentity = "usb" },
+        });
+        using var screen = await PageAsync(SnapshotFixtures.MainDisplay);
+        screen.Cast.IsMirroring = true;
+        screen.Cast.SoundState = AudioShareState.Unavailable;
+        screen.Cast.SoundProblem = "The chosen sound output is not connected.";
+
+        Snapshot.Matches("screen-page-sound-unavailable", Page(screen), Tall);
+    }
+
     private static ScreenPage Page(ScreenPageViewModel screen) => new() { DataContext = screen };
 
     private async Task<ScreenPageViewModel> PageAsync(params DisplayInfo[] displays) =>

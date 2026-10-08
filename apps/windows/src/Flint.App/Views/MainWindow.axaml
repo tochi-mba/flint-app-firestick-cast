@@ -171,6 +171,30 @@
                   AutomationProperties.Name="Switch the TV to this page" />
         </Grid>
       </Border>
+      <Border DockPanel.Dock="Top"
+              IsVisible="{Binding ShowLaunchNotice}"
+              Background="{StaticResource PanelBrush}"
+              BorderBrush="{StaticResource LineBrush}"
+              BorderThickness="0,0,0,1"
+              Padding="24,10">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Grid.Column="0"
+                     Theme="{StaticResource BodyMedium}"
+                     VerticalAlignment="Center"
+                     TextWrapping="Wrap"
+                     Text="{Binding LaunchNotice}"
+                     AutomationProperties.Name="Flint put something right"
+                     AutomationProperties.LiveSetting="Polite" />
+          <Button Grid.Column="1"
+                  Theme="{StaticResource OutlineAction}"
+                  Height="34"
+                  Padding="12,0"
+                  Margin="16,0,0,0"
+                  Content="OK"
+                  Command="{Binding DismissLaunchNoticeCommand}"
+                  AutomationProperties.Name="Dismiss this message" />
+        </Grid>
+      </Border>
 
       <Panel>
         <views:CastPage DataContext="{Binding Cast}"

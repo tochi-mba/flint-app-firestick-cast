@@ -158,6 +158,49 @@
         </StackPanel>
       </controls:InfoCard>
 
+      <controls:InfoCard x:Name="SoundCard">
+        <StackPanel Spacing="12">
+          <controls:SettingRow Title="Sound" Description="This PC's sound, played with the picture.">
+            <ToggleSwitch x:Name="ShareSound" Theme="{StaticResource FlintToggleSwitch}"
+                          IsChecked="{Binding ShareSound, Mode=TwoWay}"
+                          AutomationProperties.Name="Share this PC's sound" />
+          </controls:SettingRow>
+          <TextBlock x:Name="SoundStatus" Theme="{StaticResource BodyMedium}" TextWrapping="Wrap"
+                     Text="{Binding SoundStatus}"
+                     AutomationProperties.LiveSetting="Polite" />
+          <ProgressBar x:Name="SoundMeter" Minimum="0" Maximum="1" Height="4" MinWidth="0" Width="320"
+                       HorizontalAlignment="Left"
+                       Foreground="{StaticResource SignalBrush}" Background="{StaticResource LineBrush}"
+                       Value="{Binding SoundMeter}"
+                       IsVisible="{Binding ShowSoundMeter}"
+                       AutomationProperties.Name="Sound level" />
+          <Button x:Name="UseDefaultOutput" Theme="{StaticResource OutlineAction}" Content="USE THE DEFAULT OUTPUT"
+                  HorizontalAlignment="Left"
+                  Command="{Binding UseDefaultOutputCommand}"
+                  IsVisible="{Binding OfferDefaultOutput}"
+                  AutomationProperties.Name="Share the default sound output instead" />
+          <TextBlock x:Name="SoundNotice" Theme="{StaticResource BodySmall}" TextWrapping="Wrap"
+                     Text="{Binding SoundNotice}"
+                     IsVisible="{Binding SoundNotice, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                     AutomationProperties.LiveSetting="Polite" />
+          <controls:SettingRow Title="Sound plays on" Description="The TV only mutes this PC while sharing, and puts it back after.">
+            <controls:SegmentedChoice x:Name="SoundDestinations"
+                                      ItemsSource="{Binding SoundDestinations}"
+                                      SelectedItem="{Binding ChosenDestination, Mode=TwoWay}"
+                                      AutomationProperties.Name="Sound plays on" />
+          </controls:SettingRow>
+          <controls:SettingRow Title="TV volume" Description="{Binding TvVolumeText}">
+            <Slider x:Name="TvVolume" Theme="{StaticResource FlintSlider}" Width="200"
+                    Minimum="0" Maximum="100" SmallChange="5" LargeChange="10"
+                    Value="{Binding TvVolume, Mode=TwoWay}"
+                    IsEnabled="{Binding CanSetTvVolume}"
+                    AutomationProperties.Name="TV volume" />
+          </controls:SettingRow>
+          <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                     Text="{x:Static vm:ScreenPageViewModel.SoundHelp}" />
+        </StackPanel>
+      </controls:InfoCard>
+
       <controls:InfoCard>
         <StackPanel Spacing="10">
           <controls:SettingRow Title="Live numbers" Description="What the share is sending, while it runs.">

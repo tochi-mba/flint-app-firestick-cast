@@ -44,5 +44,9 @@ public sealed partial class CastPageViewModel
         return true;
     }
 
-    partial void OnMirrorPauseChanged(MirrorPause value) => OnPropertyChanged(nameof(IsMirrorPaused));
+    partial void OnMirrorPauseChanged(MirrorPause value)
+    {
+        OnPropertyChanged(nameof(IsMirrorPaused));
+        FollowPauseWithMute();
+    }
 }
