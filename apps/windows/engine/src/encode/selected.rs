@@ -177,6 +177,13 @@ impl VideoEncoder for SelectedEncoder {
             Self::Software(encoder) => encoder.submit(frame, force_key_frame),
         }
     }
+
+    fn poll(&mut self) -> Result<Option<EncodedFrame>, EncodeError> {
+        match self {
+            Self::Hardware(encoder) => encoder.poll(),
+            Self::Software(encoder) => encoder.poll(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -215,6 +222,14 @@ mod tests {
         let encoder =
             SelectedEncoder::software_only(config(640, 360)).expect("software must be available");
         assert_eq!(encoder.kind(), EncoderKind::Software);
+    }
+
+    #[test]
+    fn the_software_encoder_finishes_every_frame_so_has_nothing_to_drain() {
+        let mut encoder =
+            SelectedEncoder::software_only(config(640, 360)).expect("software must be available");
+
+        assert_eq!(encoder.poll().unwrap(), None);
     }
 
     #[test]

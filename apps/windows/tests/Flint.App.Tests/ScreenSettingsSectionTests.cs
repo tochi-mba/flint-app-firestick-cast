@@ -55,6 +55,46 @@ public sealed class ScreenSettingsSectionTests : IDisposable
     }
 
     [Fact]
+    public void ThePauseSettings_ReadAndWriteTheirValues()
+    {
+        var screen = new ScreenSettingsViewModel(service);
+        screen.PausedPictureChoice!.Label.ShouldBe("The last picture");
+        screen.PauseWhenLocked.ShouldBeTrue();
+        screen.StayPausedAfterUnlock.ShouldBeFalse();
+
+        screen.PausedPictureChoice = screen.PausedPictureChoices[1];
+        screen.PauseWhenLocked = false;
+        screen.StayPausedAfterUnlock = true;
+        screen.PausedPictureChoice = null;
+
+        service.Current.Screen.PausedPicture.ShouldBe(PausedPicture.Black);
+        service.Current.Screen.PauseWhenLocked.ShouldBeFalse();
+        service.Current.Screen.StayPausedAfterUnlock.ShouldBeTrue();
+        screen.StayPausedAfterUnlock.ShouldBeTrue();
+        screen.Settings.Single(setting => setting.Matches("locks")).ShouldBe(screen.PauseWhenLockedText);
+    }
+
+    [Fact]
+    public void TheWindowTitle_SaysWhatIsOnTheTv()
+    {
+        var shell = MainWindowViewModel.CreateWith(BrowserFixtures.Prober(BrowserFixtures.EligibleDevice()));
+        var raised = new List<string?>();
+        shell.PropertyChanged += (_, change) => raised.Add(change.PropertyName);
+
+        shell.WindowTitle.ShouldBe("Flint - REX Technologies");
+        shell.Cast.IsMirroring = true;
+        shell.WindowTitle.ShouldBe("Flint - sharing your screen");
+        shell.Cast.MirrorPause = Flint.Core.MirrorPause.HoldingLastPicture;
+        shell.WindowTitle.ShouldBe("Flint - sharing paused");
+        shell.Cast.MirrorPause = Flint.Core.MirrorPause.Running;
+        shell.Cast.IsMirroring = false;
+        shell.Cast.IsReconnecting = true;
+        shell.WindowTitle.ShouldBe("Flint - reconnecting");
+
+        raised.Count(name => name == nameof(MainWindowViewModel.WindowTitle)).ShouldBe(5);
+    }
+
+    [Fact]
     public void AnEmptyChoice_ChangesNothing()
     {
         var screen = new ScreenSettingsViewModel(service);
@@ -94,7 +134,7 @@ public sealed class ScreenSettingsSectionTests : IDisposable
         var screen = new ScreenSettingsViewModel(service);
 
         screen.Title.ShouldBe("Screen sharing");
-        screen.Settings.Count.ShouldBe(9);
+        screen.Settings.Count.ShouldBe(12);
         screen.Settings.Single(setting => setting.Matches("minimise")).ShouldBe(screen.MinimiseText);
         screen.Settings.Count(setting => setting.Matches("countdown") || setting.Matches("count down")).ShouldBe(1);
     }

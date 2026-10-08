@@ -103,6 +103,27 @@ public sealed class ScreenPageSnapshotTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task PausedHoldingThePicture()
+    {
+        using var screen = await PageAsync(SnapshotFixtures.MainDisplay);
+        screen.Cast.IsMirroring = true;
+        screen.Cast.MirrorPause = MirrorPause.HoldingLastPicture;
+        clock.Advance(TimeSpan.FromSeconds(83));
+
+        Snapshot.Matches("screen-page-paused-holding", Page(screen), Tall);
+    }
+
+    [AvaloniaFact]
+    public async Task PausedOnABlackScreen()
+    {
+        using var screen = await PageAsync(SnapshotFixtures.MainDisplay);
+        screen.Cast.IsMirroring = true;
+        screen.Cast.MirrorPause = MirrorPause.Black;
+
+        Snapshot.Matches("screen-page-paused-black", Page(screen), Tall);
+    }
+
+    [AvaloniaFact]
     public async Task Struggling()
     {
         using var screen = await PageAsync(SnapshotFixtures.MainDisplay);

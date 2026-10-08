@@ -47,6 +47,13 @@ public interface IMirrorEngineSession : IDisposable
     /// <summary>Asks for the next access unit to be a key frame.</summary>
     void RequestKeyFrame();
 
+    /// <summary>Pauses or resumes the share from the next tick.</summary>
+    /// <remarks>
+    /// While paused, nothing captured is given to the encoder: the TV keeps its last picture, or
+    /// is sent one black frame and then nothing.
+    /// </remarks>
+    void SetPause(MirrorPause pause);
+
     /// <summary>Reads the session counters.</summary>
     MirrorSessionStats ReadStats();
 }

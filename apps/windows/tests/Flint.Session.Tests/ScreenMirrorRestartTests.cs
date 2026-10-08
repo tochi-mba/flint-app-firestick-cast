@@ -274,6 +274,10 @@ public sealed class ScreenMirrorRestartTests
         {
         }
 
+        public void SetPause(MirrorPause pause)
+        {
+        }
+
         public MirrorSessionStats ReadStats() => new(ticks, 0, 0, ticks * 10L, ticks);
 
         public void Dispose()

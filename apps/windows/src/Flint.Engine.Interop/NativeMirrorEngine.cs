@@ -26,6 +26,7 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
         "flint_mirror_stop",
         "flint_mirror_pacing",
         "flint_mirror_encoder_kind",
+        "flint_mirror_set_pause",
     ];
 
     /// <inheritdoc />
@@ -412,6 +413,10 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
         [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
         internal static unsafe partial int EncoderKind(nint handle, uint* kind);
 
+        [LibraryImport(NativeEngineProbeApi.LibraryName, EntryPoint = "flint_mirror_set_pause")]
+        [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+        internal static partial int SetPause(nint handle, uint mode);
+
         [LibraryImport(NativeEngineProbeApi.LibraryName, EntryPoint = "flint_mirror_stop")]
         [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
         internal static partial int Stop(nint handle);
@@ -533,6 +538,30 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
                 ThrowForStatus(
                     (FlintStatus)NativeMethods.RequestKeyFrame(handle),
                     "requesting a key frame");
+            }
+            catch (Exception exception) when (exception is DllNotFoundException
+                or EntryPointNotFoundException
+                or BadImageFormatException
+                or MarshalDirectiveException)
+            {
+                throw AbiCallFailed(exception);
+            }
+        }
+
+        /// <inheritdoc />
+        public void SetPause(MirrorPause pause)
+        {
+            ObjectDisposedException.ThrowIf(handle == 0, this);
+            if (!Enum.IsDefined(pause))
+            {
+                throw new ArgumentOutOfRangeException(nameof(pause), pause, "Not a pause the engine knows.");
+            }
+
+            try
+            {
+                ThrowForStatus(
+                    (FlintStatus)NativeMethods.SetPause(handle, (uint)pause),
+                    "pausing or resuming the share");
             }
             catch (Exception exception) when (exception is DllNotFoundException
                 or EntryPointNotFoundException

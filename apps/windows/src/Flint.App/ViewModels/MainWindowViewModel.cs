@@ -100,6 +100,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
                 Updates.SessionStateChanged();
             }
 
+            if (changed.PropertyName is nameof(CastPageViewModel.IsMirroring)
+                or nameof(CastPageViewModel.MirrorPause)
+                or nameof(CastPageViewModel.IsReconnecting))
+            {
+                OnPropertyChanged(nameof(WindowTitle));
+            }
+
             // The window gets out of the way so the TV shows the person's work rather than Flint.
             if (changed.PropertyName is nameof(CastPageViewModel.IsMirroring)
                 && Cast.IsMirroring
@@ -156,6 +163,18 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     /// <summary>The Screen page: which display, which picture, and the live numbers.</summary>
     public ScreenPageViewModel Screen { get; }
+
+    /// <summary>
+    /// The window's title, which carries what is on the TV, so it can be seen even when the window
+    /// is behind another.
+    /// </summary>
+    public string WindowTitle => Cast switch
+    {
+        { IsMirrorPaused: true } => "Flint - sharing paused",
+        { IsMirroring: true } => "Flint - sharing your screen",
+        { IsReconnecting: true } => "Flint - reconnecting",
+        _ => "Flint - REX Technologies",
+    };
 
     /// <summary>Raised when a share starts and the settings say Flint should minimise itself.</summary>
     public event EventHandler? MinimiseRequested;

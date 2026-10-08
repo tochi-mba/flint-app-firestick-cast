@@ -25,13 +25,39 @@ public sealed record MirrorSwitch(MirrorSessionOptions Options, string? Failure)
 /// </remarks>
 public sealed class MirrorControl
 {
+    /// <summary>
+    /// How many access units may still reach the TV after a black-screen pause begins: the black
+    /// frame, and what the encoder was still finishing from before the pause.
+    /// </summary>
+    /// <remarks>
+    /// A ceiling the runner holds whatever the engine does, because a picture leaking out of a
+    /// paused share is a privacy failure rather than a glitch.
+    /// </remarks>
+    public const int BlackFrameAllowance = 4;
+
     private MirrorSessionOptions? pending;
+    private int pause;
 
     /// <summary>
     /// Raised on the share's worker thread once a change has been made, or refused and the share
     /// carried on as it was.
     /// </summary>
     public event Action<MirrorSwitch>? Switched;
+
+    /// <summary>Whether the share should be sending, and what the TV shows while it is not.</summary>
+    public MirrorPause Pause => (MirrorPause)Volatile.Read(ref pause);
+
+    /// <summary>Pauses or resumes the share, from its next frame.</summary>
+    /// <remarks>A change asked for while paused waits, and is made on resuming.</remarks>
+    public void SetPause(MirrorPause value)
+    {
+        if (!Enum.IsDefined(value))
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), value, "Not a pause the engine knows.");
+        }
+
+        Volatile.Write(ref pause, (int)value);
+    }
 
     /// <summary>Asks the share to send <paramref name="options"/> from now on.</summary>
     public void Change(MirrorSessionOptions options)

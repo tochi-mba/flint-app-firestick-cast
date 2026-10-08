@@ -96,6 +96,8 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
         byte[]? buffer = null;
         var mirrorSurfaceSelected = false;
         var requestKeyFrame = 0;
+        var applied = MirrorPause.Running;
+        var allowance = 0;
         long lastDroppedFrames = 0;
         var feedback = transport as IMirrorFeedbackTransport;
         void OnReceiverStats(StatsMessage stats)
@@ -126,7 +128,17 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
             buffer = ArrayPool<byte>.Shared.Rent(FrameBufferBytes);
             while (!cancellationToken.IsCancellationRequested && transport.IsConnected)
             {
-                if (control?.TakeChange() is { } next && next != current)
+                if (control?.Pause is { } wanted && wanted != applied)
+                {
+                    // The engine is tied to this thread, so the pause is applied here, once per change.
+                    session.SetPause(wanted);
+                    applied = wanted;
+                    allowance = wanted is MirrorPause.Black ? MirrorControl.BlackFrameAllowance : 0;
+                }
+
+                // Not while paused: a new decoder configuration would replace the held picture on
+                // the TV with its "waiting" screen. The change stays asked for, and is made on resume.
+                if (applied is MirrorPause.Running && control?.TakeChange() is { } next && next != current)
                 {
                     earlier = Add(earlier, session.ReadStats());
                     session.Dispose();
@@ -162,6 +174,16 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
                         break;
                     }
                     continue;
+                }
+
+                if (applied is not MirrorPause.Running)
+                {
+                    if (allowance == 0)
+                    {
+                        continue;
+                    }
+
+                    allowance--;
                 }
 
                 transport.SendVideoAsync(

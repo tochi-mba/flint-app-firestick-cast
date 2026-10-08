@@ -125,6 +125,40 @@ public sealed class ScreenPageLayoutTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Pause_IsOfferedOnlyWhileSharing_AndOncePausedResumeHasFocus()
+    {
+        var (page, window) = Render(Main);
+        try
+        {
+            var screen = (ScreenPageViewModel)page.DataContext!;
+            var pause = page.FindControl<Button>("PauseButton")!;
+            var banner = page.FindControl<Border>("PausedBanner")!;
+            pause.IsEffectivelyVisible.ShouldBeFalse("nothing is being shared");
+
+            screen.Cast.IsMirroring = true;
+            window.UpdateLayout();
+            pause.IsEffectivelyVisible.ShouldBeTrue();
+            banner.IsEffectivelyVisible.ShouldBeFalse();
+
+            screen.Cast.MirrorPause = MirrorPause.HoldingLastPicture;
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            window.UpdateLayout();
+
+            pause.IsEffectivelyVisible.ShouldBeFalse();
+            banner.IsEffectivelyVisible.ShouldBeTrue();
+            Avalonia.Automation.AutomationProperties.GetLiveSetting(banner).ShouldBe(Avalonia.Automation.AutomationLiveSetting.Assertive);
+            page.FindControl<Button>("ResumeButton")!.IsFocused.ShouldBeTrue("RESUME is where the next key press goes");
+
+            screen.Cast.MirrorPause = MirrorPause.Running;
+            screen.Cast.IsMirroring = false;
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public void Diagnostics_ShowTheScreenPagesCounters()
     {
         var shell = MainWindowViewModel.CreateWith(BrowserFixtures.Prober(BrowserFixtures.EligibleDevice()));

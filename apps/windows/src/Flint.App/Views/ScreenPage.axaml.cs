@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using Flint.App.ViewModels;
 
 namespace Flint.App.Views;
@@ -8,10 +9,12 @@ namespace Flint.App.Views;
 public partial class ScreenPage : UserControl
 {
     private Screens? screens;
+    private ScreenPageViewModel? watched;
 
     public ScreenPage()
     {
         InitializeComponent();
+        DataContextChanged += (_, _) => Watch(DataContext as ScreenPageViewModel);
         PropertyChanged += (_, change) =>
         {
             if (change.Property == IsVisibleProperty && IsVisible)
@@ -42,6 +45,30 @@ public partial class ScreenPage : UserControl
         }
 
         base.OnDetachedFromVisualTree(e);
+    }
+
+    /// <summary>Follows the page's view model, to move focus to RESUME when the share pauses.</summary>
+    private void Watch(ScreenPageViewModel? screen)
+    {
+        if (watched is not null)
+        {
+            watched.PropertyChanged -= OnScreenChanged;
+        }
+
+        watched = screen;
+        if (watched is not null)
+        {
+            watched.PropertyChanged += OnScreenChanged;
+        }
+    }
+
+    /// <summary>Once paused, RESUME has focus, so the next press of Enter or Space resumes.</summary>
+    private void OnScreenChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs change)
+    {
+        if (change.PropertyName is nameof(ScreenPageViewModel.IsPaused) && ((ScreenPageViewModel)sender!).IsPaused)
+        {
+            Dispatcher.UIThread.Post(() => ResumeButton.Focus(), DispatcherPriority.Loaded);
+        }
     }
 
     /// <summary>Windows reported a display change: one plugged in, unplugged or moved.</summary>

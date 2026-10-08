@@ -61,12 +61,32 @@
                     IsVisible="{Binding !Cast.IsMirroring}"
                     HorizontalAlignment="Left"
                     AutomationProperties.Name="Start screen session" />
+            <Button x:Name="PauseButton" Theme="{StaticResource OutlineAction}" Content="PAUSE"
+                    Command="{Binding PauseCommand}"
+                    IsVisible="{Binding CanPause}"
+                    AutomationProperties.Name="Pause screen sharing" />
             <Button Theme="{StaticResource OutlineAction}" Content="STOP SHARING"
                     Command="{Binding Cast.StopScreenSessionCommand}"
                     IsVisible="{Binding Cast.IsMirroring}"
                     HorizontalAlignment="Left"
                     AutomationProperties.Name="Stop screen session" />
           </StackPanel>
+          <Border x:Name="PausedBanner" Background="{StaticResource SignalWashBrush}"
+                  BorderBrush="{StaticResource SignalBrush}" BorderThickness="1"
+                  CornerRadius="{StaticResource RadiusSmall}" Padding="16,12"
+                  IsVisible="{Binding IsPaused}"
+                  AutomationProperties.LiveSetting="Assertive"
+                  AutomationProperties.Name="{Binding PausedBanner}">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="4" VerticalAlignment="Center">
+                <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding PausedBanner}" TextWrapping="Wrap" />
+                <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}" Text="{Binding PausedFor}" />
+              </StackPanel>
+              <Button x:Name="ResumeButton" Grid.Column="1" Theme="{StaticResource SignalButton}" Content="RESUME"
+                      Command="{Binding ResumeCommand}" Margin="12,0,0,0"
+                      AutomationProperties.Name="Resume screen sharing" />
+            </Grid>
+          </Border>
           <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding IsCountingDown}">
             <TextBlock Theme="{StaticResource TitleMedium}" VerticalAlignment="Center" Text="{Binding CountdownText}" />
             <Button Theme="{StaticResource OutlineAction}" Content="CANCEL"

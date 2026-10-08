@@ -367,6 +367,10 @@ public sealed class CastPageDisconnectTests
             {
             }
 
+            public void SetPause(MirrorPause pause)
+            {
+            }
+
             public MirrorSessionStats ReadStats() => default;
 
             public void Dispose()

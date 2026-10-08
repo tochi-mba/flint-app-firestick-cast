@@ -81,12 +81,55 @@ public sealed class ScreenSettingsViewModel : SettingsSectionViewModel
         "Minimise Flint when sharing starts",
         "So the TV shows what you are working on rather than Flint.");
 
+    /// <summary>What the TV shows while a share is paused.</summary>
+    public SettingText PausedPictureText { get; } = new(
+        "While paused, the TV shows",
+        "The last picture it was sent, or a black screen.");
+
+    /// <summary>Whether locking pauses.</summary>
+    public SettingText PauseWhenLockedText { get; } = new(
+        "Pause when this PC locks",
+        "Locking with Windows key and L stops the TV showing your screen.");
+
+    /// <summary>Whether a share paused by locking waits after unlocking.</summary>
+    public SettingText StayPausedText { get; } = new(
+        "Stay paused after unlocking",
+        "Wait for RESUME rather than sharing again as soon as you unlock.");
+
     /// <inheritdoc />
     public override IReadOnlyList<SettingText> Settings =>
     [
         DisplayText, PromptText, PictureText, CustomSizeText, CustomFramesText, CustomRateText,
-        LiveNumbersText, CountdownText, MinimiseText,
+        LiveNumbersText, CountdownText, MinimiseText, PausedPictureText, PauseWhenLockedText, StayPausedText,
     ];
+
+    /// <summary>What the TV can show while paused.</summary>
+    public IReadOnlyList<ScreenOption<PausedPicture>> PausedPictureChoices { get; } =
+    [
+        new(PausedPicture.LastPicture, "The last picture"),
+        new(PausedPicture.Black, "A black screen"),
+    ];
+
+    /// <summary>What the TV shows while paused, in use.</summary>
+    public ScreenOption<PausedPicture>? PausedPictureChoice
+    {
+        get => PausedPictureChoices.FirstOrDefault(choice => choice.Value == Screen.PausedPicture);
+        set => Choose(value, (screen, picture) => screen with { PausedPicture = picture });
+    }
+
+    /// <summary>Whether locking pauses.</summary>
+    public bool PauseWhenLocked
+    {
+        get => Screen.PauseWhenLocked;
+        set => Update(screen => screen with { PauseWhenLocked = value });
+    }
+
+    /// <summary>Whether a share paused by locking waits after unlocking.</summary>
+    public bool StayPausedAfterUnlock
+    {
+        get => Screen.StayPausedAfterUnlock;
+        set => Update(screen => screen with { StayPausedAfterUnlock = value });
+    }
 
     /// <summary>The display choices.</summary>
     public IReadOnlyList<ScreenOption<ShareDisplayChoice>> DisplayChoices { get; } =

@@ -2,6 +2,7 @@ using System.Net;
 using Flint.App.Services;
 using Flint.App.ViewModels;
 using Flint.Core;
+using Flint.Protocol;
 using Shouldly;
 using static Flint.App.Tests.CastPageFixtures;
 
@@ -74,8 +75,7 @@ public sealed partial class CastPageReconnectTests
 
         await tv.CloseAsync();
         await Until(() => cast.IsReconnecting);
-        clock.Advance(TimeSpan.FromSeconds(1));
-        await cast.ReconnectTask.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await RunFirstAttemptAsync(cast);
 
         cast.ReconnectBanner.ShouldBe("Reconnecting to Living Room stopped. Connect on the Cast page to try again.");
         cast.IsReconnecting.ShouldBeFalse();
@@ -95,6 +95,23 @@ public sealed partial class CastPageReconnectTests
         await Until(() => !paired.IsSessionConnected);
         await paired.ReconnectTask;
         paired.IsReconnecting.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task AShareThatWasPaused_IsNotOfferedBack_AfterADrop()
+    {
+        await using var tv = new LoopbackReceiver { Name = "Living Room", Login = Login };
+        var cast = await PairedPageAsync(tv, new IdleMirrorEngine());
+        var sharing = cast.StartScreenSessionCommand.ExecuteAsync(null);
+        await tv.WaitForAsync<VideoConfigMessage>();
+        cast.PauseMirror(MirrorPause.HoldingLastPicture).ShouldBeTrue();
+
+        await DropAndReconnectAsync(cast, tv);
+        await sharing.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        cast.IsSessionConnected.ShouldBeTrue();
+        cast.HasReconnectBanner.ShouldBeFalse("a paused share is never put back on the TV without being asked");
+        cast.IsMirrorPaused.ShouldBeFalse();
     }
 
     [Fact]

@@ -64,7 +64,9 @@ public sealed partial class CastPageViewModel
         FlintDiag.Info("FlintCast", $"session ended reason={closed.Reason}");
         session = null;
         var wasPlaying = IsMediaPlaying;
-        NoteWhatWasOnTheTv(IsMirroring, wasPlaying);
+        // A paused share is not offered back after a drop: reconnecting must never put the screen on
+        // the TV again unless the person chooses to.
+        NoteWhatWasOnTheTv(IsMirroring && !IsMirrorPaused, wasPlaying);
         IsConnected = false;
         IsMediaPlaying = false;
         coordinator?.Prompt?.Dismiss();

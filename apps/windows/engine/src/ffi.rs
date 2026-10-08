@@ -604,10 +604,12 @@ pub unsafe extern "C" fn flint_mirror_next(
         let mut frame = FlintMirrorFrame::EMPTY;
 
         let status = match session.tick() {
-            // A frame held back by the cap is, to the caller, a tick with nothing to send yet.
-            Ok(crate::session::Tick::Unchanged | crate::session::Tick::Held) => {
-                FlintStatus::Ok as i32
-            }
+            // A frame held back by the cap, or a paused share, is a tick with nothing to send yet.
+            Ok(
+                crate::session::Tick::Unchanged
+                | crate::session::Tick::Held
+                | crate::session::Tick::Paused,
+            ) => FlintStatus::Ok as i32,
             Ok(crate::session::Tick::Recovered) => {
                 frame.kind = mirror_tick::RECOVERED;
                 FlintStatus::Ok as i32
@@ -882,3 +884,7 @@ mod mirror_ffi_tests;
 #[path = "ffi_outputs.rs"]
 mod outputs;
 pub use outputs::{flint_probe_outputs, FlintOutput};
+
+#[path = "ffi_control.rs"]
+mod control;
+pub use control::{flint_mirror_set_pause, pause_from, pause_mode};

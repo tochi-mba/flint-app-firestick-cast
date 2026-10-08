@@ -167,6 +167,19 @@ pub trait VideoEncoder {
         frame: &SourceFrame,
         force_key_frame: bool,
     ) -> Result<Option<EncodedFrame>, EncodeError>;
+
+    /// Collects an access unit the encoder finished after the last [`Self::submit`], without giving
+    /// it a new frame.
+    ///
+    /// A paused share submits nothing, yet a hardware encoder may still be holding the last frames
+    /// it was given; this drains them. An encoder that finishes every frame within `submit` has
+    /// nothing to drain.
+    ///
+    /// # Errors
+    /// Whatever the platform reports while collecting.
+    fn poll(&mut self) -> Result<Option<EncodedFrame>, EncodeError> {
+        Ok(None)
+    }
 }
 
 /// An encoder that produces deterministic, decodable-by-nobody output.

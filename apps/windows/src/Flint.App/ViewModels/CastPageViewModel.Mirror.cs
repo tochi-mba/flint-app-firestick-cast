@@ -181,6 +181,9 @@ public sealed partial class CastPageViewModel
             mirrorStop.Dispose();
             mirrorStop = null;
             mirrorControl = null;
+
+            // A pause belongs to the share it paused: the next share starts sending.
+            MirrorPause = MirrorPause.Running;
             IsMirroring = false;
             mirrorStopped?.TrySetResult();
             mirrorStopped = null;

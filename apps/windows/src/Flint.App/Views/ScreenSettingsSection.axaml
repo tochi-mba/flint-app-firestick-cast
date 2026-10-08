@@ -77,6 +77,26 @@
                     IsChecked="{Binding MinimiseWhenSharing, Mode=TwoWay}"
                     AutomationProperties.Name="Minimise Flint when sharing starts" />
     </controls:SettingRow>
+    <controls:SettingRow Title="{Binding PausedPictureText.Title}"
+                         Description="{Binding PausedPictureText.Description}">
+      <ComboBox x:Name="PausedPicture" Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding PausedPictureChoices}"
+                SelectedItem="{Binding PausedPictureChoice, Mode=TwoWay}"
+                AutomationProperties.Name="While paused, the TV shows" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding PauseWhenLockedText.Title}"
+                         Description="{Binding PauseWhenLockedText.Description}">
+      <ToggleSwitch x:Name="PauseWhenLocked" Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding PauseWhenLocked, Mode=TwoWay}"
+                    AutomationProperties.Name="Pause when this PC locks" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding StayPausedText.Title}"
+                         Description="{Binding StayPausedText.Description}">
+      <ToggleSwitch x:Name="StayPausedAfterUnlock" Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding StayPausedAfterUnlock, Mode=TwoWay}"
+                    IsEnabled="{Binding PauseWhenLocked}"
+                    AutomationProperties.Name="Stay paused after unlocking" />
+    </controls:SettingRow>
     <views:ConfirmableActionView DataContext="{Binding Reset}" Margin="0,18,0,0" />
   </StackPanel>
 </UserControl>

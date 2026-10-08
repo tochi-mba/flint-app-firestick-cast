@@ -591,6 +591,14 @@ public sealed class ScreenMirrorRunnerTests
             KeyFrameRequests++;
         }
 
+        internal List<MirrorPause> Pauses { get; } = [];
+
+        public void SetPause(MirrorPause pause)
+        {
+            RecordLifecycleThread();
+            Pauses.Add(pause);
+        }
+
         public MirrorSessionStats ReadStats()
         {
             RecordLifecycleThread();

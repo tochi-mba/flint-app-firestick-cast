@@ -5,7 +5,7 @@
         xmlns:controls="using:Flint.App.Controls"
         x:Class="Flint.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="Flint - REX Technologies"
+        Title="{Binding WindowTitle}"
         Icon="avares://Flint.App/Assets/flint.ico"
         Width="1180" Height="780"
         MinWidth="{Binding MinimumWidth}" MinHeight="{Binding MinimumHeight}"
