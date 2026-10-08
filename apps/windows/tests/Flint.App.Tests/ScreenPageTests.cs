@@ -123,7 +123,7 @@ public sealed class ScreenPageTests
                 new FakeNetworkProbe(path)),
             new EmptyRecentAddressStore(),
             receiverInstaller: new OfflineReceiverInstaller());
-        var view = new ScreenPage { DataContext = viewModel };
+        var view = new ScreenPage { DataContext = Snapshots.SnapshotFixtures.Screen(viewModel) };
         var window = new Window { Width = 1180, Height = 780, Content = view };
         window.Show();
         window.UpdateLayout();

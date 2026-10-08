@@ -182,7 +182,7 @@
         <views:MediaPage DataContext="{Binding Media}"
                  IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsMediaSelected}" />
 
-        <views:ScreenPage DataContext="{Binding Cast}"
+        <views:ScreenPage DataContext="{Binding Screen}"
               IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsScreenSelected}" />
 
         <views:BrowserPage DataContext="{Binding Browser}"

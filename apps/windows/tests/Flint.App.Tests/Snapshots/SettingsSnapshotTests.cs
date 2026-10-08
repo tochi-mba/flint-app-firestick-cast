@@ -105,6 +105,17 @@ public sealed class SettingsSnapshotTests
     }
 
     [AvaloniaFact]
+    public void Settings_ScreenSharingInCustom()
+    {
+        var model = Page();
+        var screen = model.Section<ScreenSettingsViewModel>();
+        screen.Picture = screen.PictureChoices.Single(choice => choice.Value is Flint.Core.Settings.PictureMode.Custom);
+        model.SelectedSection = screen;
+
+        Snapshot.Matches("settings-section-screen", new SettingsPage { DataContext = model }, new Avalonia.PixelSize(1280, 1200));
+    }
+
+    [AvaloniaFact]
     public void Settings_About()
     {
         var model = Page();
@@ -135,6 +146,7 @@ public sealed class SettingsSnapshotTests
         [
             new GeneralSettingsViewModel(settings),
             new MediaSettingsViewModel(settings),
+            new ScreenSettingsViewModel(settings),
             new TvSettingsViewModel(shell.Cast),
             new PrivacySettingsViewModel(
                 settings,

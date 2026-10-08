@@ -44,12 +44,16 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
     /// <summary>Raised after each tick that changed the counters, for the diagnostics view.</summary>
     public event Action<MirrorSessionStats>? StatsUpdated;
 
+    /// <summary>Raised whenever a session starts sending, with the picture it sends.</summary>
+    public event Action<MirrorPicture>? PictureStarted;
+
     /// <summary>
     /// Mirrors the screen until cancelled or until the receiver session ends.
     /// </summary>
     /// <param name="transport">The connected receiver session.</param>
     /// <param name="options">What the session should produce.</param>
     /// <param name="caption">What the television shows while it waits for the first frame.</param>
+    /// <param name="control">Changes the display or picture while the mirror runs.</param>
     /// <param name="cancellationToken">Stops the mirror.</param>
     /// <returns>The counters as they stood when the mirror stopped.</returns>
     /// <exception cref="MirrorEngineException">The host could not capture or encode.</exception>
@@ -57,6 +61,7 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
         IMirrorTransport transport,
         MirrorSessionOptions options,
         string caption = "Screen mirror",
+        MirrorControl? control = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(transport);
@@ -69,7 +74,7 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
         // synchronous, long-running worker instead. Blocking that one worker on socket writes is
         // intentional back-pressure and does not block the UI thread.
         return Task.Factory.StartNew(
-            () => RunOnWorker(transport, options, caption, cancellationToken),
+            () => RunOnWorker(transport, options, caption, control, cancellationToken),
             CancellationToken.None,
             TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
             TaskScheduler.Default);
@@ -80,9 +85,14 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
         IMirrorTransport transport,
         MirrorSessionOptions options,
         string caption,
+        MirrorControl? control,
         CancellationToken cancellationToken)
     {
-        using var session = engine.Start(options);
+        var session = engine.Start(options);
+        var current = options;
+
+        // Counters from sessions a change has already replaced, so the totals cover the whole share.
+        var earlier = default(MirrorSessionStats);
         byte[]? buffer = null;
         var mirrorSurfaceSelected = false;
         var requestKeyFrame = 0;
@@ -111,18 +121,27 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
                 .GetResult();
             mirrorSurfaceSelected = true;
 
-            transport.SendVideoConfigAsync(
-                    new CodecId((int)session.Codec),
-                    session.Width,
-                    session.Height,
-                    session.CodecSpecificData.Select(block => BinaryData.From(block.AsSpan())),
-                    cancellationToken)
-                .GetAwaiter()
-                .GetResult();
+            SendVideoConfig(transport, session, cancellationToken);
 
             buffer = ArrayPool<byte>.Shared.Rent(FrameBufferBytes);
             while (!cancellationToken.IsCancellationRequested && transport.IsConnected)
             {
+                if (control?.TakeChange() is { } next && next != current)
+                {
+                    earlier = Add(earlier, session.ReadStats());
+                    session.Dispose();
+
+                    // Cleared first, so a restart that fails outright leaves nothing to dispose twice.
+                    session = null!;
+                    (session, var failure) = StartInstead(next, current);
+                    current = failure is null ? next : current;
+
+                    // A new decoder configuration and nothing else: the TV stays on the mirror
+                    // surface and swaps its decoder, rather than dropping to its idle screen.
+                    SendVideoConfig(transport, session, cancellationToken);
+                    control.Report(new MirrorSwitch(current, failure));
+                }
+
                 if (Interlocked.Exchange(ref requestKeyFrame, 0) != 0)
                 {
                     // Native state remains thread-affine: feedback only flips an atomic flag on
@@ -153,19 +172,21 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
                     .GetAwaiter()
                     .GetResult();
 
-                StatsUpdated?.Invoke(session.ReadStats());
+                StatsUpdated?.Invoke(Add(earlier, session.ReadStats()));
             }
 
-            return session.ReadStats();
+            return Add(earlier, session.ReadStats());
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             // Stopping is how a mirror ends. Reporting the final counters is more useful than
             // propagating the cancellation the caller asked for.
-            return session.ReadStats();
+            return Add(earlier, session.ReadStats());
         }
         finally
         {
+            session?.Dispose();
+
             if (feedback is not null)
             {
                 feedback.StatsReceived -= OnReceiverStats;
@@ -196,4 +217,49 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
             }
         }
     }
+
+    /// <summary>
+    /// Starts a session with <paramref name="next"/>, or with <paramref name="previous"/> again when
+    /// the new options cannot be captured or encoded.
+    /// </summary>
+    /// <returns>The session, and why the change failed when it did.</returns>
+    /// <exception cref="MirrorEngineException">Not even the previous options would start again.</exception>
+    private (IMirrorEngineSession Session, string? Failure) StartInstead(
+        MirrorSessionOptions next,
+        MirrorSessionOptions previous)
+    {
+        try
+        {
+            return (engine.Start(next), null);
+        }
+        catch (MirrorEngineException exception)
+        {
+            return (engine.Start(previous), exception.Message);
+        }
+    }
+
+    private void SendVideoConfig(
+        IMirrorTransport transport,
+        IMirrorEngineSession session,
+        CancellationToken cancellationToken)
+    {
+        transport.SendVideoConfigAsync(
+                new CodecId((int)session.Codec),
+                session.Width,
+                session.Height,
+                session.CodecSpecificData.Select(block => BinaryData.From(block.AsSpan())),
+                cancellationToken)
+            .GetAwaiter()
+            .GetResult();
+        PictureStarted?.Invoke(new MirrorPicture(session.Width, session.Height, session.EncoderKind));
+    }
+
+    /// <summary>Counters from two sessions of one share, added together.</summary>
+    private static MirrorSessionStats Add(MirrorSessionStats earlier, MirrorSessionStats now) =>
+        new(
+            earlier.FramesEncoded + now.FramesEncoded,
+            earlier.FramesUnchanged + now.FramesUnchanged,
+            earlier.Recoveries + now.Recoveries,
+            earlier.BytesEncoded + now.BytesEncoded,
+            earlier.FramesHeldBack + now.FramesHeldBack);
 }

@@ -493,7 +493,7 @@ public sealed class ScreenMirrorRunnerTests
         internal Task<MirrorSessionStats> RunAsync(
             MirrorSessionOptions? options = null,
             string caption = "Screen mirror") =>
-            Runner.RunAsync(Transport, options ?? new MirrorSessionOptions(), caption, cancellation.Token);
+            Runner.RunAsync(Transport, options ?? new MirrorSessionOptions(), caption, cancellationToken: cancellation.Token);
 
         public void Dispose() => cancellation.Dispose();
     }

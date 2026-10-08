@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Flint.App.ViewModels"
+             xmlns:controls="using:Flint.App.Controls"
+             x:Class="Flint.App.Views.LiveNumbersView"
+             x:DataType="vm:ScreenPageViewModel">
+  <StackPanel>
+    <controls:DiagnosticRow Label="Frames a second" Value="{Binding LiveFramesPerSecond}" />
+    <controls:DiagnosticRow Label="Data rate" Value="{Binding LiveDataRate}" />
+    <controls:DiagnosticRow Label="Picture size" Value="{Binding LivePictureSize}" />
+    <controls:DiagnosticRow Label="Encoder" Value="{Binding LiveEncoder}" />
+    <controls:DiagnosticRow Label="Frames the TV dropped" Value="{Binding LiveDroppedFrames}" />
+    <controls:DiagnosticRow Label="Waiting on the TV" Value="{Binding LiveTvQueue}" />
+    <controls:DiagnosticRow Label="Capture restarts" Value="{Binding LiveRestarts}" IsLast="True" />
+    <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0"
+               Text="These are counters. They are not a measurement of delay." />
+  </StackPanel>
+</UserControl>
