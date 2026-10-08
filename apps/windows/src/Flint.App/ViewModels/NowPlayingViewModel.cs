@@ -59,6 +59,7 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
     private long scrubPosition;
     private long frozenPosition;
     private string? problem;
+    private bool problemRaisedHere;
     private int? volumePercent;
     private int? volumeBeforeMute;
 
@@ -289,6 +290,7 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
 
         isSending = false;
         problem = reason;
+        problemRaisedHere = true;
         expectedPhase = null;
         snapshot = new PlaybackSnapshot(PlaybackPhase.Problem, 0, -1, reason, time.GetUtcNow());
         RaiseAll();
@@ -312,6 +314,14 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
             return;
         }
 
+        // Flint gave up waiting for the TV and said why. The TV repeats its state twice a second,
+        // and "still buffering" is no answer to that; playing, finishing or its own error is.
+        if (problemRaisedHere && report.Phase is PlaybackPhase.Buffering)
+        {
+            return;
+        }
+
+        problemRaisedHere = false;
         snapshot = report;
         if (heldPosition is { } target && Math.Abs(report.PositionMs - target) <= SeekTolerance)
         {
@@ -409,6 +419,7 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
         expectedPhase = null;
         gatheredSkip = null;
         problem = null;
+        problemRaisedHere = false;
         frozenPosition = 0;
         IsScrubbing = false;
         IsConnectionLost = false;
