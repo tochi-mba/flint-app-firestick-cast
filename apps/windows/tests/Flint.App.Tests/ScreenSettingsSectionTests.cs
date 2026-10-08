@@ -1,8 +1,11 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
 using Flint.App.ViewModels;
 using Flint.App.ViewModels.Settings;
 using Flint.App.Views;
+using Flint.App.Services;
+using Flint.Core;
 using Flint.Core.Settings;
 using Shouldly;
 
@@ -134,7 +137,7 @@ public sealed class ScreenSettingsSectionTests : IDisposable
         var screen = new ScreenSettingsViewModel(service);
 
         screen.Title.ShouldBe("Screen sharing");
-        screen.Settings.Count.ShouldBe(12);
+        screen.Settings.Count.ShouldBe(15);
         screen.Settings.Single(setting => setting.Matches("minimise")).ShouldBe(screen.MinimiseText);
         screen.Settings.Count(setting => setting.Matches("countdown") || setting.Matches("count down")).ShouldBe(1);
     }
@@ -204,4 +207,111 @@ public sealed class ScreenSettingsSectionTests : IDisposable
     }
 
     private static bool Shown(Control control) => TopLevel.GetTopLevel(control) is not null && control.IsEffectivelyVisible;
+
+    [Fact]
+    public void TheSoundSettings_ReadAndWriteTheirValues()
+    {
+        var outputs = new List<AudioDevice> { new("speakers", "Speakers", true), new("usb", "USB headset", false) };
+        var screen = new ScreenSettingsViewModel(service, () => outputs);
+
+        screen.SoundSourceChoices.Select(choice => choice.Label).ShouldBe(["The output Windows plays through", "Speakers", "USB headset"]);
+        screen.SoundSource!.Value.ShouldBeNull();
+        screen.SoundQuality!.Label.ShouldBe("128 kbps");
+        screen.SoundQualityChoices.Select(choice => choice.Label).ShouldBe(["96 kbps, the least data", "128 kbps", "160 kbps", "192 kbps, the best"]);
+        screen.SoundDelay.ShouldBe(0);
+
+        screen.SoundSource = screen.SoundSourceChoices[2];
+        screen.SoundQuality = screen.SoundQualityChoices[3];
+        screen.SoundDelay = 84.6;
+
+        var saved = service.Current.Screen;
+        saved.SoundSource.ShouldBe(SoundSource.NamedDevice);
+        saved.SoundDeviceIdentity.ShouldBe("usb");
+        saved.SoundKbps.ShouldBe(192);
+        saved.SoundDelayMilliseconds.ShouldBe(85);
+        screen.SoundSource!.Label.ShouldBe("USB headset");
+
+        screen.SoundSource = screen.SoundSourceChoices[0];
+        service.Current.Screen.SoundSource.ShouldBe(SoundSource.DefaultOutput);
+        service.Current.Screen.SoundDeviceIdentity.ShouldBe("usb", "remembered, should it be chosen again");
+        ScreenSettingsViewModel.MaximumSoundDelay.ShouldBe(ScreenSettings.MaximumSoundDelayMilliseconds);
+    }
+
+    [Fact]
+    public void AChosenOutputThatIsNotConnected_StaysInTheList_AndTheListIsReadAgainAfterAChange()
+    {
+        var outputs = new List<AudioDevice> { new("speakers", "Speakers", true) };
+        service.Update(current => current with { Screen = current.Screen with { SoundSource = SoundSource.NamedDevice, SoundDeviceIdentity = "usb" } });
+        var screen = new ScreenSettingsViewModel(service, () => outputs);
+
+        screen.SoundSource!.Label.ShouldBe("An output that is not connected");
+        outputs.Add(new("usb", "USB headset", false));
+        screen.SoundSource!.Label.ShouldBe("An output that is not connected", "read once until something changes");
+
+        screen.SoundDelay = 20;
+
+        screen.SoundSource!.Label.ShouldBe("USB headset");
+        new ScreenSettingsViewModel(service).SoundSourceChoices.Count.ShouldBe(2, "with no outputs listed, only the default and the chosen one");
+    }
+
+    [Fact]
+    public void TheSoundSettings_CanBeFound_ByWhatTheyDo()
+    {
+        var screen = new ScreenSettingsViewModel(service);
+
+        screen.Settings.Where(setting => setting.Matches("lips")).ShouldHaveSingleItem().ShouldBe(screen.SoundDelayText);
+        screen.Settings.ShouldContain(screen.SoundSourceText);
+        screen.Settings.ShouldContain(screen.SoundQualityText);
+    }
+
+    [AvaloniaFact]
+    public void TheSection_ShowsTheSoundRows()
+    {
+        var screen = new ScreenSettingsViewModel(service, () => [new("speakers", "Speakers", true)]);
+        var section = new ScreenSettingsSection { DataContext = screen };
+        var window = new Window { Width = 900, Height = 900, Content = section };
+        try
+        {
+            window.Show();
+            window.UpdateLayout();
+
+            section.FindControl<ComboBox>("SoundSource")!.SelectedItem.ShouldBe(screen.SoundSourceChoices[0]);
+            section.FindControl<ComboBox>("SoundQuality")!.SelectedItem.ShouldBe(screen.SoundQuality);
+            section.FindControl<Slider>("SoundDelay")!.Maximum.ShouldBe(ScreenSettings.MaximumSoundDelayMilliseconds);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void AMuteLeftBehind_IsToldOnce_AndPutAway()
+    {
+        var shell = MainWindowViewModel.CreateWith(BrowserFixtures.Prober(BrowserFixtures.EligibleDevice()));
+        var window = new MainWindow { DataContext = shell, Width = 1180, Height = 780 };
+        try
+        {
+            window.Show();
+            shell.ShowLaunchNotice.ShouldBeFalse();
+            shell.TellLeftOverMute(LeftOverMute.None);
+            shell.ShowLaunchNotice.ShouldBeFalse();
+            shell.TellLeftOverMute(LeftOverMute.OutputGone);
+            shell.ShowLaunchNotice.ShouldBeFalse("an output that has gone is forgotten quietly");
+
+            shell.TellLeftOverMute(LeftOverMute.Restored);
+            shell.LaunchNotice.ShouldBe("Flint closed last time while this PC was muted for the TV. Its sound is back as it was.");
+            window.UpdateLayout();
+            window.GetVisualDescendants().OfType<TextBlock>().ShouldContain(text => text.Text == shell.LaunchNotice && text.IsEffectivelyVisible);
+            shell.DismissLaunchNoticeCommand.Execute(null);
+            shell.ShowLaunchNotice.ShouldBeFalse();
+
+            shell.TellLeftOverMute(LeftOverMute.NotRestored);
+            shell.LaunchNotice!.ShouldContain("Unmute it from the taskbar");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
 }

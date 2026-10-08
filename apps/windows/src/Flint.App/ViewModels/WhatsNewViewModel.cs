@@ -148,5 +148,17 @@ public sealed class WhatsNewViewModel : WalkthroughViewModel
                     "Custom sets the size, frame rate and data rate yourself.",
                     "Turn on live numbers to see what is being sent.",
                 ])),
+        new(
+            "2026-10-sound",
+            new OnboardingStep(
+                "New in Flint",
+                "Your PC's sound plays on the TV with your screen",
+                "Sharing your screen now carries what this PC plays, so films, music and calls are heard "
+                    + "on the TV too.",
+                [
+                    "Choose the TV only, and Flint mutes this PC while sharing and puts it back after.",
+                    "Pausing the share pauses the sound with it.",
+                    "If lips and voices do not line up, add a sound delay in Settings, Screen sharing.",
+                ])),
     ];
 }

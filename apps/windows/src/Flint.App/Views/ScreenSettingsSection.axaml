@@ -97,6 +97,32 @@
                     IsEnabled="{Binding PauseWhenLocked}"
                     AutomationProperties.Name="Stay paused after unlocking" />
     </controls:SettingRow>
+    <controls:SettingRow Title="{Binding SoundSourceText.Title}"
+                         Description="{Binding SoundSourceText.Description}">
+      <ComboBox x:Name="SoundSource" Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding SoundSourceChoices}"
+                SelectedItem="{Binding SoundSource, Mode=TwoWay}"
+                AutomationProperties.Name="Sound comes from" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding SoundQualityText.Title}"
+                         Description="{Binding SoundQualityText.Description}">
+      <ComboBox x:Name="SoundQuality" Theme="{StaticResource FlintComboBox}"
+                ItemsSource="{Binding SoundQualityChoices}"
+                SelectedItem="{Binding SoundQuality, Mode=TwoWay}"
+                AutomationProperties.Name="Sound quality" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding SoundDelayText.Title}"
+                         Description="{Binding SoundDelayText.Description}">
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Slider x:Name="SoundDelay" Theme="{StaticResource FlintSlider}" Width="200"
+                Minimum="0" Maximum="{x:Static settings:ScreenSettingsViewModel.MaximumSoundDelay}"
+                SmallChange="10" LargeChange="50" TickFrequency="10" IsSnapToTickEnabled="True"
+                Value="{Binding SoundDelay, Mode=TwoWay}"
+                AutomationProperties.Name="Sound delay in milliseconds" />
+        <TextBlock Theme="{StaticResource BodyMedium}" VerticalAlignment="Center"
+                   Text="{Binding SoundDelay, StringFormat='{}{0:0} ms'}" />
+      </StackPanel>
+    </controls:SettingRow>
     <views:ConfirmableActionView DataContext="{Binding Reset}" Margin="0,18,0,0" />
   </StackPanel>
 </UserControl>

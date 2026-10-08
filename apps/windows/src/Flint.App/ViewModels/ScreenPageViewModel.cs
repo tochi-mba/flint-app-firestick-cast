@@ -40,6 +40,7 @@ public sealed partial class ScreenPageViewModel : ObservableObject, IDisposable
         cast.MirrorStatsUpdated += OnStats;
         cast.MirrorPictureStarted += OnPictureStarted;
         cast.MirrorReceiverStats += OnReceiverStats;
+        cast.SoundReported += OnSoundReported;
         settings.Changed += OnSettingsChanged;
         RefreshDisplays();
     }
@@ -105,6 +106,7 @@ public sealed partial class ScreenPageViewModel : ObservableObject, IDisposable
         Cast.MirrorStatsUpdated -= OnStats;
         Cast.MirrorPictureStarted -= OnPictureStarted;
         Cast.MirrorReceiverStats -= OnReceiverStats;
+        Cast.SoundReported -= OnSoundReported;
         settings.Changed -= OnSettingsChanged;
         countdown?.Cancel();
         countdown?.Dispose();
@@ -173,6 +175,7 @@ public sealed partial class ScreenPageViewModel : ObservableObject, IDisposable
         var before = change.Previous.Screen;
         var now = change.Current.Screen;
         RaiseModes();
+        RaiseSound();
         OnPropertyChanged(nameof(ShowLiveNumbers));
         if (ScreenQualityPreset.Resolve(before) != ScreenQualityPreset.Resolve(now))
         {
@@ -194,6 +197,17 @@ public sealed partial class ScreenPageViewModel : ObservableObject, IDisposable
         if (change.PropertyName is nameof(CastPageViewModel.IsMirroring) or nameof(CastPageViewModel.MirrorPause))
         {
             OnPauseChanged();
+        }
+
+        if (change.PropertyName is nameof(CastPageViewModel.IsMirroring)
+            or nameof(CastPageViewModel.MirrorPause)
+            or nameof(CastPageViewModel.IsSessionConnected)
+            or nameof(CastPageViewModel.SoundState)
+            or nameof(CastPageViewModel.SoundProblem)
+            or nameof(CastPageViewModel.SoundLevel)
+            or nameof(CastPageViewModel.SoundNotice))
+        {
+            RaiseSound();
         }
 
         if (change.PropertyName is nameof(CastPageViewModel.IsMirroring)

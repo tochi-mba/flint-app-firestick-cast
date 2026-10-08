@@ -38,6 +38,8 @@ public sealed partial class CastPageViewModel : ObservableObject
     private readonly IRecentAddressStore addressStore;
     private readonly IReceiverLauncher receiverLauncher;
     private readonly IMirrorEngine mirrorEngine;
+    private readonly IAudioEngine audioEngine;
+    private readonly TvOnlyMute tvOnly;
     private readonly IReceiverInstaller receiverInstaller;
     private readonly IBundledReceiverSource bundledReceiver;
     private CastSession? session;
@@ -57,7 +59,9 @@ public sealed partial class CastPageViewModel : ObservableObject
         IMirrorEngine? mirrorEngine = null,
         IReceiverInstaller? receiverInstaller = null,
         IBundledReceiverSource? bundledReceiver = null,
-        TimeProvider? time = null)
+        TimeProvider? time = null,
+        IAudioEngine? audioEngine = null,
+        ISoundMemory? soundMemory = null)
     {
         this.prober = prober ?? throw new ArgumentNullException(nameof(prober));
         this.addressStore = addressStore ?? new FileRecentAddressStore();
@@ -66,6 +70,11 @@ public sealed partial class CastPageViewModel : ObservableObject
         this.receiverInstaller = receiverInstaller ?? new AdbReceiverInstaller();
         this.bundledReceiver = bundledReceiver ?? BundledReceiverPackage.BesideTheApp();
         this.time = time ?? TimeProvider.System;
+
+        // No sound unless an engine is handed over: nothing built for a test may capture this PC's
+        // sound or mute it.
+        this.audioEngine = audioEngine ?? new UnavailableAudioEngine();
+        tvOnly = new TvOnlyMute(this.audioEngine, soundMemory ?? new InMemorySoundMemory(), this.time);
         NowPlaying = new NowPlayingViewModel(this, this.time);
 
         var recent = this.addressStore.Load();

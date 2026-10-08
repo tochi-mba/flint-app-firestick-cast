@@ -60,11 +60,12 @@ public sealed partial class CastPageViewModel
     /// <summary>The TVs Flint can reach again, most recently used first.</summary>
     public IReadOnlyList<KnownTv> KnownTvs => knownTvs.Load();
 
-    /// <summary>Gives the page its remembered TVs and the settings that say when to reconnect.</summary>
+    /// <summary>Gives the page its remembered TVs, and the settings that say when to reconnect and how to share sound.</summary>
     internal void UseReconnect(IKnownTvStore store, ISettingsService liveSettings)
     {
         knownTvs = store ?? throw new ArgumentNullException(nameof(store));
         settings = liveSettings ?? throw new ArgumentNullException(nameof(liveSettings));
+        settings.Changed += OnSoundSettingsChanged;
     }
 
     /// <summary>Forgets one TV: its login and its address.</summary>

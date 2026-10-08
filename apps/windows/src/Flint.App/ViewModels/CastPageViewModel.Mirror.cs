@@ -140,6 +140,12 @@ public sealed partial class CastPageViewModel
         OnPropertyChanged(nameof(CanStopMirror));
         StopScreenSessionCommand.NotifyCanExecuteChanged();
 
+        // Beside the picture, never ahead of it: sound waits for the picture's clock to start.
+        if (ScreenChoices.ShareSound)
+        {
+            StartSound();
+        }
+
         try
         {
             var stats = await runner.RunAsync(
@@ -177,6 +183,7 @@ public sealed partial class CastPageViewModel
         }
         finally
         {
+            await StopSoundAsync().ConfigureAwait(true);
             sharing.StatsReceived -= OnReceiverStats;
             mirrorStop.Dispose();
             mirrorStop = null;

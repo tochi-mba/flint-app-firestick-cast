@@ -697,7 +697,11 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
                     TransportAction.NEXT -> if (player.hasNextMediaItem()) player.seekToNextMediaItem()
                     TransportAction.PREVIOUS -> if (player.hasPreviousMediaItem()) player.seekToPreviousMediaItem()
                 }
-                is VolumeControl -> player.volume = playerVolume(event.level)
+                is VolumeControl -> {
+                    // Whichever is playing: a pushed file, or a PC's shared sound.
+                    player.volume = playerVolume(event.level)
+                    audioDecoder.setVolume(playerVolume(event.level))
+                }
                 is KeyControl -> if (event.action == KeyAction.DOWN) dispatchTvKey(event.keyCode)
                 else -> Unit
             }

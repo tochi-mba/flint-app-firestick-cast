@@ -3,6 +3,7 @@ using Avalonia.Threading;
 using Flint.App.Services;
 using Flint.App.ViewModels;
 using Flint.Core;
+using Flint.Core.Settings;
 using Shouldly;
 
 namespace Flint.App.Tests;
@@ -24,6 +25,27 @@ internal static class CastPageFixtures
             mirrorEngine: engine,
             receiverInstaller: new OfflineReceiverInstaller(),
             time: time);
+        await Pair(cast, receiver);
+        return cast;
+    }
+
+    /// <summary>A paired Cast page that shares sound through <paramref name="audio"/>, as <paramref name="settings"/> say.</summary>
+    public static async Task<CastPageViewModel> PairedWithSoundAsync(
+        LoopbackReceiver receiver,
+        ISettingsService settings,
+        IAudioEngine audio,
+        ISoundMemory memory,
+        TimeProvider time)
+    {
+        var cast = new CastPageViewModel(
+            BrowserFixtures.Prober(BrowserFixtures.EligibleDevice() with { Address = IPAddress.Loopback }),
+            new NoRecentAddresses(),
+            mirrorEngine: new RecordingMirrorEngine(),
+            receiverInstaller: new OfflineReceiverInstaller(),
+            time: time,
+            audioEngine: audio,
+            soundMemory: memory);
+        cast.UseReconnect(new InMemoryKnownTvStore(), settings);
         await Pair(cast, receiver);
         return cast;
     }
@@ -132,8 +154,11 @@ internal sealed class RecordingMirrorEngine : IMirrorEngine
         return new StillSession();
     }
 
-    private sealed class StillSession : IMirrorEngineSession
+    /// <summary>A still screen, on a clock of its own so shared sound need not wait for one.</summary>
+    private sealed class StillSession : IMirrorEngineSession, IMirrorClock
     {
+        public long ReadElapsedUs() => 0;
+
         public VideoCodec Codec => VideoCodec.H264;
 
         public MirrorEncoderKind EncoderKind => MirrorEncoderKind.Hardware;

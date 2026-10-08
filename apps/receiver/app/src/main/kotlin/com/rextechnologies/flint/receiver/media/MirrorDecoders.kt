@@ -261,9 +261,21 @@ class MirrorAudioDecoder(
     @Volatile private var lastLatencyUs = 0L
 
     @Volatile private var closed = false
+
+    @Volatile private var volume = 1f
     private var codec: MediaCodec? = null
     private var track: AudioTrack? = null
     private var drainScheduled = false
+
+    /**
+     * Sets how loud shared sound plays, from silent to as loud as the TV is set, as a volume
+     * control does for a played file. A track started later plays at it too.
+     */
+    fun setVolume(level: Float) {
+        volume = level
+        if (closed) return
+        handler.post { track?.setVolume(volume) }
+    }
 
     fun configure(config: AudioConfigMessage) {
         if (closed) return
@@ -390,7 +402,10 @@ class MirrorAudioDecoder(
             .setTransferMode(AudioTrack.MODE_STREAM)
             .setBufferSizeInBytes(minimum)
             .build()
-            .also(AudioTrack::play)
+            .also {
+                it.setVolume(volume)
+                it.play()
+            }
     }
 
     private fun releaseCodec() {

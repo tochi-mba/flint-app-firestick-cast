@@ -306,3 +306,16 @@ unplugged leaves the share unavailable until it is back, when capture picks it u
 Windows remembers unplugged outputs, so a named output counts as there only while it is active. Sound shares the picture's clock: a share
 started during a mirror times its packets from `flint_mirror_elapsed_us`. A pause keeps the encoder
 running on silence, so its clock does not stop, and sends nothing.
+
+In the app, `AudioPump` (`Flint.Session`) carries packets to the TV on a worker of its own beside the
+picture's runner, decoder configuration first. Every failure ends the pump with a reason the Screen
+page shows; none reaches the picture. The picture's clock is read on the runner's own worker and
+published through `MirrorControl`, so sound never calls into the picture's native session from
+another thread.
+
+"TV only" is `TvOnlyMute`. The output's previous mute is written to `sound-outputs.json` before it is
+muted, so a Flint that is killed mid-share puts it back at the next launch and says so once. Only the
+mute is touched, never the level. A person who turns this PC's sound back on during a share is left
+alone for the rest of it. An output whose capture stays silent for two seconds while Windows' meter
+shows sound is unmuted, and remembered as one that must play on both. The receiver applies the TV
+volume to shared sound as it does to a played file.

@@ -89,6 +89,7 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
         CancellationToken cancellationToken)
     {
         var session = engine.Start(options);
+        StartClock(control, session);
         var current = options;
 
         // Counters from sessions a change has already replaced, so the totals cover the whole share.
@@ -147,6 +148,10 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
                     session = null!;
                     (session, var failure) = StartInstead(next, current);
                     current = failure is null ? next : current;
+
+                    // A new session counts from zero. Sound already running keeps the time it
+                    // started with; the TV plays sound as it arrives, so nothing heard shifts.
+                    StartClock(control, session);
 
                     // A new decoder configuration and nothing else: the TV stays on the mirror
                     // surface and swaps its decoder, rather than dropping to its idle screen.
@@ -257,6 +262,27 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
         catch (MirrorEngineException exception)
         {
             return (engine.Start(previous), exception.Message);
+        }
+    }
+
+    /// <summary>
+    /// Publishes the session's clock for sound to share, read here because the session belongs to
+    /// this thread.
+    /// </summary>
+    private static void StartClock(MirrorControl? control, IMirrorEngineSession session)
+    {
+        if (control is null || session is not IMirrorClock clock)
+        {
+            return;
+        }
+
+        try
+        {
+            control.StartClock(clock.ReadElapsedUs());
+        }
+        catch (MirrorEngineException)
+        {
+            // Sound then times itself from zero. The picture does not depend on its clock being read.
         }
     }
 

@@ -86,7 +86,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         [
             new GeneralSettingsViewModel(settingsService),
             new MediaSettingsViewModel(settingsService),
-            new ScreenSettingsViewModel(settingsService),
+            new ScreenSettingsViewModel(settingsService, Cast.SoundOutputs),
             new TvSettingsViewModel(Cast),
             new PrivacySettingsViewModel(settingsService, folders, FlintDataFolder.Path, FlintDataFolder.LogsPath, mediaHistory),
             new UpdatesSectionViewModel(Updates),
@@ -251,6 +251,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <remarks>Called as Flint exits, so a change made in the last moment is not lost.</remarks>
     public void Dispose()
     {
+        // First, so this PC's sound is back as it was even if anything after it fails.
+        Cast.EndSound();
         Media.Dispose();
         keepAwake.Dispose();
         settingsService.Dispose();
@@ -298,13 +300,20 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public static MainWindowViewModel CreateDefault()
     {
         var sleepBlocker = new SleepBlocker();
+        var sound = new NativeAudioEngine();
+        var soundMemory = new FileSoundMemory();
+
+        // Before anything else touches sound: a mute an earlier Flint left behind is put back first.
+        var leftOver = TvOnlyMute.RestoreLeftOver(sound, soundMemory);
         var shell = new MainWindowViewModel(
             new CastPageViewModel(
                 new CapabilityProber(
                     new EngineHostProbe(new WindowsHostProbe()),
                     new FireTvDeviceProbe(),
                     new TcpNetworkProbe()),
-                new FileRecentAddressStore()),
+                new FileRecentAddressStore(),
+                audioEngine: sound,
+                soundMemory: soundMemory),
             new FileOnboardingState(),
             new FileAppSettingsStore(),
             sleepBlocker.Apply,
@@ -315,6 +324,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             new DisplayCatalog(new NativeDisplayOutputs(), new DisplayNames()),
             new VelopackUpdateSource(),
             new FileUpdatePreference());
+
+        shell.TellLeftOverMute(leftOver);
 
         // In the background and without a prompt. A launch must not wait on GitHub, and the answer
         // belongs on the Settings page rather than in front of somebody who opened Flint to cast.

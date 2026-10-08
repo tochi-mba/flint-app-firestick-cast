@@ -67,6 +67,10 @@ public sealed partial class ScreenPageViewModel
     [ObservableProperty]
     private string _liveRestarts = NoFigure;
 
+    /// <summary>Sound packets sent, and those dropped because the network fell behind.</summary>
+    [ObservableProperty]
+    private string _liveSound = NoFigure;
+
     /// <summary>Whether the page suggests Data saver because the TV is not keeping up.</summary>
     [ObservableProperty]
     private bool _showStrugglingSuggestion;
@@ -112,6 +116,11 @@ public sealed partial class ScreenPageViewModel
         rateFrom = stats;
         rateFromAt = now;
     }
+
+    internal void OnSoundReported(AudioPumpReport report) =>
+        LiveSound = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{report.Stats.Packets:N0} sent, {report.Stats.Dropped:N0} dropped");
 
     internal void OnPictureStarted(MirrorPicture picture)
     {
@@ -166,5 +175,6 @@ public sealed partial class ScreenPageViewModel
         LiveDroppedFrames = NoFigure;
         LiveTvQueue = NoFigure;
         LiveRestarts = NoFigure;
+        LiveSound = NoFigure;
     }
 }

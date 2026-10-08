@@ -1,3 +1,4 @@
+using Flint.Core;
 using Flint.Core.Settings;
 
 namespace Flint.App.ViewModels.Settings;
@@ -12,20 +13,25 @@ public sealed record ScreenOption<T>(T Value, string Label)
     public override string ToString() => Label;
 }
 
-/// <summary>The Screen sharing section: which display, the picture, and how a share starts.</summary>
-public sealed class ScreenSettingsViewModel : SettingsSectionViewModel
+/// <summary>The Screen sharing section: which display, the picture, how a share starts, and sound.</summary>
+public sealed partial class ScreenSettingsViewModel : SettingsSectionViewModel
 {
     private readonly ISettingsService settings;
+    private readonly Func<IReadOnlyList<AudioDevice>> outputs;
 
     /// <summary>Creates the section over the live settings.</summary>
-    public ScreenSettingsViewModel(ISettingsService settings)
+    /// <param name="settings">The live settings.</param>
+    /// <param name="outputs">Lists this PC's sound outputs. Defaults to none.</param>
+    public ScreenSettingsViewModel(ISettingsService settings, Func<IReadOnlyList<AudioDevice>>? outputs = null)
         : base("Screen sharing")
     {
         this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        this.outputs = outputs ?? (() => []);
         settings.Changed += (_, change) =>
         {
             if (change.Previous.Screen != change.Current.Screen)
             {
+                ForgetSources();
                 OnPropertyChanged(string.Empty);
             }
         };
@@ -101,6 +107,7 @@ public sealed class ScreenSettingsViewModel : SettingsSectionViewModel
     [
         DisplayText, PromptText, PictureText, CustomSizeText, CustomFramesText, CustomRateText,
         LiveNumbersText, CountdownText, MinimiseText, PausedPictureText, PauseWhenLockedText, StayPausedText,
+        SoundSourceText, SoundQualityText, SoundDelayText,
     ];
 
     /// <summary>What the TV can show while paused.</summary>

@@ -11,7 +11,8 @@
     <controls:DiagnosticRow Label="Encoder" Value="{Binding LiveEncoder}" />
     <controls:DiagnosticRow Label="Frames the TV dropped" Value="{Binding LiveDroppedFrames}" />
     <controls:DiagnosticRow Label="Waiting on the TV" Value="{Binding LiveTvQueue}" />
-    <controls:DiagnosticRow Label="Capture restarts" Value="{Binding LiveRestarts}" IsLast="True" />
+    <controls:DiagnosticRow Label="Capture restarts" Value="{Binding LiveRestarts}" />
+    <controls:DiagnosticRow Label="Sound packets" Value="{Binding LiveSound}" IsLast="True" />
     <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0"
                Text="These are counters. They are not a measurement of delay." />
   </StackPanel>
