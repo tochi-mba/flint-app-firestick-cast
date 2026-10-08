@@ -532,6 +532,10 @@ impl crate::session::FrameSource for DesktopFrameSource {
     fn recycle_frame(&mut self, frame: SourceFrame) {
         self.readback.recycle(frame);
     }
+
+    fn elapsed_us(&self) -> i64 {
+        i64::try_from(self.origin.elapsed().as_micros()).unwrap_or(i64::MAX)
+    }
 }
 
 /// Owned copies of captured desktop textures.

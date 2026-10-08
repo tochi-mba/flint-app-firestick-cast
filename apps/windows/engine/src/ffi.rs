@@ -887,4 +887,13 @@ pub use outputs::{flint_probe_outputs, FlintOutput};
 
 #[path = "ffi_control.rs"]
 mod control;
-pub use control::{flint_mirror_set_pause, pause_from, pause_mode};
+pub use control::{flint_mirror_elapsed_us, flint_mirror_set_pause, pause_from, pause_mode};
+
+#[path = "ffi_audio.rs"]
+mod audio;
+pub use audio::{
+    audio_failure, audio_state, flint_audio_config, flint_audio_devices, flint_audio_muted,
+    flint_audio_next, flint_audio_problem, flint_audio_set_delay, flint_audio_set_muted,
+    flint_audio_set_paused, flint_audio_start, flint_audio_stats, flint_audio_stop,
+    FlintAudioConfig, FlintAudioDevice, FlintAudioStats,
+};

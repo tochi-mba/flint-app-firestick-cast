@@ -270,3 +270,39 @@ Locking the PC pauses when "Pause when this PC locks" is on. The main window reg
 `WM_WTSSESSION_CHANGE` and reads lock and unlock from its own message hook. Unlocking resumes a
 pause the lock made, unless "Stay paused after unlocking" is on; it never ends a pause the person
 made. A share that drops while paused is not offered back after reconnecting.
+
+## Sound with screen sharing
+
+Four questions were answered on real hardware before any sound code was written, as ignored
+reports in `engine/src/audio/spike_tests.rs`. Measured on the development PC, whose default output
+is "Speakers (Realtek(R) Audio)", mixing at 48 kHz in 32-bit float:
+
+1. **Loopback capture as 48 kHz 16-bit stereo.** Windows accepts the request and converts, so the
+   engine does no format conversion of its own.
+2. **Capture while the output is muted.** It still hears everything, at the same level, so "TV
+   only" can work by muting this PC. Other devices may differ, which is why the shell watches for
+   capture going silent after muting. Windows' own meter for the output reads the same muted as
+   unmuted (0.096 for the test tone both ways), so it is measured before the mute: sound on the
+   meter while capture hears silence is how that case is recognised.
+3. **Windows' AAC encoder.** Present, and its setup data is `11 90`: low complexity, 48 kHz,
+   stereo, the same two bytes the phone app sends. A 1 kHz tone survives an encode and decode with
+   Windows' own decoder at its own pitch. Whether the TV's decoder plays these frames is checked on
+   the TV.
+4. **How far apart picture and sound land on the TV** is measured on the TV.
+
+Two more facts the spike turned up. Windows delivers no data at all while nothing plays, rather
+than silent buffers, so the session pads silence to keep presentation times on the wall clock.
+Otherwise everything after a quiet spell would arrive early relative to the picture. And a 1 kHz
+tone at an RMS of 707 was captured at about 1,700, so this output adds gain after the mix; levels
+are relative, never absolute.
+
+The engine's sound path (`engine/src/audio/`): `capture.rs` reads loopback,
+`aac.rs` encodes, and `ring.rs` holds encoded packets between the capture thread and the caller.
+The ring is allocated once, drops the oldest packet when full, and can hold every packet back by a
+delay. `session.rs` runs it all on one thread raised to the "Pro Audio" scheduling class.
+`endpoint.rs` lists outputs and reads and sets their mute. `follow.rs` keeps capture on the chosen
+output: "the default output" is followed within a second when it changes, and an output that is
+unplugged leaves the share unavailable until it is back, when capture picks it up again by itself.
+Windows remembers unplugged outputs, so a named output counts as there only while it is active. Sound shares the picture's clock: a share
+started during a mirror times its packets from `flint_mirror_elapsed_us`. A pause keeps the encoder
+running on silence, so its clock does not stop, and sends nothing.

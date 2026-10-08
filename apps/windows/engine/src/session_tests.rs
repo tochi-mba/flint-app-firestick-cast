@@ -66,6 +66,11 @@ fn session(
 }
 
 #[test]
+fn a_source_with_no_clock_of_its_own_reports_zero_elapsed() {
+    assert_eq!(session(vec![]).elapsed_us(), 0);
+}
+
+#[test]
 fn a_captured_frame_is_encoded_and_counted() {
     let mut session = session(vec![Ok((FrameOutcome::Captured, Some(frame(0))))]);
 

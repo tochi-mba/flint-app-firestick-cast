@@ -425,6 +425,7 @@ public sealed class NativeMirrorEngineTests
             }
 
             Should.Throw<ArgumentOutOfRangeException>(() => session.SetPause((MirrorPause)7));
+            ((IMirrorClock)session).ReadElapsedUs().ShouldBeGreaterThan(0, "capture has been running since the session started");
             session.ReadStats().FramesHeldBack.ShouldBe(0, "nothing has been captured yet");
         }
     }
@@ -465,6 +466,7 @@ public sealed class NativeMirrorEngineTests
         Should.Throw<ObjectDisposedException>(session.RequestKeyFrame);
         Should.Throw<ObjectDisposedException>(() => session.ReadStats());
         Should.Throw<ObjectDisposedException>(() => session.SetPause(MirrorPause.Black));
+        Should.Throw<ObjectDisposedException>(() => ((IMirrorClock)session).ReadElapsedUs());
     }
 
     [Fact]
@@ -520,4 +522,32 @@ public sealed class NativeMirrorEngineTests
         Width = 1280,
         Height = 720,
     };
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("export")]
+    [InlineData("image")]
+    [InlineData("marshal")]
+    public void ASessionWhoseEngineCannotBeCalled_FailsAsAnEngineFailure(string kind)
+    {
+        Exception thrown = kind switch
+        {
+            "missing" => new DllNotFoundException(),
+            "export" => new EntryPointNotFoundException(),
+            "image" => new BadImageFormatException(),
+            _ => new MarshalDirectiveException(),
+        };
+
+        var failure = Should.Throw<MirrorEngineException>(() => NativeMirrorEngine.CallSession(() => throw thrown));
+
+        failure.InnerException.ShouldBeSameAs(thrown);
+        failure.Message.ShouldContain("may not match the app");
+    }
+
+    [Fact]
+    public void ASessionCall_PassesTheEnginesAnswerThrough_AndAnyOtherFailureAsItIs()
+    {
+        NativeMirrorEngine.CallSession(() => 6).ShouldBe(6);
+        Should.Throw<InvalidOperationException>(() => NativeMirrorEngine.CallSession(() => throw new InvalidOperationException()));
+    }
 }
