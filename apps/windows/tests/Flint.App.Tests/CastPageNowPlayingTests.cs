@@ -265,6 +265,44 @@ public sealed class CastPageNowPlayingTests : IDisposable
     }
 
     [Fact]
+    public async Task ATvStillBuffering_AfterFlintGaveUp_DoesNotHideWhy()
+    {
+        await using var receiver = new LoopbackReceiver();
+        var cast = await PairedAsync(receiver, time: clock);
+        var sending = cast.LoadMediaFileCommand.ExecuteAsync(file);
+        await receiver.WaitForAsync<MediaCommandMessage>();
+        clock.Advance(TimeSpan.FromSeconds(61));
+        await sending.WaitAsync(TimeSpan.FromSeconds(10), Token);
+
+        // The TV repeats its state twice a second; reports arrive in order, so once the goodbye
+        // has been handled the Buffering before it has been too.
+        await receiver.SendAsync(new PlaybackStateMessage(PlaybackState.Buffering));
+        await receiver.SendByeAsync();
+        await Until(() => cast.NowPlaying.IsConnectionLost);
+
+        cast.NowPlaying.ShowsProblem.ShouldBeTrue();
+        cast.NowPlaying.ProblemText.ShouldBe(CastPageViewModel.FirewallGuidance);
+    }
+
+    [Fact]
+    public async Task ATvThatStartsLate_AfterFlintGaveUp_ShowsItPlaying()
+    {
+        await using var receiver = new LoopbackReceiver();
+        var cast = await PairedAsync(receiver, time: clock);
+        var sending = cast.LoadMediaFileCommand.ExecuteAsync(file);
+        await receiver.WaitForAsync<MediaCommandMessage>();
+        clock.Advance(TimeSpan.FromSeconds(61));
+        await sending.WaitAsync(TimeSpan.FromSeconds(10), Token);
+
+        await receiver.SendAsync(new PlaybackStateMessage(PlaybackState.Playing, 1_000, 60_000));
+        await Until(() => cast.NowPlaying.Phase is PlaybackPhase.Playing);
+
+        cast.NowPlaying.ShowsProblem.ShouldBeFalse();
+        await receiver.SendAsync(new PlaybackStateMessage(PlaybackState.Buffering, 1_000, 60_000));
+        await Until(() => cast.NowPlaying.Phase is PlaybackPhase.Buffering);
+    }
+
+    [Fact]
     public async Task TheConnectionDropping_GreysTheCard_AndSaysWhy()
     {
         await using var receiver = new LoopbackReceiver();
