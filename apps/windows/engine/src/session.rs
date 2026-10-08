@@ -10,6 +10,11 @@ use crate::convert::scale::scale_bgra;
 use crate::encode::video::{EncodeError, EncodedFrame, FrameData, SourceFrame, VideoEncoder};
 use crate::pacing::{FramePacer, MonotonicClock, PacingClock};
 
+#[path = "session_pause.rs"]
+mod pause;
+pub use pause::Pause;
+use pause::PauseState;
+
 /// A source of desktop frames.
 ///
 /// [`crate::capture::duplication::DesktopDuplication`] is the real one; tests use their own.
@@ -72,6 +77,8 @@ pub enum Tick {
     /// A frame arrived sooner than the frame-rate cap allows. It is kept, replaced by any newer
     /// one, and sent as soon as the interval has passed.
     Held,
+    /// The share is paused: whatever was captured went straight back, and nothing is sent.
+    Paused,
 }
 
 /// Counters a session keeps for the diagnostics view and for adaptive bitrate.
@@ -102,6 +109,7 @@ pub struct MirrorSession<S: FrameSource, E: VideoEncoder, C: PacingClock = Monot
     /// The newest frame that arrived before the cap allowed another. At most one: a newer arrival
     /// replaces it, and the replaced frame goes straight back to the source.
     held: Option<SourceFrame>,
+    paused: PauseState,
 }
 
 impl<S: FrameSource, E: VideoEncoder> MirrorSession<S, E> {
@@ -138,6 +146,7 @@ impl<S: FrameSource, E: VideoEncoder, C: PacingClock> MirrorSession<S, E, C> {
             clock,
             pacer: FramePacer::UNCAPPED,
             held: None,
+            paused: PauseState::new(width, height),
         }
     }
 
@@ -226,6 +235,10 @@ impl<S: FrameSource, E: VideoEncoder, C: PacingClock> MirrorSession<S, E, C> {
             }
         };
 
+        if self.paused.pause != Pause::Running {
+            return self.paused_tick(arrived);
+        }
+
         if let Some(frame) = arrived {
             // Latest wins: the older frame would only show the TV a picture that is already gone.
             if let Some(older) = self.held.replace(frame) {
@@ -291,26 +304,30 @@ impl<S: FrameSource, E: VideoEncoder, C: PacingClock> MirrorSession<S, E, C> {
 
         // The encoder only borrows its input, so the capture allocation is available again on
         // every path from here, including scale and encoder failures.
+        self.paused.last_presentation_time_us = frame.presentation_time_us;
         self.source.recycle_frame(frame);
         let encoded = encoded.map_err(SessionError::Encode)?;
 
         match encoded {
-            Some(encoded) => {
-                self.started = true;
-                // Clear only when an IDR actually came out. Some encoders accept a force request
-                // yet delay or ignore it; clearing on an ordinary access unit would strand a
-                // receiver whose reference chain is already lost.
-                if encoded.key_frame {
-                    self.force_key_frame = false;
-                }
-                self.stats.frames_encoded += 1;
-                self.stats.bytes_encoded += encoded.data.len() as u64;
-                Ok(Tick::Encoded(encoded))
-            }
+            Some(encoded) => Ok(self.count(encoded)),
             // The encoder took the frame but has not produced anything yet, which is normal for
             // the first frames of a stream.
             None => Ok(Tick::Unchanged),
         }
+    }
+
+    /// Counts an access unit that is going to the TV.
+    fn count(&mut self, encoded: EncodedFrame) -> Tick {
+        self.started = true;
+        // Clear only when an IDR actually came out. Some encoders accept a force request yet delay
+        // or ignore it; clearing on an ordinary access unit would strand a receiver whose
+        // reference chain is already lost.
+        if encoded.key_frame {
+            self.force_key_frame = false;
+        }
+        self.stats.frames_encoded += 1;
+        self.stats.bytes_encoded += encoded.data.len() as u64;
+        Tick::Encoded(encoded)
     }
 
     /// Resizes a captured frame to what the encoder accepts using the session's pooled buffer.
@@ -371,6 +388,10 @@ mod tests;
 #[cfg(test)]
 #[path = "session_pacing_tests.rs"]
 mod pacing_tests;
+
+#[cfg(test)]
+#[path = "session_pause_tests.rs"]
+mod pause_tests;
 
 #[cfg(all(test, windows))]
 /// Live diagnostics that capture and encode from the real desktop.

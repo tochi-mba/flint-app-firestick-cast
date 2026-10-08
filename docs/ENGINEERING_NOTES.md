@@ -244,3 +244,29 @@ The live numbers on the Screen page and on Diagnostics are counters: frames and 
 second over at least a second, the picture size, whether the graphics card or software encodes, and
 the TV's own dropped frames and queue. If the TV keeps dropping frames for ten seconds, the page
 suggests Data saver; it never changes the picture by itself.
+
+## Pausing a share
+
+A pause is decided between two frames, so it lives in the engine. While paused, `MirrorSession`
+keeps taking frames from capture and giving them straight back, so desktop duplication stays
+healthy and a lock screen still recovers, but nothing captured after the pause reaches the encoder.
+With "the last picture" the TV simply stops receiving frames. With "a black screen" one black frame,
+allocated when the session starts, is encoded and sent.
+
+A hardware encoder may finish a frame only after it is given the next, and a paused share gives it
+nothing, so `VideoEncoder::poll` drains what it still holds. With a black screen, what drains (the
+last frames from before the pause, then the black one) goes to the TV, so it ends on black. While
+holding the last picture it is discarded instead, and resuming forces a key frame, because the TV's
+decoder then lacks frames that later ones may refer to. Nothing captured after the pause is ever
+encoded either way.
+
+The runner applies the pause on its own worker thread, once per change, and holds its own line on
+what reaches the TV: nothing while holding, and at most `MirrorControl.BlackFrameAllowance` access
+units after a black-screen pause begins, whatever the engine returns. A display or mode change asked
+for while paused waits for resume, because a new decoder configuration would replace the held
+picture with the TV's "waiting" screen.
+
+Locking the PC pauses when "Pause when this PC locks" is on. The main window registers for
+`WM_WTSSESSION_CHANGE` and reads lock and unlock from its own message hook. Unlocking resumes a
+pause the lock made, unless "Stay paused after unlocking" is on; it never ends a pause the person
+made. A share that drops while paused is not offered back after reconnecting.

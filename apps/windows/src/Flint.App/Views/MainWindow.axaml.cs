@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Avalonia.Controls;
+using Flint.Platform.Windows;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
@@ -24,6 +25,7 @@ public partial class MainWindow : Window
         AddHandler(KeyUpEvent, OnWindowKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         // A key released while another window has focus never comes up here.
         Deactivated += (_, _) => ReleaseEnter();
+        Opened += (_, _) => WatchForLocking();
         Closed += (_, _) => (DataContext as IDisposable)?.Dispose();
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DragEnterEvent, OnDragOver);
@@ -100,6 +102,32 @@ public partial class MainWindow : Window
     /// an answer: see <see cref="OnWindowKeyDown"/>.
     /// </remarks>
     private void OnMinimiseRequested(object? sender, EventArgs args) => WindowState = WindowState.Minimized;
+
+    /// <summary>
+    /// Asks Windows to tell this window when the PC locks and unlocks, and passes that to the Screen
+    /// page, which pauses a share as the settings say.
+    /// </summary>
+    /// <remarks>Only a real Windows window can be told; a headless one has no handle.</remarks>
+    private void WatchForLocking()
+    {
+        if (TryGetPlatformHandle()?.Handle is not { } handle || handle == 0)
+        {
+            return;
+        }
+
+        // Lives exactly as long as this window, which signs it out when it closes.
+        var watcher = new SessionLockWatcher(handle);
+        watcher.Locked += (_, _) => shell?.Screen.OnPcLocked();
+        watcher.Unlocked += (_, _) => shell?.Screen.OnPcUnlocked();
+        Win32Properties.AddWndProcHookCallback(
+            this,
+            (nint window, uint message, nint wParam, nint lParam, ref bool handled) =>
+            {
+                watcher.OnMessage(message, wParam);
+                return 0;
+            });
+        Closed += (_, _) => watcher.Dispose();
+    }
 
     private void OnPromptChanged(object? sender, PropertyChangedEventArgs args)
     {

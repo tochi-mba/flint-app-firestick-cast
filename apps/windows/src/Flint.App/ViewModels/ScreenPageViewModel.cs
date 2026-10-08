@@ -19,6 +19,7 @@ public sealed partial class ScreenPageViewModel : ObservableObject, IDisposable
     private readonly ISettingsService settings;
     private readonly IDisplayCatalog catalog;
     private readonly TimeProvider time;
+    private readonly SynchronizationContext? context = SynchronizationContext.Current;
     private DisplayInfo? selected;
     private bool usualMissing;
 
@@ -107,6 +108,7 @@ public sealed partial class ScreenPageViewModel : ObservableObject, IDisposable
         settings.Changed -= OnSettingsChanged;
         countdown?.Cancel();
         countdown?.Dispose();
+        StopPauseTimer();
     }
 
     /// <summary>Chooses a display, remembers it, and moves a running share onto it.</summary>
@@ -132,6 +134,13 @@ public sealed partial class ScreenPageViewModel : ObservableObject, IDisposable
     {
         if (!Cast.ChangeMirror(ShareOptions()))
         {
+            return;
+        }
+
+        // Made now, it would replace the picture the TV is holding with its "waiting" screen.
+        if (Cast.IsMirrorPaused)
+        {
+            SwitchStatus = "This change applies when you resume.";
             return;
         }
 
@@ -180,6 +189,11 @@ public sealed partial class ScreenPageViewModel : ObservableObject, IDisposable
             {
                 IsSwitching = false;
             }
+        }
+
+        if (change.PropertyName is nameof(CastPageViewModel.IsMirroring) or nameof(CastPageViewModel.MirrorPause))
+        {
+            OnPauseChanged();
         }
 
         if (change.PropertyName is nameof(CastPageViewModel.IsMirroring)

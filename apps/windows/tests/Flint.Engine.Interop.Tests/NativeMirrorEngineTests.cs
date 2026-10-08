@@ -417,6 +417,14 @@ public sealed class NativeMirrorEngineTests
             session.CodecSpecificData.ShouldAllBe(block => block.Length > 0);
 
             session.EncoderKind.ShouldBeOneOf(MirrorEncoderKind.Hardware, MirrorEncoderKind.Software);
+
+            // Every pause the engine knows is accepted, repeated or not; anything else is refused here.
+            foreach (var pause in new[] { MirrorPause.Black, MirrorPause.Black, MirrorPause.HoldingLastPicture, MirrorPause.Running })
+            {
+                Should.NotThrow(() => session.SetPause(pause));
+            }
+
+            Should.Throw<ArgumentOutOfRangeException>(() => session.SetPause((MirrorPause)7));
             session.ReadStats().FramesHeldBack.ShouldBe(0, "nothing has been captured yet");
         }
     }
@@ -456,6 +464,7 @@ public sealed class NativeMirrorEngineTests
         Should.Throw<ObjectDisposedException>(() => session.Next(new byte[1024]));
         Should.Throw<ObjectDisposedException>(session.RequestKeyFrame);
         Should.Throw<ObjectDisposedException>(() => session.ReadStats());
+        Should.Throw<ObjectDisposedException>(() => session.SetPause(MirrorPause.Black));
     }
 
     [Fact]

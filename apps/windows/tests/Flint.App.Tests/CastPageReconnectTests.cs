@@ -55,9 +55,8 @@ public sealed partial class CastPageReconnectTests : IDisposable
         await Until(() => cast.IsReconnecting);
         cast.ReconnectBanner.ShouldBe("Reconnecting to Living Room. Trying again in 1 s.");
         cast.CancelReconnectCommand.CanExecute(null).ShouldBeTrue();
-        clock.Advance(TimeSpan.FromSeconds(1));
 
-        await cast.ReconnectTask.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await RunFirstAttemptAsync(cast);
         cast.IsSessionConnected.ShouldBeTrue();
         tv.LoginsAccepted.ShouldBe(1);
         cast.PairingStatus.ShouldBe("Connected to Living Room again.");
@@ -139,8 +138,7 @@ public sealed partial class CastPageReconnectTests : IDisposable
 
         var sharing = cast.AcceptReconnectOfferCommand.ExecuteAsync(null);
         await Until(() => cast.ReconnectBanner == "Sharing your screen again in 3...");
-        clock.Advance(TimeSpan.FromSeconds(1));
-        await Until(() => cast.ReconnectBanner == "Sharing your screen again in 2...");
+        await AdvanceUntilAsync(() => cast.ReconnectBanner == "Sharing your screen again in 2...");
         cast.CancelReconnectCommand.Execute(null);
         await sharing.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
@@ -157,13 +155,8 @@ public sealed partial class CastPageReconnectTests : IDisposable
         cast.NoteWhatWasOnTheTv(wasMirroring: true, wasPlaying: false);
 
         var offering = cast.OfferWhatWasOnTheTvAsync();
-        for (var second = 0; second < 3; second++)
-        {
-            await Until(() => cast.ReconnectBanner?.StartsWith("Sharing your screen again", StringComparison.Ordinal) == true);
-            clock.Advance(TimeSpan.FromSeconds(1));
-        }
-
-        await Until(() => cast.IsMirroring);
+        await Until(() => cast.ReconnectBanner == "Sharing your screen again in 3...");
+        await AdvanceUntilAsync(() => cast.IsMirroring);
         cast.HasReconnectBanner.ShouldBeFalse();
         await cast.StopMirrorAsync(TestContext.Current.CancellationToken);
         await offering.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
@@ -179,8 +172,7 @@ public sealed partial class CastPageReconnectTests : IDisposable
 
         await tv.CloseAsync();
         await Until(() => cast.IsReconnecting);
-        clock.Advance(TimeSpan.FromSeconds(1));
-        await cast.ReconnectTask.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await RunFirstAttemptAsync(cast);
 
         tv.LoginsRefused.ShouldBe(1);
         cast.IsSessionConnected.ShouldBeFalse();
@@ -203,8 +195,7 @@ public sealed partial class CastPageReconnectTests : IDisposable
 
         await tv.CloseAsync();
         await Until(() => cast.IsReconnecting);
-        clock.Advance(TimeSpan.FromSeconds(1));
-        await cast.ReconnectTask.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await RunFirstAttemptAsync(cast);
 
         cast.PairingStatus.ShouldBe(status);
         launcher.Launches.ShouldBe(openSetting ? 1 : 0);
@@ -376,12 +367,35 @@ public sealed partial class CastPageReconnectTests : IDisposable
         await Until(() => cast.NowPlaying.PositionMs >= 754_000);
     }
 
+    /// <summary>Moves the clock on until the attempt under way has finished.</summary>
+    /// <remarks>
+    /// The page says it is reconnecting a moment before it sets its first timer. Moving the clock
+    /// once, in that moment, would leave the timer waiting for a time that has already passed, so
+    /// the clock is nudged on a quarter of a second at a time until the attempt is over.
+    /// </remarks>
+    private async Task RunFirstAttemptAsync(CastPageViewModel cast)
+    {
+        await AdvanceUntilAsync(() => cast.ReconnectTask.IsCompleted);
+        await cast.ReconnectTask.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>Moves the clock on a quarter of a second at a time until <paramref name="done"/> holds.</summary>
+    private async Task AdvanceUntilAsync(Func<bool> done)
+    {
+        for (var step = 0; step < 200 && !done(); step++)
+        {
+            clock.Advance(TimeSpan.FromMilliseconds(250));
+            await Task.Delay(20, TestContext.Current.CancellationToken);
+        }
+
+        done().ShouldBeTrue("the clock moved on fifty seconds and it still had not happened");
+    }
+
     private async Task DropAndReconnectAsync(CastPageViewModel cast, LoopbackReceiver tv)
     {
         await tv.CloseAsync();
         await Until(() => cast.IsReconnecting);
-        clock.Advance(TimeSpan.FromSeconds(1));
-        await cast.ReconnectTask.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await RunFirstAttemptAsync(cast);
         cast.IsSessionConnected.ShouldBeTrue();
     }
 
@@ -419,6 +433,10 @@ public sealed partial class CastPageReconnectTests : IDisposable
             public MirrorTick Next(Span<byte> buffer) => MirrorTick.Nothing;
 
             public void RequestKeyFrame()
+            {
+            }
+
+            public void SetPause(MirrorPause pause)
             {
             }
 

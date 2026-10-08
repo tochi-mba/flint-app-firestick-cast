@@ -105,6 +105,10 @@ internal sealed class MovingMirrorEngine : IMirrorEngine
         {
         }
 
+        public void SetPause(MirrorPause pause)
+        {
+        }
+
         public MirrorSessionStats ReadStats() => new(frames, 0, 0, frames * 16);
 
         public void Dispose()
@@ -143,6 +147,10 @@ internal sealed class RecordingMirrorEngine : IMirrorEngine
         public MirrorTick Next(Span<byte> buffer) => MirrorTick.Nothing;
 
         public void RequestKeyFrame()
+        {
+        }
+
+        public void SetPause(MirrorPause pause)
         {
         }
 

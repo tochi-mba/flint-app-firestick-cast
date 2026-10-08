@@ -727,6 +727,29 @@ impl VideoEncoder for HardwareH264Encoder {
         // Whatever the pump gathered, oldest first, so nothing the encoder produced is dropped.
         Ok(self.ready.pop_front())
     }
+
+    fn poll(&mut self) -> Result<Option<EncodedFrame>, EncodeError> {
+        // The same pump as `submit`, without a frame to deliver: requests for input are banked for
+        // the next frame, and finished output is collected.
+        for _ in 0..Self::MAX_EVENTS_PER_TICK {
+            match self.hardware.poll_event()? {
+                Some(TransformEvent::NeedInput) => {
+                    self.release_oldest_in_flight();
+                    self.input_requests += 1;
+                }
+                Some(TransformEvent::HaveOutput) => {
+                    if let Some(encoded) = self.collect_output()? {
+                        self.capture_parameter_sets(&encoded);
+                        self.ready.push_back(encoded);
+                    }
+                }
+                None => break,
+                Some(_) => {}
+            }
+        }
+
+        Ok(self.ready.pop_front())
+    }
 }
 
 impl Drop for HardwareH264Encoder {
