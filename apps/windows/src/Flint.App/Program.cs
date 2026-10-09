@@ -32,10 +32,14 @@ internal static class Program
         using var instance = FlintSingleInstance.TryAcquire();
         if (instance is null)
         {
+            // Flint is already running, perhaps hidden in the tray: bring its window forward rather
+            // than appearing to do nothing.
+            FlintSingleInstance.AskRunningCopyToShow();
             return;
         }
 
         DevFileLog.Start();
+        FlintApplication.Instance = instance;
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

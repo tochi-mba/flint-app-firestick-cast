@@ -33,6 +33,18 @@ public sealed class PageSnapshotTests
     }
 
     [AvaloniaFact]
+    public void MainWindow_FirstClose()
+    {
+        // The question the first close asks, over the page it was asked from.
+        var shell = SnapshotFixtures.Shell();
+        shell.UseWindow(new RecordingWindow());
+        _ = shell.CloseWindowAsync();
+        var window = new MainWindow { DataContext = shell };
+
+        Snapshot.MatchesWindow("main-window-first-close", window);
+    }
+
+    [AvaloniaFact]
     public void CastPage_BeforeProbing()
     {
         var page = new CastPage { DataContext = SnapshotFixtures.ViewModel() };

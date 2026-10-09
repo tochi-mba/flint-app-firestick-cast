@@ -68,6 +68,29 @@ public sealed class InstallLifecycleTests
         steps.ShouldBe(["stop"]);
     }
 
+    [Theory]
+    [InlineData(@"""C:\Users\someone\AppData\Local\Flint\Flint.exe"" --minimized", false)]
+    [InlineData(@"""D:\Portable\Flint\Flint.exe""", true)]
+    [InlineData(@"""C:\Users\someone\AppData\Local\FlintOther\Flint.exe""", true)]
+    public void BeforeUninstall_RemovesTheSignInEntry_OnlyWhenItStartsThisInstall(string command, bool kept)
+    {
+        var runKey = new InMemoryRunKey();
+        runKey.Write(RunAtSignIn.EntryName, command);
+
+        Lifecycle(new FakePathStore(@"C:\Tools"), [], runKey).BeforeUninstall();
+
+        (runKey.Read(RunAtSignIn.EntryName) is not null).ShouldBe(kept);
+    }
+
+    [Fact]
+    public void BeforeUninstall_WithNoSignInEntry_LeavesTheListAlone()
+    {
+        var runKey = new InMemoryRunKey();
+        Lifecycle(new FakePathStore(Folder), [], runKey).BeforeUninstall();
+
+        runKey.Read(RunAtSignIn.EntryName).ShouldBeNull();
+    }
+
     [Fact]
     public void ForThisInstall_IsTheRunningBuildsFolder()
     {
@@ -79,14 +102,15 @@ public sealed class InstallLifecycleTests
     public void EveryDependencyIsRequired()
     {
         var store = new FakePathStore(string.Empty);
-        Should.Throw<ArgumentNullException>(() => new InstallLifecycle(null!, Folder, () => { }, () => { }));
-        Should.Throw<ArgumentException>(() => new InstallLifecycle(store, " ", () => { }, () => { }));
-        Should.Throw<ArgumentNullException>(() => new InstallLifecycle(store, Folder, null!, () => { }));
-        Should.Throw<ArgumentNullException>(() => new InstallLifecycle(store, Folder, () => { }, null!));
+        Should.Throw<ArgumentNullException>(() => new InstallLifecycle(null!, Folder, () => { }, () => { }, new InMemoryRunKey()));
+        Should.Throw<ArgumentException>(() => new InstallLifecycle(store, " ", () => { }, () => { }, new InMemoryRunKey()));
+        Should.Throw<ArgumentNullException>(() => new InstallLifecycle(store, Folder, null!, () => { }, new InMemoryRunKey()));
+        Should.Throw<ArgumentNullException>(() => new InstallLifecycle(store, Folder, () => { }, null!, new InMemoryRunKey()));
+        Should.Throw<ArgumentNullException>(() => new InstallLifecycle(store, Folder, () => { }, () => { }, null!));
     }
 
-    private static InstallLifecycle Lifecycle(FakePathStore store, List<string> steps) =>
-        new(store, Folder, () => steps.Add("stop"), () => steps.Add("announce"));
+    private static InstallLifecycle Lifecycle(FakePathStore store, List<string> steps, IRunKey? runKey = null) =>
+        new(store, Folder, () => steps.Add("stop"), () => steps.Add("announce"), runKey ?? new InMemoryRunKey());
 
     private sealed class FakePathStore(string value) : IUserPathStore
     {

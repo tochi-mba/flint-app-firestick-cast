@@ -23,7 +23,7 @@ public sealed class SettingsPageTests
         try
         {
             var controls = page.GetVisualDescendants().OfType<Control>().ToList();
-            controls.OfType<ToggleSwitch>().Count().ShouldBe(5);
+            controls.OfType<ToggleSwitch>().Count().ShouldBe(8);
             // Only what can be seen and reached. A non-editable ComboBox carries a hidden text box in
             // its template that nobody can focus, and naming it would mean nothing to a screen reader.
             foreach (var control in controls.Where(control => control.IsEffectivelyVisible
