@@ -149,7 +149,7 @@ public sealed class SettingsControlsTests
         window.UpdateLayout();
         var visited = new List<string>();
 
-        for (var press = 0; press < 13; press++)
+        for (var press = 0; press < 17; press++)
         {
             Press(window, PhysicalKey.Tab);
             if (window.FocusManager!.GetFocusedElement() is Control focused)
@@ -159,7 +159,7 @@ public sealed class SettingsControlsTests
         }
 
         // The search, then the section list, then the open section top to bottom, then round again.
-        visited.Take(11).ShouldBe(
+        visited.Take(15).ShouldBe(
         [
             "TextBox Search settings",
             "ListBoxItem General",
@@ -171,6 +171,10 @@ public sealed class SettingsControlsTests
             "ComboBox How long to keep trying",
             "ComboBox After reconnecting",
             "ToggleSwitch Open Flint on the TV when a new code is needed",
+            "ToggleSwitch Show Flint in the notification area",
+            "ToggleSwitch Open Flint with one click on its icon",
+            "ComboBox When I close the window",
+            "ToggleSwitch Ask before quitting while something is on the TV",
             "Button RESET GENERAL SETTINGS",
         ]);
         window.Close();

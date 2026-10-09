@@ -67,6 +67,71 @@
                     IsChecked="{Binding OpenReceiverForNewCode, Mode=TwoWay}"
                     AutomationProperties.Name="Open Flint on the TV when a new code is needed" />
     </controls:SettingRow>
+    <controls:SettingRow Title="{Binding ShowTrayIconText.Title}"
+                         Description="{Binding ShowTrayIconText.Description}">
+      <ToggleSwitch x:Name="ShowTrayIcon"
+                    Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding ShowTrayIcon, Mode=TwoWay}"
+                    AutomationProperties.Name="Show Flint in the notification area" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding SingleClickText.Title}"
+                         Description="{Binding SingleClickText.Description}">
+      <ToggleSwitch x:Name="SingleClickOpens"
+                    Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding SingleClickOpens, Mode=TwoWay}"
+                    IsEnabled="{Binding ShowTrayIcon}"
+                    AutomationProperties.Name="Open Flint with one click on its icon" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding CloseWindowText.Title}"
+                         Description="{Binding CloseWindowText.Description}">
+      <StackPanel Spacing="4">
+        <ComboBox x:Name="CloseWindow"
+                  Theme="{StaticResource FlintComboBox}"
+                  ItemsSource="{Binding CloseWindowChoices}"
+                  SelectedItem="{Binding CloseWindow, Mode=TwoWay}"
+                  IsEnabled="{Binding ShowTrayIcon}"
+                  AutomationProperties.Name="When I close the window" />
+        <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                   TextWrapping="Wrap" MaxWidth="260"
+                   Text="{Binding CloseWindowLocked}"
+                   IsVisible="{Binding CloseWindowLocked, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding ConfirmQuitText.Title}"
+                         Description="{Binding ConfirmQuitText.Description}">
+      <ToggleSwitch x:Name="ConfirmQuit"
+                    Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding ConfirmQuit, Mode=TwoWay}"
+                    AutomationProperties.Name="Ask before quitting while something is on the TV" />
+    </controls:SettingRow>
+    <StackPanel IsVisible="{Binding CanStartWithWindows}">
+      <controls:SettingRow Title="{Binding StartWithWindowsText.Title}"
+                           Description="{Binding StartWithWindowsText.Description}">
+        <ToggleSwitch x:Name="StartWithWindows"
+                      Theme="{StaticResource FlintToggleSwitch}"
+                      IsChecked="{Binding StartWithWindows, Mode=TwoWay}"
+                      AutomationProperties.Name="Start Flint when I sign in to Windows" />
+      </controls:SettingRow>
+      <TextBlock x:Name="StartsFile" Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                 TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="{Binding StartsFile}" />
+      <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,0,0,8"
+                  IsVisible="{Binding StaleStart, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+        <TextBlock Theme="{StaticResource BodySmall}" VerticalAlignment="Center" TextWrapping="Wrap"
+                   Text="{Binding StaleStart}" />
+        <Button x:Name="StartThisCopy" Theme="{StaticResource OutlineAction}" Content="START THIS COPY"
+                Command="{Binding StartThisCopyCommand}"
+                AutomationProperties.Name="Start this copy of Flint when I sign in" />
+      </StackPanel>
+      <controls:SettingRow Title="{Binding StartInTrayText.Title}"
+                           Description="{Binding StartInTrayText.Description}">
+        <ToggleSwitch x:Name="StartInTray"
+                      Theme="{StaticResource FlintToggleSwitch}"
+                      IsChecked="{Binding StartInTray, Mode=TwoWay}"
+                      IsEnabled="{Binding ShowTrayIcon}"
+                      AutomationProperties.Name="Start in the tray" />
+      </controls:SettingRow>
+    </StackPanel>
     <views:ConfirmableActionView DataContext="{Binding Reset}" Margin="0,18,0,0" />
   </StackPanel>
 </UserControl>

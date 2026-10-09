@@ -26,6 +26,7 @@ public partial class MainWindow : Window
         // A key released while another window has focus never comes up here.
         Deactivated += (_, _) => ReleaseEnter();
         Opened += (_, _) => WatchForLocking();
+        Closing += OnClosing;
         Closed += (_, _) => (DataContext as IDisposable)?.Dispose();
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DragEnterEvent, OnDragOver);
@@ -104,6 +105,29 @@ public partial class MainWindow : Window
     private void OnMinimiseRequested(object? sender, EventArgs args) => WindowState = WindowState.Minimized;
 
     /// <summary>
+    /// Turns the person's own close into the shell's decision: hide to the tray, ask, or quit.
+    /// Windows shutting down, and Flint quitting, go straight through.
+    /// </summary>
+    private void OnClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (shell is { HasWindowControl: true, IsQuitting: false } && e.CloseReason is WindowCloseReason.WindowClosing)
+        {
+            e.Cancel = true;
+            _ = shell.CloseWindowAsync();
+        }
+    }
+
+    /// <summary>Escape puts the closing question away without choosing.</summary>
+    private void OnCloseOverlayKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.Escape && shell is not null)
+        {
+            shell.CloseQuestion.CancelCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
     /// Asks Windows to tell this window when the PC locks and unlocks, and passes that to the Screen
     /// page, which pauses a share as the settings say.
     /// </summary>
@@ -152,6 +176,12 @@ public partial class MainWindow : Window
     /// </remarks>
     private void OnWindowKeyDown(object? sender, KeyEventArgs args)
     {
+        if (!args.Handled && shell?.OnWindowKey(args.Key, args.KeyModifiers) == true)
+        {
+            args.Handled = true;
+            return;
+        }
+
         if (args.Key != Key.Enter)
         {
             return;

@@ -14,7 +14,7 @@ public sealed partial class GeneralSettingsViewModel : SettingsSectionViewModel
         this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
         settings.Changed += (_, change) =>
         {
-            if (change.Previous.General != change.Current.General)
+            if (change.Previous.General != change.Current.General || change.Previous.Tray != change.Current.Tray)
             {
                 OnPropertyChanged(string.Empty);
             }
@@ -43,7 +43,11 @@ public sealed partial class GeneralSettingsViewModel : SettingsSectionViewModel
 
     /// <inheritdoc />
     public override IReadOnlyList<SettingText> Settings =>
-        [AskBeforeSwitchingText, KeepAwakeText, InterfaceSizeText, ReconnectOnStartText, ReconnectAfterDropText, ReconnectTimeText, AfterReconnectText, OpenReceiverText];
+    [
+        AskBeforeSwitchingText, KeepAwakeText, InterfaceSizeText, ReconnectOnStartText, ReconnectAfterDropText,
+        ReconnectTimeText, AfterReconnectText, OpenReceiverText, ShowTrayIconText, SingleClickText, CloseWindowText,
+        ConfirmQuitText, StartWithWindowsText, StartInTrayText,
+    ];
 
     /// <summary>Whether Flint asks before switching what the TV shows.</summary>
     public bool AskBeforeSwitching

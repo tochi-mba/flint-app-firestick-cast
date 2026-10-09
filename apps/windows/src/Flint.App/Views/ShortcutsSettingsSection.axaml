@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Flint.App.Controls"
+             xmlns:settings="using:Flint.App.ViewModels.Settings"
+             xmlns:views="using:Flint.App.Views"
+             x:Class="Flint.App.Views.ShortcutsSettingsSection"
+             x:DataType="settings:ShortcutsSettingsViewModel">
+  <UserControl.Styles>
+    <Style Selector="Border.capturing">
+      <Setter Property="BorderBrush" Value="{StaticResource SignalBrush}" />
+    </Style>
+  </UserControl.Styles>
+  <StackPanel Spacing="0">
+    <TextBlock Theme="{StaticResource HeadlineLarge}" Text="Shortcuts" Margin="0,0,0,10" />
+    <ItemsControl x:Name="ShortcutRows" ItemsSource="{Binding Rows}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="settings:ShortcutRowViewModel">
+          <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="0,12">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+              <StackPanel Spacing="4" VerticalAlignment="Center" Margin="0,0,16,0">
+                <TextBlock Theme="{StaticResource TitleMedium}" Text="{Binding Text.Title}" />
+                <TextBlock Theme="{StaticResource BodySmall}" TextWrapping="Wrap"
+                           Text="{Binding Problem}"
+                           IsVisible="{Binding Problem, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Border x:Name="CaptureBox" MinWidth="170" Padding="12,8" VerticalAlignment="Center"
+                        CornerRadius="{StaticResource RadiusSmall}"
+                        BorderThickness="1"
+                        BorderBrush="{StaticResource LineBrush}"
+                        Classes.capturing="{Binding IsCapturing}"
+                        AutomationProperties.Name="{Binding Text.Title}"
+                        AutomationProperties.HelpText="{Binding Shortcut}">
+                  <TextBlock Theme="{StaticResource BodyMedium}" Text="{Binding Shortcut}" />
+                </Border>
+                <Button Theme="{StaticResource OutlineAction}" Content="CHANGE"
+                        Command="{Binding ChangeCommand}"
+                        AutomationProperties.Name="{Binding Text.Title, StringFormat='Change the shortcut to {0}'}" />
+                <Button Theme="{StaticResource OutlineAction}" Content="CLEAR"
+                        Command="{Binding ClearCommand}"
+                        AutomationProperties.Name="{Binding Text.Title, StringFormat='Clear the shortcut to {0}'}" />
+              </StackPanel>
+              <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Spacing="8" Margin="0,8,0,0"
+                          IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Theme="{StaticResource BodySmall}" Foreground="{StaticResource MutedBrush}"
+                           TextWrapping="Wrap"
+                           Text="{Binding Status}"
+                           AutomationProperties.LiveSetting="Polite" />
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsAskingToMove}">
+                  <Button Theme="{StaticResource SignalButton}" Content="MOVE IT"
+                          Command="{Binding MoveCommand}"
+                          AutomationProperties.Name="Move the shortcut here" />
+                  <Button Theme="{StaticResource OutlineAction}" Content="KEEP IT"
+                          Command="{Binding KeepItCommand}"
+                          AutomationProperties.Name="Keep the shortcut where it is" />
+                </StackPanel>
+              </StackPanel>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <controls:SettingRow Title="{Binding WorkInBackgroundText.Title}"
+                         Description="{Binding WorkInBackgroundText.Description}">
+      <ToggleSwitch x:Name="WorkInBackground"
+                    Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding WorkInBackground, Mode=TwoWay}"
+                    AutomationProperties.Name="Shortcuts work in other programs" />
+    </controls:SettingRow>
+    <controls:SettingRow Title="{Binding MediaKeysText.Title}"
+                         Description="{Binding MediaKeysText.Description}">
+      <ToggleSwitch x:Name="UseMediaKeys"
+                    Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding UseMediaKeys, Mode=TwoWay}"
+                    AutomationProperties.Name="Use the keyboard's media keys for the TV" />
+    </controls:SettingRow>
+    <views:ConfirmableActionView DataContext="{Binding Reset}" Margin="0,18,0,0" />
+  </StackPanel>
+</UserControl>

@@ -160,5 +160,17 @@ public sealed class WhatsNewViewModel : WalkthroughViewModel
                     "Pausing the share pauses the sound with it.",
                     "If lips and voices do not line up, add a sound delay in Settings, Screen sharing.",
                 ])),
+        new(
+            "2026-10-tray-and-shortcuts",
+            new OnboardingStep(
+                "New in Flint",
+                "Flint waits in the tray, and answers to shortcuts",
+                "Close the window and Flint keeps sharing and playing from the notification area, with a "
+                    + "menu to share, pause and quit.",
+                [
+                    "Shortcuts such as Ctrl+Alt+Shift+S start and stop sharing from any program. Change them in Settings, Shortcuts.",
+                    "Flint can start when you sign in to Windows, in the tray if you like. See Settings, General.",
+                    "Opening Flint again brings its window forward.",
+                ])),
     ];
 }

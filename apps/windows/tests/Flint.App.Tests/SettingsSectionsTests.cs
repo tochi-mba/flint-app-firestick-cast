@@ -65,6 +65,8 @@ public sealed class SettingsSectionsTests
         [
             general.AskBeforeSwitchingText, general.KeepAwakeText, general.InterfaceSizeText, general.ReconnectOnStartText,
             general.ReconnectAfterDropText, general.ReconnectTimeText, general.AfterReconnectText, general.OpenReceiverText,
+            general.ShowTrayIconText, general.SingleClickText, general.CloseWindowText, general.ConfirmQuitText,
+            general.StartWithWindowsText, general.StartInTrayText,
         ]);
         general.Title.ShouldBe("General");
         Should.Throw<ArgumentNullException>(() => new GeneralSettingsViewModel(null!));
