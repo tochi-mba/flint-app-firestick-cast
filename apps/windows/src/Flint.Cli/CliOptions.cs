@@ -1,4 +1,6 @@
+using System.Globalization;
 using Flint.Core;
+using Flint.Core.Settings;
 
 namespace Flint.Cli;
 
@@ -34,11 +36,11 @@ internal sealed record CliOptions(
     string? PairingCode,
     string? MediaPath,
     int ReceiverPort,
-    bool Mirror = false,
-    uint MirrorMaxWidth = 1920,
+    MirrorChoices? Mirror = null,
     string? BrowseUrl = null,
     int? BrowserPort = null,
-    CliVerb Verb = CliVerb.None)
+    CliVerb Verb = CliVerb.None,
+    bool ListDisplays = false)
 {
     internal static bool TryParse(
         IReadOnlyList<string> arguments,
@@ -75,7 +77,15 @@ internal sealed record CliOptions(
         var receiverPort = 47855;
         var receiverPortWasExplicit = false;
         var mirror = false;
-        var mirrorMaxWidth = 1920u;
+        uint? mirrorMaxWidth = null;
+        int? display = null;
+        PictureMode? mode = null;
+        int? frameRate = null;
+        int? megabits = null;
+        var sound = true;
+        var pointer = true;
+        string? shareOnly = null;
+        var listDisplays = false;
         string? browseUrl = null;
         int? browserPort = null;
 
@@ -173,12 +183,87 @@ internal sealed record CliOptions(
             else if (argument.Equals("--mirror-width", StringComparison.OrdinalIgnoreCase))
             {
                 if (!TryReadValue(rest, ref index, out var widthText)
-                    || !uint.TryParse(widthText, out mirrorMaxWidth)
-                    || mirrorMaxWidth is < 320 or > 7680)
+                    || !uint.TryParse(widthText, out var width)
+                    || width is < 320 or > 7680)
                 {
                     error = "--mirror-width must be between 320 and 7680.";
                     return false;
                 }
+
+                mirrorMaxWidth = width;
+                shareOnly ??= "--mirror-width";
+            }
+            else if (argument.Equals("--display", StringComparison.OrdinalIgnoreCase))
+            {
+                if (display is not null
+                    || !TryReadValue(rest, ref index, out var displayText)
+                    || !int.TryParse(displayText, out var number)
+                    || number < 1)
+                {
+                    error = "--display must be followed by one display number, as --list-displays shows them.";
+                    return false;
+                }
+
+                display = number;
+                shareOnly ??= "--display";
+            }
+            else if (argument.Equals("--mode", StringComparison.OrdinalIgnoreCase))
+            {
+                if (mode is not null
+                    || !TryReadValue(rest, ref index, out var modeText)
+                    || MirrorChoices.FindMode(modeText) is not { } named)
+                {
+                    error = $"--mode must be followed by one of {OneOf(MirrorChoices.ModeNames.Select(known => known.Name))}.";
+                    return false;
+                }
+
+                mode = named;
+                shareOnly ??= "--mode";
+            }
+            else if (argument.Equals("--fps", StringComparison.OrdinalIgnoreCase))
+            {
+                // Only the frame rates the app offers, so a run here is one the app could have made.
+                if (frameRate is not null
+                    || !TryReadValue(rest, ref index, out var frameRateText)
+                    || !int.TryParse(frameRateText, out var rate)
+                    || !ScreenSettings.FrameRates.Contains(rate))
+                {
+                    var rates = ScreenSettings.FrameRates.Select(known => known.ToString(CultureInfo.InvariantCulture));
+                    error = $"--fps must be followed by {OneOf(rates)}.";
+                    return false;
+                }
+
+                frameRate = rate;
+                shareOnly ??= "--fps";
+            }
+            else if (argument.Equals("--bitrate", StringComparison.OrdinalIgnoreCase))
+            {
+                if (megabits is not null
+                    || !TryReadValue(rest, ref index, out var bitrateText)
+                    || !int.TryParse(bitrateText, out var parsedMegabits)
+                    || parsedMegabits is < ScreenSettings.MinimumMegabitsPerSecond or > ScreenSettings.MaximumMegabitsPerSecond)
+                {
+                    error = "--bitrate must be followed by megabits a second, from "
+                        + $"{ScreenSettings.MinimumMegabitsPerSecond} to {ScreenSettings.MaximumMegabitsPerSecond}.";
+                    return false;
+                }
+
+                megabits = parsedMegabits;
+                shareOnly ??= "--bitrate";
+            }
+            else if (argument.Equals("--no-sound", StringComparison.OrdinalIgnoreCase))
+            {
+                sound = false;
+                shareOnly ??= "--no-sound";
+            }
+            else if (argument.Equals("--no-pointer", StringComparison.OrdinalIgnoreCase))
+            {
+                pointer = false;
+                shareOnly ??= "--no-pointer";
+            }
+            else if (argument.Equals("--list-displays", StringComparison.OrdinalIgnoreCase))
+            {
+                listDisplays = true;
             }
             else
             {
@@ -210,6 +295,21 @@ internal sealed record CliOptions(
 
             options = new CliOptions(
                 false, false, false, json, null, null, null, receiverPort, Verb: verb);
+            return true;
+        }
+
+        // Listing displays answers a question about this PC alone. Anything else on the line would be
+        // ignored, and an ignored option is a typo nobody hears about.
+        if (listDisplays)
+        {
+            if (arguments.Count != 1)
+            {
+                error = "--list-displays takes no other options.";
+                return false;
+            }
+
+            options = new CliOptions(
+                false, false, false, false, null, null, null, receiverPort, ListDisplays: true);
             return true;
         }
 
@@ -299,6 +399,13 @@ internal sealed record CliOptions(
             return false;
         }
 
+        // Each of these shapes a share, and given without one it would be quietly ignored.
+        if (shareOnly is not null && !mirror)
+        {
+            error = $"{shareOnly} only applies with --mirror.";
+            return false;
+        }
+
         // A file and a live screen are two different things to put on one surface, and doing both
         // would leave whichever finished second showing over the other.
         if (mirror && mediaPath is not null)
@@ -316,8 +423,7 @@ internal sealed record CliOptions(
             pairingCode,
             mediaPath,
             receiverPort,
-            mirror,
-            mirrorMaxWidth,
+            mirror ? new MirrorChoices(display, mode ?? PictureMode.Balanced, frameRate, megabits, mirrorMaxWidth, sound, pointer) : null,
             browseUrl,
             browserPort,
             verb);
@@ -365,6 +471,13 @@ internal sealed record CliOptions(
                 error = $"Unknown command '{arguments[0]}'. Try version, doctor, update, completion or perf.";
                 return false;
         }
+    }
+
+    /// <summary>Joins choices as a sentence names them: "a, b or c".</summary>
+    private static string OneOf(IEnumerable<string> choices)
+    {
+        var all = choices.ToList();
+        return string.Join(", ", all.Take(all.Count - 1)) + " or " + all[^1];
     }
 
     private static bool TryReadValue(

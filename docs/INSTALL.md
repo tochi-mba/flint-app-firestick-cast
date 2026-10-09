@@ -121,7 +121,9 @@ extra desktop rather than a copy of this one - is the one mode that is not built
 |---|---|
 | Capability reporting | Working |
 | Screen mirroring | Working after pairing |
+| This PC's sound, with a shared screen | Working after pairing; lip-sync not yet measured |
 | Local media handoff | Working after pairing |
+| The TV browser | Working after pairing |
 | Second screen | Coming soon |
 
 Second screen needs an indirect display driver, which Windows will only install once it carries a
@@ -130,6 +132,33 @@ certificate authority to work around that, so the mode is shown as coming soon a
 stays disabled until a properly signed driver ships. Everything else works without a driver.
 
 See the [latency budget](LATENCY_BUDGET.md) for what has and has not been measured.
+
+## Keeping Flint running
+
+Flint can keep sharing your screen, or playing a file on the TV, with its window closed. It shows an
+icon in the notification area, by the clock, that says what it is doing; its menu can share, pause,
+resume, disconnect, open Settings and quit. The first time you close the window, Flint asks whether
+to keep running there or to quit, and remembers the answer. **Settings → General** changes it, and
+also whether Flint asks before quitting while something is on the TV.
+
+Shortcuts work from anywhere in Windows, even with Flint hidden: **Ctrl+Alt+Shift+S** starts or
+stops sharing, **P** pauses, **Space** plays or pauses the TV, **Up** and **Down** change the TV's
+volume, **Left** and **Right** move through a queue, and **F** brings Flint forward. **Settings →
+Shortcuts** changes any of them, turns them off while another program is in front, and can hand the
+keyboard's media keys to the TV.
+
+**Settings → General → Start Flint when I sign in to Windows** adds Flint to your own sign-in list
+(the per-user Run key, so no administrator prompt), optionally starting in the tray. An installed
+copy is started through its launcher, which survives updates; a portable copy names its own file,
+and Settings says when that file has moved. Uninstalling removes the entry.
+
+## Where Flint keeps its settings
+
+Everything Flint remembers is in `%LOCALAPPDATA%\REX Technologies\Flint`: settings in
+`settings.json`, the TVs it knows in `known-tvs.json` (each login readable only by your Windows
+account), what it learned about your sound outputs in `sound-outputs.json`, and recent files and
+addresses beside them. The session log is in `%LOCALAPPDATA%\Flint\logs`. **Settings → Privacy**
+opens both folders, exports and imports your settings, and clears the playback history.
 
 ## Flint Mobile (phone as host)
 

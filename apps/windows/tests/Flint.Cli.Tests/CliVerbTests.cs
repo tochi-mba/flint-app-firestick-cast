@@ -88,7 +88,7 @@ public sealed class CliVerbTests
         error.ShouldBeNull();
         options.ShouldNotBeNull();
         options.Verb.ShouldBe(CliVerb.None);
-        options.Mirror.ShouldBeTrue();
+        options.Mirror.ShouldNotBeNull();
     }
 
     [Fact]
