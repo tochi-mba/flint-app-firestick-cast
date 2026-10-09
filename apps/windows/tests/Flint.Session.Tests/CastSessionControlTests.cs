@@ -27,6 +27,56 @@ public sealed class CastSessionControlTests
     }
 
     [Fact]
+    public async Task AStopFromTheTvsRemote_IsReported_AndNoOtherControlIs()
+    {
+        await using var tv = await FakeTv.StartAsync();
+        await using var session = await tv.PairAsync();
+        var stops = 0;
+        var stats = 0;
+        session.ShareStoppedOnTv += () => Interlocked.Increment(ref stops);
+        session.StatsReceived += _ => Interlocked.Increment(ref stats);
+
+        // Read in order, so once the counters after them arrive, these have been read too.
+        await tv.SendAsync(new ControlMessage(1, new TransportControl(TransportAction.Pause)));
+        await tv.SendAsync(new ControlMessage(2, new VolumeControl(0.5f)));
+        await tv.SendAsync(new StatsMessage(0, 0, 0, 1));
+        await UntilAsync(() => Volatile.Read(ref stats) == 1);
+        Volatile.Read(ref stops).ShouldBe(0, "only a Stop ends a share");
+
+        await tv.SendAsync(new ControlMessage(3, new TransportControl(TransportAction.Stop)));
+        await tv.SendAsync(new StatsMessage(0, 0, 0, 2));
+        await UntilAsync(() => Volatile.Read(ref stats) == 2);
+
+        Volatile.Read(ref stops).ShouldBe(1);
+        session.IsConnected.ShouldBeTrue("the TV keeps the connection; only the share ends");
+    }
+
+    [Fact]
+    public async Task AStopWithNobodyListening_IsHarmless()
+    {
+        await using var tv = await FakeTv.StartAsync();
+        await using var session = await tv.PairAsync();
+        var stats = 0;
+        session.StatsReceived += _ => Interlocked.Increment(ref stats);
+
+        await tv.SendAsync(new ControlMessage(1, new TransportControl(TransportAction.Stop)));
+        await tv.SendAsync(new StatsMessage(0, 0, 0, 1));
+        await UntilAsync(() => Volatile.Read(ref stats) == 1);
+
+        session.IsConnected.ShouldBeTrue();
+    }
+
+    private static async Task UntilAsync(Func<bool> condition)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (!condition())
+        {
+            DateTime.UtcNow.ShouldBeLessThan(deadline, "the TV's messages never arrived");
+            await Task.Delay(10, Token);
+        }
+    }
+
+    [Fact]
     public async Task ASeek_CarriesItsPosition()
     {
         await using var tv = await FakeTv.StartAsync();

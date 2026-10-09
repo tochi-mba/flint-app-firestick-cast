@@ -16,6 +16,7 @@ namespace Flint.App.ViewModels;
 public sealed partial class CastPageViewModel
 {
     private MirrorControl? mirrorControl;
+    private bool mirrorStoppedOnTv;
 
     /// <summary>Raised on the UI thread with a running share's counters, after each frame sent.</summary>
     public event Action<MirrorSessionStats>? MirrorStatsUpdated;
@@ -132,7 +133,13 @@ public sealed partial class CastPageViewModel
         void OnReceiverStats(StatsMessage stats) => Dispatcher.UIThread.Post(() => MirrorReceiverStats?.Invoke(stats));
         sharing.StatsReceived += OnReceiverStats;
 
-        mirrorStop = new CancellationTokenSource();
+        // Back or Stop on the TV's remote ends the share there; the PC stops sending with it.
+        var stop = new CancellationTokenSource();
+        mirrorStoppedOnTv = false;
+        void OnStoppedOnTv() => Dispatcher.UIThread.Post(() => StopForTv(stop));
+        sharing.ShareStoppedOnTv += OnStoppedOnTv;
+
+        mirrorStop = stop;
         mirrorStopped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         mirrorControl = control;
         IsMirroring = true;
@@ -162,17 +169,17 @@ public sealed partial class CastPageViewModel
 
             // Nothing threw, so the session ran - but a mirror that sent no frames left the TV on
             // an empty surface, and that must not read as success.
-            MirrorStatus = stats.FramesEncoded > 0
-                ? $"Mirror stopped after {stats.FramesEncoded} frames."
+            MirrorStatus = mirrorStoppedOnTv ? "Sharing stopped on the TV."
+                : stats.FramesEncoded > 0 ? $"Mirror stopped after {stats.FramesEncoded} frames."
                 : "The mirror ran but sent no frames.";
-            if (stats.FramesEncoded == 0)
+            if (stats.FramesEncoded == 0 && !mirrorStoppedOnTv)
             {
                 Failure = "Flint captured this screen but encoded nothing from it.";
                 FlintDiag.Warn("FlintCast", "mirror ended with zero frames");
             }
             else
             {
-                FlintDiag.Info("FlintCast", $"mirror ended frames={stats.FramesEncoded}");
+                FlintDiag.Info("FlintCast", $"mirror ended frames={stats.FramesEncoded} stoppedOnTv={mirrorStoppedOnTv}");
             }
         }
         catch (OperationCanceledException)
@@ -190,6 +197,7 @@ public sealed partial class CastPageViewModel
         {
             await StopSoundAsync().ConfigureAwait(true);
             sharing.StatsReceived -= OnReceiverStats;
+            sharing.ShareStoppedOnTv -= OnStoppedOnTv;
             mirrorStop.Dispose();
             mirrorStop = null;
             mirrorControl = null;
@@ -203,6 +211,19 @@ public sealed partial class CastPageViewModel
             OnPropertyChanged(nameof(CanStopMirror));
             StopScreenSessionCommand.NotifyCanExecuteChanged();
         }
+    }
+
+    /// <summary>Ends <paramref name="share"/>, which the TV's remote stopped, unless it has already ended.</summary>
+    /// <remarks>Posted from the session's thread, so the share may have ended, or been replaced, since.</remarks>
+    internal void StopForTv(CancellationTokenSource share)
+    {
+        if (!ReferenceEquals(mirrorStop, share))
+        {
+            return;
+        }
+
+        mirrorStoppedOnTv = true;
+        share.Cancel();
     }
 
     /// <summary>Stops a running mirror session.</summary>

@@ -17,6 +17,25 @@ internal sealed class MirrorCommand(IMirrorEngine mirrorEngine, IAudioEngine aud
     /// <summary>Frames between two progress lines, so a minute of sharing is a readable log.</summary>
     internal const int FramesPerLine = 30;
 
+    private readonly Lock gate = new();
+    private CancellationTokenSource? running;
+    private bool stoppedOnTv;
+
+    /// <summary>Ends the running share because the TV's remote stopped it; does nothing when none runs.</summary>
+    internal void StopForTv()
+    {
+        lock (gate)
+        {
+            if (running is null)
+            {
+                return;
+            }
+
+            stoppedOnTv = true;
+            running.Cancel();
+        }
+    }
+
     /// <summary>Shares until cancelled or until the TV goes away.</summary>
     /// <typeparam name="TTransport">The receiver session, which carries the picture and the sound.</typeparam>
     /// <param name="session">The connected receiver session.</param>
@@ -57,10 +76,16 @@ internal sealed class MirrorCommand(IMirrorEngine mirrorEngine, IAudioEngine aud
         output.WriteLine($"  Sharing {display?.Describe() ?? "the first display capture finds"}{what}. Ctrl+C to stop.");
         output.WriteLine($"  {choices.Describe(options)}");
 
+        using var share = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        lock (gate)
+        {
+            running = share;
+        }
+
         // Sound waits on the share's control for the picture's clock, so the two start together.
         var control = new MirrorControl();
         control.SetShowPointer(choices.Pointer);
-        using var soundStop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        using var soundStop = CancellationTokenSource.CreateLinkedTokenSource(share.Token);
         var soundRun = choices.Sound
             ? new AudioPump(audioEngine).RunAsync(session, new AudioShareOptions(), control, soundStop.Token)
             : null;
@@ -69,7 +94,7 @@ internal sealed class MirrorCommand(IMirrorEngine mirrorEngine, IAudioEngine aud
         AudioPumpEnd? sound = null;
         try
         {
-            stats = await runner.RunAsync(session, options, surfaceName, control, cancellationToken).ConfigureAwait(false);
+            stats = await runner.RunAsync(session, options, surfaceName, control, share.Token).ConfigureAwait(false);
         }
         catch (MirrorEngineException exception)
         {
@@ -80,6 +105,11 @@ internal sealed class MirrorCommand(IMirrorEngine mirrorEngine, IAudioEngine aud
         }
         finally
         {
+            lock (gate)
+            {
+                running = null;
+            }
+
             // Sound never outlives the picture it plays beside. The pump never faults, so this
             // wait cannot hide the picture's own exception.
             await soundStop.CancelAsync().ConfigureAwait(false);
@@ -91,6 +121,10 @@ internal sealed class MirrorCommand(IMirrorEngine mirrorEngine, IAudioEngine aud
 
         output.WriteLine();
         output.WriteLine($"  Mirror stopped: {stats.FramesEncoded} frames, {stats.BytesEncoded / 1024} KiB sent.");
+        if (stoppedOnTv)
+        {
+            output.WriteLine("  The TV's remote stopped the share.");
+        }
         if (sound is { Problem: { } problem })
         {
             output.WriteLine($"  Sound did not play: {problem}");

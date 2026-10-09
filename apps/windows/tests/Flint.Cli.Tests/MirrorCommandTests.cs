@@ -33,6 +33,7 @@ public sealed partial class MirrorCommandTests
         text.ShouldContain("  Smoother motion. Up to 720p, 60 frames a second, 16 Mbps.");
         text.ShouldContain("  Sound: ");
         text.ShouldContain(" packets sent, 0 dropped.");
+        text.ShouldNotContain("The TV's remote");
 
         var sent = long.Parse(Stopped().Match(text).Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
         var progress = Progress().Matches(text);
@@ -77,6 +78,23 @@ public sealed partial class MirrorCommandTests
 
         (await run).ShouldBe(FlintExitCode.Success);
         screen.Pointer.ToArray().ShouldBe([false]);
+    }
+
+    [Fact]
+    public async Task TheTvsRemote_StopsTheShare_AndItSaysSo()
+    {
+        var tv = new CountingTv();
+        var output = new StringWriter();
+        var command = new MirrorCommand(new ScriptedScreen(), new PacketSound(), output);
+        command.StopForTv();
+
+        var run = command.RunAsync(tv, new MirrorChoices(), Second, null, "Desk", TestContext.Current.CancellationToken);
+        await Until.TrueAsync(() => tv.Frames > 3);
+        command.StopForTv();
+
+        (await run).ShouldBe(FlintExitCode.Success, "the share ran; the person ended it");
+        output.ToString().ShouldContain("  The TV's remote stopped the share.");
+        command.StopForTv();
     }
 
     [Fact]

@@ -64,6 +64,13 @@ public sealed partial class CastSession : IMirrorTransport, IMirrorFeedbackTrans
     /// <summary>Raised whenever the receiver reports mirror decoder counters.</summary>
     public event Action<StatsMessage>? StatsReceived;
 
+    /// <summary>Raised when the person stops a share with the TV's own remote.</summary>
+    /// <remarks>
+    /// The TV has already gone back to its own screen, so a share still running would capture and
+    /// send a picture nobody can see. Raised on the receive loop's thread.
+    /// </remarks>
+    public event Action? ShareStoppedOnTv;
+
     /// <summary>How the session ended, once it has.</summary>
     /// <remarks>
     /// A task rather than only an event, so a listener that attaches after the TV has already gone
@@ -411,6 +418,11 @@ public sealed partial class CastSession : IMirrorTransport, IMirrorFeedbackTrans
                 if (frame.Message is StatsMessage stats)
                 {
                     StatsReceived?.Invoke(stats);
+                }
+
+                if (frame.Message is ControlMessage { Event: TransportControl { Action: TransportAction.Stop } })
+                {
+                    ShareStoppedOnTv?.Invoke();
                 }
 
                 if (frame.Message is ByeMessage bye)

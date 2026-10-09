@@ -332,6 +332,42 @@ public sealed class CastPageSoundTests : IDisposable
         cast.SoundState.ShouldBe(AudioShareState.Off);
     }
 
+    [AvaloniaFact]
+    public async Task StoppingTheShareWithTheTvsRemote_StopsItHere_WithItsSound_AndSaysSo()
+    {
+        await using var tv = new LoopbackReceiver();
+        var cast = await PairedAsync(tv);
+        var sharing = await SharingAsync(cast, tv);
+        await tv.WaitForAsync<AudioConfigMessage>();
+        await Until(() => cast.IsMutingThisPc);
+
+        await tv.SendAsync(new ControlMessage(1, new TransportControl(TransportAction.Stop)));
+        await sharing;
+
+        cast.IsMirroring.ShouldBeFalse();
+        cast.MirrorStatus.ShouldBe("Sharing stopped on the TV.");
+        cast.Failure.ShouldBeNull("the person ended it; nothing went wrong");
+        cast.IsSharingSound.ShouldBeFalse();
+        audio.Muted("speakers").ShouldBeFalse("this PC's sound is put back");
+        cast.IsSessionConnected.ShouldBeTrue("the TV is still connected, ready for the next share");
+    }
+
+    [AvaloniaFact]
+    public async Task AStopFromTheTv_ForAShareThatHasEnded_StopsNothing()
+    {
+        await using var tv = new LoopbackReceiver();
+        var cast = await PairedAsync(tv);
+        var sharing = await SharingAsync(cast, tv);
+
+        using var ended = new CancellationTokenSource();
+        cast.StopForTv(ended);
+
+        cast.IsMirroring.ShouldBeTrue("a stop meant for another share does not end this one");
+        ended.IsCancellationRequested.ShouldBeFalse();
+        await StopAsync(cast, sharing);
+        cast.MirrorStatus.ShouldNotBe("Sharing stopped on the TV.");
+    }
+
     private Task<CastPageViewModel> PairedAsync(LoopbackReceiver tv) =>
         PairedWithSoundAsync(tv, settings, audio, memory, clock);
 

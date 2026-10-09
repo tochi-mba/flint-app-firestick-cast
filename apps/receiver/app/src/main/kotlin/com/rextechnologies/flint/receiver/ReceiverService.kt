@@ -120,6 +120,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
     private lateinit var videoDecoder: MirrorVideoDecoder
     private lateinit var audioDecoder: MirrorAudioDecoder
     private var pairingCode = PairingCode.generate()
+    private val shareStop = ShareStopNotice()
     private var server: ReceiverServer? = null
     private var mdns: ReceiverMdnsResponder? = null
     private var broadcastResponder: ReceiverBroadcastResponder? = null
@@ -336,6 +337,7 @@ class ReceiverService : Service(), ReceiverSessionListener, Player.Listener {
         }
         KeyEvent.KEYCODE_MEDIA_STOP, KeyEvent.KEYCODE_BACK -> {
             if (_uiState.value.surfaceMode != SurfaceMode.IDLE) {
+                shareStop.onCleared(_uiState.value.surfaceMode)?.let { server?.send(it) }
                 clearSessionSurface()
                 true
             } else {
