@@ -306,6 +306,7 @@ internal static class Program
         try
         {
             var command = new MirrorCommand(new NativeMirrorEngine(), new NativeAudioEngine(), Console.Out);
+            session.ShareStoppedOnTv += command.StopForTv;
             return await command.RunAsync(
                     session,
                     choices,
