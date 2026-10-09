@@ -5,6 +5,30 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use super::{FlintMirrorSession, FlintStatus};
 use crate::session::Pause;
 
+/// Draws the mouse pointer into the shared picture, or stops, from the next frame.
+///
+/// Off until asked: Windows hands the pointer over apart from the picture, so a share shows none
+/// unless this turns it on.
+///
+/// # Safety
+/// `handle` must come from `flint_mirror_start` and not yet have been stopped.
+#[no_mangle]
+pub unsafe extern "C" fn flint_mirror_set_pointer(
+    handle: *mut FlintMirrorSession,
+    show: u8,
+) -> i32 {
+    if handle.is_null() {
+        return FlintStatus::NullArgument as i32;
+    }
+
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: the caller guarantees the handle is live and not aliased.
+        unsafe { (*handle).session.set_show_pointer(show != 0) };
+        FlintStatus::Ok as i32
+    }));
+    result.unwrap_or(FlintStatus::InternalError as i32)
+}
+
 /// Values for [`flint_mirror_set_pause`]'s `mode`.
 pub mod pause_mode {
     /// Sending the screen.
@@ -105,6 +129,14 @@ mod tests {
     }
 
     #[test]
+    fn showing_the_pointer_refuses_a_null_handle() {
+        assert_eq!(
+            unsafe { flint_mirror_set_pointer(std::ptr::null_mut(), 1) },
+            FlintStatus::NullArgument as i32
+        );
+    }
+
+    #[test]
     fn the_elapsed_time_refuses_null_arguments() {
         let mut elapsed = 0i64;
         assert_eq!(
@@ -187,6 +219,13 @@ mod tests {
         ] {
             assert_eq!(
                 unsafe { flint_mirror_set_pause(handle, mode) },
+                FlintStatus::Ok as i32
+            );
+        }
+
+        for show in [1, 0] {
+            assert_eq!(
+                unsafe { flint_mirror_set_pointer(handle, show) },
                 FlintStatus::Ok as i32
             );
         }

@@ -39,6 +39,8 @@ public sealed class ScreenSettingsSectionTests : IDisposable
         screen.Countdown = screen.CountdownChoices.Single(choice => choice.Value == 3);
         screen.ShowLiveNumbers = true;
         screen.MinimiseWhenSharing = true;
+        screen.ShowPointer.ShouldBeTrue();
+        screen.ShowPointer = false;
 
         var saved = service.Current.Screen;
         saved.Display.ShouldBe(ShareDisplayChoice.Remembered);
@@ -50,6 +52,7 @@ public sealed class ScreenSettingsSectionTests : IDisposable
         saved.CountdownSeconds.ShouldBe(3);
         saved.ShowLiveNumbers.ShouldBeTrue();
         saved.MinimiseWhenSharing.ShouldBeTrue();
+        saved.ShowPointer.ShouldBeFalse();
         screen.IsCustom.ShouldBeTrue();
         screen.CustomRate.ShouldBe(17);
         screen.ShowLiveNumbers.ShouldBeTrue();
@@ -137,7 +140,7 @@ public sealed class ScreenSettingsSectionTests : IDisposable
         var screen = new ScreenSettingsViewModel(service);
 
         screen.Title.ShouldBe("Screen sharing");
-        screen.Settings.Count.ShouldBe(15);
+        screen.Settings.Count.ShouldBe(16);
         screen.Settings.Single(setting => setting.Matches("minimise")).ShouldBe(screen.MinimiseText);
         screen.Settings.Count(setting => setting.Matches("countdown") || setting.Matches("count down")).ShouldBe(1);
     }

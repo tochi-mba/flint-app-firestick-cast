@@ -319,3 +319,24 @@ mute is touched, never the level. A person who turns this PC's sound back on dur
 alone for the rest of it. An output whose capture stays silent for two seconds while Windows' meter
 shows sound is unmuted, and remembered as one that must play on both. The receiver applies the TV
 volume to shared sound as it does to a played file.
+
+## The mouse pointer
+
+Desktop Duplication never puts the pointer in the picture. Windows hands it over separately: a
+position on every frame that moved it, and a shape on the frame it changed. Without drawing it, the
+TV shows a desktop with no pointer at all, which is why this exists rather than being a choice.
+
+`engine/src/capture/pointer.rs` draws the three kinds of shape Windows uses: colour with straight
+alpha, monochrome as an AND mask over an XOR mask (so the I-beam inverts what is under it), and
+masked colour, whose alpha byte says whether a pixel is drawn or inverts the picture. It clips at
+every edge and refuses a shape larger than 256 pixels rather than reading past it. On the
+system-memory path the pointer is drawn into the read-back picture at its scaled position. On the
+graphics-card path only the small region under the pointer leaves the GPU: it is copied to a
+staging texture, drawn on, and copied back (`pointer_gpu.rs`).
+
+While the pointer is drawn, a pointer that moves over a still desktop is a new frame, so it moves
+on the TV too; the frame-rate cap bounds how often. On a display turned on its side the pointer is
+not drawn: that display's picture already reaches the TV sideways.
+
+`flint_mirror_set_pointer` switches it on and off in a running share, so the setting applies at
+once. The runner applies it on the share's own thread, as it does a pause.

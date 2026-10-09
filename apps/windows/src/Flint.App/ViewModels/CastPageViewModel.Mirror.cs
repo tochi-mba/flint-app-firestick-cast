@@ -55,6 +55,10 @@ public sealed partial class CastPageViewModel
         return true;
     }
 
+    /// <summary>Draws the pointer, or stops, in a running share as soon as the setting changes.</summary>
+    private void OnPointerSettingChanged(object? sender, SettingsChangedEventArgs change) =>
+        mirrorControl?.SetShowPointer(change.Current.Screen.ShowPointer);
+
     /// <summary>Whether the Screen page should offer Stop rather than only Start.</summary>
     public bool CanStopMirror => IsMirroring;
 
@@ -122,6 +126,7 @@ public sealed partial class CastPageViewModel
         };
         runner.PictureStarted += picture => Dispatcher.UIThread.Post(() => MirrorPictureStarted?.Invoke(picture));
         var control = new MirrorControl();
+        control.SetShowPointer(ScreenChoices.ShowPointer);
         control.Switched += switched => Dispatcher.UIThread.Post(() => MirrorSwitched?.Invoke(switched));
         var sharing = session;
         void OnReceiverStats(StatsMessage stats) => Dispatcher.UIThread.Post(() => MirrorReceiverStats?.Invoke(stats));

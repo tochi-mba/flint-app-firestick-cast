@@ -16,11 +16,17 @@ use windows::Win32::Graphics::Direct3D11::{
     D3D11CreateDevice, ID3D11Device, ID3D11DeviceContext, ID3D11Texture2D,
     D3D11_CREATE_DEVICE_BGRA_SUPPORT, D3D11_CREATE_DEVICE_VIDEO_SUPPORT, D3D11_SDK_VERSION,
 };
+use windows::Win32::Graphics::Dxgi::Common::{
+    DXGI_MODE_ROTATION, DXGI_MODE_ROTATION_IDENTITY, DXGI_MODE_ROTATION_UNSPECIFIED,
+};
 use windows::Win32::Graphics::Dxgi::{
     IDXGIAdapter1, IDXGIOutput1, IDXGIOutputDuplication, IDXGIResource, DXGI_ERROR_ACCESS_LOST,
-    DXGI_ERROR_WAIT_TIMEOUT, DXGI_OUTDUPL_FRAME_INFO,
+    DXGI_ERROR_WAIT_TIMEOUT, DXGI_OUTDUPL_FRAME_INFO, DXGI_OUTDUPL_POINTER_SHAPE_INFO,
+    DXGI_OUTDUPL_POINTER_SHAPE_TYPE_COLOR, DXGI_OUTDUPL_POINTER_SHAPE_TYPE_MASKED_COLOR,
+    DXGI_OUTDUPL_POINTER_SHAPE_TYPE_MONOCHROME,
 };
 
+use super::pointer::{PointerKind, PointerShape, PointerTrack};
 use super::{CaptureError, CaptureFormat, FrameOutcome};
 
 /// A live duplication of one display.
@@ -30,6 +36,12 @@ pub struct DesktopDuplication {
     duplication: IDXGIOutputDuplication,
     format: CaptureFormat,
     holding_frame: bool,
+    /// Whether the display is turned on its side, where the pointer is not drawn: its picture
+    /// already reaches the TV sideways, and Windows reports the pointer in the turned desktop's
+    /// terms.
+    rotated: bool,
+    show_pointer: bool,
+    pointer: PointerTrack,
 }
 
 impl DesktopDuplication {
@@ -95,7 +107,24 @@ impl DesktopDuplication {
                 adapter_luid,
             },
             holding_frame: false,
+            rotated: is_turned(description.Rotation),
+            show_pointer: false,
+            pointer: PointerTrack::default(),
         })
+    }
+
+    /// Draws the pointer into frames from now on, or stops.
+    ///
+    /// While it is drawn, a pointer that moves over a still desktop is a new frame, so the pointer
+    /// moves on the TV too.
+    pub fn set_show_pointer(&mut self, show: bool) {
+        self.show_pointer = show;
+    }
+
+    /// The pointer to draw into the frame just taken, or `None` when it is not drawn.
+    #[must_use]
+    pub fn pointer(&self) -> Option<&PointerTrack> {
+        (self.show_pointer && !self.rotated).then_some(&self.pointer)
     }
 
     /// The frame geometry and the adapter the frames live on.
@@ -151,16 +180,62 @@ impl DesktopDuplication {
         }
 
         self.holding_frame = true;
+        let pointer_changed = self.track_pointer(&info);
 
         // A frame with no accumulated updates carries no new pixels: the desktop reported only a
-        // pointer move. Treating it as new would send a duplicate frame down the wire.
-        if info.LastPresentTime == 0 {
+        // pointer move. Unless the pointer is drawn, treating it as new would send a duplicate
+        // frame down the wire.
+        if !is_new(
+            info.LastPresentTime,
+            pointer_changed,
+            self.pointer().is_some(),
+        ) {
             return Ok((FrameOutcome::Unchanged, None));
         }
 
         let resource = resource.ok_or_else(|| CaptureError::Platform("no frame surface".into()))?;
         let texture: ID3D11Texture2D = resource.cast().map_err(platform)?;
         Ok((FrameOutcome::Captured, Some(texture)))
+    }
+
+    /// Takes what this frame says about the pointer; returns whether the picture would change.
+    fn track_pointer(&mut self, info: &DXGI_OUTDUPL_FRAME_INFO) -> bool {
+        let mut changed = false;
+        if info.LastMouseUpdateTime != 0 {
+            let position = info.PointerPosition;
+            changed |= self.pointer.moved_to(
+                position
+                    .Visible
+                    .as_bool()
+                    .then_some((position.Position.x, position.Position.y)),
+            );
+        }
+
+        if info.PointerShapeBufferSize > 0 {
+            if let Some(shape) = self.read_pointer_shape(info.PointerShapeBufferSize) {
+                changed |= self.pointer.reshape(shape);
+            }
+        }
+
+        changed
+    }
+
+    /// Reads the pointer's new shape, which Windows offers only on the frame it changed.
+    fn read_pointer_shape(&self, size: u32) -> Option<PointerShape> {
+        let mut data = vec![0u8; size as usize];
+        let mut required = 0u32;
+        let mut shape = DXGI_OUTDUPL_POINTER_SHAPE_INFO::default();
+        // SAFETY: a frame is held, and the buffer is as large as the frame said the shape is.
+        unsafe {
+            self.duplication.GetFramePointerShape(
+                size,
+                data.as_mut_ptr().cast(),
+                &raw mut required,
+                &raw mut shape,
+            )
+        }
+        .ok()?;
+        pointer_shape(&shape, data)
     }
 
     /// Returns the current frame to the duplication.
@@ -182,6 +257,47 @@ impl Drop for DesktopDuplication {
     fn drop(&mut self) {
         self.release();
     }
+}
+
+/// Whether a frame has something new to send: new desktop pixels, or a pointer that is drawn and
+/// moved or changed shape.
+/// Whether a display is turned, so a pointer drawn at its reported place would land wrongly.
+pub(crate) fn is_turned(rotation: DXGI_MODE_ROTATION) -> bool {
+    rotation != DXGI_MODE_ROTATION_IDENTITY && rotation != DXGI_MODE_ROTATION_UNSPECIFIED
+}
+
+pub(crate) fn is_new(last_present_time: i64, pointer_changed: bool, drawing_pointer: bool) -> bool {
+    last_present_time != 0 || (pointer_changed && drawing_pointer)
+}
+
+/// A shape as Windows described it, or `None` for a kind this code does not draw.
+pub(crate) fn pointer_shape(
+    info: &DXGI_OUTDUPL_POINTER_SHAPE_INFO,
+    data: Vec<u8>,
+) -> Option<PointerShape> {
+    let kind = match info.Type {
+        kind if kind == DXGI_OUTDUPL_POINTER_SHAPE_TYPE_MONOCHROME.0 as u32 => {
+            PointerKind::Monochrome
+        }
+        kind if kind == DXGI_OUTDUPL_POINTER_SHAPE_TYPE_COLOR.0 as u32 => PointerKind::Color,
+        kind if kind == DXGI_OUTDUPL_POINTER_SHAPE_TYPE_MASKED_COLOR.0 as u32 => {
+            PointerKind::MaskedColor
+        }
+        _ => return None,
+    };
+    Some(PointerShape {
+        kind,
+        width: info.Width,
+        // A monochrome shape's height counts both of its masks.
+        height: if kind == PointerKind::Monochrome {
+            info.Height / 2
+        } else {
+            info.Height
+        },
+        pitch: info.Pitch,
+        hotspot: (info.HotSpot.x, info.HotSpot.y),
+        data,
+    })
 }
 
 /// Finds the requested output and the adapter that drives it.
@@ -221,59 +337,8 @@ pub fn is_available() -> bool {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    // These run against the real desktop. On a build agent with no interactive session they
-    // correctly report no capture, which is the same answer the capability report would give.
-
-    #[test]
-    fn probing_never_panics_whatever_the_session() {
-        let _ = is_available();
-    }
-
-    #[test]
-    fn opening_an_absurd_output_index_is_refused() {
-        let result = DesktopDuplication::open(9_999);
-        assert!(matches!(
-            result,
-            Err(CaptureError::NoSuchOutput(9_999) | CaptureError::NoDisplayAdapter)
-        ));
-    }
-
-    #[test]
-    fn a_capture_reports_a_plausible_geometry_when_one_is_available() {
-        let Ok(duplication) = DesktopDuplication::open_primary() else {
-            // No interactive desktop here; nothing to assert.
-            return;
-        };
-
-        let format = duplication.format();
-        assert!(format.width > 0 && format.height > 0);
-        assert!(format.adapter_luid != 0);
-    }
-
-    #[test]
-    fn releasing_without_a_held_frame_is_harmless() {
-        let Ok(mut duplication) = DesktopDuplication::open_primary() else {
-            return;
-        };
-
-        duplication.release();
-        duplication.release();
-    }
-
-    #[test]
-    fn an_idle_desktop_reports_unchanged_rather_than_failing() {
-        // A still desktop produces no frame, and that must not read as an error.
-        let Ok(mut duplication) = DesktopDuplication::open_primary() else {
-            return;
-        };
-
-        let outcome = duplication.acquire(50);
-        assert!(outcome.is_ok(), "a timeout must not surface as an error");
-    }
-}
+#[path = "duplication_tests.rs"]
+mod tests;
 
 #[cfg(test)]
 mod live_probe {

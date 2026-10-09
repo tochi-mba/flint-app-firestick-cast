@@ -54,6 +54,13 @@ public interface IMirrorEngineSession : IDisposable
     /// </remarks>
     void SetPause(MirrorPause pause);
 
+    /// <summary>Draws the mouse pointer into the picture from the next frame, or stops.</summary>
+    /// <remarks>Windows hands the pointer over apart from the picture, so without this the TV shows none.</remarks>
+    void SetShowPointer(bool show)
+    {
+        // A session with no pointer of its own has nothing to draw.
+    }
+
     /// <summary>Reads the session counters.</summary>
     MirrorSessionStats ReadStats();
 }

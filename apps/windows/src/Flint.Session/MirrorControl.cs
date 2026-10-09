@@ -39,6 +39,7 @@ public sealed class MirrorControl
     private readonly TaskCompletionSource clockStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private MirrorSessionOptions? pending;
     private int pause;
+    private int showPointer = 1;
     private long clockOrigin;
 
     /// <summary>Creates a control on the system clock.</summary>
@@ -74,6 +75,12 @@ public sealed class MirrorControl
 
         Volatile.Write(ref pause, (int)value);
     }
+
+    /// <summary>Whether the mouse pointer is drawn into the picture. On unless switched off.</summary>
+    public bool ShowPointer => Volatile.Read(ref showPointer) != 0;
+
+    /// <summary>Draws the mouse pointer into the picture from the next frame, or stops.</summary>
+    public void SetShowPointer(bool show) => Volatile.Write(ref showPointer, show ? 1 : 0);
 
     /// <summary>Asks the share to send <paramref name="options"/> from now on.</summary>
     public void Change(MirrorSessionOptions options)
