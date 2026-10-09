@@ -377,6 +377,8 @@ pub struct DesktopFrameSource {
     gpu_frames: Option<BgraTexturePool>,
     output_index: u32,
     origin: std::time::Instant,
+    show_pointer: bool,
+    overlay: super::pointer_gpu::PointerOverlay,
 }
 
 impl DesktopFrameSource {
@@ -401,6 +403,8 @@ impl DesktopFrameSource {
             gpu_frames: None,
             output_index,
             origin: std::time::Instant::now(),
+            show_pointer: false,
+            overlay: super::pointer_gpu::PointerOverlay::default(),
         })
     }
 
@@ -463,7 +467,8 @@ impl DesktopFrameSource {
 
     /// Re-creates the duplication after Windows took it away.
     fn reopen(&mut self) -> Result<(), CaptureError> {
-        let duplication = super::duplication::DesktopDuplication::open(self.output_index)?;
+        let mut duplication = super::duplication::DesktopDuplication::open(self.output_index)?;
+        duplication.set_show_pointer(self.show_pointer);
         self.readback = FrameReadback::new(
             duplication.device().clone(),
             duplication.context().clone(),
@@ -504,6 +509,14 @@ impl crate::session::FrameSource for DesktopFrameSource {
             // Copied before the release, because the duplication only lends its texture. The copy
             // stays on the GPU, which is the entire point of this path.
             let owned = pool.copy_of(&texture);
+            // A pointer that cannot be drawn leaves the frame as it is; the frame still goes.
+            let _ = self.overlay.draw(
+                self.duplication.device(),
+                self.duplication.context(),
+                &owned,
+                (format.width, format.height),
+                self.duplication.pointer(),
+            );
             self.duplication.release();
             return Ok((
                 outcome,
@@ -523,7 +536,14 @@ impl crate::session::FrameSource for DesktopFrameSource {
         // acquire fail, turning one bad frame into a dead session.
         self.duplication.release();
         match frame? {
-            Some(frame) => Ok((outcome, Some(frame))),
+            Some(mut frame) => {
+                super::pointer::draw_into(
+                    &mut frame,
+                    self.duplication.pointer(),
+                    (format.width, format.height),
+                );
+                Ok((outcome, Some(frame)))
+            }
             // The readback pipeline is still filling; there is genuinely nothing to encode yet.
             None => Ok((FrameOutcome::Unchanged, None)),
         }
@@ -531,6 +551,11 @@ impl crate::session::FrameSource for DesktopFrameSource {
 
     fn recycle_frame(&mut self, frame: SourceFrame) {
         self.readback.recycle(frame);
+    }
+
+    fn set_show_pointer(&mut self, show: bool) {
+        self.show_pointer = show;
+        self.duplication.set_show_pointer(show);
     }
 
     fn elapsed_us(&self) -> i64 {

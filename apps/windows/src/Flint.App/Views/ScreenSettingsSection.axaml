@@ -77,6 +77,12 @@
                     IsChecked="{Binding MinimiseWhenSharing, Mode=TwoWay}"
                     AutomationProperties.Name="Minimise Flint when sharing starts" />
     </controls:SettingRow>
+    <controls:SettingRow Title="{Binding ShowPointerText.Title}"
+                         Description="{Binding ShowPointerText.Description}">
+      <ToggleSwitch x:Name="ShowPointer" Theme="{StaticResource FlintToggleSwitch}"
+                    IsChecked="{Binding ShowPointer, Mode=TwoWay}"
+                    AutomationProperties.Name="Show the mouse pointer on the TV" />
+    </controls:SettingRow>
     <controls:SettingRow Title="{Binding PausedPictureText.Title}"
                          Description="{Binding PausedPictureText.Description}">
       <ComboBox x:Name="PausedPicture" Theme="{StaticResource FlintComboBox}"

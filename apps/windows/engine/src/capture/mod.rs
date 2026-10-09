@@ -9,6 +9,8 @@ pub mod duplication;
 #[cfg(windows)]
 pub mod mipscale;
 pub mod outputs;
+pub mod pointer;
+pub mod pointer_gpu;
 #[cfg(windows)]
 pub mod readback;
 

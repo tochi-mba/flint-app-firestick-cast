@@ -425,6 +425,8 @@ public sealed class NativeMirrorEngineTests
             }
 
             Should.Throw<ArgumentOutOfRangeException>(() => session.SetPause((MirrorPause)7));
+            Should.NotThrow(() => session.SetShowPointer(true));
+            Should.NotThrow(() => session.SetShowPointer(false));
             ((IMirrorClock)session).ReadElapsedUs().ShouldBeGreaterThan(0, "capture has been running since the session started");
             session.ReadStats().FramesHeldBack.ShouldBe(0, "nothing has been captured yet");
         }
@@ -466,6 +468,7 @@ public sealed class NativeMirrorEngineTests
         Should.Throw<ObjectDisposedException>(session.RequestKeyFrame);
         Should.Throw<ObjectDisposedException>(() => session.ReadStats());
         Should.Throw<ObjectDisposedException>(() => session.SetPause(MirrorPause.Black));
+        Should.Throw<ObjectDisposedException>(() => session.SetShowPointer(true));
         Should.Throw<ObjectDisposedException>(() => ((IMirrorClock)session).ReadElapsedUs());
     }
 

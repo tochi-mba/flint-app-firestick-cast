@@ -56,6 +56,47 @@ impl FrameSource for ScriptedSource {
     }
 }
 
+/// A capture source that records each time it is told whether to draw the pointer.
+struct PointerSource(std::rc::Rc<std::cell::RefCell<Vec<bool>>>);
+
+impl FrameSource for PointerSource {
+    fn next_frame(
+        &mut self,
+        _timeout_ms: u32,
+    ) -> Result<(FrameOutcome, Option<SourceFrame>), CaptureError> {
+        Ok((FrameOutcome::Unchanged, None))
+    }
+
+    fn recycle_frame(&mut self, _frame: SourceFrame) {}
+
+    fn set_show_pointer(&mut self, show: bool) {
+        self.0.borrow_mut().push(show);
+    }
+}
+
+#[test]
+fn the_pointer_setting_reaches_the_capture_source() {
+    let told = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+    let mut session = MirrorSession::new(
+        PointerSource(told.clone()),
+        NullEncoder::new(config()).unwrap(),
+    );
+
+    session.set_show_pointer(true);
+    session.set_show_pointer(false);
+
+    assert_eq!(*told.borrow(), [true, false]);
+}
+
+#[test]
+fn a_source_with_no_pointer_of_its_own_ignores_the_setting_and_carries_on() {
+    let mut session = session(vec![Ok((FrameOutcome::Captured, Some(frame(0))))]);
+
+    session.set_show_pointer(true);
+
+    assert!(matches!(session.tick().unwrap(), Tick::Encoded(_)));
+}
+
 fn session(
     steps: Vec<Result<(FrameOutcome, Option<SourceFrame>), CaptureError>>,
 ) -> MirrorSession<ScriptedSource, NullEncoder> {

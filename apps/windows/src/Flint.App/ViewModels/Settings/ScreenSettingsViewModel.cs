@@ -92,6 +92,11 @@ public sealed partial class ScreenSettingsViewModel : SettingsSectionViewModel
         "While paused, the TV shows",
         "The last picture it was sent, or a black screen.");
 
+    /// <summary>Whether the pointer shows on the TV.</summary>
+    public SettingText ShowPointerText { get; } = new(
+        "Show the mouse pointer on the TV",
+        "So people watching can follow what you point at.");
+
     /// <summary>Whether locking pauses.</summary>
     public SettingText PauseWhenLockedText { get; } = new(
         "Pause when this PC locks",
@@ -106,7 +111,7 @@ public sealed partial class ScreenSettingsViewModel : SettingsSectionViewModel
     public override IReadOnlyList<SettingText> Settings =>
     [
         DisplayText, PromptText, PictureText, CustomSizeText, CustomFramesText, CustomRateText,
-        LiveNumbersText, CountdownText, MinimiseText, PausedPictureText, PauseWhenLockedText, StayPausedText,
+        LiveNumbersText, CountdownText, MinimiseText, ShowPointerText, PausedPictureText, PauseWhenLockedText, StayPausedText,
         SoundSourceText, SoundQualityText, SoundDelayText,
     ];
 
@@ -122,6 +127,13 @@ public sealed partial class ScreenSettingsViewModel : SettingsSectionViewModel
     {
         get => PausedPictureChoices.FirstOrDefault(choice => choice.Value == Screen.PausedPicture);
         set => Choose(value, (screen, picture) => screen with { PausedPicture = picture });
+    }
+
+    /// <summary>Whether the pointer shows on the TV.</summary>
+    public bool ShowPointer
+    {
+        get => Screen.ShowPointer;
+        set => Update(screen => screen with { ShowPointer = value });
     }
 
     /// <summary>Whether locking pauses.</summary>

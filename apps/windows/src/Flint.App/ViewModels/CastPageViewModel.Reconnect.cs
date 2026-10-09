@@ -66,6 +66,7 @@ public sealed partial class CastPageViewModel
         knownTvs = store ?? throw new ArgumentNullException(nameof(store));
         settings = liveSettings ?? throw new ArgumentNullException(nameof(liveSettings));
         settings.Changed += OnSoundSettingsChanged;
+        settings.Changed += OnPointerSettingChanged;
     }
 
     /// <summary>Forgets one TV: its login and its address.</summary>

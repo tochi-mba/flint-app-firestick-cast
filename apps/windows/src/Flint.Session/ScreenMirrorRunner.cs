@@ -98,6 +98,7 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
         var mirrorSurfaceSelected = false;
         var requestKeyFrame = 0;
         var applied = MirrorPause.Running;
+        bool? pointerShown = null;
         var allowance = 0;
         long lastDroppedFrames = 0;
         var feedback = transport as IMirrorFeedbackTransport;
@@ -129,6 +130,14 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
             buffer = ArrayPool<byte>.Shared.Rent(FrameBufferBytes);
             while (!cancellationToken.IsCancellationRequested && transport.IsConnected)
             {
+                // Like the pause, applied on this thread, once per change, and again to a new session.
+                var showPointer = control?.ShowPointer ?? true;
+                if (showPointer != pointerShown)
+                {
+                    session.SetShowPointer(showPointer);
+                    pointerShown = showPointer;
+                }
+
                 if (control?.Pause is { } wanted && wanted != applied)
                 {
                     // The engine is tied to this thread, so the pause is applied here, once per change.
@@ -152,6 +161,8 @@ public sealed class ScreenMirrorRunner(IMirrorEngine engine)
                     // A new session counts from zero. Sound already running keeps the time it
                     // started with; the TV plays sound as it arrives, so nothing heard shifts.
                     StartClock(control, session);
+                    pointerShown = control.ShowPointer;
+                    session.SetShowPointer(pointerShown.Value);
 
                     // A new decoder configuration and nothing else: the TV stays on the mirror
                     // surface and swaps its decoder, rather than dropping to its idle screen.

@@ -144,6 +144,9 @@ internal sealed class RecordingMirrorEngine : IMirrorEngine
 {
     public List<MirrorSessionOptions> Started { get; } = [];
 
+    /// <summary>Each time a session was told whether to draw the pointer.</summary>
+    public System.Collections.Concurrent.ConcurrentQueue<bool> Pointer { get; } = new();
+
     public IMirrorEngineSession Start(MirrorSessionOptions options)
     {
         lock (Started)
@@ -151,12 +154,14 @@ internal sealed class RecordingMirrorEngine : IMirrorEngine
             Started.Add(options);
         }
 
-        return new StillSession();
+        return new StillSession(this);
     }
 
     /// <summary>A still screen, on a clock of its own so shared sound need not wait for one.</summary>
-    private sealed class StillSession : IMirrorEngineSession, IMirrorClock
+    private sealed class StillSession(RecordingMirrorEngine engine) : IMirrorEngineSession, IMirrorClock
     {
+        public void SetShowPointer(bool show) => engine.Pointer.Enqueue(show);
+
         public long ReadElapsedUs() => 0;
 
         public VideoCodec Codec => VideoCodec.H264;

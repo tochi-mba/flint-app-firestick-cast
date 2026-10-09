@@ -36,6 +36,10 @@ pub trait FrameSource {
     /// allocation and fill it again on the next capture instead of allocating on every tick.
     fn recycle_frame(&mut self, frame: SourceFrame);
 
+    /// Draws the mouse pointer into frames from now on, or stops. A source without a pointer of
+    /// its own has nothing to draw, so it ignores this.
+    fn set_show_pointer(&mut self, _show: bool) {}
+
     /// Time since this source started, on the clock its frames' presentation times are counted on.
     ///
     /// Sound is timed from the same point, so the TV can line the two up. A source with no clock
@@ -178,6 +182,11 @@ impl<S: FrameSource, E: VideoEncoder, C: PacingClock> MirrorSession<S, E, C> {
     #[must_use]
     pub fn elapsed_us(&self) -> i64 {
         self.source.elapsed_us()
+    }
+
+    /// Draws the mouse pointer into the picture from the next frame, or stops.
+    pub fn set_show_pointer(&mut self, show: bool) {
+        self.source.set_show_pointer(show);
     }
 
     /// The encoder this session drives.

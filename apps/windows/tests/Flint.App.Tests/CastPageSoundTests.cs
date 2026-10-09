@@ -295,6 +295,31 @@ public sealed class CastPageSoundTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task ThePointerSetting_IsAppliedAtTheStart_AndAtOnceWhenItChanges()
+    {
+        Screen(screen => screen with { ShowPointer = false, ShareSound = false });
+        await using var tv = new LoopbackReceiver();
+        var mirror = new RecordingMirrorEngine();
+        var cast = new CastPageViewModel(
+            BrowserFixtures.Prober(BrowserFixtures.EligibleDevice() with { Address = System.Net.IPAddress.Loopback }),
+            new NoRecentAddresses(),
+            mirrorEngine: mirror,
+            receiverInstaller: new OfflineReceiverInstaller(),
+            time: clock);
+        cast.UseReconnect(new InMemoryKnownTvStore(), settings);
+        await Pair(cast, tv);
+        var sharing = await SharingAsync(cast, tv);
+        await Until(() => mirror.Pointer.Count == 1);
+
+        Screen(screen => screen with { ShowPointer = true });
+        await Until(() => mirror.Pointer.Count == 2);
+        await StopAsync(cast, sharing);
+        Screen(screen => screen with { ShowPointer = false });
+
+        mirror.Pointer.ToArray().ShouldBe([false, true], "and nothing once the share has stopped");
+    }
+
+    [AvaloniaFact]
     public async Task StartingSound_WithNoShareRunning_DoesNothing()
     {
         await using var tv = new LoopbackReceiver();

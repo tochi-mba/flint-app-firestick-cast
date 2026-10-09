@@ -27,6 +27,7 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
         "flint_mirror_pacing",
         "flint_mirror_encoder_kind",
         "flint_mirror_set_pause",
+        "flint_mirror_set_pointer",
         "flint_mirror_elapsed_us",
     ];
 
@@ -418,6 +419,10 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
         [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
         internal static partial int ElapsedUs(nint handle, out long elapsedUs);
 
+        [LibraryImport(NativeEngineProbeApi.LibraryName, EntryPoint = "flint_mirror_set_pointer")]
+        [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+        internal static partial int SetPointer(nint handle, byte show);
+
         [LibraryImport(NativeEngineProbeApi.LibraryName, EntryPoint = "flint_mirror_set_pause")]
         [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
         internal static partial int SetPause(nint handle, uint mode);
@@ -586,6 +591,15 @@ public sealed partial class NativeMirrorEngine : IMirrorEngine
             var status = CallSession(() => NativeMethods.ElapsedUs(handle, out elapsed));
             ThrowForStatus((FlintStatus)status, "reading how long it has been capturing");
             return elapsed;
+        }
+
+        /// <inheritdoc />
+        public void SetShowPointer(bool show)
+        {
+            ObjectDisposedException.ThrowIf(handle == 0, this);
+            ThrowForStatus(
+                (FlintStatus)CallSession(() => NativeMethods.SetPointer(handle, show ? (byte)1 : (byte)0)),
+                "drawing the mouse pointer");
         }
 
         /// <inheritdoc />
