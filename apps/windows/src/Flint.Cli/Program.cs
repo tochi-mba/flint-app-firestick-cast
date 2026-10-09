@@ -19,7 +19,7 @@ namespace Flint.Cli;
 /// </remarks>
 internal static class Program
 {
-    private static async Task<int> Main(string[] args)
+    internal static async Task<int> Main(string[] args)
     {
         var timeout = TimeSpan.FromSeconds(60);
 
@@ -84,8 +84,24 @@ internal static class Program
                 .ConfigureAwait(false);
         }
 
+        if (options.ListDisplays)
+        {
+            DisplayListing.Write(Displays().List(), Console.Out);
+            return FlintExitCode.Success;
+        }
+
+        // Found before anything is probed or connected, so a display that is not there is named at
+        // once rather than after the TV has been asked to show a share.
+        DisplayInfo? display = null;
+        if (options.Mirror is { } wanted && !wanted.TryChooseDisplay(Displays().List(), out display, out var displayError))
+        {
+            Console.WriteLine($"  {displayError}");
+            Console.WriteLine();
+            return FlintExitCode.UsageError;
+        }
+
         // A probe has a deadline; a live session does not - it runs until Ctrl+C.
-        var runsUntilStopped = options.MediaPath is not null || options.Mirror || options.BrowseUrl is not null;
+        var runsUntilStopped = options.MediaPath is not null || options.Mirror is not null || options.BrowseUrl is not null;
         using var cts = new CancellationTokenSource(runsUntilStopped ? Timeout.InfiniteTimeSpan : timeout);
 
         if (options.ScanServices)
@@ -205,9 +221,9 @@ internal static class Program
                 return FlintExitCode.Success;
             }
 
-            if (options.Mirror)
+            if (options.Mirror is { } share)
             {
-                return await MirrorScreenAsync(session, options.MirrorMaxWidth, cts.Token).ConfigureAwait(false);
+                return await MirrorScreenAsync(session, share, display, cts.Token).ConfigureAwait(false);
             }
         }
 
@@ -233,18 +249,28 @@ internal static class Program
         Console.WriteLine("    flint --address <ip> --port <port>");
         Console.WriteLine("                                  Probe one explicit ADB endpoint");
         Console.WriteLine("    flint --services              List multicast service types");
+        Console.WriteLine("    flint --list-displays         List this PC's displays, numbered for --display");
         Console.WriteLine("    flint --address <ip> --pairing-code <code>");
         Console.WriteLine("                                  Connect to a running Flint receiver");
         Console.WriteLine("    flint --address <ip> --port <receiver-port> --pairing-code <code>");
         Console.WriteLine("                                  Connect on a non-default receiver port");
         Console.WriteLine("    flint --address <ip> --pairing-code <code> --media <path>");
         Console.WriteLine("                                  Play a local file and keep serving it until Ctrl+C");
-        Console.WriteLine("    flint --address <ip> --pairing-code <code> --mirror [--mirror-width <px>]");
-        Console.WriteLine("                                  Mirror this screen until Ctrl+C");
+        Console.WriteLine("    flint --address <ip> --pairing-code <code> --mirror [sharing options]");
+        Console.WriteLine("                                  Share this screen and its sound until Ctrl+C");
         Console.WriteLine("    flint --address <ip> --pairing-code <code> --browse <https url>");
         Console.WriteLine("                                  Open a page in the TV's own browser until Ctrl+C");
         Console.WriteLine("    flint ... --browse <https url> --browser-port <port>");
         Console.WriteLine("                                  Use an explicit browser port instead of the advertised one");
+        Console.WriteLine();
+        Console.WriteLine("  Sharing options, with --mirror (the same choices the app offers):");
+        Console.WriteLine("    --display <number>            Share this display rather than the main one");
+        Console.WriteLine("    --mode <name>                 balanced (the default), movie, game, text or data-saver");
+        Console.WriteLine("    --fps <15|24|30|60>           Frames a second instead of the mode's");
+        Console.WriteLine("    --bitrate <2-30>              Megabits a second instead of the mode's");
+        Console.WriteLine("    --mirror-width <320-7680>     The widest picture instead of the mode's");
+        Console.WriteLine("    --no-sound                    Share the picture without this PC's sound");
+        Console.WriteLine("    --no-pointer                  Leave the mouse pointer out of the picture");
         Console.WriteLine();
         Console.WriteLine("  Output:");
         Console.WriteLine("    --json                        Print the probe verdict as JSON on stdout");
@@ -257,41 +283,18 @@ internal static class Program
         Console.WriteLine($"    {FlintExitCode.ProbeTimedOut,-3} the probe did not finish in time");
         Console.WriteLine($"    {FlintExitCode.MirrorProducedNoFrames,-3} the mirror encoded no frames");
         Console.WriteLine($"    {FlintExitCode.MirrorUnsupported,-3} this PC cannot mirror");
-        Console.WriteLine($"    {FlintExitCode.UsageError,-3} bad command line");
+        Console.WriteLine($"    {FlintExitCode.UsageError,-3} bad command line, or a --display that is not connected");
         Console.WriteLine($"    {FlintExitCode.ReceiverUnavailable,-3} the receiver is not offering that service");
         Console.WriteLine();
     }
 
-    /// <summary>
-    /// Mirrors this screen onto a connected receiver until Ctrl+C.
-    /// </summary>
-    /// <remarks>
-    /// This is the path that proves the host half of a mirror on real hardware, so it prints what
-    /// the engine actually produced rather than only whether it finished - a mirror that reports
-    /// success while sending nothing is the failure worth catching here.
-    /// </remarks>
+    /// <summary>Shares this screen, and its sound unless asked not to, until Ctrl+C.</summary>
     private static async Task<int> MirrorScreenAsync(
         CastSession session,
-        uint maxWidth,
+        MirrorChoices choices,
+        DisplayInfo? display,
         CancellationToken cancellationToken)
     {
-        var runner = new ScreenMirrorRunner(new NativeMirrorEngine());
-        var lastReported = 0L;
-        runner.StatsUpdated += stats =>
-        {
-            // Every thirtieth frame, so a minute of mirroring is a readable log rather than
-            // eighteen hundred lines.
-            if (stats.FramesEncoded - lastReported < 30)
-            {
-                return;
-            }
-
-            lastReported = stats.FramesEncoded;
-            Console.WriteLine(
-                $"  {stats.FramesEncoded} frames, {stats.BytesEncoded / 1024} KiB, "
-                + $"{stats.FramesUnchanged} idle ticks, {stats.Recoveries} recoveries");
-        };
-
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         ConsoleCancelEventHandler cancelHandler = (_, eventArgs) =>
         {
@@ -302,40 +305,24 @@ internal static class Program
 
         try
         {
-            Console.WriteLine($"  Mirroring this screen (capped at {maxWidth}px wide). Ctrl+C to stop.");
-            var stats = await runner.RunAsync(
-                session,
-                new MirrorSessionOptions(MaxWidth: maxWidth),
-                Environment.MachineName,
-                cancellationToken: stop.Token).ConfigureAwait(false);
-
-            Console.WriteLine();
-            Console.WriteLine($"  Mirror stopped: {stats.FramesEncoded} frames, {stats.BytesEncoded / 1024} KiB sent.");
-            Console.WriteLine();
-
-            // Zero frames is a failure even though nothing threw: the television saw a mirror
-            // surface and never a picture, which is exactly the outcome that must not read as
-            // success.
-            if (stats.FramesEncoded == 0)
-            {
-                Console.WriteLine("  No frames were encoded, so the television never showed anything.");
-                return FlintExitCode.MirrorProducedNoFrames;
-            }
-
-            return FlintExitCode.Success;
-        }
-        catch (MirrorEngineException exception)
-        {
-            Console.WriteLine();
-            Console.WriteLine($"  This PC cannot mirror: {exception.Message}");
-            Console.WriteLine();
-            return FlintExitCode.MirrorUnsupported;
+            var command = new MirrorCommand(new NativeMirrorEngine(), new NativeAudioEngine(), Console.Out);
+            return await command.RunAsync(
+                    session,
+                    choices,
+                    display,
+                    (session.PeerHello.Message as HelloMessage)?.ScreenWidth,
+                    Environment.MachineName,
+                    stop.Token)
+                .ConfigureAwait(false);
         }
         finally
         {
             Console.CancelKeyPress -= cancelHandler;
         }
     }
+
+    /// <summary>This PC's displays, named and numbered as the app shows them.</summary>
+    private static DisplayCatalog Displays() => new(new NativeDisplayOutputs(), new DisplayNames());
 
     private static async Task PlayMediaAsync(CastSession session, string mediaPath, CancellationToken cancellationToken)
     {

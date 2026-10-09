@@ -165,7 +165,7 @@ public sealed class CliOptionsTests
 
         error.ShouldBeNull();
         options.ShouldNotBeNull();
-        options.Mirror.ShouldBeTrue();
+        options.Mirror.ShouldNotBeNull();
     }
 
     [Fact]
@@ -179,7 +179,10 @@ public sealed class CliOptionsTests
             out _).ShouldBeTrue();
 
         options.ShouldNotBeNull();
-        options.MirrorMaxWidth.ShouldBe(1920u);
+        options.Mirror.ShouldNotBeNull();
+        options.Mirror.MaxWidth.ShouldBeNull("the picture mode decides");
+        options.Mirror.Resolve(null, null).MaxWidth.ShouldBe(1920u);
+        options.Mirror.Resolve(null, 1280).MaxWidth.ShouldBe(1280u);
     }
 
     [Fact]
@@ -191,7 +194,8 @@ public sealed class CliOptionsTests
             out _).ShouldBeTrue();
 
         options.ShouldNotBeNull();
-        options.MirrorMaxWidth.ShouldBe(1280u);
+        options.Mirror.ShouldNotBeNull();
+        options.Mirror.MaxWidth.ShouldBe(1280u);
     }
 
     [Theory]
@@ -241,6 +245,6 @@ public sealed class CliOptionsTests
         CliOptions.TryParse([], out var options, out _).ShouldBeTrue();
 
         options.ShouldNotBeNull();
-        options.Mirror.ShouldBeFalse();
+        options.Mirror.ShouldBeNull();
     }
 }

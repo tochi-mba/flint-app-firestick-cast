@@ -18,6 +18,12 @@ transmission are implemented; the receiver decodes and renders them.
 It also recognises documented Vega build models, enumerates host encoders and display adapters,
 samples TCP-connect round-trip behaviour, and reports which modes the pair could support.
 
+Built since, and checked on the same TV on 2026-10-09 from the command line: this PC's sound
+beside a share, which the TV decodes and plays, and the mouse pointer drawn into the picture. Each
+has a section below. Pausing is covered by tests on the host and still waits for its pass on the TV,
+and how far apart picture and sound land has not been measured. The notification-area icon, global
+shortcuts and starting at sign-in are host-only and need no TV to prove.
+
 Second-screen output is not implemented. Glass-to-glass latency has not been measured; the host path
 has, and `docs/LATENCY_BUDGET.md` keeps the two apart.
 
@@ -286,9 +292,12 @@ is "Speakers (Realtek(R) Audio)", mixing at 48 kHz in 32-bit float:
    meter while capture hears silence is how that case is recognised.
 3. **Windows' AAC encoder.** Present, and its setup data is `11 90`: low complexity, 48 kHz,
    stereo, the same two bytes the phone app sends. A 1 kHz tone survives an encode and decode with
-   Windows' own decoder at its own pitch. Whether the TV's decoder plays these frames is checked on
-   the TV.
-4. **How far apart picture and sound land on the TV** is measured on the TV.
+   Windows' own decoder at its own pitch. The TV plays these frames: on 2026-10-09 the AFTMM opened
+   its software AAC decoder (`OMX.google.aac.decoder`) at 48 kHz stereo, and Android's mixer showed
+   the receiver's track active, about 19 seconds of a 23-second share played with underruns only
+   in its first second. The host sent 1,101 packets and dropped none.
+4. **How far apart picture and sound land on the TV** is measured on the TV, with a camera. That
+   has not been done yet, so the delay trim defaults to zero.
 
 Two more facts the spike turned up. Windows delivers no data at all while nothing plays, rather
 than silent buffers, so the session pads silence to keep presentation times on the wall clock.

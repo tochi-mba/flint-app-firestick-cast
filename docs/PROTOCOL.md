@@ -32,12 +32,12 @@ Every frame is a four-byte big-endian body length followed by an eight-byte enve
 | Id | Name | Direction | Purpose |
 |---|---|---|---|
 | 1 | `HELLO` | both | Version range, device name, codec capabilities, screen geometry |
-| 2 | `AUTH` | host to receiver | Pairing code, session token, or public-key proof |
+| 2 | `AUTH` | both | Pairing code, session token, or public-key proof; the receiver's reply may grant a session token |
 | 3 | `VIDEO_CONFIG` | host to receiver | Codec, dimensions, codec-specific data (SPS/PPS/VPS) |
 | 4 | `VIDEO` | host to receiver | One access unit, with presentation time and a key-frame flag |
 | 5 | `AUDIO_CONFIG` | host to receiver | Codec, sample rate, channel count |
 | 6 | `AUDIO` | host to receiver | One audio packet |
-| 7 | `CONTROL` | receiver to host | Transport, pointer, key, text and volume events |
+| 7 | `CONTROL` | both | Transport, pointer, key, text and volume events; the host sends transport and volume |
 | 8 | `STATS` | receiver to host | Queue depth, decode latency, round-trip time, dropped frames |
 | 9 | `BYE` | both | Ordered shutdown with a reason |
 | 10 | `MEDIA_COMMAND` | host to receiver | Play a file: fetched from a URL, or the file most recently pushed on this connection |
@@ -122,6 +122,27 @@ FEC's reach triggers an IDR request rather than a stall.
 
 Control and stats move over a reliable channel. The two must not share a socket's fate: losing a
 key-up event because a video packet was dropped would leave a key held down.
+
+### CONTROL in both directions
+
+`CONTROL` began as the receiver's way to send a remote's presses back to the host. The host sends it
+too, on the same connection and with its own sequence numbers: a transport action (play, pause,
+seek) for a file it pushed, and a volume level from 0.0 to 1.0, which the receiver applies to
+whatever it is playing, including the sound of a screen share. A receiver ignores a `CONTROL` event
+it has no use for rather than closing the connection.
+
+## Logging in with a token
+
+The first connection to a TV logs in with the six-digit code the TV shows (`AUTH` method 1). When the
+TV accepts it, its `AUTH` reply carries a session token: 43 URL-safe base64 characters, random, and
+not derived from the code. A later connection can log in with that token instead (method 2), so a
+PC the TV already knows reconnects without anyone reading a code off the screen.
+
+The host reads the TV's `HELLO` before it sends anything, and presents the token only to a TV that
+gives the same name it gave when the token was granted, so a different device answering at the same
+address never sees it. The token lives as long as the TV app's listener: a restart of the app, a TV
+reboot or a press of New code replaces it, and the TV refuses the old one. A refused token is
+forgotten and the next connection asks for the code again. The token is never written to a log.
 
 ## Authorization is not encryption
 

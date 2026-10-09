@@ -17,8 +17,8 @@ internal static class CliCompletion
 
             $commands = 'version', 'doctor', 'update', 'completion', 'perf'
             $options = '--address', '--port', '--receiver-port', '--pairing-code', '--media',
-                '--mirror', '--mirror-width', '--browse', '--browser-port', '--services',
-                '--json', '--version', '--help'
+                '--mirror', '--mirror-width', '--display', '--mode', '--fps', '--bitrate', '--no-sound', '--no-pointer',
+                '--list-displays', '--browse', '--browser-port', '--services', '--json', '--version', '--help'
 
             $spoken = @($commandAst.CommandElements | Select-Object -Skip 1 | ForEach-Object { "$_" })
             $candidates = if ($spoken.Count -eq 0 -or ($spoken.Count -eq 1 -and $wordToComplete)) {

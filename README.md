@@ -10,8 +10,17 @@ This repository is under active construction. The current `0.1.0` build includes
 - **screen mirroring**, proven end to end on a Fire TV Stick: Desktop Duplication capture, colour
   conversion and downscale on the GPU's video processor, hardware H.264 encode, and a receiver that
   decodes and renders it;
+- **this PC's sound on the TV** while the screen is shared, captured from the chosen output and
+  encoded as AAC, with a delay trim, the TV's volume, and an option to mute this PC while the TV
+  plays;
+- a choice of **display** and **picture mode** (Balanced, Movie, Game, Text and slides, Data saver
+  or Custom),
+  **pause** without stopping, and the **mouse pointer** drawn into the picture;
 - **local media handoff**, pushing a selected file to the receiver over the control channel and
   playing it at original quality, with no transcode;
+- a **notification-area icon**, **global shortcuts**, and an option to **start with Windows** in the
+  tray, so Flint can keep sharing with its window closed;
+- reconnecting to a TV it already knows **without a code**, using a token the TV grants at pairing;
 - a Fire TV receiver built with Compose for TV: fully remote-operable, with visible focus and
   overscan-safe margins;
 - a Windows application shell with the REX ink/signal visual system, and a first-run
@@ -115,6 +124,24 @@ separate absence from failure, and are worth branching on: `host.encodersProbed`
 encoder" from "never looked", and `path.throughputMeasured` distinguishes a slow network from one
 that was not measured.
 
+### Reproducing a share
+
+A screen share can be started headlessly with the same choices the Screen page offers, so a problem
+seen in the app can be reproduced from a script with the same numbers:
+
+```powershell
+flint --list-displays                    # the displays, numbered as --display takes them
+flint --address 192.168.1.42 --pairing-code 123456 --mirror --display 2 --mode game
+flint --address 192.168.1.42 --pairing-code 123456 --mirror --fps 30 --bitrate 8 --no-sound
+```
+
+`--mode` takes `balanced` (the default), `movie`, `game`, `text` or `data-saver`, and is worked out
+exactly as the app works it out, never wider than the TV. `--fps` (15, 24, 30 or 60), `--bitrate`
+(2 to 30 megabits a second) and `--mirror-width` replace one of the mode's numbers each. The main
+display is shared unless `--display` names another, this PC's sound plays on the TV too unless
+`--no-sound` is given, and the mouse pointer is drawn into the picture unless `--no-pointer` is. A
+sharing option given without `--mirror` is refused rather than ignored.
+
 Exit codes are a contract - `tools/scripts/*.ps1` and CI branch on them:
 
 | Code | Meaning |
@@ -123,7 +150,7 @@ Exit codes are a contract - `tools/scripts/*.ps1` and CI branch on them:
 | 2 | The probe did not finish in time |
 | 3 | The mirror ran but encoded no frames |
 | 4 | This PC cannot mirror |
-| 64 | Bad command line (`sysexits.h` EX_USAGE) |
+| 64 | Bad command line, or a `--display` that is not connected (`sysexits.h` EX_USAGE) |
 | 69 | The receiver is not offering that service (`sysexits.h` EX_UNAVAILABLE) |
 
 `--version` prints the build, including the source revision when one was stamped, which is what a
@@ -181,19 +208,18 @@ hardware tests instead. See [Measuring the managed paths](docs/ENGINEERING_NOTES
 
 ## Privacy
 
-No account, analytics, ads, cloud relay, or crash-reporting SDK. Current network activity is local
-discovery and read-only device probing. Future session tokens will authorize a receiver; they will
-not by themselves encrypt the stream, and nothing in this project describes local traffic as
-private or encrypted.
+No account, analytics, ads, cloud relay, or crash-reporting SDK. Network activity is local discovery,
+read-only device probing, and the session with the TV on the same network. A session token
+authorizes this PC to a receiver; it does not by itself encrypt the stream, and nothing in this
+project describes local traffic as private or encrypted.
 
 ## Current Status
 
-The connection report, local diagnostics, wire protocol, and Windows package are available now.
+Available: capability reporting, direct Fire TV connection, receiver installation over ADB, screen
+mirroring with sound, local media handoff, the TV browser, diagnostics, and the installer and
+portable Windows packages.
 
-Available: capability reporting, direct Fire TV connection, diagnostics, and the portable Windows
-package.
-
-Unavailable: receiver installation, screen mirroring, media handoff, and second-screen output.
+Unavailable: second-screen output, which needs a signed display driver.
 
 ## Authorship
 
