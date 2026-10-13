@@ -15,7 +15,7 @@
 # copy is the only one outside this file.
 jdk = "17"
 agp = "9.4.1"
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 jacoco = "0.8.14"
 # Formatting follows the pinned ktlint release in CI and locally.
 ktlint = "1.8.0"
