@@ -37,13 +37,13 @@
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.3" />
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
     <PackageVersion Include="FlaUI.UIA3" Version="5.0.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <!-- FlaUI hardware tests remain on xUnit v2; the headless app suite uses v3. -->
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
     <!-- Keep the shared VSTest/Coverlet runner for all suites. -->
-    <PackageVersion Include="xunit.v3.mtp-off" Version="4.0.1" />
+    <PackageVersion Include="xunit.v3.mtp-off" Version="4.0.2" />
   </ItemGroup>
 
 </Project>
