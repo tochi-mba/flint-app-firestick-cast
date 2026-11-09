@@ -212,7 +212,7 @@ jobs:
         # Also guarded on the branch. A workflow_dispatch from any branch would otherwise move
         # `latest` -- the tag every download link on every phone points at -- to a branch build.
         if: steps.version.outputs.tagged == 'false' && github.ref == 'refs/heads/master'
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           tag_name: latest-mobile
           name: Flint Mobile (rolling)
@@ -261,7 +261,7 @@ jobs:
 
       - name: Publish the tagged release
         if: steps.version.outputs.tagged == 'true'
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           files: dist/*
           generate_release_notes: true
